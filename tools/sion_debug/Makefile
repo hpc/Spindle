@@ -1,0 +1,32 @@
+OPT=
+DEBUG=NODEBUG
+DEBUGD=-D$(DEBUG)
+
+CFLAGS=  -g $(OPT) $(DEBUGD) -I. -fPIC -Wall
+FFLAGS=  -g $(OPT)
+LDFLAGS = -g $(OPT)
+LIBS = 
+C_AR= ar 
+
+ifeq ($(DEBUG),SIONDEBUG)
+ CFLAGS += -DSION_DEBUG
+endif
+
+LDCS_COMMON_OBJS = sion_debug.o sion_printts.o
+
+all: default 
+
+default: libsiondebug.a
+
+libsiondebug.a : $(LDCS_COMMON_OBJS)
+	$(C_AR) $(AFLAG) -rcs $@  $(LDCS_COMMON_OBJS)
+	@echo "*** $@ built"
+
+sion_debug.o: 	sion_debug.c sion_debug.h Makefile
+	$(CC) $(CFLAGS) -c  sion_debug.c	
+
+sion_printts.o:	sion_printts.c sion_printts.h Makefile
+	$(CC) $(CFLAGS) -c  sion_printts.c	
+
+clean:
+	rm -rf *.o *.a  *~ *core*

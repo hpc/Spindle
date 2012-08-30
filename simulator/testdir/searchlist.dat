@@ -1,0 +1,5 @@
+# multiple calls to same file
+./dir/libA.so
+./dir/libA.so
+./dir/libA.so
+./dir/libA.so
