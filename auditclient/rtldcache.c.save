@@ -1,0 +1,504 @@
+/**
+ * RTLDCache v0.3 by Matthew LeGendre (legendre1@llnl.gov)
+ *
+ *
+ * RTLDCache is designed to improve the performance of shared library loading.  
+ * Enable it by building this file into a shared object, then setting the
+ * environment variable LD_AUDIT to point at the resulting .so.
+ *
+ * To build and load:
+ *   gcc rtldcache.c -o librtldcache.so -fPIC -shared -O3
+ *   export LD_AUDIT=`pwd`/librtldcache.so
+ *
+ * Note that you need to specify the full path to librtldcache.so.
+ *
+ * This works by building a hash table mapping from file names to directories.
+ * As the dynamic loader visits a directory for the first time, RTLDCache
+ * will read the file list for that directroy and add it to the hash table.  
+ * Subsequent attempts to access any of those files will go straight to the
+ * correct directory.
+ *
+ *
+ * The optimizations used by this system change the typical System V library loading
+ * semantics in a couple ways:
+ *  1) If there are two libraries with the same name in different parts of 
+ *     the search path, then it's possible for RTLDCache to pick the incorrect
+ *     instance of the library.
+ *
+ *     One scenario where this may be common is if there are 32-bit and 
+ *     64-bit libraries installed on a machine, and the search path points to
+ *     the wrong set of libraries.  For example, having /lib (rather than /lib64)
+ *     at the start of LD_LIBRARY_PATH when running a 64-bit binary produces
+ *     problems related to this scenario.
+ *
+ *     I have ideas on how one could fix this, but they are not implemented in this
+ *     version.
+ *
+ *  2) If a library moves from one location to another during the execution
+ *     of a program, and the program then tries to load that library from 
+ *     the new location then it may not be found.
+ **/
+
+#define INTERCEPT_OPEN 1
+#define DEBUG 1
+
+#if defined(DEBUG)
+#define debug_printf(format, ...) \
+  do { \
+     fprintf(stderr, "[%s:%u@%d] - " format, __FILE__, __LINE__, getpid(), ## __VA_ARGS__); \
+  } while (0)
+#else
+#define debug_printf(format, ...)
+#endif
+
+#if defined(INTERCEPT_OPEN)
+int intercept_open = 1;
+#else
+int intercept_open = 0;
+#endif
+
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <assert.h>
+#include <stdio.h>
+
+#define _GNU_SOURCE
+#define __USE_GNU
+#include <link.h>
+
+#define HASH_SIZE 1024
+
+typedef unsigned hash_key_t;
+
+struct hash_entry_t
+{
+   char *dirname;
+   char *filename;
+   hash_key_t hash_val;
+   struct hash_entry_t *next;
+};
+
+static int (*orig_open)(const char *pathname, int flags, ...);
+static int (*orig_open64)(const char *pathname, int flags, ...);
+static FILE* (*orig_fopen)(const char *pathname, const char *mode);
+static FILE* (*orig_fopen64)(const char *pathname, const char *mode);
+
+struct hash_entry_t table[HASH_SIZE];
+
+/**
+ * open_filter returns 1 if we should redirect an open call
+ * to a cached location, or 0 if we shouldn't.
+ *
+ * Currently setup to redirect reads of .py and .pyc files.
+ **/
+static int open_filter(const char *fname)
+{
+   const char *last_dot;
+   last_dot = strrchr(fname, '.');
+   if (!last_dot)
+      return 0;
+   if (strcmp(last_dot, ".py") == 0 || strcmp(last_dot, ".pyc") == 0 || strcmp(last_dot, ".so") == 0)
+      return 1;
+
+   return 0;
+}
+
+static int open_filter_flags(int flags)
+{
+   return !(((flags & O_WRONLY) == O_WRONLY) || ((flags & O_RDWR) == O_RDWR));
+}
+
+static int open_filter_str(const char *mode)
+{
+   if (!mode)
+      return 1;
+   while (*mode) {
+      if (*mode == 'w' || *mode == 'a')
+         return 0;
+      mode++;
+   }
+   return 1;
+}
+
+static hash_key_t hashVal(const char *str)
+{
+   hash_key_t hash = 5381;
+   int c;
+   while ((c = *str++))
+      hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+   return hash;
+}
+
+static void addHashEntry(char *dirname, char *filename)
+{
+   struct hash_entry_t *newentry;
+   hash_key_t key = hashVal(filename);
+   unsigned int index = (unsigned int) key % HASH_SIZE;
+
+   debug_printf("Adding %s%s to cache at index %u\n", dirname, filename, index);
+   newentry = table + index;
+   if (newentry->dirname != NULL) {
+      while (newentry->next != NULL)
+         newentry = newentry->next;
+      newentry->next = (struct hash_entry_t *) malloc(sizeof(struct hash_entry_t));
+      newentry = newentry->next;
+   }
+   newentry->filename = filename;
+   newentry->dirname = dirname;
+   newentry->hash_val = key;
+   newentry->next = NULL;
+   return;
+}
+
+static struct hash_entry_t *hashLookup(const char *filename)
+{
+   struct hash_entry_t *entry;
+   hash_key_t key = hashVal(filename);
+   unsigned int index = (unsigned int) key % HASH_SIZE;
+   
+   if (table[index].dirname == NULL) {
+      debug_printf("No key for %s at index %u\n", filename, index);
+      return NULL;
+   }
+
+   entry = table+index;
+   while (entry != NULL) {
+      if (entry->hash_val == key && strcmp(filename, entry->filename) == 0) {
+         debug_printf("Found entry for %s\n", filename);
+         return entry;
+      }
+      entry = entry->next;
+   } 
+   debug_printf("No key for %s at index %u\n", filename, index);
+   return NULL;
+}
+
+static char *lookupDirectoryForFile(const char *filename)
+{
+   struct hash_entry_t *e = hashLookup(filename);
+   return e ? e->dirname : NULL;
+}
+
+typedef enum {
+   ex_nodir,
+   ex_nofile,
+   ex_found
+} existance_ret_t;
+
+static existance_ret_t existanceTest(const char *filename, char *dirname)
+{
+   struct hash_entry_t *entry;
+   hash_key_t key = hashVal(filename);
+   unsigned int index = (unsigned int) key % HASH_SIZE;
+   
+   if (table[index].dirname == NULL) {
+      debug_printf("No key for %s at index %u\n", filename, index);
+      return ex_nodir;
+   }
+
+   entry = table+index;
+   while (entry != NULL) {
+      if (entry->filename != entry->dirname &&
+          entry->hash_val == key &&
+          strcmp(filename, entry->filename) == 0 &&
+          strcmp(dirname, entry->dirname) == 0)
+      {
+         debug_printf("Found entry for %s in %s\n", filename, dirname);
+         return ex_found;
+      }
+      entry = entry->next;
+   } 
+   debug_printf("File %s does not exist in %s\n", filename, dirname);
+   return ex_nofile;
+}
+
+static int directoryParsed(char *dirname)
+{
+   struct hash_entry_t *e = hashLookup(dirname);
+   return e ? 1 : 0;
+}
+
+static void cacheLibraries(char *dirname)
+{
+   size_t len;
+
+   debug_printf("cacheLibraries for directory %s\n", dirname);
+   addHashEntry(dirname, dirname);
+   
+   DIR *d = opendir(dirname);
+   struct dirent *dent = NULL, *entry;
+
+   if (!d) {
+      debug_printf("Could not open directory %s\n", dirname);
+      return;
+   }
+
+   len = offsetof(struct dirent, d_name) + pathconf(dirname, _PC_NAME_MAX) + 1;
+   entry = (struct dirent *) malloc(len);
+
+   for (;;) {
+      if (readdir_r(d, entry, &dent) != 0)
+         break;
+      if (dent == NULL)
+         break;
+      if (dent->d_type != DT_LNK && dent->d_type != DT_REG && dent->d_type != DT_UNKNOWN) {
+         debug_printf("Not adding file %s%s due to being non-so type\n", dirname, dent->d_name);
+         continue;
+      }
+      
+      addHashEntry(dirname, strdup(dent->d_name));
+   }
+
+   free(entry);
+}
+
+static void processDirectory(char *dirname)
+{
+
+   debug_printf("Processing directory %s\n", dirname);
+   if (directoryParsed(dirname)) {
+      debug_printf("Directory %s already parsed\n", dirname);
+      return;
+   }
+   cacheLibraries(strdup(dirname));
+}
+
+static char *setupPermString(const char *str1, int str1_len, const char *str2, int str2_len)
+{
+   static char *buffer = NULL;
+   static unsigned size = 0;
+   unsigned cur_size = str1_len + str2_len + 1;
+   
+   if (cur_size > size) {
+      buffer = realloc(buffer, cur_size);
+      size = cur_size;
+   }
+   strncpy(buffer, str1, str1_len);
+   if (str2)
+      strncpy(buffer+str1_len, str2, str2_len);
+   buffer[str1_len+str2_len] = '\0';
+
+   return buffer;
+}
+
+static void breakUpFilename(const char *name, const char **filename, char **dirname)
+{
+   char *last_slash = strrchr(name, '/');
+
+   if (last_slash) {
+      *dirname = setupPermString(name, last_slash-name+1, NULL, 0);
+      *filename = last_slash+1;
+   }
+   else {
+      *dirname = NULL;
+      *filename = name;
+   }
+}
+
+static char *findDirForFile(const char *name)
+{
+   char *dirname, *found_dirname, *result;
+   const char *filename;
+
+   breakUpFilename(name, &filename, &dirname);
+   if (!dirname) {
+      debug_printf("Returning direct name %s after input %s\n", name, name);
+      return (char *) name;
+   }
+      
+   processDirectory(dirname);
+
+   found_dirname = lookupDirectoryForFile(filename);
+   if (!found_dirname) {
+      //result = setupPermString(NOT_FOUND_PREFIX, NOT_FOUND_PREFIX_SIZE, filename, strlen(filename));
+      //return result;
+      debug_printf("File %s not found in cache. Returning NULL\n", filename);
+      return NULL;
+   }
+
+   result = setupPermString(found_dirname, strlen(found_dirname), filename, strlen(filename));
+   debug_printf("Returning %s after input %s\n", result, name);
+   return result;
+}
+
+static existance_ret_t fileExistsInDir(const char *name) {
+   char *dirname;
+   const char *filename;
+
+   breakUpFilename(name, &filename, &dirname);
+   if (!dirname)
+      dirname = (char *) "./";
+   processDirectory(dirname);
+
+   return existanceTest(filename, dirname);
+}
+
+static int do_open_abort(const char *path)
+{
+   existance_ret_t result = fileExistsInDir(path);
+   if (result == ex_found) {
+      debug_printf("File found. Opening.");
+      return 0;
+   }
+
+   errno = ENOENT;
+   debug_printf("Open of not found file. Erroring\n");
+   return 1;
+}
+
+static int do_open_abort_str(const char *path, const char *mode)
+{
+   if (!open_filter(path) || !open_filter_str(mode)) {
+      debug_printf("Not redirecting %s\n", path);
+      return 0;
+   }
+   return do_open_abort(path);   
+}
+
+static int do_open_abort_flags(const char *path, int flags)
+{
+   if (!open_filter(path) || !open_filter_flags(flags)) {
+      debug_printf("Not redirecting %s\n", path);
+      return 0;
+   }
+   return do_open_abort(path);
+}
+
+static int rtcache_open(const char *path, int oflag, ...)
+{
+   va_list argp;
+   mode_t mode;
+
+   va_start(argp, oflag);
+   mode = va_arg(argp, mode_t);
+   va_end(argp);
+
+   debug_printf("open redirection of %s\n", path)
+   if (!do_open_abort_flags(path, oflag))
+       return orig_open(path, oflag, mode);
+   return -1;
+}
+
+static int rtcache_open64(const char *path, int oflag, ...)
+{
+   va_list argp;
+   mode_t mode;
+
+   va_start(argp, oflag);
+   mode = va_arg(argp, mode_t);
+   va_end(argp);
+
+   debug_printf("open64 redirection of %s\n", path);
+   if (!do_open_abort_flags(path, oflag))
+       return orig_open64(path, oflag, mode);
+   return -1;
+}
+
+static FILE *rtcache_fopen(const char *path, const char *mode)
+{
+   debug_printf("fopen redirection of %s\n", path);
+   if (!do_open_abort_str(path, mode))
+      return orig_fopen(path, mode);
+   return NULL;
+}
+
+static FILE *rtcache_fopen64(const char *path, const char *mode)
+{
+   debug_printf("fopen64 redirection of %s\n", path);
+   if (!do_open_abort_str(path, mode))
+      return orig_fopen64(path, mode);
+   return NULL;
+}
+
+static signed long cookie_shift = 0;
+static Elf64_Addr doPermanentBinding(struct link_map *map,
+                              unsigned long plt_reloc_idx,
+                              Elf64_Addr target)
+{
+   Elf64_Dyn *dynamic_section = map->l_ld;
+   Elf64_Rela *rel = NULL;
+   Elf64_Addr *got_entry;
+   Elf64_Addr base = map->l_addr;
+   for (; dynamic_section->d_tag != DT_NULL; dynamic_section++) {
+      if (dynamic_section->d_tag == DT_JMPREL) {
+         rel = ((Elf64_Rela *) dynamic_section->d_un.d_ptr) + plt_reloc_idx;
+         break;
+      }
+   }
+   if (!rel)
+      return target;
+   got_entry = (Elf64_Addr *) (rel->r_offset + base);
+   *got_entry = target;
+   return target;
+}
+
+unsigned int la_version(unsigned int version)
+{
+   return 1;
+}
+
+char *la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
+{
+   return findDirForFile(name);
+}
+
+unsigned la_objopen(struct link_map *map, Lmid_t lmid,
+                    uintptr_t *cookie)
+{
+   signed long shift;
+   shift = ((unsigned char *) map) - ((unsigned char *) cookie);
+   if (cookie_shift) 
+      assert(cookie_shift == shift);
+   else 
+      cookie_shift = shift;
+   return (LA_FLG_BINDFROM | LA_FLG_BINDTO);
+}
+
+Elf64_Addr la_x86_64_gnu_pltenter (Elf64_Sym *sym,
+                                   unsigned int ndx,
+                                   uintptr_t *refcook,
+                                   uintptr_t *defcook,
+                                   La_x86_64_regs *regs,
+                                   unsigned int *flags,
+                                   const char *symname,
+                                   long int *framesizep)
+{
+   struct link_map *map = (struct link_map *) (((unsigned char *) refcook) + cookie_shift);
+   unsigned long reloc_index = *((unsigned long *) (regs->lr_rsp-8));
+   Elf64_Addr target;
+   if (intercept_open && strstr(symname, "open")) {
+      if (strcmp(symname, "open") == 0) {
+         if (!orig_open)
+            orig_open = (void *) sym->st_value;
+         target = (uintptr_t) rtcache_open;
+      }
+      else if (strcmp(symname, "open64") == 0) {
+         if (!orig_open64)
+            orig_open64 = (void *) sym->st_value;
+         target = (uintptr_t) rtcache_open64;
+      }
+      else if (strcmp(symname, "fopen") == 0) {
+         if (!orig_fopen)
+            orig_fopen = (void *) sym->st_value;
+         target = (uintptr_t) rtcache_fopen;
+      }
+      else if (strcmp(symname, "fopen64") == 0) {
+         if (!orig_fopen64)
+            orig_fopen64 = (void *) sym->st_value;
+         target = (uintptr_t) rtcache_fopen64;
+      }
+      else
+         target = sym->st_value;
+   }
+   else
+      target = sym->st_value;
+   return doPermanentBinding(map, reloc_index, target);
+}
+

@@ -1,0 +1,72 @@
+OPT=
+DEBUG=NODEBUG
+DEBUGD=-D$(DEBUG)
+
+CFLAGS=  -g $(OPT)  $(DEBUGD) -I../lib
+FFLAGS=  -g $(OPT)
+LDFLAGS = -g $(OPT) 
+
+LIBS = -lrt
+LIBS = 
+
+MPICC = mpicc
+
+HWBIT= BIT64
+HWBITD= -D$(HWBIT)
+
+SOCFLAGS = -O3 -g $(HWBITD)  $(DEBUGD) -I../lib
+SOLIBS_notworking   = -fPIC -static-libgcc -Wl,-Bstatic -L../lib -lldcs  -shared 
+SOLIBS_SOCKET   =  -static-libgcc -L../lib -lldcs_socket  -shared -fPIC 
+SOLIBS_PIPE     =  -static-libgcc -L../lib -lldcs_pipe  -shared -fPIC 
+
+ifeq ($(DEBUG),SIONDEBUG)
+ CFLAGS += -I../tools/sion_debug
+ SOCFLAGS += -I../tools/sion_debug
+ LIBS += -L../tools/sion_debug -lsiondebug
+ SOLIBS_SOCKET += -L../tools/sion_debug -lsiondebug
+ SOLIBS_PIPE   += -L../tools/sion_debug -lsiondebug
+endif
+
+all: default 
+
+default: ldcs_audit_client_socket.so ldcs_audit_client_pipe.so helloworld helloworld2 helloworld3 helloworld3_mpi lib/libsampleA.so lib/libsampleB.so
+
+ldcs_audit_client_socket.so:   ldcs_audit_client.c ../lib/libldcs_socket.a Makefile
+	 $(CC) $(SOCFLAGS) -o ldcs_audit_client_socket.so ldcs_audit_client.c $(SOLIBS_SOCKET) 
+
+ldcs_audit_client_pipe.so:   ldcs_audit_client.c ../lib/libldcs_pipe.a Makefile
+	 $(CC) $(SOCFLAGS) -o ldcs_audit_client_pipe.so ldcs_audit_client.c $(SOLIBS_PIPE) 
+
+helloworld:   helloworld.o
+	 $(CC) $(CFLAGS) -o helloworld helloworld.o $(LIBS) 
+
+helloworld.o: 	helloworld.c Makefile 
+	$(CC) $(CFLAGS) -c  helloworld.c	
+
+helloworld2:   helloworld2.o
+	 $(CC) $(CFLAGS) -o helloworld2 helloworld2.o $(LIBS) -L./lib -lsampleA -lsampleB
+
+helloworld2.o: 	helloworld2.c Makefile lib/libsampleA.so lib/libsampleB.so
+	$(CC) $(CFLAGS) -c  helloworld2.c 	
+
+helloworld3:   helloworld3.o
+	 $(CC) $(CFLAGS) -o helloworld3 helloworld3.o $(LIBS) -L./lib -lsampleA -ldl
+
+helloworld3.o: 	helloworld3.c Makefile lib/libsampleA.so lib/libsampleB.so 
+	$(CC) $(CFLAGS) -c  helloworld3.c 	
+
+helloworld3_mpi:   helloworld3_mpi.o
+	 $(MPICC) $(CFLAGS) -o helloworld3_mpi helloworld3_mpi.o $(LIBS) -L./lib -lsampleA -ldl
+
+helloworld3_mpi.o: 	helloworld3_mpi.c Makefile lib/libsampleA.so lib/libsampleB.so 
+	$(MPICC) $(CFLAGS) -c  helloworld3_mpi.c 	
+
+lib/libsampleA.so:   libsampleA.c  Makefile
+	 $(CC) $(SOCFLAGS) -shared -fPIC -o lib/libsampleA.so libsampleA.c
+
+lib/libsampleB.so:   libsampleB.c  Makefile
+	 $(CC) $(SOCFLAGS) -shared -fPIC -o lib/libsampleB.so libsampleB.c
+
+clean::
+	rm -rf *.o *.so lib/*.so *~ *core* helloworld helloworld2 helloworld3 helloworld3_mpi _debug_audit*
+
