@@ -1,0 +1,176 @@
+=============================================================================
+== SPINDLE: Scalable Parallel Input Network for Dynamic Load Environments  ==
+=============================================================================
+Authors:    SPINDLE:              W.Frings <frings1@llnl.gov>
+	    			           <W.Frings@fz-juelich.de>	  
+ 	    	                  ...
+            Auditing Interface:  Matthew LeGendre (legendre1@llnl.gov)		     
+ 	    COBO:                Adam Moody <moody20@llnl.gov>
+
+Version:    0.3 (August 24, 2012)
+
+Introduction:
+============
+
+Dynamic linking and loading are widely used in High Performance
+Computing (HPC). As HPC applications are becoming increasingly
+complex, developers leverage these techniques that are well-suited for
+large-scale software development through support for modularization
+and computational steering. But the growing trend towards high numbers
+of dynamically linked libraries (DLLs) within applications poses
+greater challenges to application start-up. During start-up at scale,
+a large number of processes simultaneously access many DLLs, which
+creates file access storms that overwhelm shared file systems and acts
+like site-wide denial-of-service attacks. 
+
+The Scalable Parallel Input Network for Dynamic Loading Environment
+(SPINDLE) presents a novel approach that provides a scalable and
+transparent dynamic linking and loading environment. SPINDLE extends
+the stock dynamic loader (e.g., ld.so) with a scalable file cache
+server overlay network. The network forms a forest topology that
+allows SPINDLE to use a varying number of communication trees in the
+forest, thereby only the roots of the trees perform file operations of
+dynamic loading and scalably propagate the results to all other cache
+servers. The cached results are then used by SPINDLE clients that
+intercept and re-route file operations of the dynamic
+loaders. Building on the existing loader auditing interface, system
+requires no modifications to either the loader or the application.
+
+Scalability:
+------------
+
+Preliminary results on LLNL Linux clusters indicate that SPINDLE
+prototype improves the performance of Pynamic, a benchmark that
+stresses the dynamic loading system, by a factor of 3.5 over the
+traditional approach at 768 MPI processes, the scale at which we could
+run the traditional scheme without significantly affecting other
+jobs. Further this benchmark under SPINDLE support scales well on LLNL
+clusters without pounding on the shared resources up to 8400
+processes.
+
+
+Directories:
+============
+
+./lib              --> low level communication layers (socket, pipe, shmem)
+./cache            --> Internal data structure for file meta data (cache)
+./auditclient      --> Implementation of Loader Auditing Interface for SPINDLE,
+                       Sample client applications
+./auditserver      --> Implementation of SPINDLE server,
+                       High level communication layer (cobo, msocket)
+./simulator        --> MPI-programm starting all components of SPINDLE in one 
+                       MPI context
+./launchmon        --> LaunchMON start-up command and BE-server
+./client           --> client part of simple program to test low-level communication
+./server           --> server part of simple program to test low-level communication
+./tools/cobo/src   --> cobo src used by one of the high level SPINDLE comm. layers      
+./tools/cobo/test  --> rsh start-up utility
+./tools/slurm      --> utility scripts for LLNL cluster running SLURM,
+                       benchmarking scripts for pynamic
+./tools/sion_debug --> Implements DPRINTF interface for selective printf-debugging
+                       from SIONlib package
+
+
+Compilation:
+============
+
+1) Adapt Makefiles (in each director)
+
+2) Run make:
+   gmake -f Makefile DEBUG=SIONDEBUG HWBIT=BIT64 
+   
+   Variables:
+     DEBUG=SIONDEBUG
+           --> using SION debug: 
+               - set environment variable SION_DEBUG=<fn_prefix> to enable debugging 
+                 for all tasks (each task writes to file <fn_prefix>.pid)
+               - set environment variable LDCS_AUDITDEBUG=<fn_prefix> to enable debugging 
+                 for some client tasks (task writes to file <fn_prefix>.pid)
+     DEBUG=DEBUG
+           --> using COBO debugging (only cobo communication)
+     
+     HWBIT=BIT64
+           --> enables open intercepting with pltenter for 64bit platforms 
+     HWBIT=BIT32
+           --> enables open intercepting with pltenter for 32bit platforms 
+        
+Usage:
+======
+
+- LaunchMON:
+   - ... TDB
+
+
+- RSH:
+  - Starting server:
+
+    cd ./audit_server;
+  
+    # Files
+    ./cobo_param.dat: (Envs-Vars exported to server processes)
+    ------------------------------
+    LDCS_LOCATION=/tmp/myfifo
+    LDCS_NUMBER=7777
+    LDCS_NPORTS=10
+    LDCS_EXIT_AFTER_SESSION=1
+    SION_DEBUG=../auditserver/_debug_audit_server_md
+    COBO_CLIENT_DEBUG=7
+    ------------------------------
+    
+    ./hostlist.dat (nodes on which SPINDLE server should be started)
+    ------------------------------
+    sierra... 
+    sierra... 
+    ------------------------------
+
+   ../tools/cobo/test/server_rsh_ldcs -np <nodes> -paramfile ./cobo_param.dat \
+                                                  -hostfile ./hostlist.dat \
+		                              ./ldcs_audit_server_par_pipe_cobo
+
+   - Starting application:
+
+    cd ./audit_client;
+
+    LD_AUDIT=`pwd`/ldcs_audit_client_pipe.so
+    export LD_AUDIT
+
+    # path to directory used for pipes 
+    LDCS_LOCATION=/tmp/myfifo
+    export LDCS_LOCATION
+    # not used for pipes 
+    LDCS_NUMBER=7777
+    export LDCS_NUMBER
+    # number of task per server (multiple server per node, -1 --> disabled)
+    LDCS_LOCATION_MOD=-1
+    export LDCS_LOCATION_MOD
+
+    srun -N <nodes> -n <tasks>  ./helloworld3_mpi
+
+
+Pynamic:
+	
+   cd pynamic-pyMPI-2.6a1;
+
+   # generate benchmark
+   ./config_pynamic.py 495 1850 -e -u 215 1850 -n 100 -t
+
+   mkdir ~/benchmarkx
+   cp *.so pyMPI pyMPI2.6 pyMPI2.6_linker pyMPI_linker pynamic-pyMPI pynamic_driver.py ~/benchmarkx
+
+   cd ~/benchmarkx
+   cp .../tools/slurm/runit_multi_bm.sh .
+   cp .../tools/slurm/job_sierra.sh
+   cp .../tools/slurm/generate_hostfiles.pl .
+
+   cp .../tools/slurm/file_preload.dat .
+   # --> adapt pathes in file_preload.dat
+
+   mkdir log tmp strace
+   
+   # --> adapt job_sierra.sh
+   
+   # salloc or mxterm ... 
+
+   # starts fe, servers and pynamic
+   ./job_sierra.sh
+    

@@ -1,0 +1,60 @@
+DEBUG=DEBUG
+
+.PHONY: all lib cache auditclient auditserver client server sion_debug simulator
+
+
+all: auditclient auditserver client simulator cobotest
+
+auditclient: lib
+	@echo "++++++++++ AUDITCLIENT ++++++++++++++++++++++++++++++"
+	@if test -d auditclient; then (cd auditclient; $(MAKE) -f Makefile_BGQ all ); fi
+
+auditserver: lib cache cobo
+	@echo "++++++++++ AUDITSERVER ++++++++++++++++++++++++++++++"
+	@if test -d auditserver; then (cd auditserver; $(MAKE) -f Makefile_BGQ all ); fi
+
+client: lib
+	@echo "++++++++++ CLIENT ++++++++++++++++++++++++++++++"
+	@if test -d client; then (cd client; $(MAKE) -f Makefile_BGQ all ); fi
+
+simulator: lib cache cobo
+	@echo "++++++++++ SIMULATOR ++++++++++++++++++++++++++++++"
+	@if test -d simulator; then (cd simulator; $(MAKE) -f Makefile_BGQ all ); fi
+
+server: lib
+	@echo "++++++++++ SERVER ++++++++++++++++++++++++++++++"
+	@if test -d server; then (cd server; $(MAKE) -f Makefile_BGQ all ); fi
+
+lib: sion_debug
+	@echo "++++++++++ LIB ++++++++++++++++++++++++++++++"
+	@if test -d lib; then (cd lib; $(MAKE) -f Makefile_BGQ all ); fi
+
+sion_debug: 
+	@echo "++++++++++ sion_debug ++++++++++++++++++++++++++++++"
+	@if test -d tools/sion_debug; then (cd tools/sion_debug; $(MAKE) -f Makefile_BGQ all ); fi
+
+cobo: sion_debug
+	@echo "++++++++++ cobo ++++++++++++++++++++++++++++++"
+	@if test -d tools/cobo/src; then (cd tools/cobo/src; $(MAKE) -f Makefile_BGQ all ); fi
+
+cobotest: sion_debug auditserver
+	@echo "++++++++++ cobotest ++++++++++++++++++++++++++++++"
+	@if test -d tools/cobo/test; then (cd tools/cobo/test; $(MAKE) -f Makefile_BGQ all ); fi
+
+cache: 
+	@echo "++++++++++ CACHE ++++++++++++++++++++++++++++++"
+	@if test -d cache; then (cd cache; $(MAKE) -f Makefile_BGQ all ); fi
+
+
+
+clean:
+	@if test -d lib; then ( cd lib; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d cache; then ( cd cache; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d auditserver; then ( cd auditserver; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d auditclient; then ( cd auditclient; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d simulator; then ( cd simulator; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d client; then ( cd client; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d server; then ( cd server; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d tools/sion_debug; then (cd tools/sion_debug; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d tools/cobo/src; then (cd tools/cobo/src; $(MAKE) -f Makefile_BGQ clean ); fi
+	@if test -d tools/cobo/test; then (cd tools/cobo/test; $(MAKE) -f Makefile_BGQ clean ); fi

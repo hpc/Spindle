@@ -1,0 +1,2 @@
+gmake -f Makefile_BGQ DEBUG=SIONDEBUG HWBIT=BIT64 $*
+#make HWBIT=BIT64 DEBUG=DEBUG $*

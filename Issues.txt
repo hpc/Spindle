@@ -1,0 +1,13 @@
+================================
+== LDCS: Loader Cache Server  ==
+================================
+W.Frings, July 18th, 2012
+
+
+Version 0.1: (July 18th, 2012)
+------------------------------
+  1. Running with only one auditserver -> deadlock
+  2. distribute only data if directory exists        (v)
+
+
+	

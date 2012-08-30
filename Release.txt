@@ -1,0 +1,26 @@
+================================
+== LDCS: Loader Cache Server  ==
+================================
+
+Version 0.2: (August 21th, 2012)
+--------------------------------
+ ...
+ 
+
+Version 0.1: (July 18th, 2012)
+------------------------------
+- First version, including
+  - auditclient, auditserver, simulator, ldcs-library, cache-library
+  - Features:
+    - multi client support: 
+      - auditlient-auditserver using named pipes
+      - cache for library meta data
+    - multi server support:
+      - using COBO
+      - synchronization of distributed caches
+      	- file meta data obtained on md_rank 0 and distributed from there
+	- distribution of complete directory info (e.g. /lib64/*)	
+ 
+
+
+	
