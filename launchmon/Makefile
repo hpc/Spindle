@@ -10,11 +10,11 @@ CFLAGS_LMON=-I$(LAUNCHMON)/include
 LIBS_LMON_BE=-L$(LAUNCHMON)/lib -lmonbeapi
 LIBS_LMON_FE=-L$(LAUNCHMON)/lib -lmonfeapi
 
-CFLAGS= -O3 -g -Wall $(DEBUGD) -I. -I../lib -I../cache -I../auditserver 
+CFLAGS= -O3 -g -Wall $(DEBUGD) -I. -I../comlib -I../cache -I../auditserver 
 FFLAGS= -O3 -g
-LIBS_SOCKET_WO_WRAPPER  = -g -L../lib -lldcs_socket_wo_wrapper -L../cache -lldcs_cache
-LIBS_SOCKET  = -g -L../lib -lldcs_socket -L../cache -lldcs_cache
-LIBS_PIPE    = -g -L../lib -lldcs_pipe -L../cache -lldcs_cache
+LIBS_SOCKET_WO_WRAPPER  = -g -L../comlib -lldcs_socket_wo_wrapper -L../cache -lldcs_cache
+LIBS_SOCKET  = -g -L../comlib -lldcs_socket -L../cache -lldcs_cache
+LIBS_PIPE    = -g -L../comlib -lldcs_pipe -L../cache -lldcs_cache
 
 MD_CFLAGS=-DMD_ENABLED -I../auditserver  -DEXIT_AFTER_SESSION
 MD_LDFLAGS=-DMD_ENABLED 

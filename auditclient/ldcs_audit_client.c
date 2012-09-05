@@ -15,6 +15,7 @@
 #include <link.h>
 
 #include "ldcs_api.h" 
+#include "config.h"
 
 #define INTERCEPT_OPEN 1
 
@@ -302,10 +303,6 @@ la_i86_gnu_pltenter(Elf32_Sym *sym, unsigned int ndx,
 }
 #endif
 
-#ifdef INTERCEPT_OPEN
-#ifdef BIT64
-/* support functions */
-
 /**
  * open_filter returns 1 if we should redirect an open call
  * to a cached location, or 0 if we shouldn't.
@@ -479,6 +476,8 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    return NULL;
 }
 
+#ifndef arch_ppc64
+
 static Elf64_Addr doPermanentBinding(struct link_map *map,
                               unsigned long plt_reloc_idx,
                               Elf64_Addr target)
@@ -499,8 +498,6 @@ static Elf64_Addr doPermanentBinding(struct link_map *map,
    *got_entry = target;
    return target;
 }
-
-#ifndef BITPPC64
 
 Elf64_Addr la_x86_64_gnu_pltenter (Elf64_Sym *sym,
                                    unsigned int ndx,
@@ -544,7 +541,7 @@ Elf64_Addr la_x86_64_gnu_pltenter (Elf64_Sym *sym,
    return doPermanentBinding(map, reloc_index, target);
 }
 
-#else 
+#elif defined(arch_ppc64)
 
 Elf64_Addr la_ppc64_gnu_pltenter (Elf64_Sym *sym,
 				  unsigned int ndx,
@@ -595,6 +592,3 @@ Elf64_Addr la_ppc64_gnu_pltenter (Elf64_Sym *sym,
 }
 #endif
 
-#endif
-
-#endif
