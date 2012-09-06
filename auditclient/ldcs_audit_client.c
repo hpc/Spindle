@@ -289,7 +289,7 @@ la_symbind64(Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
 }
 #endif
 
-#ifdef BIT32
+#if (!defined(arch_x86_64)) && (!defined(arch_ppc64))
 Elf32_Addr
 la_i86_gnu_pltenter(Elf32_Sym *sym, unsigned int ndx,
 		    uintptr_t *refcook, uintptr_t *defcook, La_i86_regs *regs,
@@ -476,7 +476,7 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    return NULL;
 }
 
-#ifndef arch_ppc64
+#if (!defined(arch_ppc64)) && defined(arch_x86_64)
 
 static Elf64_Addr doPermanentBinding(struct link_map *map,
                               unsigned long plt_reloc_idx,
