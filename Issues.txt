@@ -1,13 +1,19 @@
 ================================
 == LDCS: Loader Cache Server  ==
 ================================
-W.Frings, July 18th, 2012
+W.Frings, September 17th, 2012
+
+Version 0.4
+-----------
+
+- configure:
+
+  - Makefile in auditclient generates not .so files in auditclient/libs for
+    libesampleA.so
+    libesampleB.so
 
 
-Version 0.1: (July 18th, 2012)
-------------------------------
-  1. Running with only one auditserver -> deadlock
-  2. distribute only data if directory exists        (v)
+
 
 
 	
