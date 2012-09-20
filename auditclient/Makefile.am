@@ -1,5 +1,5 @@
-lib_LTLIBRARIES = libldcs_audit_client_socket.la libldcs_audit_client_pipe.la
-noinst_LTLIBRARIES = libsampleA.la libsampleB.la
+lib_LTLIBRARIES = libldcs_audit_client_socket.la libldcs_audit_client_pipe.la libsampleA.la libsampleB.la
+noinst_LTLIBRARIES = 
 noinst_PROGRAMS = helloworld helloworld2 helloworld3 helloworld3_mpi
 
 libldcs_audit_client_socket_la_SOURCES = ldcs_audit_client.c
@@ -11,6 +11,9 @@ libldcs_audit_client_socket_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
 libldcs_audit_client_pipe_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
 libsampleA_la_CPPFLAGS = -DBIT64
 libsampleB_la_CPPFLAGS = -DBIT64
+
+libldcs_audit_client_pipe_la_LIBADD = -L$(top_srcdir)/comlib -lldcs_pipe
+
 
 helloworld_SOURCES = helloworld.c
 helloworld2_SOURCES = helloworld2.c

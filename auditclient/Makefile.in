@@ -73,7 +73,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
-libldcs_audit_client_pipe_la_LIBADD =
+libldcs_audit_client_pipe_la_DEPENDENCIES =
 am_libldcs_audit_client_pipe_la_OBJECTS =  \
 	libldcs_audit_client_pipe_la-ldcs_audit_client.lo
 libldcs_audit_client_pipe_la_OBJECTS =  \
@@ -202,6 +202,7 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
+PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
@@ -266,8 +267,8 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LTLIBRARIES = libldcs_audit_client_socket.la libldcs_audit_client_pipe.la
-noinst_LTLIBRARIES = libsampleA.la libsampleB.la
+lib_LTLIBRARIES = libldcs_audit_client_socket.la libldcs_audit_client_pipe.la libsampleA.la libsampleB.la
+noinst_LTLIBRARIES = 
 libldcs_audit_client_socket_la_SOURCES = ldcs_audit_client.c
 libldcs_audit_client_pipe_la_SOURCES = ldcs_audit_client.c
 libsampleA_la_SOURCES = libsampleA.c
@@ -276,6 +277,7 @@ libldcs_audit_client_socket_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
 libldcs_audit_client_pipe_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
 libsampleA_la_CPPFLAGS = -DBIT64
 libsampleB_la_CPPFLAGS = -DBIT64
+libldcs_audit_client_pipe_la_LIBADD = -L$(top_srcdir)/comlib -lldcs_pipe
 helloworld_SOURCES = helloworld.c
 helloworld2_SOURCES = helloworld2.c
 helloworld2_LDADD = libsampleA.la libsampleB.la
@@ -363,9 +365,9 @@ libldcs_audit_client_pipe.la: $(libldcs_audit_client_pipe_la_OBJECTS) $(libldcs_
 libldcs_audit_client_socket.la: $(libldcs_audit_client_socket_la_OBJECTS) $(libldcs_audit_client_socket_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libldcs_audit_client_socket_la_OBJECTS) $(libldcs_audit_client_socket_la_LIBADD) $(LIBS)
 libsampleA.la: $(libsampleA_la_OBJECTS) $(libsampleA_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libsampleA_la_OBJECTS) $(libsampleA_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libsampleA_la_OBJECTS) $(libsampleA_la_LIBADD) $(LIBS)
 libsampleB.la: $(libsampleB_la_OBJECTS) $(libsampleB_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libsampleB_la_OBJECTS) $(libsampleB_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libsampleB_la_OBJECTS) $(libsampleB_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
