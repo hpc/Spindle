@@ -23,7 +23,16 @@ export SION_DEBUG
 LMON_VERBOSE=3
 export LMON_VERBOSE
 
+export RM_TYPE=openrte
+export MPI_JOB_LAUNCHER_PATH=mpiexec
+export LMON_PREFIX=/home/zam/zdv087/releases/launchmon
+export LMON_LAUNCHMON_ENGINE_PATH=/home/zam/zdv087/releases/launchmon/bin/launchmon
+
 LD_LIBRARY_PATH=../auditclient/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
-./sample_fe ../auditclient/helloworld3_mpi 4 2 pdebug `pwd`/sample_be  
+export LMON_FE_HOSTNAME_TO_CONN=localhost
+
+#./sample_fe ../auditclient/helloworld3_mpi 4 2 pdebug `pwd`/sample_be  
+./sample_fe ./sample_client 4 2 pdebug `pwd`/sample_be  
+

@@ -12,8 +12,10 @@
 
 int fooA () {
   printf("This is function foo A\n");
+  return(0);
 }
 
 int barA () {
   printf("This is function bar A\n");
+  return(0);
 }

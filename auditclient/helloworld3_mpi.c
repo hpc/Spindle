@@ -38,7 +38,7 @@ int main (int argc, char **argv)
   MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef USEDL
-  handle = dlopen ("libsampleB.so", RTLD_LAZY);
+  handle = dlopen ("libsampleB.la", RTLD_LAZY);
   if (!handle) {
     fprintf (stderr, "could not open libsampleB.so on rank %d %s\n", rank, dlerror);
     fprintf (stderr, "%s\n", dlerror());

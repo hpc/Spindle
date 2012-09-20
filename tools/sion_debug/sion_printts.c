@@ -119,10 +119,14 @@ char     *_sion_get_time_asc()
  */
 int sion_print_time_stamp(int rank, char *desc)
 {
-  time_t    t;
 #if defined(_BGL)
 #else
+#ifdef SIONDEBUG
+  time_t    t;
   struct tm *ts;
+  t = time(NULL);
+  ts = localtime(&t);
+#endif
 #endif
 
   /* return (1); */
@@ -133,8 +137,6 @@ int sion_print_time_stamp(int rank, char *desc)
 #if defined(_BGL)
   DPRINTFP((32, "TIMINGS", rank, "                            step=%-18s timestamp=%18.8f\n", desc, bgl_wtime()));
 #else
-  t = time(NULL);
-  ts = localtime(&t);
   DPRINTFP((32, "TIMINGS", rank, "                            step=%-18s timestamp=%18.8f\n", desc, asctime(ts)));
 #endif
   return (1);

@@ -70,9 +70,9 @@ static double cobo_connect_timelimit  = COBO_CONNECT_TIMELIMIT; /* seconds */
 /* to establish a connection, the service and session ids must match
  * the sessionid will be provided by the user, it should be a random
  * number which associate processes with the same session */
-static unsigned int cobo_serviceid = 3059238577;
+static unsigned int cobo_serviceid = 3059238577u;
 static unsigned int cobo_sessionid = 0;
-static unsigned int cobo_acceptid  = 2348104830;
+static unsigned int cobo_acceptid  = 2348104830u;
 
 /* number of ports and list of ports in the available port range */
 static int  cobo_num_ports = 0;
@@ -145,6 +145,7 @@ static void cobo_error(char *fmt, ...)
     fprintf(stderr, "\n");
 }
 
+#ifdef __COBO_CURRENTLY_NOT_USED
 /* print message to stderr */
 static void cobo_warn(char *fmt, ...)
 {
@@ -166,6 +167,7 @@ static void cobo_warn(char *fmt, ...)
     va_end(argp);
     fprintf(stderr, "\n");
 }
+#endif
 
 #if defined(SIONDEBUG) 
 #define cobo_debug(level, format, ...)		\
@@ -787,6 +789,7 @@ static int cobo_compute_children()
     return COBO_SUCCESS;
 }
 
+#ifdef __COBO_CURRENTLY_NOT_USED
 /* given cobo_me and cobo_nprocs, fills in parent and children ranks -- currently implements a binomial tree */
 static int cobo_compute_children_root_C1()
 {
@@ -834,6 +837,7 @@ static int cobo_compute_children_root_C1()
 
     return COBO_SUCCESS;
 }
+#endif
 
 /* open socket tree across tasks */
 static int cobo_open_tree()

@@ -8,8 +8,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
+#include <unistd.h>
 
 #include <dlfcn.h>
+
+int fooA ();
+int barA ();
 
 int main (int argc, char **argv)
 {

@@ -117,11 +117,13 @@ double ldcs_get_time();
 
 
 #if defined(DEBUG)
+#define LDCSDEBUG 1
 #define debug_printf(format, ...) \
   do { \
      fprintf(stderr, "[%s:%u@%d] - " format, __FILE__, __LINE__, getpid(), ## __VA_ARGS__); \
   } while (0)
 #elif defined(SIONDEBUG)
+#define LDCSDEBUG 1
 #include "sion_debug.h"
 #define debug_printf(format, ...) \
   do { \

@@ -21,7 +21,7 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-  int ldcsid, n;
+  int ldcsid;
   
   ldcs_message_t message;
   ldcs_message_t end_message;

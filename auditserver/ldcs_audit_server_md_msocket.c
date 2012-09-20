@@ -301,7 +301,10 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
   ldcs_msocket_data_t *ldcs_msocket_data = (ldcs_msocket_data_t *) data ;
   ldcs_process_data_t *ldcs_process_data = ldcs_msocket_data->procdata ;
   ldcs_message_t *msg, *out_msg;
-  double starttime,cb_starttime, msg_time;
+  double starttime,cb_starttime;
+#ifdef LDCSDEBUG
+  double msg_time;
+#endif
   int connid, do_route, do_process;
   cb_starttime=ldcs_get_time();
 
@@ -311,8 +314,9 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
   /* get message  */
   starttime=ldcs_get_time();
   msg=ldcs_recv_msg_socket(connid, LDCS_READ_BLOCK);
+#ifdef LDCSDEBUG
   msg_time=ldcs_get_time()-starttime;
-
+#endif
   debug_printf("received message on connection  nc=%d connid=%d routing: %d -> %d %s %s (%10.4fs) \n", nc, connid, 
 	       msg->header.source, msg->header.dest,
 	       _message_type_to_str(msg->header.type),(msg->header.mtype==LDCS_MSG_MTYPE_P2P)?"P2P":"BCAST", msg_time);

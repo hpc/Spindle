@@ -26,7 +26,7 @@ int _ldcs_client_CB ( int fd, int nc, void *data ) {
   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data ;
   ldcs_message_t in_msg;
   int connid;
-  double starttime,msg_time,cb_starttime;
+  double cb_starttime;
   cb_starttime=ldcs_get_time();
 
   ldcs_process_data->last_action_on_nc=nc;
@@ -36,9 +36,7 @@ int _ldcs_client_CB ( int fd, int nc, void *data ) {
   in_msg.header.type=LDCS_MSG_UNKNOWN;  in_msg.alloclen=MAX_PATH_LEN;  in_msg.header.len=0;  in_msg.data=buffer_in;
 
   /* get message from client */
-  starttime=ldcs_get_time();
   ldcs_recv_msg_static(connid,&in_msg, LDCS_READ_BLOCK);
-  msg_time=ldcs_get_time()-starttime;
 
   /* printf("SERVER[%03d]: received message on connection connid=%d\n", nc, connid); */
   debug_printf("received message on connection nc=%d connid=%d\n", nc, connid);
@@ -143,7 +141,6 @@ int _ldcs_client_process_fe_preload_requests ( ldcs_process_data_t *ldcs_process
   char *filename=NULL, *dirname=NULL, *tmpname, *globalpath=NULL, *localpath=NULL;
   char *fe_cwd=""; 		
   ldcs_cache_result_t cache_filedir_result=LDCS_CACHE_UNKNOWN;
-  double cb_starttime;
 
   debug_printf(" got preload request for %s\n", fn);
 
@@ -182,11 +179,10 @@ int _ldcs_client_process_fe_preload_requests ( ldcs_process_data_t *ldcs_process
 }
 
 ldcs_state_t _ldcs_client_dump_info ( ldcs_process_data_t *ldcs_process_data ) {
-  int nc, connid;
+  int nc;
   int rc=0;
 
   for(nc=0;nc<ldcs_process_data->client_table_used;nc++) {
-    connid=ldcs_process_data->client_table[nc].connid;
     debug_printf("  CLIENT DUMP: nc = %2d, connid=%d fd=%d\n",nc,
 		 ldcs_process_data->client_table[nc].connid,
 		 ldcs_get_fd(ldcs_process_data->client_table[nc].connid));

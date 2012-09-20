@@ -147,6 +147,7 @@ main( int argc, char* argv[] )
     bzero(hostname,HOSTNAME_LEN);
     gethostname(hostname,HOSTNAME_LEN);
 
+    printf("WF: gethostname=%s\n",hostname);
 
     if ( LMON_be_amIMaster() == LMON_YES ) {
       host_port_list.size=size;

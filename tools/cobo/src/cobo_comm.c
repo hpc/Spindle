@@ -30,6 +30,7 @@ static void ldcs_cobo_error(char *fmt, ...)
     fprintf(stderr, "\n");
 }
 
+#ifdef __COBO_CURRENTLY_NOT_USED
 /* print message to stderr */
 static void ldcs_cobo_warn(char *fmt, ...)
 {
@@ -43,6 +44,7 @@ static void ldcs_cobo_warn(char *fmt, ...)
     va_end(argp);
     fprintf(stderr, "\n");
 }
+#endif
 
 /* print message to stderr */
 static void ldcs_cobo_debug(int level, char *fmt, ...)

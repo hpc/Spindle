@@ -201,7 +201,7 @@ static void *safe_malloc(size_t size)
     void *result = malloc(size);
 
     if (result == NULL) {
-        fprintf(stderr, "server: malloc (%ld): Out of memory\n", size);
+      fprintf(stderr, "server: malloc (%ld): Out of memory\n", (long) size);
         exit(1);
     }
     return result;
@@ -212,7 +212,7 @@ static void *safe_realloc(void *ptr, size_t size)
     void *result = realloc(ptr, size);
 
     if (result == NULL) {
-        fprintf(stderr, "server: realloc (%ld): Out of memory\n", size);
+        fprintf(stderr, "server: realloc (%ld): Out of memory\n", (long) size);
         exit(1);
     }
     return result;
@@ -261,7 +261,8 @@ double __get_time()
 int main(int argc, char *argv[])
 {
   double starttime=__get_time();
-    int i, s, s1, c, option_index;
+    int i, s, c, option_index;
+    /* int s1; */
     int hostfile_on = 0;
 #define HOSTFILE_LEN 256
     char hostfile[HOSTFILE_LEN + 1];
@@ -269,35 +270,35 @@ int main(int argc, char *argv[])
 #define PARAMFILE_LEN 256
     char paramfile[PARAMFILE_LEN + 1];
     char *param_env;
-    FILE *hf;
+    /* FILE *hf; */
     struct sockaddr_in sockaddr;
     unsigned int sockaddr_len = sizeof(sockaddr);
-    int addrlen, global_addrlen = 0;
+    /* int addrlen, global_addrlen = 0; */
 
     char *env = "\0";
-    int tot_nread = 0;
+    /* int tot_nread = 0; */
 
-    int *alladdrs = NULL;
-    char *alladdrs_char = NULL; /* for byte location */
-    int *out_addrs;
-    int out_addrs_len;
-    int j;
+    /* int *alladdrs = NULL; */
+    /* char *alladdrs_char = NULL;  *//* for byte location */
+    /* int *out_addrs; */
+    /* int out_addrs_len; */
+    /* int j; */
 
-    char *allpids = NULL;
-    int pidlen, pidglen;
+    /* char *allpids = NULL; */
+    /* int pidlen, pidglen; */
 
     char command_name[COMMAND_LEN];
     char command_name_tv[COMMAND_LEN];
     char totalview_cmd[200];
     char *tv_env;
 
-    int hostidlen, global_hostidlen = 0;
-    int *hostids = NULL;
+    /* int hostidlen, global_hostidlen = 0; */
+    /* int *hostids = NULL; */
 
     int    hostname_len = 256;
     totalview_cmd[199] = 0;
     display[0]='\0';	
-    pidglen = sizeof(pid_t); 
+    /* pidglen = sizeof(pid_t);  */
 
     /* server [-debug] [-xterm] -np N [-hostfile hfile | h1 h2 h3 ... hN] a.out [args] */
 
@@ -686,24 +687,24 @@ int start_process(int i, char *command_name, char *env)
     char *ld_library_path;
 
     char *device_port_env = NULL;
-    int id = getpid();
+    /* int id = getpid(); */
 
     int str_len, len;
     if (plist[i].device != NULL && strlen(plist[i].device) != 0){
         device_port_env = (char * )safe_malloc(BASE_ENV_LEN + strlen(plist[i].device) + 1);
-        sprintf(device_port_env, "VIADEV_DEVICE=%s \0", plist[i].device);
+        sprintf(device_port_env, "VIADEV_DEVICE=%s %s", plist[i].device,"\0");
     }
     if (plist[i].port != -1){
         if (device_port_env != NULL){
             device_port_env = (char*)safe_realloc(device_port_env,
                     strlen(device_port_env) + 1 + BASE_ENV_LEN 
                     +sizeof(plist[i].port) + 1);
-            sprintf(&device_port_env[strlen(device_port_env)], "VIADEV_DEFAULT_PORT=%d \0",
-                    plist[i].port);
+            sprintf(&device_port_env[strlen(device_port_env)], "VIADEV_DEFAULT_PORT=%d %s",
+                    plist[i].port,"\0");
         } else {
             device_port_env = (char *) safe_malloc(BASE_ENV_LEN +
                     sizeof(plist[i].port) + 1);
-            sprintf(device_port_env, "VIADEV_DEFAULT_PORT=%d \0", plist[i].port);
+            sprintf(device_port_env, "VIADEV_DEFAULT_PORT=%d %s", plist[i].port,"\0");
         }
     }
 
@@ -831,7 +832,7 @@ int start_process(int i, char *command_name, char *env)
 
 void wait_for_errors(int s,struct sockaddr_in *sockaddr,unsigned int sockaddr_len){
  
-    int nread,remote_id,local_id,s1,i,flag;
+    int nread,remote_id,local_id,s1,flag;
  
 ACCEPT_WFE:
     s1 = accept(s,(struct sockaddr *) sockaddr,&sockaddr_len);
@@ -878,7 +879,7 @@ ACCEPT_WFE:
 void process_termination()
 {
     int i;
-    int rval;
+    /* int rval; */
     int send_val = 1000;
     int remote_id;
 
@@ -1033,7 +1034,7 @@ char *skip_white(char *s)
 /* Read hostfile */
 static int read_hostfile(char *hostfile_name)
 {
-    size_t i, j, hostname_len = 0;
+    size_t i, hostname_len = 0;
     FILE *hf = fopen(hostfile_name, "r");
     if (hf == NULL) {
         fprintf(stderr, "Can't open hostfile %s\n", hostfile_name);
@@ -1257,7 +1258,7 @@ void pglist_insert(const char * const hostname, const pid_t const pid) {
     top = pglist->npgs - 1;
     index = (top + bottom) / 2;
 
-    while(strcmp_result = strcmp(hostname, pglist->index[index]->hostname)) {
+    while( (strcmp_result = strcmp(hostname, pglist->index[index]->hostname)) ) {
 	if(bottom >= top) break;
 
 	if(strcmp_result > 0) {
@@ -1293,7 +1294,7 @@ init_pglist:
 add_process_group:
     if(pglist->npgs == pglist->npgs_allocated) {
 	process_group * pglist_data_backup	= pglist->data;
-	process_group ** pglist_index_backup	= pglist->index;
+	/* process_group ** pglist_index_backup	= pglist->index; */
 	ptrdiff_t offset;
 
 	pglist->npgs_allocated += increment;
@@ -1316,7 +1317,7 @@ add_process_group:
 	    goto register_alloc_error;
 	}
 
-	if(offset = (size_t)pglist->data - (size_t)pglist_data_backup) { 
+	if( (offset = (size_t)pglist->data - (size_t)pglist_data_backup) ) { 
 	    for(i = 0; i < pglist->npgs; i++) {
 		pglist->index[i] = (process_group *)((size_t)pglist->index[i] +
 			offset);
@@ -1544,7 +1545,7 @@ void rkill_fast(void) {
 }
 
 void rkill_linear(void) {
-    int i, j, tryagain, spawned_pid[nprocs];
+    int i, tryagain, spawned_pid[nprocs];
 
     fprintf(stderr, "Killing remote processes...");
 

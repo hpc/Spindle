@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "cobo.h"
 
 int ranks, my_rank;
@@ -207,7 +208,7 @@ int main(int argc, char* argv[])
 
 #endif
 
-done:
+/* done: */
   /* close connections (close connection with launcher and tear down the TCP tree) */
   if (cobo_close() != COBO_SUCCESS) {
     printf("Failed to close\n");

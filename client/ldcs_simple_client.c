@@ -19,7 +19,7 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-  int cid, n;
+  int cid;
   
   ldcs_message_t message;
   ldcs_message_t end_message;

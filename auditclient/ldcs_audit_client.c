@@ -25,10 +25,16 @@ int intercept_open = 1;
 int intercept_open = 0;
 #endif
 
+#if (defined(arch_ppc64)) || defined(arch_x86_64)
+#define REDIRECTOPEN 1
+#endif
+
+#ifdef REDIRECTOPEN
 static int (*orig_open)(const char *pathname, int flags, ...);
 static int (*orig_open64)(const char *pathname, int flags, ...);
 static FILE* (*orig_fopen)(const char *pathname, const char *mode);
 static FILE* (*orig_fopen64)(const char *pathname, const char *mode);
+#endif
 
 #define VERYVERBOSEno 1
 
@@ -303,6 +309,8 @@ la_i86_gnu_pltenter(Elf32_Sym *sym, unsigned int ndx,
 }
 #endif
 
+#ifdef REDIRECTOPEN
+
 /**
  * open_filter returns 1 if we should redirect an open call
  * to a cached location, or 0 if we shouldn't.
@@ -338,6 +346,7 @@ static int open_filter_str(const char *mode)
    return 1;
 }
 
+
 /* returns:
     0 if not existent
    -1 could not check, use orig open
@@ -369,6 +378,7 @@ int do_check_file(const char *path, char **newpath) {
     return(0);
   }
 }
+
 
 static int rtcache_open(const char *path, int oflag, ...)
 {
@@ -475,6 +485,7 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    }
    return NULL;
 }
+#endif
 
 #if (!defined(arch_ppc64)) && defined(arch_x86_64)
 

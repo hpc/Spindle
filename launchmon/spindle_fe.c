@@ -1,5 +1,8 @@
-#define TARGET_JOB_LAUNCHER_PATH "/usr/bin/srun"
-#define RM_SLURM_SRUN 1
+#define TARGET_JOB_LAUNCHER_PATH_srun "/usr/bin/srun"
+#define TARGET_JOB_LAUNCHER_PATH_orte "/usr/lib/mpi/gcc/openmpi/bin/orterun"
+#define RM_ORTE_ORTERUN 1
+
+/* #define RM_SLURM_SRUN 1 */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,7 +23,7 @@ const int MAXPROCOUNT  = 12000;
 /*
  * OUR PARALLEL JOB LAUNCHER 
  */
-const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
+const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH_orte;
 
 double __get_time()
 {
@@ -37,9 +40,6 @@ main (int argc, char* argv[])
   char **daemon_opts          = NULL;
   
   lmon_rc_e rc, lrc;
-  char numprocs_opt[255];
-  char numnodes_opt[255];
-  char partition_opt[255];
 
   ldcs_host_port_list_t host_port_list;
   void *md_data_ptr;
@@ -50,6 +50,11 @@ main (int argc, char* argv[])
   double steptime=__get_time();
   
   char preloadfile[255];
+
+  for (i=0;i<argc;i++) {
+    fprintf ( stdout, "FE parm[%d]=%s\n",i,argv[i]);
+   
+  }
 
   bzero(preloadfile,255);
   strncpy(preloadfile,"preload_files.dat",254);
@@ -66,7 +71,7 @@ main (int argc, char* argv[])
   if ( access(argv[1], X_OK) < 0 )
     {
       fprintf ( stdout, 
-        "%s cannot be executed\n", 
+        "%s cannot be executed (1)\n", 
         argv[1] );
       fprintf ( stdout, 
         "[LMON FE] FAILED\n" );
@@ -76,8 +81,8 @@ main (int argc, char* argv[])
   if ( access(argv[5], X_OK) < 0 )
     {
       fprintf(stdout, 
-        "%s cannot be executed\n", 
-        argv[2]);
+        "%s cannot be executed (5)\n", 
+        argv[5]);
       fprintf(stdout, 
         "[LMON FE] FAILED\n");
       return EXIT_FAILURE;	      
@@ -86,18 +91,23 @@ main (int argc, char* argv[])
     daemon_opts = argv+6;
 
 #if RM_SLURM_SRUN
-  sprintf(numprocs_opt, "-n %s",argv[2]);
-  sprintf(numnodes_opt, "-N %s",argv[3]);
-  sprintf(partition_opt, "-p %s",argv[4]);
-   
-  launcher_argv = (char**) malloc(7*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup(numprocs_opt);
-  launcher_argv[2] = strdup(numnodes_opt);
-  launcher_argv[3] = strdup(partition_opt);
-  launcher_argv[4] = strdup("-l");
-  launcher_argv[5] = strdup(argv[1]);
-  launcher_argv[6] = NULL;
+  {
+    char partition_opt[255];
+    char numprocs_opt[255];
+    char numnodes_opt[255];
+    sprintf(numprocs_opt, "-n %s",argv[2]);
+    sprintf(numnodes_opt, "-N %s",argv[3]);
+    sprintf(partition_opt, "-p %s",argv[4]);
+    
+    launcher_argv = (char**) malloc(7*sizeof(char*));
+    launcher_argv[0] = strdup(mylauncher);
+    launcher_argv[1] = strdup(numprocs_opt);
+    launcher_argv[2] = strdup(numnodes_opt);
+    launcher_argv[3] = strdup(partition_opt);
+    launcher_argv[4] = strdup("-l");
+    launcher_argv[5] = strdup(argv[1]);
+    launcher_argv[6] = NULL;
+  }
 #elif RM_BG_MPIRUN 
   launcher_argv = (char**) malloc(8*sizeof(char*));
   launcher_argv[0] = strdup(mylauncher);

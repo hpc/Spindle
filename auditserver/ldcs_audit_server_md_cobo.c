@@ -339,7 +339,7 @@ int _ldcs_audit_server_md_cobo_from_fe_CB ( int fd, int nc, void *data ) {
   ldcs_message_t *in_msg=ldcs_msg_new();
   ldcs_message_t out_msg;
 
-  double starttime,cb_starttime;
+  double cb_starttime;
   cb_starttime=ldcs_get_time();
   
   out_msg.header.len=0;
@@ -347,7 +347,6 @@ int _ldcs_audit_server_md_cobo_from_fe_CB ( int fd, int nc, void *data ) {
   out_msg.data=NULL;
 
   /* receive msg from fe */
-  starttime=ldcs_get_time();
   _ldcs_audit_server_md_cobo_recv_msg ( fd, in_msg );
 
   /* statistics */

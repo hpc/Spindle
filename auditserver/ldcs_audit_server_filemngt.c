@@ -56,7 +56,10 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
   int filename_len;
   int dirname_len;
   int fullname_len;
-  long  file_data_len, file_len, fread;
+  long  file_data_len, file_len;
+#ifdef LDCSDEBUG
+    long fread;
+#endif
 
   debug_printf("read file data for file: '%s' (%s)  \n", filename, fullname);
   infile = fopen(fullname, "rb");
@@ -96,7 +99,10 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
   memcpy(p,fullname,fullname_len);p+=fullname_len;
 
   memcpy(p,&file_len,sizeof(file_len)); p+=sizeof(file_len);
-  fread=_ldcs_file_read(infile, p, file_len);
+#ifdef LDCSDEBUG
+  fread=
+#endif
+    _ldcs_file_read(infile, p, file_len);
   fclose(infile);
   debug_printf("  file read and closed %ld bytes\n", fread);
  
@@ -112,10 +118,13 @@ int ldcs_audit_server_filemngt_store_file ( ldcs_message_t* msg, char **_filenam
   int rc=0;
   FILE *outfile;
   char *p, *filename, *dirname, *fullname, *newname, *newdir;
-  long  file_len, fwrote;
+  long  file_len;
   int filename_len, dirname_len, newname_len, fullname_len;
   char *mfilename;
   int domangle;
+#ifdef LDCSDEBUG
+  long  fwrote;
+#endif
   
   p=msg->data;
 
@@ -165,7 +174,10 @@ int ldcs_audit_server_filemngt_store_file ( ldcs_message_t* msg, char **_filenam
   if (!outfile)  _error("Could not open file");
   debug_printf("  file open successful \n");
   
-  fwrote=_ldcs_file_write(outfile, p, file_len);
+#ifdef LDCSDEBUG
+  fwrote=
+#endif
+    _ldcs_file_write(outfile, p, file_len);
   fclose(outfile);
   debug_printf("  file wrote and closed %ld bytes\n", fwrote);
 
