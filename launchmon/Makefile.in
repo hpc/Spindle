@@ -37,7 +37,7 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = sample_fe$(EXEEXT) sample_be$(EXEEXT) \
 	sample_client$(EXEEXT)
-bin_PROGRAMS = spindle_fe$(EXEEXT)
+bin_PROGRAMS = spindle_fe$(EXEEXT) spindle_be$(EXEEXT)
 subdir = launchmon
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -68,6 +68,21 @@ sample_client_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_sample_fe_OBJECTS = sample_fe.$(OBJEXT) spindle_usrdata.$(OBJEXT)
 sample_fe_OBJECTS = $(am_sample_fe_OBJECTS)
 sample_fe_DEPENDENCIES =
+am_spindle_be_OBJECTS = spindle_be-spindle_be.$(OBJEXT) \
+	spindle_be-spindle_usrdata.$(OBJEXT) \
+	spindle_be-spindle_external_fabric_be.$(OBJEXT) \
+	spindle_be-parse_launcher.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_process.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_md_msocket.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_md_msocket_util.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_md_msocket_topo.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_client_cb.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_stateloop.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_server_cb.$(OBJEXT) \
+	spindle_be-ldcs_audit_server_filemngt.$(OBJEXT)
+spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
+spindle_be_DEPENDENCIES = $(top_builddir)/comlib/libldcs_socket.la \
+	$(top_builddir)/cache/libldcs_cache.la
 am_spindle_fe_OBJECTS = spindle_fe-spindle_fe.$(OBJEXT) \
 	spindle_fe-spindle_usrdata.$(OBJEXT) \
 	spindle_fe-spindle_external_fabric_fe.$(OBJEXT) \
@@ -110,9 +125,11 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(sample_be_SOURCES) $(sample_client_SOURCES) \
-	$(sample_fe_SOURCES) $(spindle_fe_SOURCES)
+	$(sample_fe_SOURCES) $(spindle_be_SOURCES) \
+	$(spindle_fe_SOURCES)
 DIST_SOURCES = $(sample_be_SOURCES) $(sample_client_SOURCES) \
-	$(sample_fe_SOURCES) $(spindle_fe_SOURCES)
+	$(sample_fe_SOURCES) $(spindle_be_SOURCES) \
+	$(spindle_fe_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -173,6 +190,7 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
+PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
@@ -248,7 +266,10 @@ sample_client_LDADD = $(MPI_CLDFLAGS)
 sample_client_CFLAGS = $(AM_CFLAGS) $(MPI_CFLAGS)
 spindle_fe_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver
 spindle_fe_LDADD = -lmonfeapi $(top_builddir)/comlib/libldcs_socket.la $(top_builddir)/cache/libldcs_cache.la
-spindle_fe_SOURCES = spindle_fe.c spindle_usrdata.c spindle_external_fabric_fe.c parse_launcher.c ../auditserver/ldcs_audit_server_process.c ../auditserver/ldcs_audit_server_md_msocket.c ../auditserver/ldcs_audit_server_md_msocket_util.c ../auditserver/ldcs_audit_server_md_msocket_topo.c ../auditserver/ldcs_audit_server_client_cb.c ../auditserver/ldcs_audit_server_stateloop.c ../auditserver/ldcs_audit_server_server_cb.c ../auditserver/ldcs_audit_server_filemngt.c 
+spindle_fe_SOURCES = spindle_fe.c spindle_usrdata.c spindle_external_fabric_fe.c parse_launcher.c ../auditserver/ldcs_audit_server_process.c ../auditserver/ldcs_audit_server_md_msocket.c ../auditserver/ldcs_audit_server_md_msocket_util.c ../auditserver/ldcs_audit_server_md_msocket_topo.c ../auditserver/ldcs_audit_server_client_cb.c ../auditserver/ldcs_audit_server_stateloop.c ../auditserver/ldcs_audit_server_server_cb.c ../auditserver/ldcs_audit_server_filemngt.c
+spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver
+spindle_be_LDADD = -lmonbeapi $(top_builddir)/comlib/libldcs_socket.la $(top_builddir)/cache/libldcs_cache.la
+spindle_be_SOURCES = spindle_be.c spindle_usrdata.c spindle_external_fabric_be.c parse_launcher.c ../auditserver/ldcs_audit_server_process.c ../auditserver/ldcs_audit_server_md_msocket.c ../auditserver/ldcs_audit_server_md_msocket_util.c ../auditserver/ldcs_audit_server_md_msocket_topo.c ../auditserver/ldcs_audit_server_client_cb.c ../auditserver/ldcs_audit_server_stateloop.c ../auditserver/ldcs_audit_server_server_cb.c ../auditserver/ldcs_audit_server_filemngt.c
 all: all-am
 
 .SUFFIXES:
@@ -344,6 +365,9 @@ sample_client$(EXEEXT): $(sample_client_OBJECTS) $(sample_client_DEPENDENCIES)
 sample_fe$(EXEEXT): $(sample_fe_OBJECTS) $(sample_fe_DEPENDENCIES) 
 	@rm -f sample_fe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sample_fe_OBJECTS) $(sample_fe_LDADD) $(LIBS)
+spindle_be$(EXEEXT): $(spindle_be_OBJECTS) $(spindle_be_DEPENDENCIES) 
+	@rm -f spindle_be$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spindle_be_OBJECTS) $(spindle_be_LDADD) $(LIBS)
 spindle_fe$(EXEEXT): $(spindle_fe_OBJECTS) $(spindle_fe_DEPENDENCIES) 
 	@rm -f spindle_fe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spindle_fe_OBJECTS) $(spindle_fe_LDADD) $(LIBS)
@@ -357,6 +381,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sample_be.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sample_client-sample_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sample_fe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_process.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-parse_launcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_external_fabric_be.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_usrdata.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-ldcs_audit_server_client_cb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-ldcs_audit_server_filemngt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-ldcs_audit_server_md_msocket.Po@am__quote@
@@ -410,6 +446,198 @@ sample_client-sample_client.obj: sample_client.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sample_client.c' object='sample_client-sample_client.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sample_client_CFLAGS) $(CFLAGS) -c -o sample_client-sample_client.obj `if test -f 'sample_client.c'; then $(CYGPATH_W) 'sample_client.c'; else $(CYGPATH_W) '$(srcdir)/sample_client.c'; fi`
+
+spindle_be-spindle_be.o: spindle_be.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_be.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be.Tpo -c -o spindle_be-spindle_be.o `test -f 'spindle_be.c' || echo '$(srcdir)/'`spindle_be.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_be.Tpo $(DEPDIR)/spindle_be-spindle_be.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_be.c' object='spindle_be-spindle_be.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_be.o `test -f 'spindle_be.c' || echo '$(srcdir)/'`spindle_be.c
+
+spindle_be-spindle_be.obj: spindle_be.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_be.obj -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be.Tpo -c -o spindle_be-spindle_be.obj `if test -f 'spindle_be.c'; then $(CYGPATH_W) 'spindle_be.c'; else $(CYGPATH_W) '$(srcdir)/spindle_be.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_be.Tpo $(DEPDIR)/spindle_be-spindle_be.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_be.c' object='spindle_be-spindle_be.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_be.obj `if test -f 'spindle_be.c'; then $(CYGPATH_W) 'spindle_be.c'; else $(CYGPATH_W) '$(srcdir)/spindle_be.c'; fi`
+
+spindle_be-spindle_usrdata.o: spindle_usrdata.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_usrdata.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_usrdata.Tpo -c -o spindle_be-spindle_usrdata.o `test -f 'spindle_usrdata.c' || echo '$(srcdir)/'`spindle_usrdata.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_usrdata.Tpo $(DEPDIR)/spindle_be-spindle_usrdata.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_usrdata.c' object='spindle_be-spindle_usrdata.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_usrdata.o `test -f 'spindle_usrdata.c' || echo '$(srcdir)/'`spindle_usrdata.c
+
+spindle_be-spindle_usrdata.obj: spindle_usrdata.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_usrdata.obj -MD -MP -MF $(DEPDIR)/spindle_be-spindle_usrdata.Tpo -c -o spindle_be-spindle_usrdata.obj `if test -f 'spindle_usrdata.c'; then $(CYGPATH_W) 'spindle_usrdata.c'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_usrdata.Tpo $(DEPDIR)/spindle_be-spindle_usrdata.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_usrdata.c' object='spindle_be-spindle_usrdata.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_usrdata.obj `if test -f 'spindle_usrdata.c'; then $(CYGPATH_W) 'spindle_usrdata.c'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.c'; fi`
+
+spindle_be-spindle_external_fabric_be.o: spindle_external_fabric_be.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_external_fabric_be.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_external_fabric_be.Tpo -c -o spindle_be-spindle_external_fabric_be.o `test -f 'spindle_external_fabric_be.c' || echo '$(srcdir)/'`spindle_external_fabric_be.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_external_fabric_be.Tpo $(DEPDIR)/spindle_be-spindle_external_fabric_be.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_external_fabric_be.c' object='spindle_be-spindle_external_fabric_be.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_external_fabric_be.o `test -f 'spindle_external_fabric_be.c' || echo '$(srcdir)/'`spindle_external_fabric_be.c
+
+spindle_be-spindle_external_fabric_be.obj: spindle_external_fabric_be.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_external_fabric_be.obj -MD -MP -MF $(DEPDIR)/spindle_be-spindle_external_fabric_be.Tpo -c -o spindle_be-spindle_external_fabric_be.obj `if test -f 'spindle_external_fabric_be.c'; then $(CYGPATH_W) 'spindle_external_fabric_be.c'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_be.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_external_fabric_be.Tpo $(DEPDIR)/spindle_be-spindle_external_fabric_be.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spindle_external_fabric_be.c' object='spindle_be-spindle_external_fabric_be.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_external_fabric_be.obj `if test -f 'spindle_external_fabric_be.c'; then $(CYGPATH_W) 'spindle_external_fabric_be.c'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_be.c'; fi`
+
+spindle_be-parse_launcher.o: parse_launcher.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-parse_launcher.o -MD -MP -MF $(DEPDIR)/spindle_be-parse_launcher.Tpo -c -o spindle_be-parse_launcher.o `test -f 'parse_launcher.c' || echo '$(srcdir)/'`parse_launcher.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-parse_launcher.Tpo $(DEPDIR)/spindle_be-parse_launcher.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parse_launcher.c' object='spindle_be-parse_launcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-parse_launcher.o `test -f 'parse_launcher.c' || echo '$(srcdir)/'`parse_launcher.c
+
+spindle_be-parse_launcher.obj: parse_launcher.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-parse_launcher.obj -MD -MP -MF $(DEPDIR)/spindle_be-parse_launcher.Tpo -c -o spindle_be-parse_launcher.obj `if test -f 'parse_launcher.c'; then $(CYGPATH_W) 'parse_launcher.c'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-parse_launcher.Tpo $(DEPDIR)/spindle_be-parse_launcher.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parse_launcher.c' object='spindle_be-parse_launcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-parse_launcher.obj `if test -f 'parse_launcher.c'; then $(CYGPATH_W) 'parse_launcher.c'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.c'; fi`
+
+spindle_be-ldcs_audit_server_process.o: ../auditserver/ldcs_audit_server_process.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_process.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_process.Tpo -c -o spindle_be-ldcs_audit_server_process.o `test -f '../auditserver/ldcs_audit_server_process.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_process.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_process.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_process.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_process.c' object='spindle_be-ldcs_audit_server_process.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_process.o `test -f '../auditserver/ldcs_audit_server_process.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_process.c
+
+spindle_be-ldcs_audit_server_process.obj: ../auditserver/ldcs_audit_server_process.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_process.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_process.Tpo -c -o spindle_be-ldcs_audit_server_process.obj `if test -f '../auditserver/ldcs_audit_server_process.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_process.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_process.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_process.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_process.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_process.c' object='spindle_be-ldcs_audit_server_process.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_process.obj `if test -f '../auditserver/ldcs_audit_server_process.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_process.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_process.c'; fi`
+
+spindle_be-ldcs_audit_server_md_msocket.o: ../auditserver/ldcs_audit_server_md_msocket.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket.o `test -f '../auditserver/ldcs_audit_server_md_msocket.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket.c' object='spindle_be-ldcs_audit_server_md_msocket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket.o `test -f '../auditserver/ldcs_audit_server_md_msocket.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket.c
+
+spindle_be-ldcs_audit_server_md_msocket.obj: ../auditserver/ldcs_audit_server_md_msocket.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket.c' object='spindle_be-ldcs_audit_server_md_msocket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket.c'; fi`
+
+spindle_be-ldcs_audit_server_md_msocket_util.o: ../auditserver/ldcs_audit_server_md_msocket_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket_util.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket_util.o `test -f '../auditserver/ldcs_audit_server_md_msocket_util.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket_util.c' object='spindle_be-ldcs_audit_server_md_msocket_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket_util.o `test -f '../auditserver/ldcs_audit_server_md_msocket_util.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket_util.c
+
+spindle_be-ldcs_audit_server_md_msocket_util.obj: ../auditserver/ldcs_audit_server_md_msocket_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket_util.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket_util.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket_util.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket_util.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket_util.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_util.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket_util.c' object='spindle_be-ldcs_audit_server_md_msocket_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket_util.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket_util.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket_util.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket_util.c'; fi`
+
+spindle_be-ldcs_audit_server_md_msocket_topo.o: ../auditserver/ldcs_audit_server_md_msocket_topo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket_topo.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket_topo.o `test -f '../auditserver/ldcs_audit_server_md_msocket_topo.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket_topo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket_topo.c' object='spindle_be-ldcs_audit_server_md_msocket_topo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket_topo.o `test -f '../auditserver/ldcs_audit_server_md_msocket_topo.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_md_msocket_topo.c
+
+spindle_be-ldcs_audit_server_md_msocket_topo.obj: ../auditserver/ldcs_audit_server_md_msocket_topo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_md_msocket_topo.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Tpo -c -o spindle_be-ldcs_audit_server_md_msocket_topo.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket_topo.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket_topo.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket_topo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_md_msocket_topo.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_md_msocket_topo.c' object='spindle_be-ldcs_audit_server_md_msocket_topo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_md_msocket_topo.obj `if test -f '../auditserver/ldcs_audit_server_md_msocket_topo.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_md_msocket_topo.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_md_msocket_topo.c'; fi`
+
+spindle_be-ldcs_audit_server_client_cb.o: ../auditserver/ldcs_audit_server_client_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_client_cb.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Tpo -c -o spindle_be-ldcs_audit_server_client_cb.o `test -f '../auditserver/ldcs_audit_server_client_cb.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_client_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_client_cb.c' object='spindle_be-ldcs_audit_server_client_cb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_client_cb.o `test -f '../auditserver/ldcs_audit_server_client_cb.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_client_cb.c
+
+spindle_be-ldcs_audit_server_client_cb.obj: ../auditserver/ldcs_audit_server_client_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_client_cb.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Tpo -c -o spindle_be-ldcs_audit_server_client_cb.obj `if test -f '../auditserver/ldcs_audit_server_client_cb.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_client_cb.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_client_cb.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_client_cb.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_client_cb.c' object='spindle_be-ldcs_audit_server_client_cb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_client_cb.obj `if test -f '../auditserver/ldcs_audit_server_client_cb.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_client_cb.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_client_cb.c'; fi`
+
+spindle_be-ldcs_audit_server_stateloop.o: ../auditserver/ldcs_audit_server_stateloop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_stateloop.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Tpo -c -o spindle_be-ldcs_audit_server_stateloop.o `test -f '../auditserver/ldcs_audit_server_stateloop.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_stateloop.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_stateloop.c' object='spindle_be-ldcs_audit_server_stateloop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_stateloop.o `test -f '../auditserver/ldcs_audit_server_stateloop.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_stateloop.c
+
+spindle_be-ldcs_audit_server_stateloop.obj: ../auditserver/ldcs_audit_server_stateloop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_stateloop.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Tpo -c -o spindle_be-ldcs_audit_server_stateloop.obj `if test -f '../auditserver/ldcs_audit_server_stateloop.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_stateloop.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_stateloop.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_stateloop.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_stateloop.c' object='spindle_be-ldcs_audit_server_stateloop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_stateloop.obj `if test -f '../auditserver/ldcs_audit_server_stateloop.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_stateloop.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_stateloop.c'; fi`
+
+spindle_be-ldcs_audit_server_server_cb.o: ../auditserver/ldcs_audit_server_server_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_server_cb.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Tpo -c -o spindle_be-ldcs_audit_server_server_cb.o `test -f '../auditserver/ldcs_audit_server_server_cb.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_server_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_server_cb.c' object='spindle_be-ldcs_audit_server_server_cb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_server_cb.o `test -f '../auditserver/ldcs_audit_server_server_cb.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_server_cb.c
+
+spindle_be-ldcs_audit_server_server_cb.obj: ../auditserver/ldcs_audit_server_server_cb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_server_cb.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Tpo -c -o spindle_be-ldcs_audit_server_server_cb.obj `if test -f '../auditserver/ldcs_audit_server_server_cb.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_server_cb.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_server_cb.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_server_cb.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_server_cb.c' object='spindle_be-ldcs_audit_server_server_cb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_server_cb.obj `if test -f '../auditserver/ldcs_audit_server_server_cb.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_server_cb.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_server_cb.c'; fi`
+
+spindle_be-ldcs_audit_server_filemngt.o: ../auditserver/ldcs_audit_server_filemngt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_filemngt.o -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Tpo -c -o spindle_be-ldcs_audit_server_filemngt.o `test -f '../auditserver/ldcs_audit_server_filemngt.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_filemngt.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_filemngt.c' object='spindle_be-ldcs_audit_server_filemngt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_filemngt.o `test -f '../auditserver/ldcs_audit_server_filemngt.c' || echo '$(srcdir)/'`../auditserver/ldcs_audit_server_filemngt.c
+
+spindle_be-ldcs_audit_server_filemngt.obj: ../auditserver/ldcs_audit_server_filemngt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-ldcs_audit_server_filemngt.obj -MD -MP -MF $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Tpo -c -o spindle_be-ldcs_audit_server_filemngt.obj `if test -f '../auditserver/ldcs_audit_server_filemngt.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_filemngt.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_filemngt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Tpo $(DEPDIR)/spindle_be-ldcs_audit_server_filemngt.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../auditserver/ldcs_audit_server_filemngt.c' object='spindle_be-ldcs_audit_server_filemngt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-ldcs_audit_server_filemngt.obj `if test -f '../auditserver/ldcs_audit_server_filemngt.c'; then $(CYGPATH_W) '../auditserver/ldcs_audit_server_filemngt.c'; else $(CYGPATH_W) '$(srcdir)/../auditserver/ldcs_audit_server_filemngt.c'; fi`
 
 spindle_fe-spindle_fe.o: spindle_fe.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_fe-spindle_fe.o -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_fe.Tpo -c -o spindle_fe-spindle_fe.o `test -f 'spindle_fe.c' || echo '$(srcdir)/'`spindle_fe.c
