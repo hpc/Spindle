@@ -186,11 +186,11 @@ ldcs_state_t _ldcs_client_dump_info ( ldcs_process_data_t *ldcs_process_data ) {
     debug_printf("  CLIENT DUMP: nc = %2d, connid=%d fd=%d\n",nc,
 		 ldcs_process_data->client_table[nc].connid,
 		 ldcs_get_fd(ldcs_process_data->client_table[nc].connid));
-    debug_printf("               pid= %6d, hostname=%s, cwd=%s fd=%d\n",
+    /*debug_printf("               pid= %6d, hostname=%s, cwd=%s fd=%d\n",
 		 ldcs_process_data->client_table[nc].remote_pid,
 		 ldcs_process_data->client_table[nc].remote_hostname,
 		 ldcs_process_data->client_table[nc].remote_cwd, 
-		 ldcs_get_fd(connid));
+		 ldcs_get_fd(connid));*/
   }
   return(rc);
 }

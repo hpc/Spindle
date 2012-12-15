@@ -5,6 +5,7 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_SILENT_RULES([yes])
 AC_PROG_CC
+AC_PROG_CXX
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
                  tools/sion_debug/Makefile
@@ -15,6 +16,7 @@ AC_CONFIG_FILES([Makefile
                  auditserver/Makefile
                  client/Makefile
                  launchmon/Makefile
+                 beboot/Makefile
                  simulator/Makefile
                  tools/cobo/test/Makefile])
 AC_PROG_LIBTOOL
@@ -49,6 +51,7 @@ LDFLAGS_HOLD=$LDFLAGS
 LIBS_HOLD=$LIBS
 if test "x$LAUNCHMON_LIB_DIR" != "x"; then
   LAUNCHMON_LIB=-L$LAUNCHMON_LIB_DIR
+  LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
 fi
 LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
 AC_CHECK_LIB(monfeapi, LMON_fe_init, 
@@ -57,9 +60,45 @@ AC_CHECK_LIB(monfeapi, LMON_fe_init,
 LDFLAGS=$LDFLAGS_HOLD
 LIBS=$LIBS_HOLD
 
+#Runmode detection (pipe/socket or cobo/msocket communications)
+CLIENT_SERVER_COM=pipes
+SERVER_SERVER_COM=cobo
+AC_ARG_ENABLE(pipes,
+              [AS_HELP_STRING([--with-pipes],[Use pipes for server/client communication])],
+              [CLIENT_SERVER_COM=pipes;],)
+AC_ARG_ENABLE(socket,
+              [AS_HELP_STRING([--with-socket],[Use sockets for server/client communication])],
+              [CLIENT_SERVER_COM=sockets;],)
+AC_ARG_ENABLE(msocket,
+              [AS_HELP_STRING([--with-msocket],[Use msocket for inter-server communication])]
+              [SERVER_SERVER_COM=msocket;],)
+AC_ARG_ENABLE(cobo,
+              [AS_HELP_STRING([--with-cobo],[Use msocket for inter-server communication])]
+              [SERVER_SERVER_COM=cobo;],)
+
+AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
+AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
+AM_CONDITIONAL([MSOCKET], [test x$SERVER_SERVER_COM == xmsocket])
+AM_CONDITIONAL([COBO], [test x$SERVER_SERVER_COM == xcobo])
+
+if test "x$CLIENT_SERVER_COM" == "xpipes"; then
+  AC_DEFINE([COMM_PIPES],[1],[Define if were using pipes for client/server communication])
+fi
+if test "x$CLIENT_SERVER_COM" == "xsocket"; then
+  AC_DEFINE([COMM_SOCKET],[1],[Define if were using sockets for client/server communication])
+fi
+if test "x$SERVER_SERVER_COM" == "xmsocket"; then
+  AC_DEFINE([COMM_MSOCKET],[1],[Define if were using msocket for server/server communication])
+fi
+if test "x$SERVER_SERVER_COM" == "xcobo"; then
+  AC_DEFINE([COMM_COBO],[1],[Define if were using cobo for server/server communication])
+fi
+
+AC_MSG_NOTICE([Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM])
+
 AC_SUBST(LAUNCHMON_INC)
 AC_SUBST(LAUNCHMON_LIB)
-
+AC_DEFINE_UNQUOTED([LAUNCHMON_BIN_DIR],"[$LAUNCHMON_BIN]",[The bin directory for launchmon])
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then
   AC_DEFINE([arch_x86_64],[1],[Define if we're compiling for an x86_64 target])
@@ -91,9 +130,10 @@ CC=$CC_HOLD
 fi
 
 #Linux detection
-if test "x$target_os" == "xlinux"; then
+if (( "x$target_os" == "xlinux" || "x$target_os" == "xlinux-gnu" )); then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])
 fi
+AC_MSG_NOTICE([os is $target_os])
 
 AC_OUTPUT
 

@@ -15,7 +15,6 @@
 
 @SET_MAKE@
 
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -36,8 +35,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = helloworld$(EXEEXT) helloworld2$(EXEEXT) \
-	helloworld3$(EXEEXT) helloworld3_mpi$(EXEEXT)
 subdir = auditclient
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -72,8 +69,9 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
-LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
-libldcs_audit_client_pipe_la_DEPENDENCIES =
+LTLIBRARIES = $(lib_LTLIBRARIES)
+libldcs_audit_client_pipe_la_DEPENDENCIES =  \
+	$(top_builddir)/comlib/libldcs_pipe.la
 am_libldcs_audit_client_pipe_la_OBJECTS =  \
 	libldcs_audit_client_pipe_la-ldcs_audit_client.lo
 libldcs_audit_client_pipe_la_OBJECTS =  \
@@ -81,31 +79,18 @@ libldcs_audit_client_pipe_la_OBJECTS =  \
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-libldcs_audit_client_socket_la_LIBADD =
+libldcs_audit_client_socket_la_DEPENDENCIES =  \
+	$(top_builddir)/comlib/libldcs_socket.la
 am_libldcs_audit_client_socket_la_OBJECTS =  \
 	libldcs_audit_client_socket_la-ldcs_audit_client.lo
 libldcs_audit_client_socket_la_OBJECTS =  \
 	$(am_libldcs_audit_client_socket_la_OBJECTS)
 libsampleA_la_LIBADD =
-am_libsampleA_la_OBJECTS = libsampleA_la-libsampleA.lo
-libsampleA_la_OBJECTS = $(am_libsampleA_la_OBJECTS)
+libsampleA_la_SOURCES = libsampleA.c
+libsampleA_la_OBJECTS = libsampleA.lo
 libsampleB_la_LIBADD =
-am_libsampleB_la_OBJECTS = libsampleB_la-libsampleB.lo
-libsampleB_la_OBJECTS = $(am_libsampleB_la_OBJECTS)
-PROGRAMS = $(noinst_PROGRAMS)
-am_helloworld_OBJECTS = helloworld.$(OBJEXT)
-helloworld_OBJECTS = $(am_helloworld_OBJECTS)
-helloworld_LDADD = $(LDADD)
-am_helloworld2_OBJECTS = helloworld2.$(OBJEXT)
-helloworld2_OBJECTS = $(am_helloworld2_OBJECTS)
-helloworld2_DEPENDENCIES = libsampleA.la libsampleB.la
-am_helloworld3_OBJECTS = helloworld3.$(OBJEXT)
-helloworld3_OBJECTS = $(am_helloworld3_OBJECTS)
-helloworld3_DEPENDENCIES = libsampleA.la
-am_helloworld3_mpi_OBJECTS = helloworld3_mpi-helloworld3.$(OBJEXT)
-helloworld3_mpi_OBJECTS = $(am_helloworld3_mpi_OBJECTS)
-am__DEPENDENCIES_1 =
-helloworld3_mpi_DEPENDENCIES = $(am__DEPENDENCIES_1) libsampleA.la
+libsampleB_la_SOURCES = libsampleB.c
+libsampleB_la_OBJECTS = libsampleB.lo
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -133,15 +118,11 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libldcs_audit_client_pipe_la_SOURCES) \
-	$(libldcs_audit_client_socket_la_SOURCES) \
-	$(libsampleA_la_SOURCES) $(libsampleB_la_SOURCES) \
-	$(helloworld_SOURCES) $(helloworld2_SOURCES) \
-	$(helloworld3_SOURCES) $(helloworld3_mpi_SOURCES)
+	$(libldcs_audit_client_socket_la_SOURCES) libsampleA.c \
+	libsampleB.c
 DIST_SOURCES = $(libldcs_audit_client_pipe_la_SOURCES) \
-	$(libldcs_audit_client_socket_la_SOURCES) \
-	$(libsampleA_la_SOURCES) $(libsampleB_la_SOURCES) \
-	$(helloworld_SOURCES) $(helloworld2_SOURCES) \
-	$(helloworld3_SOURCES) $(helloworld3_mpi_SOURCES)
+	$(libldcs_audit_client_socket_la_SOURCES) libsampleA.c \
+	libsampleB.c
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -159,6 +140,10 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -202,7 +187,6 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
-PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
@@ -216,6 +200,7 @@ abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -268,24 +253,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libldcs_audit_client_socket.la libldcs_audit_client_pipe.la libsampleA.la libsampleB.la
-noinst_LTLIBRARIES = 
+#noinst_LTLIBRARIES = 
+#noinst_PROGRAMS = helloworld helloworld2 helloworld3 helloworld3_mpi
 libldcs_audit_client_socket_la_SOURCES = ldcs_audit_client.c
-libldcs_audit_client_pipe_la_SOURCES = ldcs_audit_client.c
-libsampleA_la_SOURCES = libsampleA.c
-libsampleB_la_SOURCES = libsampleB.c
 libldcs_audit_client_socket_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
+libldcs_audit_client_socket_la_LIBADD = $(top_builddir)/comlib/libldcs_socket.la
+libldcs_audit_client_pipe_la_SOURCES = ldcs_audit_client.c
 libldcs_audit_client_pipe_la_CPPFLAGS = -DBIT64 -I$(top_srcdir)/comlib
-libsampleA_la_CPPFLAGS = -DBIT64
-libsampleB_la_CPPFLAGS = -DBIT64
-libldcs_audit_client_pipe_la_LIBADD = -L$(top_srcdir)/comlib -lldcs_pipe
-helloworld_SOURCES = helloworld.c
-helloworld2_SOURCES = helloworld2.c
-helloworld2_LDADD = libsampleA.la libsampleB.la
-helloworld3_SOURCES = helloworld3.c
-helloworld3_LDADD = libsampleA.la -ldl
-helloworld3_mpi_SOURCES = helloworld3.c
-helloworld3_mpi_LDADD = $(MPI_CLDFLAGS) libsampleA.la -ldl
-helloworld3_mpi_CPPFLAGS = $(MPI_CFLAGS)
+libldcs_audit_client_pipe_la_LIBADD = $(top_builddir)/comlib/libldcs_pipe.la
 all: all-am
 
 .SUFFIXES:
@@ -351,15 +326,6 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-
-clean-noinstLTLIBRARIES:
-	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
-	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" != "$$p" || dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
-	done
 libldcs_audit_client_pipe.la: $(libldcs_audit_client_pipe_la_OBJECTS) $(libldcs_audit_client_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libldcs_audit_client_pipe_la_OBJECTS) $(libldcs_audit_client_pipe_la_LIBADD) $(LIBS)
 libldcs_audit_client_socket.la: $(libldcs_audit_client_socket_la_OBJECTS) $(libldcs_audit_client_socket_la_DEPENDENCIES) 
@@ -369,41 +335,16 @@ libsampleA.la: $(libsampleA_la_OBJECTS) $(libsampleA_la_DEPENDENCIES)
 libsampleB.la: $(libsampleB_la_OBJECTS) $(libsampleB_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libsampleB_la_OBJECTS) $(libsampleB_la_LIBADD) $(LIBS)
 
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
-helloworld$(EXEEXT): $(helloworld_OBJECTS) $(helloworld_DEPENDENCIES) 
-	@rm -f helloworld$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(helloworld_OBJECTS) $(helloworld_LDADD) $(LIBS)
-helloworld2$(EXEEXT): $(helloworld2_OBJECTS) $(helloworld2_DEPENDENCIES) 
-	@rm -f helloworld2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(helloworld2_OBJECTS) $(helloworld2_LDADD) $(LIBS)
-helloworld3$(EXEEXT): $(helloworld3_OBJECTS) $(helloworld3_DEPENDENCIES) 
-	@rm -f helloworld3$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(helloworld3_OBJECTS) $(helloworld3_LDADD) $(LIBS)
-helloworld3_mpi$(EXEEXT): $(helloworld3_mpi_OBJECTS) $(helloworld3_mpi_DEPENDENCIES) 
-	@rm -f helloworld3_mpi$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(helloworld3_mpi_OBJECTS) $(helloworld3_mpi_LDADD) $(LIBS)
-
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helloworld.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helloworld2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helloworld3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helloworld3_mpi-helloworld3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libldcs_audit_client_pipe_la-ldcs_audit_client.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libldcs_audit_client_socket_la-ldcs_audit_client.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsampleA_la-libsampleA.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsampleB_la-libsampleB.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsampleA.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsampleB.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -444,38 +385,6 @@ libldcs_audit_client_socket_la-ldcs_audit_client.lo: ldcs_audit_client.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ldcs_audit_client.c' object='libldcs_audit_client_socket_la-ldcs_audit_client.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libldcs_audit_client_socket_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libldcs_audit_client_socket_la-ldcs_audit_client.lo `test -f 'ldcs_audit_client.c' || echo '$(srcdir)/'`ldcs_audit_client.c
-
-libsampleA_la-libsampleA.lo: libsampleA.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsampleA_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsampleA_la-libsampleA.lo -MD -MP -MF $(DEPDIR)/libsampleA_la-libsampleA.Tpo -c -o libsampleA_la-libsampleA.lo `test -f 'libsampleA.c' || echo '$(srcdir)/'`libsampleA.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsampleA_la-libsampleA.Tpo $(DEPDIR)/libsampleA_la-libsampleA.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='libsampleA.c' object='libsampleA_la-libsampleA.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsampleA_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsampleA_la-libsampleA.lo `test -f 'libsampleA.c' || echo '$(srcdir)/'`libsampleA.c
-
-libsampleB_la-libsampleB.lo: libsampleB.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsampleB_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsampleB_la-libsampleB.lo -MD -MP -MF $(DEPDIR)/libsampleB_la-libsampleB.Tpo -c -o libsampleB_la-libsampleB.lo `test -f 'libsampleB.c' || echo '$(srcdir)/'`libsampleB.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsampleB_la-libsampleB.Tpo $(DEPDIR)/libsampleB_la-libsampleB.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='libsampleB.c' object='libsampleB_la-libsampleB.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsampleB_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsampleB_la-libsampleB.lo `test -f 'libsampleB.c' || echo '$(srcdir)/'`libsampleB.c
-
-helloworld3_mpi-helloworld3.o: helloworld3.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helloworld3_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT helloworld3_mpi-helloworld3.o -MD -MP -MF $(DEPDIR)/helloworld3_mpi-helloworld3.Tpo -c -o helloworld3_mpi-helloworld3.o `test -f 'helloworld3.c' || echo '$(srcdir)/'`helloworld3.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/helloworld3_mpi-helloworld3.Tpo $(DEPDIR)/helloworld3_mpi-helloworld3.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='helloworld3.c' object='helloworld3_mpi-helloworld3.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helloworld3_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o helloworld3_mpi-helloworld3.o `test -f 'helloworld3.c' || echo '$(srcdir)/'`helloworld3.c
-
-helloworld3_mpi-helloworld3.obj: helloworld3.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helloworld3_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT helloworld3_mpi-helloworld3.obj -MD -MP -MF $(DEPDIR)/helloworld3_mpi-helloworld3.Tpo -c -o helloworld3_mpi-helloworld3.obj `if test -f 'helloworld3.c'; then $(CYGPATH_W) 'helloworld3.c'; else $(CYGPATH_W) '$(srcdir)/helloworld3.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/helloworld3_mpi-helloworld3.Tpo $(DEPDIR)/helloworld3_mpi-helloworld3.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='helloworld3.c' object='helloworld3_mpi-helloworld3.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helloworld3_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o helloworld3_mpi-helloworld3.obj `if test -f 'helloworld3.c'; then $(CYGPATH_W) 'helloworld3.c'; else $(CYGPATH_W) '$(srcdir)/helloworld3.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -567,7 +476,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES) $(PROGRAMS)
+all-am: Makefile $(LTLIBRARIES)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -600,7 +509,7 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	clean-noinstLTLIBRARIES clean-noinstPROGRAMS mostlyclean-am
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -671,20 +580,33 @@ uninstall-am: uninstall-libLTLIBRARIES
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool clean-noinstLTLIBRARIES \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-libLTLIBRARIES \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-libLTLIBRARIES
+	clean-libLTLIBRARIES clean-libtool ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am \
+	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-libLTLIBRARIES
 
+
+#libsampleA_la_SOURCES = libsampleA.c
+#libsampleB_la_SOURCES = libsampleB.c
+#libsampleA_la_CPPFLAGS = -DBIT64
+#libsampleB_la_CPPFLAGS = -DBIT64
+
+#helloworld_SOURCES = helloworld.c
+#helloworld2_SOURCES = helloworld2.c
+#helloworld2_LDADD = libsampleA.la libsampleB.la
+#helloworld3_SOURCES = helloworld3.c
+#helloworld3_LDADD = libsampleA.la -ldl
+#helloworld3_mpi_SOURCES = helloworld3.c
+#helloworld3_mpi_LDADD = $(MPI_CLDFLAGS) libsampleA.la -ldl
+#helloworld3_mpi_CPPFLAGS = $(MPI_CFLAGS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

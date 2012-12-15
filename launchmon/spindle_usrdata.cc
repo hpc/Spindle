@@ -13,7 +13,7 @@ int packbefe_cb ( void* udata,
 		  int msgbufmax, 
 		  int* msgbuflen ) {
   ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav=msgbuf;
+  char *trav= (char *) msgbuf;
 
   if ( ( msgbuf == NULL ) || ( msgbufmax < 0) ) return -1; 
 
@@ -41,7 +41,7 @@ int unpackfebe_cb  ( void* udatabuf,
 		     void* udata ) {
   
   ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav=udatabuf;
+  char *trav= (char *) udatabuf;
   int size;
 
   if ( ( udatabuf == NULL ) || (udatabuflen < 0) ) return -1; 
@@ -71,7 +71,7 @@ int packfebe_cb ( void *udata,
 		  int *msgbuflen ) {
   
   ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav=msgbuf;
+  char *trav= (char *) msgbuf;
 
   if ( ( msgbuf == NULL ) || ( msgbufmax < 0) ) return -1; 
 
@@ -99,7 +99,7 @@ int unpackbefe_cb  ( void* udatabuf,
 		     void* udata ) {
 
   ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav=udatabuf;
+  char *trav= (char *) udatabuf;
   int size;
 
   if ( ( udatabuf == NULL ) || (udatabuflen < 0) ) return -1; 

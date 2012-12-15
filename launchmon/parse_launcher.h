@@ -11,7 +11,9 @@
 
 int createNewCmdLine(int argc, char *argv[],
                      int *new_argc, char **new_argv[],
-                     char *bootstrapper_name,
+                     const char *bootstrapper_name,
+                     const char *ldcs_location,
+                     const char *ldcs_number,
                      unsigned int test_launchers);
 
 #endif

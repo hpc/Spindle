@@ -11,7 +11,7 @@
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
-#include "cobo.h"
+#include "ldcs_cobo.h"
 #include "cobo_comm.h"
 
 int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data );

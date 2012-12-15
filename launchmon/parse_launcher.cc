@@ -15,8 +15,8 @@
 #define FL_CHDIR          1<<5
 
 typedef struct {
-   char *opt;
-   char *long_opt;
+   const char *opt;
+   const char *long_opt;
    int flags;
 } cmdoption_t;
 
@@ -204,7 +204,7 @@ static int parseLaunchCmdLine(int argc, char *argv[],
    for (i = 0; i < options_len; i++) {
       if (!(options[i].flags & FL_LAUNCHER))
          continue;
-      char *launcher_name = options[i].opt;
+      const char *launcher_name = options[i].opt;
       assert(launcher_name);
       int launcher_name_size = strlen(launcher_name);
       assert(launcher_name_size);
@@ -341,7 +341,9 @@ static int parseLaunchCmdLine(int argc, char *argv[],
 static int modifyCmdLineForLauncher(int argc, char *argv[],
                                     int *new_argc, char **new_argv[],
                                     cmdoption_t *options, int options_len,
-                                    char *bootstrapper_name)
+                                    const char *ldcs_location,
+                                    const char *ldcs_number,
+                                    const char *bootstrapper_name)
 {
    int result;
    int found_launcher_at, found_exec_at;
@@ -353,12 +355,13 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
       return result;
 
    /* Add the bootstrapper to the cmdline before the executable */
-   *new_argc = argc+1;
+   *new_argc = argc+3;
    *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
-   for (i = 0, j = 0; i < argc; i++, j++) {
+   for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
       if (i == found_exec_at) {
-         (*new_argv)[j] = bootstrapper_name;
-         j++;
+         (*new_argv)[j++] = strdup(bootstrapper_name);
+         (*new_argv)[j++] = strdup(ldcs_location);
+         (*new_argv)[j++] = strdup(ldcs_number);
       }
       (*new_argv)[j] = argv[i];
    }
@@ -369,7 +372,9 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
 
 int createNewCmdLine(int argc, char *argv[],
                      int *new_argc, char **new_argv[],
-                     char *bootstrapper_name,
+                     const char *bootstrapper_name,
+                     const char *ldcs_location,
+                     const char *ldcs_number,
                      unsigned int test_launchers)
 {
    int result = 0;
@@ -379,7 +384,7 @@ int createNewCmdLine(int argc, char *argv[],
    /* Presetup */
    if (test_launchers && TEST_PRESETUP) {
       /* If the bootstrapper is already present, don't do anything. Assume user has it right. */
-      char *bootstrapper_exec = strrchr(bootstrapper_name, '/');
+      const char *bootstrapper_exec = strrchr(bootstrapper_name, '/');
       bootstrapper_exec = bootstrapper_exec ? bootstrapper_exec+1 : bootstrapper_name;
       for (i = 0; i < argc; i++) {
          if (strstr(argv[i], bootstrapper_exec)) {
@@ -392,7 +397,8 @@ int createNewCmdLine(int argc, char *argv[],
 
    /* Slurm */
    if (test_launchers && TEST_SLURM) {
-      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size, bootstrapper_name);
+      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
+                                        ldcs_location, ldcs_number, bootstrapper_name);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)

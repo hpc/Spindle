@@ -5,7 +5,7 @@ COD = $(top_builddir)/tools/cobo/src
 CAD = $(top_builddir)/cache
 LCD = $(top_builddir)/comlib
 
-LDADD = $(COD)/libcobo.la
+LDADD = $(COD)/libldcs_cobo.la
 AM_CPPFLAGS = -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/auditserver -I$(top_srcdir)/comlib -I$(top_srcdir)/cache
 
 client_SOURCES = client.c

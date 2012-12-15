@@ -1,6 +1,10 @@
 #ifndef SAMPLE_EXTERNAL_FABRIC_H
 #define SAMPLE_EXTERNAL_FABRIC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HOSTNAME_LEN 100
 struct spindle_external_fabric_data_struct
 {
@@ -27,5 +31,9 @@ int spindle_external_fabric_fe_CB ( char *myhostname, int myport, int *myrank, i
 				    void *data );
 int spindle_external_fabric_be_CB ( char *myhostname, int myport, int *myrank, int *size, char ***hostlist, int **portlist, 
 				    void *data );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

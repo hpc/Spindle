@@ -1,3 +1,3 @@
-noinst_LTLIBRARIES = libcobocomm.la libcobo.la
+noinst_LTLIBRARIES = libcobocomm.la libldcs_cobo.la
 libcobocomm_la_SOURCES = cobo_comm.c
-libcobo_la_SOURCES = cobo.c
+libldcs_cobo_la_SOURCES = cobo.c

@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <poll.h>
-#include "cobo.h"
+#include "ldcs_cobo.h"
 
 /* print message to stderr */
 static void ldcs_cobo_error(char *fmt, ...)

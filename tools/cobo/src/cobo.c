@@ -1421,7 +1421,7 @@ int cobo_alltoall(void* sendbuf, int sendcount, void* recvbuf)
 /*
  * Perform MPI-like Allreduce maximum of a single int from each task
  */
-int cobo_allreduce_max_int(int* sendint, int* recvint)
+static int cobo_allreduce_max_int(int* sendint, int* recvint)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);

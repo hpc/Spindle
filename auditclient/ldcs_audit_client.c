@@ -1,3 +1,4 @@
+#define DEBUG 1
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -36,7 +37,7 @@ static FILE* (*orig_fopen)(const char *pathname, const char *mode);
 static FILE* (*orig_fopen64)(const char *pathname, const char *mode);
 #endif
 
-#define VERYVERBOSEno 1
+#define VERYVERBOSE 1
 
 #define NOT_FOUND_PREFIX "/__not_exists/"
 #define NOT_FOUND_PREFIX_SIZE 13
@@ -105,12 +106,21 @@ unsigned int la_version(unsigned int version)
   return version;
 }
 
+static int get_process_rank()
+{
+#if defined(os_linux)
+   return getpid();
+#elif defined(os_bgq)
+#error BGQ TODO: return rank rather than PID here
+#endif
+}
+
 char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 {
   char *myname, *newname;
 
   myname=(char *) name;
-  debug_printf("la_objsearch():         name = %s; cookie = %x; flag = %s\n", name, cookie,
+  debug_printf("la_objsearch():         name = %s; cookie = %p; flag = %s\n", name, cookie,
 	       (flag == LA_SER_ORIG) ?    "LA_SER_ORIG" :
 	       (flag == LA_SER_LIBPATH) ? "LA_SER_LIBPATH" :
 	       (flag == LA_SER_RUNPATH) ? "LA_SER_RUNPATH" :
@@ -120,81 +130,74 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 	       "???");
 
   if ((ldcsid==-1) && (use_ldcs)) {
-    char* ldcs_location=getenv("LDCS_LOCATION");
-    int   ldcs_number  =atoi(getenv("LDCS_NUMBER"));
-    char* ldcs_locmodstr=getenv("LDCS_LOCATION_MOD");
-    if(ldcs_locmodstr) {
-      int ldcs_locmod=atoi(ldcs_locmodstr);
-      char buffer[MAX_PATH_LEN];
-      debug_printf("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
-      if(strlen(ldcs_location)+10<MAX_PATH_LEN) {
-	sprintf(buffer,"%s-%02d",ldcs_location,getpid()%ldcs_locmod);
-	debug_printf("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
-	debug_printf("open connection to ldcs %s %d\n",buffer,ldcs_number);
-	ldcsid=ldcs_open_connection(buffer,ldcs_number);
-      } else _error("location path too long");
-    } else {
-      debug_printf("open connection to ldcs %s %d\n",ldcs_location,ldcs_number);
-      ldcsid=ldcs_open_connection(ldcs_location,ldcs_number);
+    char* ldcs_location = getenv("LDCS_LOCATION");
+    int ldcs_number = atoi(getenv("LDCS_NUMBER"));
+
+    char buffer[MAX_PATH_LEN];
+    if (strlen(ldcs_location)+10>=MAX_PATH_LEN) {
+       _error("location path too long");
     }
-    if(ldcsid>-1) {
-        ldcs_send_CWD(ldcsid);
-        ldcs_send_HOSTNAME(ldcsid);
-        ldcs_send_PID(ldcsid);
-        ldcs_send_LOCATION(ldcsid,ldcs_location);
-	ldcs_send_MYRANKINFO_QUERY (ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);
-	fprintf(stderr, "AUDITCLIENT: pid=%6d local rank: %2d of %2d, MD rank: %2d of %2d start time -> %14.4f\n",
-		getpid(), rankinfo[0],rankinfo[1],rankinfo[2],rankinfo[3],ldcs_get_time());
+//    sprintf(buffer, "%s-%d", ldcs_location, get_process_rank());
+    sprintf(buffer, "%s", ldcs_location);
+    debug_printf("open connection to ldcs %s %d\n", buffer, ldcs_number);
+    ldcsid = ldcs_open_connection(buffer, ldcs_number);
+
+    if(ldcsid > -1) {
+       ldcs_send_CWD(ldcsid);
+       ldcs_send_HOSTNAME(ldcsid);
+       ldcs_send_PID(ldcsid);
+       ldcs_send_LOCATION(ldcsid,ldcs_location);
+       ldcs_send_MYRANKINFO_QUERY (ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);
+       fprintf(stderr, "AUDITCLIENT: pid=%6d local rank: %2d of %2d, MD rank: %2d of %2d start time -> %14.4f\n",
+               getpid(), rankinfo[0],rankinfo[1],rankinfo[2],rankinfo[3],ldcs_get_time());
 #if defined(SIONDEBUG)
-	char* ldcs_auditdebug=getenv("LDCS_AUDITDEBUG");
-	if(ldcs_auditdebug) {
-	  if((rankinfo[0]==0) && ((rankinfo[2]%2)==0)) {
-	    char filename[MAX_PATH_LEN];
-	    sprintf(filename,"%s_%02d_%02d.log",ldcs_auditdebug,rankinfo[0],rankinfo[2]);
-	    sion_debug_on(1023,filename);
-	  }
-	}
+       char* ldcs_auditdebug=getenv("LDCS_AUDITDEBUG");
+       if(ldcs_auditdebug) {
+          if((rankinfo[0]==0) && ((rankinfo[2]%2)==0)) {
+             char filename[MAX_PATH_LEN];
+             sprintf(filename,"%s_%02d_%02d.log",ldcs_auditdebug,rankinfo[0],rankinfo[2]);
+             sion_debug_on(1023,filename);
+          }
+       }
 #endif
     }
-
-
   }
 
   /* check if direct name given --> return name  */
   {
-    char *pos_slash = strchr(name, '/');
-    if(!pos_slash) {
-      debug_printf("Returning direct name %s after input %s\n", name, name);
-      return (char *) name;
-    }
+     char *pos_slash = strchr(name, '/');
+     if(!pos_slash) {
+        debug_printf("Returning direct name %s after input %s\n", name, name);
+        return (char *) name;
+     }
   }
-
+  
   
   debug_printf("AUDITSEND: L:%s\n",myname);
   /* fprintf(stderr,"AUDITSEND: L:%s\n",myname); */
   if ((ldcsid>=0) && (use_ldcs)) {
-    ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
-    debug_printf("AUDITRECV: L:%s\n",newname);
+     ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
+     debug_printf("AUDITRECV: L:%s\n",newname);
     /* fprintf(stderr,"AUDITRECV: %s:%s\n",myname,newname); */
-
-    if(!newname) {
-      newname=concatStrings(NOT_FOUND_PREFIX, NOT_FOUND_PREFIX_SIZE, myname, strlen(myname));
-    }
-    debug_printf(" found %s -> %s\n",myname,newname);
+     
+     if(!newname) {
+        newname=concatStrings(NOT_FOUND_PREFIX, NOT_FOUND_PREFIX_SIZE, myname, strlen(myname));
+     }
+     debug_printf(" found %s -> %s\n",myname,newname);
   } else {
-    newname=myname;
+     newname=myname;
   }
+  
 
-
-  debug_printf("la_objsearch():         name = %s; cookie = %x -> '%s'\n", name, cookie,newname);
-  /* fprintf(stderr,"la_objsearch():         name = %s; cookie = %x -> '%s'\n", name, cookie,newname); */
-
+  debug_printf("la_objsearch():         name = %s; cookie = %p -> '%s'\n", name, cookie,newname);
+  /* fprintf(stderr,"la_objsearch():         name = %s; cookie = %p -> '%s'\n", name, cookie,newname); */
+  
   return newname;
 }
 
 void la_activity (uintptr_t *cookie, unsigned int flag)
 {
-  debug_printf("la_activity():          cookie = %x; flag = %s\n", cookie,
+  debug_printf("la_activity():          cookie = %p; flag = %s\n", cookie,
 	 (flag == LA_ACT_CONSISTENT) ? "LA_ACT_CONSISTENT" :
 	 (flag == LA_ACT_ADD) ?        "LA_ACT_ADD" :
 	 (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
@@ -207,13 +210,13 @@ la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
    signed long shift;
 
-   debug_printf("la_objopen():           loading \"%s\"; lmid = %s; cookie=%x\n",
+   debug_printf("la_objopen():           loading \"%s\"; lmid = %s; cookie=%p\n",
 		map->l_name, (lmid == LM_ID_BASE) ?  "LM_ID_BASE" :
 		(lmid == LM_ID_NEWLM) ? "LM_ID_NEWLM" : 
 		"???", cookie);
 
    if (!firstcookie) {
-     debug_printf("cookie store %d \n",*cookie);
+     debug_printf("cookie store %u \n",*cookie);
      firstcookie=cookie;
    }
    
@@ -230,15 +233,15 @@ la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 void
 la_preinit(uintptr_t *cookie)
 {
-  debug_printf("la_preinit():           %x\n", cookie);
+  debug_printf("la_preinit():           %p\n", cookie);
 }
 
 unsigned int
 la_objclose (uintptr_t *cookie)
 {
-  debug_printf("la_objclose():          %x\n", cookie);
+  debug_printf("la_objclose():          %p\n", cookie);
 
-  debug_printf("cookie compare %x %x\n",cookie,firstcookie);
+  debug_printf("cookie compare %p %p\n",cookie,firstcookie);
   if(cookie == firstcookie) {
     if ((ldcsid>=0) && (use_ldcs)) {
 #if defined(SIONDEBUG)
@@ -479,7 +482,7 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    } else {
      debug_printf(" redirect %s to %s\n", path, newpath);
      fp=orig_fopen64(newpath, mode);
-     debug_printf(" orig_fopen64 of %s %x\n", newpath, fp);
+     debug_printf(" orig_fopen64 of %s %p\n", newpath, fp);
      free(newpath);
      return(fp); 
    }

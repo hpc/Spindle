@@ -116,6 +116,7 @@ char *ldcs_new_char(const char *t);
 double ldcs_get_time();
 
 
+#define DEBUG
 #if defined(DEBUG)
 #define LDCSDEBUG 1
 #define debug_printf(format, ...) \

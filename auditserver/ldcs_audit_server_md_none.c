@@ -39,7 +39,6 @@ int ldcs_audit_server_md_distribute ( ldcs_process_data_t *ldcs_process_data, ld
 
   return(rc);
 }
-
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *msg ) {
   int rc=0;
 
