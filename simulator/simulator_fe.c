@@ -14,7 +14,7 @@
 #include "simulator_fe.h" 
 #include "ldcs_audit_server_md.h"
 
-#include "cobo.h"
+#include "ldcs_cobo.h"
 #include "cobo_comm.h"
 
 

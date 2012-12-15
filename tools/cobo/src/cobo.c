@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <poll.h>
-#include "cobo.h"
+#include "ldcs_cobo.h"
 
 #define COBO_DEBUG_LEVELS (3)
 

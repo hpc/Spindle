@@ -64,7 +64,7 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include "cobo.h"
+#include "ldcs_cobo.h"
 
 
 #define BASE_ENV_LEN 17

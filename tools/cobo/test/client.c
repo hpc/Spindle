@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "cobo.h"
+#include "ldcs_cobo.h"
 
 int ranks, my_rank;
 char** procs;

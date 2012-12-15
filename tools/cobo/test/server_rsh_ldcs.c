@@ -64,7 +64,7 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include "cobo.h"
+#include "ldcs_cobo.h"
 #include "cobo_comm.h"
 
 #include <poll.h>
