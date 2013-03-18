@@ -111,7 +111,7 @@ int main (int argc, char* argv[])
 
   if (strlen(LAUNCHMON_BIN_DIR)) {
      setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
-     setenv("LMON_PREFIX", "/g/g0/legendre/tools/launchmon", 0);
+     setenv("LMON_PREFIX", LAUNCHMON_BIN_DIR "/..", 0);
   }
 
   /**
