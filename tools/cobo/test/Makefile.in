@@ -72,7 +72,7 @@ am_server_rsh_ldcs_preload_OBJECTS =  \
 	ldcs_audit_server_filemngt.$(OBJEXT) \
 	ldcs_audit_server_client_cb.$(OBJEXT) \
 	ldcs_audit_server_stateloop.$(OBJEXT) \
-	ldcs_audit_server_server_cb.$(OBJEXT)
+	ldcs_audit_server_server_cb.$(OBJEXT) ldcs_elf_read.$(OBJEXT)
 server_rsh_ldcs_preload_OBJECTS =  \
 	$(am_server_rsh_ldcs_preload_OBJECTS)
 server_rsh_ldcs_preload_DEPENDENCIES = $(COD)/libcobocomm.la \
@@ -245,7 +245,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/auditserver -I$(top
 client_SOURCES = client.c
 server_rsh_SOURCES = server_rsh.c
 server_rsh_ldcs_SOURCES = server_rsh_ldcs.c
-server_rsh_ldcs_preload_SOURCES = server_rsh_ldcs_preload.c $(LSRD)/ldcs_audit_server_process.c $(LSRD)/ldcs_audit_server_md_cobo.c $(LSRD)/ldcs_audit_server_filemngt.c $(LSRD)/ldcs_audit_server_client_cb.c $(LSRD)/ldcs_audit_server_stateloop.c $(LSRD)/ldcs_audit_server_server_cb.c
+server_rsh_ldcs_preload_SOURCES = server_rsh_ldcs_preload.c $(LSRD)/ldcs_audit_server_process.c $(LSRD)/ldcs_audit_server_md_cobo.c $(LSRD)/ldcs_audit_server_filemngt.c $(LSRD)/ldcs_audit_server_client_cb.c $(LSRD)/ldcs_audit_server_stateloop.c $(LSRD)/ldcs_audit_server_server_cb.c $(LSRD)/ldcs_elf_read.c
 server_rsh_ldcs_LDADD = $(COD)/libcobocomm.la $(LCD)/libldcs_pipe.la $(CAD)/libldcs_cache.la $(LDADD)
 server_rsh_ldcs_preload_LDADD = $(COD)/libcobocomm.la $(LCD)/libldcs_pipe.la $(CAD)/libldcs_cache.la $(LDADD)
 all: all-am
@@ -317,6 +317,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_process.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_server_cb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_stateloop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_elf_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server_rsh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server_rsh_ldcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server_rsh_ldcs_preload.Po@am__quote@
@@ -440,6 +441,22 @@ ldcs_audit_server_server_cb.obj: $(LSRD)/ldcs_audit_server_server_cb.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(LSRD)/ldcs_audit_server_server_cb.c' object='ldcs_audit_server_server_cb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ldcs_audit_server_server_cb.obj `if test -f '$(LSRD)/ldcs_audit_server_server_cb.c'; then $(CYGPATH_W) '$(LSRD)/ldcs_audit_server_server_cb.c'; else $(CYGPATH_W) '$(srcdir)/$(LSRD)/ldcs_audit_server_server_cb.c'; fi`
+
+ldcs_elf_read.o: $(LSRD)/ldcs_elf_read.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ldcs_elf_read.o -MD -MP -MF $(DEPDIR)/ldcs_elf_read.Tpo -c -o ldcs_elf_read.o `test -f '$(LSRD)/ldcs_elf_read.c' || echo '$(srcdir)/'`$(LSRD)/ldcs_elf_read.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ldcs_elf_read.Tpo $(DEPDIR)/ldcs_elf_read.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(LSRD)/ldcs_elf_read.c' object='ldcs_elf_read.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ldcs_elf_read.o `test -f '$(LSRD)/ldcs_elf_read.c' || echo '$(srcdir)/'`$(LSRD)/ldcs_elf_read.c
+
+ldcs_elf_read.obj: $(LSRD)/ldcs_elf_read.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ldcs_elf_read.obj -MD -MP -MF $(DEPDIR)/ldcs_elf_read.Tpo -c -o ldcs_elf_read.obj `if test -f '$(LSRD)/ldcs_elf_read.c'; then $(CYGPATH_W) '$(LSRD)/ldcs_elf_read.c'; else $(CYGPATH_W) '$(srcdir)/$(LSRD)/ldcs_elf_read.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ldcs_elf_read.Tpo $(DEPDIR)/ldcs_elf_read.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(LSRD)/ldcs_elf_read.c' object='ldcs_elf_read.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ldcs_elf_read.obj `if test -f '$(LSRD)/ldcs_elf_read.c'; then $(CYGPATH_W) '$(LSRD)/ldcs_elf_read.c'; else $(CYGPATH_W) '$(srcdir)/$(LSRD)/ldcs_elf_read.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

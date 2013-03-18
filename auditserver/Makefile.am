@@ -10,7 +10,7 @@ AM_LDFLAGS = -all-static
 #ldcs_audit_server_socket_SOURCES = ldcs_audit_server.c
 #ldcs_audit_server_pipe_SOURCES = ldcs_audit_server.c
 
-libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_par.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_stateloop.c
+libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_par.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_stateloop.c ldcs_elf_read.c
 
 libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c
 libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c

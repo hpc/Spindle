@@ -1,4 +1,3 @@
-#define DEBUG 1
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>

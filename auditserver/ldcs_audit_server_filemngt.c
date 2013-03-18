@@ -48,18 +48,16 @@
  }
 
 
+int read_file_and_strip(FILE *f, void *data, size_t *size);
 int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *fullname, int domangle,
 					   ldcs_message_t* msg ) {
   int rc=0;
   FILE *infile;
-  char *file_data,*p;
+  char *file_data,*p,*len_pos;
   int filename_len;
   int dirname_len;
   int fullname_len;
-  long  file_data_len, file_len;
-#ifdef LDCSDEBUG
-    long fread;
-#endif
+  long file_data_len, file_len;
 
   debug_printf("read file data for file: '%s' (%s)  \n", filename, fullname);
   infile = fopen(fullname, "rb");
@@ -97,19 +95,19 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
   memcpy(p,dirname,dirname_len);p+=dirname_len;
   memcpy(p,&fullname_len,sizeof(fullname_len)); p+=sizeof(fullname_len);
   memcpy(p,fullname,fullname_len);p+=fullname_len;
+  len_pos = p; p+=sizeof(file_len);
 
-  memcpy(p,&file_len,sizeof(file_len)); p+=sizeof(file_len);
-#ifdef LDCSDEBUG
-  fread=
-#endif
-    _ldcs_file_read(infile, p, file_len);
+  read_file_and_strip(infile, p, (size_t *) &file_len);
+  p += file_len;
   fclose(infile);
-  debug_printf("  file read and closed %ld bytes\n", fread);
- 
-  msg->data=file_data;
-  msg->header.len=file_data_len;
-  msg->alloclen=file_data_len;
-  rc=file_len;
+  debug_printf("  file read and closed %ld bytes\n", file_len);
+
+  memcpy(len_pos, &file_len, sizeof(file_len));
+  
+  msg->data = file_data;
+  msg->header.len = p - file_data;
+  msg->alloclen = file_data_len;
+  rc = file_len;
 
   return(rc);
 }

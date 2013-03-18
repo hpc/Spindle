@@ -1,0 +1,116 @@
+/**
+ * The following code reads a stripped version of an ELF file, rather
+ * than the full executable with all debug info and symbols.
+ **/
+#include <elf.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include "ldcs_elf_read.h"
+#include "ldcs_api.h"
+
+static int readUpTo(FILE *f, unsigned char *buffer, size_t *cur_pos, size_t new_size)
+{
+   size_t result;
+   if (*cur_pos >= new_size)
+      return 0;
+
+   do {
+      result = fread(buffer + *cur_pos, 1, new_size - *cur_pos, f);
+   } while (result == -1 && errno == EINTR);
+   if (result == -1)
+      return -1;
+   *cur_pos += result;
+   return 0;
+}
+
+#define ERR -1
+#define NOT_ELF -2
+static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size)
+{
+   int result;
+   size_t filesize = *size;
+   size_t cur_pos = 0;
+   size_t ph_start, ph_end;
+   unsigned long num_phdrs, i, pagesize, pagediff;
+   unsigned long highest_file_addr = 0, cur_file_addr;
+   Elf64_Ehdr *ehdr;
+   Elf64_Phdr *phdr;
+
+   //Read the first page, which will contain the ELF header
+   // (and likely the program headers)
+   result = readUpTo(f, buffer, &cur_pos, 0x1000);
+   if (result == -1) {
+      return ERR;
+   }
+
+   //Check that we're a proper elf file.
+   if (EI_NIDENT > cur_pos) {
+      return NOT_ELF;
+   }
+   ehdr = (Elf64_Ehdr *) buffer;
+   if (ehdr->e_ident[EI_MAG0] != ELFMAG0 ||
+       ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
+       ehdr->e_ident[EI_MAG2] != ELFMAG2 ||
+       ehdr->e_ident[EI_MAG3] != ELFMAG3) {
+      readUpTo(f, buffer, &cur_pos, filesize);
+      return NOT_ELF;
+   }
+   if (ehdr->e_ident[EI_CLASS] != ELFCLASS64) {
+      readUpTo(f, buffer, &cur_pos, filesize);
+      return NOT_ELF;
+   }
+
+   //Collect info on program headers and read them into memory
+   // (if they weren't read in the last read).
+   num_phdrs = ehdr->e_phnum;
+   ph_start = ehdr->e_phoff;
+   ph_end = ph_start + ehdr->e_phentsize * num_phdrs;
+   
+   result = readUpTo(f, buffer, &cur_pos, ph_end);
+   if (result == -1) {
+      return ERR;
+   }
+   if (cur_pos < ph_end) {
+      return ERR;
+   }
+
+   //Find the end of the last program header
+   phdr = (Elf64_Phdr *) (buffer + ph_start);
+   for (i = 0; i < num_phdrs; i++, phdr++) {
+      if (phdr->p_type != PT_LOAD)
+         continue;
+      cur_file_addr = phdr->p_offset + phdr->p_filesz;
+      if (cur_file_addr > highest_file_addr)
+         highest_file_addr = cur_file_addr;
+   }
+
+   //Round up to a page.
+   pagesize = getpagesize();
+   pagediff = highest_file_addr % pagesize;
+   if (pagediff) 
+      highest_file_addr += (pagesize - pagediff);
+   if (highest_file_addr > filesize)
+      highest_file_addr = filesize;
+
+   //Read the main contents of the file
+   result = readUpTo(f, buffer, &cur_pos, highest_file_addr);
+   if (result == -1) {
+      return ERR;
+   }
+   if (cur_pos < highest_file_addr) {
+      return ERR;
+   }
+   *size = highest_file_addr;
+   return 0;
+}
+
+int read_file_and_strip(FILE *f, void *data, size_t *size) {
+   int result = readLoadableFileSections(f, (unsigned char *) data, size);
+   if (result == ERR) {
+      debug_printf("Error reading from file\n");
+      return -1;
+   }
+   return 0;
+}
+
