@@ -576,20 +576,5 @@ int ldcs_audit_server_fe_md_preload ( char *filename, void *data  ) {
 }
 
 int ldcs_audit_server_fe_md_close ( void *data  ) {
-  int rc=0;
-  int root_fd, ack;
-  cobo_server_get_root_socket(&root_fd);
-  
-  ldcs_cobo_read_fd(root_fd, &ack, sizeof(ack));
-  printf("server_rsh_ldcs: got ack=%d from tree root\n",ack);
-  
-  ack=15;
-  ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
-  printf("server_rsh_ldcs: sent ack=%d to tree root\n",ack);
-
-  /* open and close the server */
-  cobo_server_close();
-
-
-  return(rc);
+  return cobo_server_close();
 }

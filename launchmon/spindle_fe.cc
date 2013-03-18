@@ -31,6 +31,8 @@ extern "C" {
 #include <algorithm>
 #include <string>
 #include <iterator>
+#include <pthread.h>
+
 using namespace std;
 
 #if !defined(BINDIR)
@@ -82,6 +84,35 @@ int parseCmdLine(int *argc, char **argv[])
 
 void usage() {
    fprintf(stderr, "Usage: spindle [mpirun|srun] ...\n");
+}
+
+static pthread_mutex_t completion_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t completion_condvar = PTHREAD_COND_INITIALIZER;
+static bool spindle_done = false;
+
+static void signal_done()
+{
+   pthread_mutex_lock(&completion_lock);
+   spindle_done = true;
+   pthread_cond_signal(&completion_condvar);
+   pthread_mutex_unlock(&completion_lock);
+}
+
+static void waitfor_done()
+{
+  pthread_mutex_lock(&completion_lock);
+  while (!spindle_done) {
+     pthread_cond_wait(&completion_condvar, &completion_lock);
+  }
+  pthread_mutex_unlock(&completion_lock);
+}
+
+static int onLaunchmonStatusChange(int *pstatus) {
+   int status = *pstatus;
+   if (WIFKILLED(status) || WIFDETACHED(status)) {
+      signal_done();
+   }
+   return 0;
 }
 
 string pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
@@ -168,12 +199,19 @@ int main (int argc, char* argv[])
       fprintf ( stderr, "[LMON FE] LMON_fe_init FAILED\n" );
       return EXIT_FAILURE;
   }
+
   rc = LMON_fe_createSession(&aSession);
   if (rc != LMON_OK)  {
     fprintf ( stderr,   "[LMON FE] LMON_fe_createFEBESession FAILED\n");
     return EXIT_FAILURE;
   }
 
+  rc = LMON_fe_regStatusCB(aSession, onLaunchmonStatusChange);
+  if (rc != LMON_OK) {
+    fprintf ( stderr,   "[LMON FE] LMON_fe_regStatusCB FAILED\n");     
+    return EXIT_FAILURE;
+  }
+  
   rc = LMON_fe_regPackForFeToBe(aSession, packfebe_cb);
   if (rc != LMON_OK) {
     fprintf (stderr, "[LMON FE] LMON_fe_regPackForFeToBe FAILED\n");
@@ -249,7 +287,9 @@ int main (int argc, char* argv[])
   /* SPINDLE FE start */
   ldcs_audit_server_fe_md_open( const_cast<char **>(hosts), hosts_size, &md_data_ptr );
 
-  /* Close the server, implicit wait */
+  waitfor_done();
+
+  /* Close the server */
   ldcs_audit_server_fe_md_close(md_data_ptr);
   
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
