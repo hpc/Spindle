@@ -10,6 +10,7 @@
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
+#include "ldcs_audit_server_stateloop.h"
 #include "ldcs_cache.h"
 #include "ldcs_cobo.h"
 #include "cobo_comm.h"
@@ -19,6 +20,7 @@ int _ldcs_audit_server_md_cobo_from_fe_CB ( int fd, int nc, void *data );
 int _ldcs_audit_server_md_cobo_bcast_msg ( ldcs_process_data_t *data, ldcs_message_t *msg );
 int _ldcs_audit_server_md_cobo_recv_msg ( int fd, ldcs_message_t *msg );
 int _ldcs_audit_server_md_cobo_send_msg ( int fd, ldcs_message_t *msg );
+int _ldcs_audit_server_md_cobo_bcast_down(ldcs_message_t *msg);
 
 
 /* callback to gather info from other server over external fabric (connecting server and frontend), e.g. COBO or MPI */
@@ -61,15 +63,15 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
   }
 
   /* initialize the client (read environment variables) */
+  debug_printf2("Opening cobo\n");
   if (cobo_open(2384932, portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
     printf("Failed to init\n");
     exit(1);
   }
+  debug_printf2("cobo_open complete. Cobo rank %d/%d\n", my_rank, ranks);
 
   /* TBD: distribute bootstrap info over cobo from frontend, eg. location, number, cache parameter, ... */
   
-  debug_printf("COBO ranks: %d, Rank: %d\n", ranks, my_rank);  
-  printf("COBO ranks: %d, Rank: %d\n", ranks, my_rank);  fflush(stdout);
 
   ldcs_process_data->server_stat.md_rank=ldcs_process_data->md_rank=my_rank;
   ldcs_process_data->server_stat.md_size=ldcs_process_data->md_size=ranks;
@@ -84,10 +86,10 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
     int ldcs_locmod=atoi(ldcs_locmodstr);
     if(ldcs_locmod>0) {
       char buffer[MAX_PATH_LEN];
-      debug_printf("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
+      debug_printf3("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
       if(strlen(ldcs_process_data->location)+10<MAX_PATH_LEN) {
 	sprintf(buffer,"%s-%02d",ldcs_process_data->location,my_rank%ldcs_locmod);
-	debug_printf("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
+	debug_printf3("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
 	free(ldcs_process_data->location);
 	ldcs_process_data->location=strdup(buffer);
       } else _error("location path too long");
@@ -106,7 +108,7 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
     cobo_get_parent_socket(&root_fd);
     
     ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
-    debug_printf("sent FE client signal that server are ready %d\n",ack);
+    debug_printf3("sent FE client signal that server are ready %d\n",ack);
 
   }
 
@@ -129,7 +131,7 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) 
   if(cobo_get_parent_socket(&parent_fd)!=COBO_SUCCESS) {
     _error("cobo internal error (parent socket)");
   }
-  debug_printf("got fd for cobo connection to parent %d and register it\n",parent_fd);
+  debug_printf3("got fd for cobo connection to parent %d and register it\n",parent_fd);
   if(ldcs_process_data->md_rank>0) {
     ldcs_listen_register_fd(parent_fd, 0, &_ldcs_audit_server_md_cobo_CB, (void *) ldcs_process_data);
   } else {
@@ -175,10 +177,10 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data ) {
     cobo_get_parent_socket(&root_fd);
     
     ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
-    debug_printf("sent FE client signal to stop %d\n",ack);
+    debug_printf3("sent FE client signal to stop %d\n",ack);
 
     ldcs_cobo_read_fd(root_fd, &ack, sizeof(ack));
-    debug_printf("read from FE client ack to signal to stop %d\n",ack);
+    debug_printf3("read from FE client ack to signal to stop %d\n",ack);
   } else {
 
     /* receive all other server signal to destroy */
@@ -188,7 +190,7 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data ) {
   }
   
   if (cobo_close() != COBO_SUCCESS) {
-    debug_printf("Failed to close\n");
+    debug_printf3("Failed to close\n");
     printf("Failed to close\n");
     exit(1);
   }
@@ -210,7 +212,7 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
     rc=0;
   }
 
-  debug_printf("responsible: fn=%s rank=%d  --> %s \n",filename, ldcs_process_data->md_rank, (rc)?"YES":"NO");
+  debug_printf3("responsible: fn=%s rank=%d  --> %s \n",filename, ldcs_process_data->md_rank, (rc)?"YES":"NO");
 
   return(rc);
 }
@@ -235,7 +237,6 @@ int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, l
   return(rc);
 }
 
-
 int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data ) {
   int rc=0;
   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data ;
@@ -252,7 +253,7 @@ int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data ) {
   switch(msg->header.type) {
   case LDCS_MSG_CACHE_ENTRIES:
     {
-      debug_printf("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
+      debug_printf3("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
 		   ldcs_process_data->md_rank,msg->header.len);
       /* printf("MDSERVER[%02d]: recvd NEW ENTRIES: \n", ldcs_process_data->md_rank); */
       
@@ -272,7 +273,7 @@ int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data ) {
       double starttime;
       int domangle;
 
-      debug_printf("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
+      debug_printf3("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
 		   ldcs_process_data->md_rank,msg->header.len);
       /* printf("MDSERVER[%02d]: recvd NEW ENTRIES: \n", ldcs_process_data->md_rank); */
       
@@ -299,9 +300,7 @@ int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data ) {
 
   case LDCS_MSG_END:
     {
-      debug_printf("MDSERVER[%02d]: END message received dont listen to parent from now\n",
-		   ldcs_process_data->md_rank,msg->header.len);
-      printf("MDSERVER[%02d]: END message received \n", ldcs_process_data->md_rank);
+      debug_printf3("MDSERVER[%02d]: END message received \n", ldcs_process_data->md_rank);
       
       ldcs_audit_server_md_unregister_fd ( ldcs_process_data );
       
@@ -310,10 +309,15 @@ int _ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data ) {
       _ldcs_client_process_clients_requests_after_end( ldcs_process_data );
     }
     break;
-    
+  case LDCS_MSG_EXIT: 
+  {
+     debug_printf3("Received exit broadcast from cobo.  Exiting\n");
+     ldcs_server_process_state(ldcs_process_data, msg, LDCS_STATE_CLIENT_RECV_EXIT_BCAST);
+     break;
+  }    
   default: ;
     {
-      debug_printf("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
+      debug_printf3("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
 		   ldcs_process_data->md_rank,
 		   _message_type_to_str(msg->header.type),
 		   msg->header.len, msg->data );
@@ -356,7 +360,7 @@ int _ldcs_audit_server_md_cobo_from_fe_CB ( int fd, int nc, void *data ) {
   switch(in_msg->header.type) {
   case LDCS_MSG_PRELOAD_FILE:
     {
-      debug_printf("MDSERVER[%02d]: new preload file name received %d (%s)\n",
+      debug_printf3("MDSERVER[%02d]: new preload file name received %d (%s)\n",
 		   ldcs_process_data->md_rank,in_msg->header.len, in_msg->data);
       
       rc=_ldcs_client_process_fe_preload_requests ( ldcs_process_data, in_msg->data );
@@ -371,10 +375,16 @@ int _ldcs_audit_server_md_cobo_from_fe_CB ( int fd, int nc, void *data ) {
 
     }
     break;
-     
+  case LDCS_MSG_EXIT: 
+  {
+     debug_printf3("Received exit broadcast from FE.  Exiting\n");
+     _ldcs_audit_server_md_cobo_bcast_down(in_msg);
+     ldcs_server_process_state(ldcs_process_data, in_msg, LDCS_STATE_CLIENT_RECV_EXIT_BCAST);
+     break;
+  }
   default: ;
     {
-      debug_printf("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
+      debug_printf3("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
 		   ldcs_process_data->md_rank,
 		   _message_type_to_str(in_msg->header.type),
 		   in_msg->header.len, in_msg->data );
@@ -404,28 +414,28 @@ int _ldcs_audit_server_md_cobo_bcast_msg ( ldcs_process_data_t *ldcs_process_dat
   
   rc=cobo_bcast(&msg->header,sizeof(msg->header),0);
   if(rc!=COBO_SUCCESS) {
-    debug_printf("MDSERVER[%02d]: got rc=%d from cobo_bcast (failed)\n", ldcs_process_data->md_rank, rc);
+    debug_printf3("MDSERVER[%02d]: got rc=%d from cobo_bcast (failed)\n", ldcs_process_data->md_rank, rc);
   }
-  debug_printf("MDSERVER[%02d]: got rc=%d from cobo_bcast msg.type=%s\n", ldcs_process_data->md_rank, rc,
+  debug_printf3("MDSERVER[%02d]: got rc=%d from cobo_bcast msg.type=%s\n", ldcs_process_data->md_rank, rc,
 	       _message_type_to_str(msg->header.type));
   
   if(msg->header.len>0) {
 
     if(ldcs_process_data->md_rank!=0) { 
       if(msg->header.len>msg->alloclen) {
-	debug_printf("MDSERVER[%02d]: alloc memory for message data: %d bytes\n", ldcs_process_data->md_rank, msg->header.len);
+	debug_printf3("MDSERVER[%02d]: alloc memory for message data: %d bytes\n", ldcs_process_data->md_rank, msg->header.len);
 	msg->data = (char *) malloc(msg->header.len);
 	msg->alloclen=msg->header.len;
 	if (!msg->data)  _error("could not allocate memory for message data");
       } else {
-	debug_printf("MDSERVER[%02d]: memory already allocated for message data: %d bytes alloc=%d bytes\n", ldcs_process_data->md_rank, msg->header.len,msg->alloclen);
+	debug_printf3("MDSERVER[%02d]: memory already allocated for message data: %d bytes alloc=%d bytes\n", ldcs_process_data->md_rank, msg->header.len,msg->alloclen);
       }
     } else {
-	debug_printf("MDSERVER[%02d]: root node no need to allocate memory for message data: %d bytes alloc=%d bytes\n", ldcs_process_data->md_rank, msg->header.len,msg->alloclen);
+	debug_printf3("MDSERVER[%02d]: root node no need to allocate memory for message data: %d bytes alloc=%d bytes\n", ldcs_process_data->md_rank, msg->header.len,msg->alloclen);
     }
     rc=cobo_bcast(msg->data,msg->header.len,0);
     if(rc!=COBO_SUCCESS) {
-      debug_printf("MDSERVER[%02d]: got rc=%d from cobo_bcast\n", ldcs_process_data->md_rank, rc);
+      debug_printf3("MDSERVER[%02d]: got rc=%d from cobo_bcast\n", ldcs_process_data->md_rank, rc);
     }
   } else {
     msg->data=NULL;
@@ -439,17 +449,44 @@ int _ldcs_audit_server_md_cobo_bcast_msg ( ldcs_process_data_t *ldcs_process_dat
   return(rc);
 }
 
+int _ldcs_audit_server_md_cobo_bcast_down(ldcs_message_t *msg) 
+{
+   int result;
+
+   debug_printf3("Broadcasting down message of type: %s len=%d data=%s\n",
+                 _message_type_to_str(msg->header.type),
+                 msg->header.len,
+                 msg->data ? "NULL" : msg->data);
+
+   result = ldcs_cobo_bcast_down(&msg->header, sizeof(msg->header));
+   if (result < 0) {
+      err_printf("Error writing to cobo\n");
+      return -1;
+   }
+
+   if (msg->header.len == 0)
+      return 0;
+
+   result = ldcs_cobo_bcast_down(msg->data, msg->header.len);
+   if (result < 0) {
+      err_printf("Error writing to cobo\n");
+      return -1;
+   }
+
+   return 0;
+}
+
 int _ldcs_audit_server_md_cobo_send_msg(int fd, ldcs_message_t * msg) {
 
   int n;
 
-  debug_printf("MDSERVER: sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("MDSERVER: sending message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,msg->data );  
   
   n = ldcs_cobo_write_fd(fd, &msg->header,sizeof(msg->header));
   if (n < 0) _error("ERROR writing header to pipe");
-  debug_printf("MDSERVER: got rc=%d from ldcs_cobo_write_fd msg.type=%s\n", n,
+  debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_write_fd msg.type=%s\n", n,
 	       _message_type_to_str(msg->header.type));
 
   if(msg->header.len>0) {
@@ -457,7 +494,7 @@ int _ldcs_audit_server_md_cobo_send_msg(int fd, ldcs_message_t * msg) {
     if (n < 0) _error("ERROR writing data to pipe");
     if (n != msg->header.len) _error("sent different number of bytes for message data");
   }
-  debug_printf("MDSERVER: got rc=%d from ldcs_cobo_write_fd msg.type=%s\n", n,
+  debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_write_fd msg.type=%s\n", n,
 	       _message_type_to_str(msg->header.type));
     
   return(0);
@@ -468,27 +505,27 @@ int _ldcs_audit_server_md_cobo_recv_msg ( int fd, ldcs_message_t *msg ) {
   
   rc=ldcs_cobo_read_fd(fd, &msg->header,sizeof(msg->header));
   if(rc!=sizeof(msg->header)) {
-    debug_printf("MDSERVER: got rc=%d from ldcs_cobo_read_fd (failed)\n", rc);
+    debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_read_fd (failed)\n", rc);
   }
-  debug_printf("MDSERVER: got rc=%d from ldcs_cobo_read_fd msg.type=%s\n", rc,
+  debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_read_fd msg.type=%s\n", rc,
 	       _message_type_to_str(msg->header.type));
   
   if(msg->header.len>0) {
 
     if(msg->header.len>msg->alloclen) {
-      debug_printf("MDSERVER: alloc memory for message data: %d bytes\n", msg->header.len);
+      debug_printf3("MDSERVER: alloc memory for message data: %d bytes\n", msg->header.len);
       msg->data = (char *) malloc(msg->header.len);
       msg->alloclen=msg->header.len;
       if (!msg->data)  _error("could not allocate memory for message data");
     } else {
-      debug_printf("MDSERVER: memory already allocated for message data: %d bytes alloc=%d bytes\n", msg->header.len,msg->alloclen);
+      debug_printf3("MDSERVER: memory already allocated for message data: %d bytes alloc=%d bytes\n", msg->header.len,msg->alloclen);
     }
     
     rc=ldcs_cobo_read_fd(fd, msg->data, msg->header.len);
     if(rc!=msg->header.len) {
-      debug_printf("MDSERVER: got rc=%d from ldcs_cobo_read_fd (failed)\n", rc);
+      debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_read_fd (failed)\n", rc);
     } else {
-      debug_printf("MDSERVER: got rc=%d from ldcs_cobo_read_fd msg.type=%s\n", rc,
+      debug_printf3("MDSERVER: got rc=%d from ldcs_cobo_read_fd msg.type=%s\n", rc,
 		   _message_type_to_str(msg->header.type));
     }
 
@@ -518,7 +555,6 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, void **data  )
   cobo_server_get_root_socket(&root_fd);
   
   ldcs_cobo_read_fd(root_fd, &ack, sizeof(ack));
-  printf("server_rsh_ldcs: got ack=%d from tree root\n",ack);
 
   return(rc);
 }
@@ -534,7 +570,7 @@ int ldcs_audit_server_fe_md_preload ( char *filename, void *data  ) {
   ldcs_message_t *in_msg=ldcs_msg_new();
   int root_fd;
   
-  fprintf(stderr,"SERVERFE: open file for list of library for preload: '%s'\n",filename); 
+  debug_printf2("SERVERFE: open file for list of library for preload: '%s'\n",filename); 
   fp = fopen(filename, "r");   if (fp == NULL)  perror("could not open preload file");
 
   out_msg.header.type=LDCS_MSG_PRELOAD_FILE;
@@ -547,25 +583,25 @@ int ldcs_audit_server_fe_md_preload ( char *filename, void *data  ) {
     if( (p=strchr(line,' ')) ) *p='\0';
     strcpy(buffer,line);
 
-    fprintf(stderr,"SERVERFE: found library for preload: '%s'\n",line); 
+    debug_printf3("SERVERFE: found library for preload: '%s'\n",line); 
     if( buffer[0]=='#') continue;
 
     if ( strlen(buffer)==0 ) {
-      fprintf(stderr,"SERVERFE: unknown line: '%s'\n",buffer);
+      err_printf("SERVERFE: unknown line: '%s'\n",buffer);
       continue;
     }
     out_msg.header.len=strlen(buffer)+1;
     
     _ldcs_audit_server_md_cobo_send_msg(root_fd, &out_msg);
     
-    fprintf(stderr, "SERVERFE: sent preload msg(%s)  to tree root\n",out_msg.data);
+    debug_printf2("SERVERFE: sent preload msg(%s)  to tree root\n",out_msg.data);
 
     /* receive msg from root node */
     _ldcs_audit_server_md_cobo_recv_msg ( root_fd, in_msg );
     if(in_msg->header.type==LDCS_MSG_PRELOAD_FILE_OK) {
-      fprintf(stderr, "SERVERFE:   --> successful\n");
+       debug_printf3("SERVERFE:   --> successful\n");
     } else {
-      fprintf(stderr, "SERVERFE:   --> not successful\n");
+       debug_printf3("SERVERFE:   --> not successful\n");
     }
 
   }
@@ -576,5 +612,17 @@ int ldcs_audit_server_fe_md_preload ( char *filename, void *data  ) {
 }
 
 int ldcs_audit_server_fe_md_close ( void *data  ) {
-  return cobo_server_close();
+  
+   ldcs_message_t out_msg;
+   int root_fd;
+
+   debug_printf("Sending exit message to daemons");
+   out_msg.header.type = LDCS_MSG_EXIT;
+   out_msg.alloclen = 0;
+   out_msg.data = NULL;
+
+   cobo_server_get_root_socket(&root_fd);
+   _ldcs_audit_server_md_cobo_send_msg(root_fd, &out_msg);
+         
+   return cobo_server_close();
 }

@@ -37,6 +37,7 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
 	 (type == LDCS_MSG_PRELOAD_FILE)      ? "LDCS_MSG_PRELOAD_FILE" :
 	 (type == LDCS_MSG_PRELOAD_FILE_OK)      ? "LDCS_MSG_PRELOAD_FILE_OK" :
 	 (type == LDCS_MSG_PRELOAD_FILE_NOT_FOUND)      ? "LDCS_MSG_PRELOAD_FILE_NOT_FOUND" :
+    (type == LDCS_MSG_EXIT)              ? "LDCS_MSG_EXIT" :
 	 (type == LDCS_MSG_UNKNOWN)           ? "LDCS_MSG_UNKNOWN" :
 	 "???");
 }
@@ -137,7 +138,7 @@ int ldcs_dump_memmaps(int pid) {
   fp = fopen(filename, "r");   if (fp == NULL)  perror("could not open proc maps file");
   
   while( (read = getline(&line, &len, fp)) >= 0) {
-    debug_printf("%s: %s",filename,line);
+    debug_printf3("%s: %s",filename,line);
     printf("%s: %s",filename,line);
   }
   fclose(fp);

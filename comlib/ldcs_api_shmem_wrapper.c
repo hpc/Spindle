@@ -17,6 +17,14 @@ int ldcs_open_connection(char* location, int number) {
   return(ldcs_open_connection_shmem(location,number));
 }
 
+char *ldcs_get_connection_string(int fd) {
+   return ldcs_get_connection_string_shmem(fd);
+}
+
+int ldcs_register_connection(char *connection_str) {
+   return ldcs_register_connection_shmem(connection_str);
+}
+
 int ldcs_close_connection(int fd) {
   return(ldcs_close_connection_shmem(fd));
 }

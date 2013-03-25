@@ -159,7 +159,7 @@ int ldcs_audit_server_md_msocket_dump_bootstrap(ldcs_msocket_bootstrap_t *bootst
   int rc=0;
   int i;
   for (i=0; i < bootstrap->size; i++) {
-    debug_printf("DUMP bootstrap: %2d -> %2d (%s,%d)\n",
+    debug_printf3("DUMP bootstrap: %2d -> %2d (%s,%d)\n",
 		 bootstrap->fromlist[i],bootstrap->tolist[i],
 		 bootstrap->tohostlist[i],bootstrap->toportlist[i]);
   }
@@ -243,7 +243,7 @@ int ldcs_audit_server_md_msocket_deserialize_bootstrap(char *data, int datasize,
   o=0;
   size=((int*)data)[o];  o++;
 
-  debug_printf("deserialize: size = %d\n",size);
+  debug_printf3("deserialize: size = %d\n",size);
   
   /* check again i we have some entries */
   if (size <= 0) {
@@ -258,17 +258,17 @@ int ldcs_audit_server_md_msocket_deserialize_bootstrap(char *data, int datasize,
 
   for (i=0; i < bootstrap->size; i++) {
     bootstrap->fromlist[i]=((int*)data)[o]; o++;
-    debug_printf("deserialize: from[%d] = %d\n",i,bootstrap->fromlist[i]);
+    debug_printf3("deserialize: from[%d] = %d\n",i,bootstrap->fromlist[i]);
   }
 
   for (i=0; i < bootstrap->size; i++) {
     bootstrap->tolist[i]=((int*)data)[o]; o++;
-    debug_printf("deserialize: to[%d] = %d\n",i,bootstrap->tolist[i]);
+    debug_printf3("deserialize: to[%d] = %d\n",i,bootstrap->tolist[i]);
   }
 
   for (i=0; i < bootstrap->size; i++) {
     bootstrap->toportlist[i]=((int*)data)[o]; o++;
-    debug_printf("deserialize: toport[%d] = %d\n",i,bootstrap->toportlist[i]);
+    debug_printf3("deserialize: toport[%d] = %d\n",i,bootstrap->toportlist[i]);
   }
 
   /* copy the strings in and fill in the offsets */
@@ -276,7 +276,7 @@ int ldcs_audit_server_md_msocket_deserialize_bootstrap(char *data, int datasize,
   for (i=0; i < bootstrap->size; i++) {
     offset=((int*)data)[o+i];
     bootstrap->tohostlist[i]=strdup((char*)(data + offset));
-    debug_printf("deserialize: tohost[%d] = %s\n",i,bootstrap->tohostlist[i]);
+    debug_printf3("deserialize: tohost[%d] = %s\n",i,bootstrap->tohostlist[i]);
   }
 
   ldcs_audit_server_md_msocket_dump_bootstrap(bootstrap);

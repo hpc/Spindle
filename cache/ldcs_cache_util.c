@@ -34,13 +34,13 @@ int parseFilename(const char *name, const char *remote_cwd, char **filename, cha
   int rc=0;
   char *lfn, *ldir, *lndir;
   breakUpFilename(name, &lfn, &ldir);
-  debug_printf("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
+  debug_printf3("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
   if (!ldir) {
     *dirname  = ldir;
     *filename = lfn;
   } else {
     addCWDtoPath(ldir,remote_cwd,&lndir);
-    debug_printf(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", ldir,remote_cwd, lndir);
+    debug_printf3(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", ldir,remote_cwd, lndir);
     *dirname  = lndir;
     *filename = lfn;
     free(ldir);
@@ -53,14 +53,14 @@ int parseFilenameExact(const char *name, const char *remote_cwd, char **filename
   int rc=0;
   char *lfn, *ldir, *lndir;
   breakUpFilename(name, &lfn, &ldir);
-  debug_printf("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
+  debug_printf3("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
   if (!ldir) {
     addCWDtoPath("",remote_cwd,&lndir);
     *dirname  = lndir;
     *filename = lfn;
   }  else {
     addCWDtoPath(ldir,remote_cwd,&lndir);
-    debug_printf(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", dirname,remote_cwd, lndir);
+    debug_printf3(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", *dirname,remote_cwd, lndir);
     *dirname  = lndir;
     *filename = lfn;
     free(ldir);
@@ -96,10 +96,10 @@ void breakUpFilename(const char *name, char **filename, char **dirname) {
   char *last_slash = strrchr(name, '/');
 
    if (last_slash) {
-     debug_printf(" before breakUpFilename name='%s'\n", name);
+     debug_printf3(" before breakUpFilename name='%s'\n", name);
      *dirname = concatStrings(name, last_slash-name+1, NULL, 0);
      *filename = strdup(last_slash+1);
-     debug_printf(" after breakUpFilename name='%s' dirname='%s' filename='%s'\n", name, *dirname,*filename);
+     debug_printf3(" after breakUpFilename name='%s' dirname='%s' filename='%s'\n", name, *dirname,*filename);
 
    }
    else {

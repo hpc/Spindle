@@ -97,16 +97,16 @@ int ldcs_open_connection_socket(char* hostname, int portno) {
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) _error("ERROR opening socket");
 
-  debug_printf("after socket: -> sockfd=%d\n",sockfd);
+  debug_printf3("after socket: -> sockfd=%d\n",sockfd);
 
   server = gethostbyname(hostname);
-  debug_printf("after gethostbyname: -> server=%x\n",server);
+  debug_printf3("after gethostbyname: -> server=%p\n",server);
   if (server == NULL) {
     fprintf(stderr,"ERROR, no such host\n");
     exit(0);
   }
 
-  debug_printf("after gethostbyname: -> hostname=%s\n",server->h_name);
+  debug_printf3("after gethostbyname: -> hostname=%s\n",server->h_name);
 
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
@@ -114,7 +114,7 @@ int ldcs_open_connection_socket(char* hostname, int portno) {
 	(char *)&serv_addr.sin_addr.s_addr,
 	server->h_length);
   serv_addr.sin_port = htons(portno);
-  debug_printf("after port: -> port=%d\n",portno);
+  debug_printf3("after port: -> port=%d\n",portno);
 
   ldcs_socket_fdlist[fd].fd=sockfd;
 
@@ -123,10 +123,40 @@ int ldcs_open_connection_socket(char* hostname, int portno) {
     return(-1);
  }
   
- debug_printf("after connect: -> port=%d\n",portno);
+ debug_printf3("after connect: -> port=%d\n",portno);
  
  return(fd);
   
+}
+
+char *ldcs_get_connection_string_socket(int fd)
+{
+   int sockfd = ldcs_socket_fdlist[fd].fd;
+
+   int slen = 64;
+   char *str = (char *) malloc(slen);
+   if (!str)
+      return NULL;
+   snprintf(str, slen, "%d", sockfd);
+   return str;
+}
+
+int ldcs_register_connection_socket(char *connection_str)
+{
+   int sockfd, result;
+   
+   result = sscanf(connection_str, "%d", &sockfd);
+   if (result != 1)
+      return -1;
+
+   int fd = get_new_fd_socket();
+   if (fd < 0)
+      return -1;
+
+   ldcs_socket_fdlist[fd].type = LDCS_SOCKET_FD_TYPE_CONN;
+   ldcs_socket_fdlist[fd].fd = sockfd;
+
+   return fd;
 }
 
 int ldcs_close_connection_socket(int fd) {
@@ -159,7 +189,7 @@ int ldcs_create_server_socket(char* location, int number) {
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)  _error("ERROR opening socket");
   
-  debug_printf("after socket: -> sockfd=%d\n",sockfd);
+  debug_printf3("after socket: -> sockfd=%d\n",sockfd);
   
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family      = AF_INET;
@@ -167,15 +197,15 @@ int ldcs_create_server_socket(char* location, int number) {
   serv_addr.sin_port        = htons(number);
   if (bind(sockfd, (struct sockaddr *) &serv_addr,
 	   sizeof(serv_addr)) < 0)  {
-    debug_printf("after bind: -> could not bind %d \n",number);
+    debug_printf3("after bind: -> could not bind %d \n",number);
     return(-1);
   }
   
-  debug_printf("after bind: -> sockfd=%d\n",sockfd);
+  debug_printf3("after bind: -> sockfd=%d\n",sockfd);
 
   listen(sockfd,5);
   
-  debug_printf("after listen: -> sockfd=%d\n",sockfd);
+  debug_printf3("after listen: -> sockfd=%d\n",sockfd);
 
   ldcs_socket_fdlist[fd].type=LDCS_SOCKET_FD_TYPE_SERVER;
   ldcs_socket_fdlist[fd].server_fd=sockfd;
@@ -200,7 +230,7 @@ int ldcs_open_server_connection_socket(int fd) {
 		     (struct sockaddr *) &cli_addr, 
 		     &clilen);
   if (newsockfd < 0) _error("ERROR on accept");
-  debug_printf("after accept: -> serverfd=%d newsockfd=%d\n",serverfd,newsockfd);
+  debug_printf3("after accept: -> serverfd=%d newsockfd=%d\n",serverfd,newsockfd);
   
   /* add info to server fd data structure */
   connfd=get_new_fd_socket();
@@ -257,7 +287,7 @@ int ldcs_send_msg_socket(int fd, ldcs_message_t * msg) {
   connfd=ldcs_socket_fdlist[fd].fd;
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 
@@ -305,7 +335,7 @@ ldcs_message_t * ldcs_recv_msg_socket(int fd,  ldcs_read_block_t block) {
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
   
@@ -344,7 +374,7 @@ int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t 
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
   
@@ -367,14 +397,14 @@ int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
     bread      = read(fd, dataptr, btoread);
     if(bread<0) {
       if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf("read from socket: got EAGAIN or EWOULDBLOCK\n");
+	debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
 	if(block==LDCS_READ_NO_BLOCK) return(0);
 	else continue;
       } else { 
-	debug_printf("read from socket: %d bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+         debug_printf3("read from socket: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
       }
     } else {
-      debug_printf("read from socket: %d bytes ...\n",bread);
+      debug_printf3("read from socket: %ld bytes ...\n",bread);
     }
 
     if(bread>0) {

@@ -8,6 +8,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
+                 logging/Makefile
                  tools/sion_debug/Makefile
                  comlib/Makefile
                  auditclient/Makefile

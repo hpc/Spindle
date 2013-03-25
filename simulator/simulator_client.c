@@ -47,15 +47,15 @@ int simulator_client ( MPI_Comm mycomm,
 
   if(locmod>0) {
     char buffer[MAX_PATH_LEN];
-    debug_printf("multiple server per node add modifier to location mod=%d\n",locmod);
+    debug_printf3("multiple server per node add modifier to location mod=%d\n",locmod);
     if(strlen(location)+10<MAX_PATH_LEN) {
       sprintf(buffer,"%s-%02d",location,rank%locmod);
-      debug_printf("change location to %s (locmod=%d)\n",buffer,locmod);
-      debug_printf("open connection to ldcs %s %d\n",buffer,number);
+      debug_printf3("change location to %s (locmod=%d)\n",buffer,locmod);
+      debug_printf3("open connection to ldcs %s %d\n",buffer,number);
       ldcsid=ldcs_open_connection(buffer,number);
     } else _error("location path too long");
   } else {
-    debug_printf("open connection to ldcs %s %d\n",location,number);
+    debug_printf3("open connection to ldcs %s %d\n",location,number);
     ldcsid=ldcs_open_connection(location,number);
   }
   if(ldcsid==-1) {

@@ -19,7 +19,7 @@ int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
   int rc=0;
   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data ;
 
-  debug_printf("check exit condition open_conn=%d clients_connected=%d \n",
+  debug_printf3("check exit condition open_conn=%d clients_connected=%d \n",
 	       ldcs_process_data->client_table_used,
 	       ldcs_process_data->clients_connected);
   if(ldcs_process_data->client_table_used>1) {
@@ -75,9 +75,9 @@ int ldcs_audit_server_process (char *location, int number,
   _ldcs_server_stat_init(&ldcs_process_data.server_stat);
 
   /* init md support (multi-daemon) */
-  debug_printf("start md_init\n");
+  debug_printf3("start md_init\n");
   ldcs_audit_server_md_init(&ldcs_process_data);
-  debug_printf("finished md_init\n");
+  debug_printf3("finished md_init\n");
 
   ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
 
@@ -92,7 +92,7 @@ int ldcs_audit_server_process (char *location, int number,
    ldcs_audit_server_filemngt_init(ldcs_process_data.location);
 
    /* start server */
-   debug_printf("create server (%s,%d)\n",ldcs_process_data.location,ldcs_process_data.number);
+   debug_printf3("create server (%s,%d)\n",ldcs_process_data.location,ldcs_process_data.number);
    serverid = ldcs_create_server(ldcs_process_data.location,ldcs_process_data.number);
    if(serverid<0)  _error("in starting server");
    ldcs_process_data.serverid=serverid;
@@ -112,17 +112,17 @@ int ldcs_audit_server_process (char *location, int number,
      }
    }
 
-   debug_printf("init now cache\n");
+   debug_printf3("init now cache\n");
    ldcs_cache_init();
 
-   debug_printf("calling ready function\n");
+   debug_printf3("calling ready function\n");
    ready_cb_func(ready_cb_data);
 
 
    /* start loop */
-   debug_printf("start listening\n");
+   debug_printf3("start listening\n");
    ldcs_listen();
-   debug_printf("ending listening\n");
+   debug_printf3("ending listening\n");
 
    ldcs_process_data.server_stat.listen_time=(ldcs_get_time()-ldcs_process_data.server_stat.starttime);
    ldcs_process_data.server_stat.select_time=
@@ -141,7 +141,7 @@ int ldcs_audit_server_process (char *location, int number,
      ldcs_cache_dump(buffer);
    }
 
-   debug_printf("destroy server (%s,%d)\n",location,number);
+   debug_printf3("destroy server (%s,%d)\n",location,number);
    ldcs_destroy_server(serverid);
 
    /* destroy md support (multi-daemon) */
@@ -183,7 +183,7 @@ int ldcs_audit_server_process (char *location, int number,
  /* Statistic functions */
  int _ldcs_server_stat_print ( ldcs_server_stat_t *server_stat ) {
    int rc=0;
-   fprintf(stderr,"SERVER[%02d] STAT: #conn=%2d md_size=%2d md_fan_out=%2d listen_time=%8.4f select_time=%8.4f ts_first_connect=%16.6f hostname=%s\n",
+   debug_printf("SERVER[%02d] STAT: #conn=%2d md_size=%2d md_fan_out=%2d listen_time=%8.4f select_time=%8.4f ts_first_connect=%16.6f hostname=%s\n",
 	   server_stat->md_rank, 
 	   server_stat->num_connections,	
 	   server_stat->md_size,
@@ -195,67 +195,67 @@ int ldcs_audit_server_process (char *location, int number,
 
 #define MYFORMAT "SERVER[%02d] STAT:  %-10s, #cnt=%5d, bytes=%8.2f MB, time=%8.4f sec\n"
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libread",
 	  server_stat->libread.cnt,
 	  server_stat->libread.bytes/1024.0/1024.0,
 	  server_stat->libread.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libstore",
 	  server_stat->libstore.cnt,
 	  server_stat->libstore.bytes/1024.0/1024.0,
 	  server_stat->libstore.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libdist",
 	  server_stat->libdist.cnt,
 	  server_stat->libdist.bytes/1024.0/1024.0,
 	  server_stat->libdist.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"procdir",
 	  server_stat->procdir.cnt,
 	  server_stat->procdir.bytes/1024.0/1024.0,
 	  server_stat->procdir.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"distdir",
 	  server_stat->distdir.cnt,
 	  server_stat->distdir.bytes/1024.0/1024.0,
 	  server_stat->distdir.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"client_cb",
 	  server_stat->client_cb.cnt,
 	  server_stat->client_cb.bytes/1024.0/1024.0,
 	  server_stat->client_cb.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"server_cb",
 	  server_stat->server_cb.cnt,
 	  server_stat->server_cb.bytes/1024.0/1024.0,
 	  server_stat->server_cb.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"md_cb",
 	  server_stat->md_cb.cnt,
 	  server_stat->md_cb.bytes/1024.0/1024.0,
 	  server_stat->md_cb.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"cl_msg_avg",
 	  server_stat->clientmsg.cnt/((server_stat->num_connections>0)?server_stat->num_connections:1),
 	  server_stat->clientmsg.bytes/1024.0/1024.0,
 	  server_stat->clientmsg.time/((server_stat->num_connections>0)?server_stat->num_connections:1) );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"bcast",
 	  server_stat->bcast.cnt,
 	  server_stat->bcast.bytes/1024.0/1024.0,
 	  server_stat->bcast.time );
 
-  fprintf(stderr,MYFORMAT,
+  debug_printf(MYFORMAT,
 	  server_stat->md_rank,"preload_cb",
 	  server_stat->preload.cnt,
 	  server_stat->preload.bytes/1024.0/1024.0,

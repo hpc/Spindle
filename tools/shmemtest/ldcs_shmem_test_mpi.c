@@ -47,10 +47,10 @@ int main(int argc, char *argv[])
 
   if(locmodstr>0) {
     int locmod=atoi(locmodstr);
-    debug_printf("multiple server per node add modifier to location mod=%d\n",locmod);
+    debug_printf3("multiple server per node add modifier to location mod=%d\n",locmod);
     if(strlen(location)+10<MAX_PATH_LEN) {
       sprintf(mylocation,"%s-%02d",location,rank%locmod);
-      debug_printf("change location to %s (locmod=%d)\n",mylocation,locmod);
+      debug_printf3("change location to %s (locmod=%d)\n",mylocation,locmod);
     } else error("location path too long");
   } else {
     strncpy(mylocation,location,MAX_PATH_LEN);

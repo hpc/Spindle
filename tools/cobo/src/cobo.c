@@ -15,9 +15,9 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <poll.h>
-#include "ldcs_cobo.h"
 
-#define COBO_DEBUG_LEVELS (3)
+#include "ldcs_cobo.h"
+#include "spindle_debug.h"
 
 /* Reads environment variable, bails if not set */
 #define ENV_REQUIRED (0)
@@ -82,9 +82,6 @@ static int* cobo_ports     = NULL;
 static int   cobo_hostlist_size = 0;
 static void* cobo_hostlist      = NULL;
 
-/* debug level */
-static int cobo_echo_debug = 0;
-
 /* tree data structures */
 static int  cobo_parent     = -3;    /* rank of parent */
 static int  cobo_parent_fd  = -1;    /* socket to parent */
@@ -113,93 +110,6 @@ static struct timeval tree_start, tree_end;
 #include "sion_debug.h"
 #endif
 
-/* print message to stderr */
-#if defined(SIONDEBUG) 
-#define cobo_error(format, ...)		\
-  do { \
-    sion_dprintfp(32, __FILE__, getpid(), "[L%04u, %12.2f] [COBO ERROR] - " format "\n", __LINE__,_sion_get_time(), ## __VA_ARGS__); \
-  } while (0);								\
-  _cobo_error(format, ## __VA_ARGS__) ;
-
-static void _cobo_error(char *fmt, ...)
-#else
-static void cobo_error(char *fmt, ...)
-#endif
-{
-    va_list argp;
-    char hostname[256];
-    gethostname(hostname, 256);
-    fprintf(stderr, "COBO ERROR: ");
-    if (cobo_me >= 0) {
-        fprintf(stderr, "rank %d on %s: ", cobo_me, hostname);
-    } else if (cobo_me == -2) {
-        fprintf(stderr, "server on %s: ", hostname);
-    } else if (cobo_me == -1) {
-        fprintf(stderr, "unitialized client task on %s: ", hostname);
-    } else {
-        fprintf(stderr, "unitialized task (server or client) on %s: ", hostname);
-    }
-    va_start(argp, fmt);
-    vfprintf(stderr, fmt, argp);
-    va_end(argp);
-    fprintf(stderr, "\n");
-}
-
-#ifdef __COBO_CURRENTLY_NOT_USED
-/* print message to stderr */
-static void cobo_warn(char *fmt, ...)
-{
-    va_list argp;
-    char hostname[256];
-    gethostname(hostname, 256);
-    fprintf(stderr, "COBO WARNING: ");
-    if (cobo_me >= 0) {
-        fprintf(stderr, "rank %d on %s: ", cobo_me, hostname);
-    } else if (cobo_me == -2) {
-        fprintf(stderr, "server on %s: ", hostname);
-    } else if (cobo_me == -1) {
-        fprintf(stderr, "unitialized client task on %s: ", hostname);
-    } else {
-        fprintf(stderr, "unitialized task (server or client) on %s: ", hostname);
-    }
-    va_start(argp, fmt);
-    vfprintf(stderr, fmt, argp);
-    va_end(argp);
-    fprintf(stderr, "\n");
-}
-#endif
-
-#if defined(SIONDEBUG) 
-#define cobo_debug(level, format, ...)		\
-  do { \
-    sion_dprintfp(32, __FILE__, getpid(), "[L%04u, %12.2f] [COBO L%d] - " format "\n", __LINE__,_sion_get_time(), level, ## __VA_ARGS__); \
-  } while (0)
-#else
-/* print message to stderr */
-static void cobo_debug(int level, char *fmt, ...)
-{
-    va_list argp;
-    char hostname[256];
-    gethostname(hostname, 256);
-    if (cobo_echo_debug > 0 && cobo_echo_debug >= level) {
-        fprintf(stderr, "COBO DEBUG: ");
-        if (cobo_me >= 0) {
-            fprintf(stderr, "rank %d on %s: ", cobo_me, hostname);
-        } else if (cobo_me == -2) {
-            fprintf(stderr, "server on %s: ", hostname);
-        } else if (cobo_me == -1) {
-            fprintf(stderr, "unitialized client task on %s: ", hostname);
-        } else {
-            fprintf(stderr, "unitialized task (server or client) on %s: ", hostname);
-        }
-        va_start(argp, fmt);
-        vfprintf(stderr, fmt, argp);
-        va_end(argp);
-        fprintf(stderr, "\n");
-    }
-}
-#endif
-
 /* Return the number of secs as a double between two timeval structs (tv2-tv1) */
 static double cobo_getsecs(struct timeval* tv2, struct timeval* tv1)
 {
@@ -212,7 +122,7 @@ static double cobo_getsecs(struct timeval* tv2, struct timeval* tv1)
 static void cobo_gettimeofday(struct timeval* tv)
 {
     if (gettimeofday(tv, NULL) < 0) {
-        cobo_error("Getting time (gettimeofday() %m errno=%d)", errno);
+        err_printf("Getting time (gettimeofday() %m errno=%d)\n", errno);
     }
 }
 
@@ -221,7 +131,7 @@ static char* cobo_getenv(char* envvar, int type)
 {
     char* str = getenv(envvar);
     if (str == NULL && type == ENV_REQUIRED) {
-        cobo_error("Missing required environment variable: %s", envvar);
+        err_printf("Missing required environment variable: %s\n", envvar);
         exit(1);
     }
     return str;
@@ -232,7 +142,7 @@ static void* cobo_malloc(size_t n, char* msg)
 {
     void* p = malloc(n);
     if (!p) {
-        cobo_error("Call to malloc(%lu) failed: %s (%m errno %d)", n, msg, errno);
+        err_printf("Call to malloc(%lu) failed: %s (%m errno %d)\n", n, msg, errno);
         exit(1);
     }
     return p;
@@ -249,7 +159,7 @@ static int _cobo_opt_socket(int sockfd)  {
 			  (char *) &flag,  /* the cast is historical
 					      cruft */
 			  sizeof(int));    /* length of option value */
-  cobo_debug(2, "_cobo_opt_socket (sockfd=%d) flag=%d",sockfd, flag);
+  debug_printf3("_cobo_opt_socket (sockfd=%d) flag=%d\n",sockfd, flag);
 #ifdef CHANGENNODELAY
   flag=0;
   result = setsockopt(sockfd,            /* socket affected */
@@ -290,37 +200,32 @@ static int cobo_write_fd_w_suppress(int fd, void* buf, int size, int suppress)
     char* offset = (char*) buf;
 
     while (n < size) {
-	cobo_debug(1, "start to write(fd=%d,offset=%x,size=%d) @ file %s:%d",
-		   fd, offset, size-n, __FILE__, __LINE__
-		   );
+       debug_printf3("start to write(fd=%d,offset=%p,size=%d)\n",
+		   fd, offset, size-n
+		);
 
 	rc = write(fd, offset, size - n);
 
-	cobo_debug(1, "after write(fd=%d,offset=%x,size=%d) rc=%d @ file %s:%d",
-		   fd, offset, size-n, rc, __FILE__, __LINE__
-		   );
+	debug_printf3("after write(fd=%d,offset=%p,size=%d) rc=%d\n",
+                 fd, offset, size-n, rc);
 
 	if (rc < 0) {
 	    if(errno == EINTR || errno == EAGAIN) { continue; }
             if (!suppress) {
-                cobo_error("Writing to file descriptor (write(fd=%d,offset=%x,size=%d) %m errno=%d %s) @ file %s:%d",
-                           fd, offset, size-n, errno, strerror(errno), __FILE__, __LINE__
-                );
+                err_printf("Writing to file descriptor (write(fd=%d,offset=%p,size=%d) %m errno=%d %s)\n",
+                           fd, offset, size-n, errno, strerror(errno));
             } else {
-                cobo_debug(1, "Writing to file descriptor (write(fd=%d,offset=%x,size=%d) %m errno=%d) @ file %s:%d",
-                           fd, offset, size-n, errno, __FILE__, __LINE__
-                );
+                debug_printf3("Writing to file descriptor (write(fd=%d,offset=%p,size=%d) %m errno=%d)\n",
+                           fd, offset, size-n, errno);
             }
 	    return rc;
 	} else if(rc == 0) {
             if (!suppress) {
-                cobo_error("Unexpected return code of 0 from write to file descriptor (write(fd=%d,offset=%x,size=%d)) @ file %s:%d",
-                           fd, offset, size-n, __FILE__, __LINE__
-                );
+                err_printf("Unexpected return code of 0 from write to file descriptor (write(fd=%d,offset=%p,size=%d))\n",
+                           fd, offset, size-n);
             } else {
-                cobo_debug(1, "Unexpected return code of 0 from write to file descriptor (write(fd=%d,offset=%x,size=%d)) @ file %s:%d",
-                           fd, offset, size-n, __FILE__, __LINE__
-                );
+                err_printf("Unexpected return code of 0 from write to file descriptor (write(fd=%d,offset=%p,size=%d))\n",
+                           fd, offset, size-n);
             }
 	    return -1;
 	}
@@ -354,9 +259,8 @@ static int cobo_read_fd_w_timeout(int fd, void* buf, int size, int usecs)
         /* poll the connection with a timeout value */
         int poll_rc = poll(&fds, 1, usecs);
         if (poll_rc < 0) {
-            cobo_error("Polling file descriptor for read (read(fd=%d,offset=%x,size=%d) %m errno=%d) @ file %s:%d",
-                       fd, offset, size-n, errno, __FILE__, __LINE__
-            );
+            err_printf("Polling file descriptor for read (read(fd=%d,offset=%p,size=%d) %m errno=%d)\n",
+                       fd, offset, size-n, errno);
             return -1;
         } else if (poll_rc == 0) {
             return -1;
@@ -364,52 +268,44 @@ static int cobo_read_fd_w_timeout(int fd, void* buf, int size, int usecs)
 
         /* check the revents field for errors */
         if (fds.revents & POLLHUP) {
-            cobo_debug(1, "Hang up error on poll for read(fd=%d,offset=%x,size=%d) @ file %s:%d",
-                       fd, offset, size-n, __FILE__, __LINE__
-            );
+            debug_printf3("Hang up error on poll for read(fd=%d,offset=%p,size=%d)\n",
+                       fd, offset, size-n);
             return -1;
         }
 
         if (fds.revents & POLLERR) {
-            cobo_debug(1, "Error on poll for read(fd=%d,offset=%x,size=%d) @ file %s:%d",
-                       fd, offset, size-n, __FILE__, __LINE__
-            );
+            debug_printf3("Error on poll for read(fd=%d,offset=%p,size=%d)\n",
+                       fd, offset, size-n);
             return -1;
         }
 
         if (fds.revents & POLLNVAL) {
-            cobo_error("Invalid request on poll for read(fd=%d,offset=%x,size=%d) @ file %s:%d",
-                       fd, offset, size-n, __FILE__, __LINE__
-            );
+            err_printf("Invalid request on poll for read(fd=%d,offset=%p,size=%d)\n",
+                       fd, offset, size-n);
             return -1;
         }
 
         if (!(fds.revents & POLLIN)) {
-            cobo_error("No errors found, but POLLIN is not set for read(fd=%d,offset=%x,size=%d) @ file %s:%d",
-                       fd, offset, size-n, __FILE__, __LINE__
-            );
+            err_printf("No errors found, but POLLIN is not set for read(fd=%d,offset=%p,size=%d)\n",
+                       fd, offset, size-n);
             return -1;
         }
 
-	cobo_debug(1, "start to read(fd=%d,offset=%x,size=%d) @ file %s:%d",
-		   fd, offset, size-n, __FILE__, __LINE__
-		   );
+	debug_printf3("start to read(fd=%d,offset=%p,size=%d)\n",
+		   fd, offset, size-n);
         /* poll returned that fd is ready for reading */
 	rc = read(fd, offset, size - n);
-	cobo_debug(1, "after read(fd=%d,offset=%x,size=%d) rc=%d @ file %s:%d",
-		   fd, offset, size-n, rc,  __FILE__, __LINE__
-		   );
+	debug_printf3("after read(fd=%d,offset=%p,size=%d) rc=%d\n",
+		   fd, offset, size-n, rc);
 
 	if (rc < 0) {
 	    if(errno == EINTR || errno == EAGAIN) { continue; }
-            cobo_error("Reading from file descriptor (read(fd=%d,offset=%x,size=%d) %m errno=%d) @ file %s:%d",
-                       fd, offset, size-n, errno, __FILE__, __LINE__
-            );
+            err_printf("Reading from file descriptor (read(fd=%d,offset=%p,size=%d) %m errno=%d)\n",
+                       fd, offset, size-n, errno);
 	    return rc;
 	} else if(rc == 0) {
-            cobo_error("Unexpected return code of 0 from read from file descriptor (read(fd=%d,offset=%x,size=%d) revents=%x) @ file %s:%d",
-                       fd, offset, size-n, fds.revents, __FILE__, __LINE__
-            );
+            err_printf("Unexpected return code of 0 from read from file descriptor (read(fd=%d,offset=%p,size=%d) revents=%x)\n",
+                       fd, offset, size-n, fds.revents);
 	    return -1;
 	}
 
@@ -448,9 +344,8 @@ static int cobo_connect_w_timeout(int fd, struct sockaddr const * addr, socklen_
     rc = connect(fd , addr , len);
     if (rc < 0 && errno != EINPROGRESS) {
 /*
-        cobo_error("Nonblocking connect failed immediately (connect() %m errno=%d) @ file %s:%d",
-                   errno, __FILE__, __LINE__
-        );
+        err_printf("Nonblocking connect failed immediately (connect() %m errno=%d)\n",
+                   errno);
 */
         return -1;
     }
@@ -470,9 +365,8 @@ again:	rc = poll(&ufds, 1, millisec);
             goto again;
         } else {
 /*
-            cobo_error("Polling connection (poll() %m errno=%d) @ file %s:%d",
-                       errno, __FILE__, __LINE__
-            );
+            err_printf("Polling connection (poll() %m errno=%d)\n",
+                       errno);
 */
         }
         return -1;
@@ -488,9 +382,8 @@ again:	rc = poll(&ufds, 1, millisec);
         err_len = (socklen_t) sizeof(err);
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &err_len) < 0) {
 /*
-            cobo_error("Failed to read event on socket (getsockopt() %m errno=%d) @ file %s:%d",
-                       errno, __FILE__, __LINE__
-            );
+            err_printf("Failed to read event on socket (getsockopt() %m errno=%d)\n",
+                       errno);
 */
             return -1; /* solaris pending error */
         }
@@ -504,9 +397,8 @@ done:
      * with terminated launcher. */
     if (err) {
 /*
-        cobo_error("Error on socket in cobo_connect_w_timeout() (getsockopt() set err=%d) @ file %s:%d",
-                   err, __FILE__, __LINE__
-        );
+        err_printf("Error on socket in cobo_connect_w_timeout() (getsockopt() set err=%d)\n",
+                   err);
 */
         return -1;
     }
@@ -530,9 +422,8 @@ static int cobo_connect(struct in_addr ip, int port, int timeout)
     /* create a socket */
     int s = socket(AF_INET, SOCK_STREAM, 0); /* IPPROTO_TCP */
     if (s < 0) {
-        cobo_error("Creating socket (socket() %m errno=%d) @ file %s:%d",
-                   errno, __FILE__, __LINE__
-        );
+        err_printf("Creating socket (socket() %m errno=%d)\n",
+                   errno);
         return -1;
     }
 
@@ -559,9 +450,8 @@ static int cobo_connect_hostname(char* hostname, int rank)
        /* gethostbyname doesn't know how to resolve hostname, trying inet_addr */ 
        saddr.s_addr = inet_addr(hostname);
        if (saddr.s_addr == -1) {
-           cobo_error("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d) @ file %s:%d",
-                hostname, hstrerror(h_errno), h_errno, __FILE__, __LINE__
-           );
+           err_printf("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d)\n",
+                hostname, hstrerror(h_errno), h_errno);
            return s;
        }
     }
@@ -584,45 +474,41 @@ static int cobo_connect_hostname(char* hostname, int rank)
             int port = cobo_ports[i];
 
             /* attempt to connect to hostname on this port */
-            cobo_debug(1, "Trying rank %d port %d on %s", rank, port, hostname);
+            debug_printf3("Trying rank %d port %d on %s\n", rank, port, hostname);
             /* s = cobo_connect(*(struct in_addr *) (*he->h_addr_list), htons(port)); */
             s = cobo_connect(saddr, htons(port), connect_timeout);
             if (s != -1) {
                 /* got a connection, let's test it out */
-                cobo_debug(1, "Connected to rank %d port %d on %s", rank, port, hostname);
+                debug_printf3("Connected to rank %d port %d on %s\n", rank, port, hostname);
                 int test_failed = 0;
 
                 /* write cobo service id */
                 if (!test_failed && cobo_write_fd_w_suppress(s, &cobo_serviceid, sizeof(cobo_serviceid), 1) < 0) {
-                    cobo_debug(1, "Writing service id to %s on port %d @ file %s:%d",
-                               hostname, port, __FILE__, __LINE__
-                    );
+                    debug_printf3("Writing service id to %s on port %d\n",
+                                  hostname, port);
                     test_failed = 1;
                 }
 
                 /* write our session id */
                 if (!test_failed && cobo_write_fd_w_suppress(s, &cobo_sessionid, sizeof(cobo_sessionid), 1) < 0) {
-                    cobo_debug(1, "Writing session id to %s on port %d @ file %s:%d",
-                               hostname, port, __FILE__, __LINE__
-                    );
+                    debug_printf3("Writing session id to %s on port %d\n",
+                                  hostname, port);
                     test_failed = 1;
                 }
 
                 /* read the service id */
                 unsigned int received_serviceid = 0;
                 if (!test_failed && cobo_read_fd_w_timeout(s, &received_serviceid, sizeof(received_serviceid), reply_timeout) < 0) {
-                    cobo_debug(1, "Receiving service id from %s on port %d failed @ file %s:%d",
-                              hostname, port, __FILE__, __LINE__
-                    );
+                    debug_printf3("Receiving service id from %s on port %d failed\n",
+                              hostname, port);
                     test_failed = 1;
                 }
 
                 /* read the accept id */
                 unsigned int received_acceptid = 0;
                 if (!test_failed && cobo_read_fd_w_timeout(s, &received_acceptid, sizeof(received_acceptid), reply_timeout) < 0) {
-                    cobo_debug(1, "Receiving accept id from %s on port %d failed @ file %s:%d",
-                              hostname, port, __FILE__, __LINE__
-                    );
+                    debug_printf3("Receiving accept id from %s on port %d failed\n",
+                              hostname, port);
                     test_failed = 1;
                 }
 
@@ -634,9 +520,8 @@ static int cobo_connect_hostname(char* hostname, int rank)
                 /* write ack to finalize connection (no need to suppress write errors any longer) */
                 unsigned int ack = 1;
                 if (!test_failed && cobo_write_fd(s, &ack, sizeof(ack)) < 0) {
-                    cobo_debug(1, "Writing ack to finalize connection to rank %d on %s port %d @ file %s:%d",
-                               rank, hostname, port, __FILE__, __LINE__
-                    );
+                    debug_printf3("Writing ack to finalize connection to rank %d on %s port %d\n",
+                               rank, hostname, port);
                     test_failed = 1;
                 }
 
@@ -665,18 +550,15 @@ static int cobo_connect_hostname(char* hostname, int rank)
         cobo_gettimeofday(&end);
         secs = cobo_getsecs(&end, &start);
         if (secs >= cobo_connect_timelimit) {
-            cobo_error("Time limit to connect to rank %d on %s expired @ file %s:%d",
-                       rank, hostname, __FILE__, __LINE__
-            );
+            err_printf("Time limit to connect to rank %d on %s expired\n",
+                       rank, hostname);
         }
     }
 
     /* check that we successfully opened a socket */
     if (s == -1) {
-        cobo_error("Connecting socket to %s at %s failed @ file %s:%d",
-                   hostname, inet_ntoa(saddr),
-                   __FILE__, __LINE__
-        );
+        err_printf("Connecting socket to %s at %s failed\n",
+                   hostname, inet_ntoa(saddr));
         return s;
     }
 
@@ -686,45 +568,40 @@ static int cobo_connect_hostname(char* hostname, int rank)
 /* send rank id and hostlist data to specified hostname */
 static int cobo_send_hostlist(int s, char* hostname, int rank, int ranks, void* hostlist, int bytes)
 {
-    cobo_debug(1, "Sending hostlist to rank %d on %s", rank, hostname);
+    debug_printf3("Sending hostlist to rank %d on %s\n", rank, hostname);
 
     /* check that we have an open socket */
     if (s == -1) {
-        cobo_error("No connection to rank %d on %s to send hostlist @ file %s:%d",
-                   rank, hostname, __FILE__, __LINE__
-        );
+        err_printf("No connection to rank %d on %s to send hostlist\n",
+                   rank, hostname);
         return (!COBO_SUCCESS);
     }
 
     /* forward the rank of hostname to hostname */
     if (cobo_write_fd(s, &rank, sizeof(rank)) < 0) {
-        cobo_error("Writing hostname table to rank %d on %s failed @ file %s:%d",
-                   rank, hostname, __FILE__, __LINE__
-        );
+        err_printf("Writing hostname table to rank %d on %s failed\n",
+                   rank, hostname);
         return (!COBO_SUCCESS);
     }
 
     /* forward the number of ranks in the job to hostname */
     if (cobo_write_fd(s, &ranks, sizeof(ranks)) < 0) {
-        cobo_error("Writing hostname table to rank %d on %s failed @ file %s:%d",
-                   rank, hostname, __FILE__, __LINE__
-        );
+        err_printf("Writing hostname table to rank %d on %s failed\n",
+                   rank, hostname);
         return (!COBO_SUCCESS);
     }
 
     /* forward the size of the hostlist in bytes */
     if (cobo_write_fd(s, &bytes, sizeof(bytes)) < 0) {
-        cobo_error("Writing hostname table to rank %d on %s failed @ file %s:%d",
-                   rank, hostname, __FILE__, __LINE__
-        );
+        err_printf("Writing hostname table to rank %d on %s failed\n",
+                   rank, hostname);
         return (!COBO_SUCCESS);
     }
 
     /* and finally, forward the hostlist table */
     if (cobo_write_fd(s, hostlist, bytes) < 0) {
-        cobo_error("Writing hostname table to child (rank %d) at %s failed @ file %s:%d",
-                   rank, hostname, __FILE__, __LINE__
-        );
+        err_printf("Writing hostname table to child (rank %d) at %s failed\n",
+                   rank, hostname);
         return (!COBO_SUCCESS);
     }
 
@@ -845,9 +722,8 @@ static int cobo_open_tree()
     /* create a socket to accept connection from parent IPPROTO_TCP */
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
-        cobo_error("Creating parent socket (socket() %m errno=%d) @ file %s:%d",
-                   errno, __FILE__, __LINE__
-        );
+        err_printf("Creating parent socket (socket() %m errno=%d)\n",
+                   errno);
         exit(1);
     }
 
@@ -869,29 +745,27 @@ static int cobo_open_tree()
 
         /* attempt to bind a socket on this port */
         if (bind(sockfd, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
-            cobo_debug(2, "Binding parent socket (bind() %m errno=%d) port=%d @ file %s:%d",
-                errno, port, __FILE__, __LINE__);
+            err_printf("Binding parent socket (bind() %m errno=%d) port=%d\n",
+                errno, port);
             continue;
         }
 
         /* set the socket to listen for connections */
         if (listen(sockfd, 1) < 0) {
-            cobo_debug(2, "Setting parent socket to listen (listen() %m errno=%d) port=%d @ file %s:%d",
-                errno, port, __FILE__, __LINE__);
+            err_printf("Setting parent socket to listen (listen() %m errno=%d) port=%d\n",
+                errno, port);
             continue;
         }
 
         /* bound and listening on our port */
-        cobo_debug(0, "Opened socket on port %d", port);
+        debug_printf3("Opened socket on port %d\n", port);
         port_is_bound = 1;
     }
 
     /* failed to bind to a port, this is fatal */
     if (!port_is_bound) {
         /* TODO: would like to send an abort back to server */
-        cobo_error("Failed to open socket on any port @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Failed to open socket on any port\n");
         exit(1);
     }
 
@@ -910,9 +784,7 @@ static int cobo_open_tree()
         /* read the service id */
         unsigned int received_serviceid = 0;
         if (cobo_read_fd_w_timeout(cobo_parent_fd, &received_serviceid, sizeof(received_serviceid), reply_timeout) < 0) {
-            cobo_debug(1, "Receiving service id from new connection failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            debug_printf3("Receiving service id from new connection failed\n");
             close(cobo_parent_fd);
             continue;
         }
@@ -920,9 +792,7 @@ static int cobo_open_tree()
         /* read the session id */
         unsigned int received_sessionid = 0;
         if (cobo_read_fd_w_timeout(cobo_parent_fd, &received_sessionid, sizeof(received_sessionid), reply_timeout) < 0) {
-            cobo_debug(1, "Receiving session id from new connection failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            debug_printf3("Receiving session id from new connection failed\n");
             close(cobo_parent_fd);
             continue;
         }
@@ -936,18 +806,14 @@ static int cobo_open_tree()
 
         /* write our service id back as a reply */
         if (cobo_write_fd_w_suppress(cobo_parent_fd, &cobo_serviceid, sizeof(cobo_serviceid), 1) < 0) {
-            cobo_debug(1, "Writing service id to new connection failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            debug_printf3("Writing service id to new connection failed\n");
             close(cobo_parent_fd);
             continue;
         }
 
         /* write our accept id back as a reply */
         if (cobo_write_fd_w_suppress(cobo_parent_fd, &cobo_acceptid, sizeof(cobo_acceptid), 1) < 0) {
-            cobo_debug(1, "Writing accept id to new connection failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            debug_printf3("Writing accept id to new connection failed\n");
             close(cobo_parent_fd);
             continue;
         }
@@ -956,9 +822,7 @@ static int cobo_open_tree()
          * read his ack to know that he completed the connection */
         unsigned int ack = 0;
         if (cobo_read_fd_w_timeout(cobo_parent_fd, &ack, sizeof(ack), reply_timeout) < 0) {
-            cobo_debug(1, "Receiving ack to finalize connection @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            debug_printf3("Receiving ack to finalize connection\n");
             close(cobo_parent_fd);
             continue;
         }
@@ -976,34 +840,26 @@ static int cobo_open_tree()
 
     /* read our rank number */
     if (cobo_read_fd(cobo_parent_fd, &cobo_me, sizeof(int)) < 0) {
-        cobo_error("Receiving my rank from parent failed @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Receiving my rank from parent failed\n");
         exit(1);
     }
 
     /* discover how many ranks are in our world */
     if (cobo_read_fd(cobo_parent_fd, &cobo_nprocs, sizeof(int)) < 0) {
-        cobo_error("Receiving number of tasks from parent failed @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Receiving number of tasks from parent failed\n");
         exit(1);
     }
 
     /* read the size of the hostlist (in bytes) */
     if (cobo_read_fd(cobo_parent_fd, &cobo_hostlist_size, sizeof(int)) < 0) {
-        cobo_error("Receiving size of hostname table from parent failed @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Receiving size of hostname table from parent failed\n");
         exit(1);
     }
 
     /* allocate space for the hostlist and read it in */
     cobo_hostlist = (void*) cobo_malloc(cobo_hostlist_size, "Hostlist data buffer");
     if (cobo_read_fd(cobo_parent_fd, cobo_hostlist, cobo_hostlist_size) < 0) {
-        cobo_error("Receiving hostname table from parent failed @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Receiving hostname table from parent failed\n");
         exit(1);
     }
 
@@ -1027,14 +883,13 @@ static int cobo_open_tree()
         int c = cobo_child[i];
         char* child_hostname = cobo_expand_hostname(c);
 
-	cobo_debug(1,"%d: on COBO%02d: connect to child #%02d (%s)\n",i,cobo_me,c,child_hostname);
+        debug_printf3("%d: on COBO%02d: connect to child #%02d (%s)\n",i,cobo_me,c,child_hostname);
 
         /* connect to child */
         cobo_child_fd[i] = cobo_connect_hostname(child_hostname, c);
         if (cobo_child_fd[i] == -1) {
-            cobo_error("Failed to connect to child (rank %d) on %s failed @ file %s:%d",
-                       c, child_hostname, __FILE__, __LINE__
-            );
+            err_printf("Failed to connect to child (rank %d) on %s failed\n",
+                       c, child_hostname);
             exit(1);
         }
 
@@ -1042,9 +897,8 @@ static int cobo_open_tree()
         int forward = cobo_send_hostlist(cobo_child_fd[i], child_hostname, c,
                           cobo_nprocs, cobo_hostlist, cobo_hostlist_size);
         if (forward != COBO_SUCCESS) {
-            cobo_error("Failed to forward hostname table to child (rank %d) on %s failed @ file %s:%d",
-                       c, child_hostname, __FILE__, __LINE__
-            );
+            err_printf("Failed to forward hostname table to child (rank %d) on %s failed\n",
+                       c, child_hostname);
             exit(1);
         }
 
@@ -1094,9 +948,7 @@ static int cobo_bcast_tree(void* buf, int size)
     /* if i'm not rank 0, receive data from parent */
     if (cobo_me != 0) {
         if (cobo_read_fd(cobo_parent_fd, buf, size) < 0) {
-            cobo_error("Receiving broadcast data from parent failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            err_printf("Receiving broadcast data from parent failed\n");
             exit(1);
         }
     }
@@ -1104,14 +956,28 @@ static int cobo_bcast_tree(void* buf, int size)
     /* for each child, forward data */
     for(i=0; i<cobo_num_child; i++) {
         if (cobo_write_fd(cobo_child_fd[i], buf, size) < 0) {
-            cobo_error("Broadcasting data to child (rank %d) failed @ file %s:%d",
-                       cobo_child[i], __FILE__, __LINE__
-            );
+            err_printf("Broadcasting data to child (rank %d) failed\n",
+                       cobo_child[i]);
             exit(1);
         }
     }
 
     return rc;
+}
+
+int cobo_bcast_down(void* buf, int size)
+{
+   int rc = COBO_SUCCESS;
+   int i;
+   /* for each child, forward data */
+   for(i=0; i<cobo_num_child; i++) {
+      if (cobo_write_fd(cobo_child_fd[i], buf, size) < 0) {
+         err_printf("Broadcasting data to child (rank %d) failed\n",
+                    cobo_child[i]);
+         exit(1);
+      }
+   }   
+   return rc;
 }
 
 /* reduce maximum integer to rank 0 */
@@ -1128,9 +994,8 @@ static int cobo_allreduce_max_int_tree(int* sendbuf, int* recvbuf)
     for(i=cobo_num_child-1; i>=0; i--) {
         /* read integer from child */
         if (cobo_read_fd(cobo_child_fd[i], &child_val, sizeof(child_val)) < 0) {
-            cobo_error("Reducing data from child (rank %d) failed @ file %s:%d",
-                       cobo_child[i], __FILE__, __LINE__
-            );
+            err_printf("Reducing data from child (rank %d) failed\n",
+                       cobo_child[i]);
             exit(1);
         }
 
@@ -1144,9 +1009,7 @@ static int cobo_allreduce_max_int_tree(int* sendbuf, int* recvbuf)
     if (cobo_me != 0) {
         /* not the root, so forward our reduction result to our parent */
         if (cobo_write_fd(cobo_parent_fd, &max_val, sizeof(max_val)) < 0) {
-            cobo_error("Sending reduced data to parent failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            err_printf("Sending reduced data to parent failed\n");
             exit(1);
         }
     } else {
@@ -1180,9 +1043,8 @@ static int cobo_gather_tree(void* sendbuf, int sendcount, void* recvbuf)
     int offset = sendcount;
     for(i=cobo_num_child-1; i>=0; i--) {
         if (cobo_read_fd(cobo_child_fd[i], (char*)bigbuf + offset, sendcount * cobo_child_incl[i]) < 0) {
-            cobo_error("Gathering data from child (rank %d) failed @ file %s:%d",
-                       cobo_child[i], __FILE__, __LINE__
-            );
+            err_printf("Gathering data from child (rank %d) failed\n",
+                       cobo_child[i]);
             exit(1);
         }
         offset += sendcount * cobo_child_incl[i];
@@ -1191,9 +1053,7 @@ static int cobo_gather_tree(void* sendbuf, int sendcount, void* recvbuf)
     /* if i'm not rank 0, send to parent and free temporary buffer */
     if (cobo_me != 0) {
         if (cobo_write_fd(cobo_parent_fd, bigbuf, bigcount) < 0) {
-            cobo_error("Sending gathered data to parent failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            err_printf("Sending gathered data to parent failed\n");
             exit(1);
         }
         cobo_free(bigbuf);
@@ -1213,9 +1073,7 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
     if (cobo_me != 0) {
         bigbuf = (void*) cobo_malloc(bigcount, "Temporary scatter buffer in cobo_scatter_tree");
         if (cobo_read_fd(cobo_parent_fd, bigbuf, bigcount) < 0) {
-            cobo_error("Receiving scatter data from parent failed @ file %s:%d",
-                       __FILE__, __LINE__
-            );
+            err_printf("Receiving scatter data from parent failed\n");
             exit(1);
         }
     }
@@ -1225,9 +1083,8 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
     int offset = sendcount;
     for(i=0; i<cobo_num_child; i++) {
         if (cobo_write_fd(cobo_child_fd[i], (char*)bigbuf + offset, sendcount * cobo_child_incl[i]) < 0) {
-            cobo_error("Scattering data to child (rank %d) failed @ file %s:%d",
-                       cobo_child[i], __FILE__, __LINE__
-            );
+            err_printf("Scattering data to child (rank %d) failed\n",
+                       cobo_child[i]);
             exit(1);
         }
         offset += sendcount * cobo_child_incl[i];
@@ -1279,7 +1136,7 @@ int cobo_barrier()
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_barrier()");
+    debug_printf3("Starting cobo_barrier()");
 
     /* use allreduce of an int for our barrier */
     int dummy;
@@ -1287,7 +1144,7 @@ int cobo_barrier()
     cobo_allreduce_max_int_tree(&myint, &dummy);
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_barrier(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_barrier(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return COBO_SUCCESS;
 }
 
@@ -1299,7 +1156,7 @@ int cobo_bcast(void* buf, int sendcount, int root)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_bcast()");
+    debug_printf3("Starting cobo_bcast()");
 
     int rc = COBO_SUCCESS;
 
@@ -1308,14 +1165,12 @@ int cobo_bcast(void* buf, int sendcount, int root)
     if (root == 0) {
         rc = cobo_bcast_tree(buf, sendcount);
     } else {
-        cobo_error("Cannot execute bcast from non-zero root @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Cannot execute bcast from non-zero root\n");
         exit(1);
     }
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_bcast(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_bcast(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return rc;
 }
 
@@ -1327,7 +1182,7 @@ int cobo_gather(void* sendbuf, int sendcount, void* recvbuf, int root)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_gather()");
+    debug_printf3("Starting cobo_gather()");
 
     int rc = COBO_SUCCESS;
 
@@ -1336,14 +1191,12 @@ int cobo_gather(void* sendbuf, int sendcount, void* recvbuf, int root)
     if (root == 0) {
         rc = cobo_gather_tree(sendbuf, sendcount, recvbuf);
     } else {
-        cobo_error("Cannot execute gather to non-zero root @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Cannot execute gather to non-zero root\n");
         exit(1);
     }
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_gather(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_gather(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return rc;
 }
 
@@ -1355,7 +1208,7 @@ int cobo_scatter(void* sendbuf, int sendcount, void* recvbuf, int root)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_scatter()");
+    debug_printf3("Starting cobo_scatter()");
 
     int rc = COBO_SUCCESS;
 
@@ -1364,14 +1217,12 @@ int cobo_scatter(void* sendbuf, int sendcount, void* recvbuf, int root)
     if (root == 0) {
         rc = cobo_scatter_tree(sendbuf, sendcount, recvbuf);
     } else {
-        cobo_error("Cannot execute scatter from non-zero root @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Cannot execute scatter from non-zero root\n");
         exit(1);
     }
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_scatter(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_scatter(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return rc;
 }
 
@@ -1383,7 +1234,7 @@ int cobo_allgather(void* sendbuf, int sendcount, void* recvbuf)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_allgather()");
+    debug_printf3("Starting cobo_allgather()");
 
     /* gather data to rank 0 */
     cobo_gather_tree(sendbuf, sendcount, recvbuf);
@@ -1392,7 +1243,7 @@ int cobo_allgather(void* sendbuf, int sendcount, void* recvbuf)
     cobo_bcast_tree(recvbuf, sendcount * cobo_nprocs);
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_allgather(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_allgather(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return COBO_SUCCESS;
 }
 
@@ -1404,17 +1255,15 @@ int cobo_alltoall(void* sendbuf, int sendcount, void* recvbuf)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_alltoall()");
+    debug_printf3("Starting cobo_alltoall()");
 
     int rc = COBO_SUCCESS;
 
-    cobo_error("Cannot execute alltoall @ file %s:%d",
-               __FILE__, __LINE__
-    );
+    err_printf("Cannot execute alltoall\n");
     exit(1);
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_alltoall(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_alltoall(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return rc;
 }
 
@@ -1425,13 +1274,13 @@ static int cobo_allreduce_max_int(int* sendint, int* recvint)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_allreducemaxint()");
+    debug_printf3("Starting cobo_allreducemaxint()");
 
     /* compute allreduce via tree */
     cobo_allreduce_max_int_tree(sendint, recvint);
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_allreducemaxint(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_allreducemaxint(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return COBO_SUCCESS;
 }
 
@@ -1457,7 +1306,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_allgatherstr()");
+    debug_printf3("Starting cobo_allgatherstr()");
 
     /* determine max length of send strings */
     int mylen  = strlen(sendstr) + 1;
@@ -1487,7 +1336,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
     *recvbuf = stringbuf;
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_allgatherstr(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_allgatherstr(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return COBO_SUCCESS;
 }
 
@@ -1511,57 +1360,34 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
      * ======================================================= */
 
     /* milliseconds */
-    if ((value = cobo_getenv("COBO_CONNECT_TIMEOUT", ENV_OPTIONAL))) {
+    if ((value = cobo_getenv("COBO_CONNECT_TIMEOUT\n", ENV_OPTIONAL))) {
         cobo_connect_timeout = atoi(value);
     }
 
     /* exponential backoff factor for connect */
-    if ((value = cobo_getenv("COBO_CONNECT_BACKOFF", ENV_OPTIONAL))) {
+    if ((value = cobo_getenv("COBO_CONNECT_BACKOFF\n", ENV_OPTIONAL))) {
         cobo_connect_backoff = atoi(value);
     }
 
     /* milliseconds to sleep before rescanning ports */
-    if ((value = cobo_getenv("COBO_CONNECT_SLEEP", ENV_OPTIONAL))) {
+    if ((value = cobo_getenv("COBO_CONNECT_SLEEP\n", ENV_OPTIONAL))) {
         cobo_connect_sleep = atoi(value);
     }
 
     /* seconds */
-    if ((value = cobo_getenv("COBO_CONNECT_TIMELIMIT", ENV_OPTIONAL))) {
+    if ((value = cobo_getenv("COBO_CONNECT_TIMELIMIT\n", ENV_OPTIONAL))) {
         cobo_connect_timelimit = (double) atoi(value);
     }
 
-    /* COBO_CLIENT_DEBUG={0,1} disables/enables debug statements */
-    if ((value = cobo_getenv("COBO_CLIENT_DEBUG", ENV_OPTIONAL)) != NULL) {
-        cobo_echo_debug = atoi(value);
-        int print_rank = 0;
-        if (cobo_echo_debug > 0) {
-            if        (cobo_echo_debug <= 1*COBO_DEBUG_LEVELS) {
-                print_rank = (cobo_me == 0); /* just rank 0 prints */
-            } else if (cobo_echo_debug <= 2*COBO_DEBUG_LEVELS) {
-                print_rank = (cobo_me == 0 || cobo_me == cobo_nprocs-1); /* just rank 0 and rank N-1 print */
-            } else {
-                print_rank = 1; /* all ranks print */
-            }
-            if (print_rank) {
-                cobo_echo_debug = 1 + (cobo_echo_debug-1) % COBO_DEBUG_LEVELS;
-            } else {
-                cobo_echo_debug = 0;
-            }
-        }
-    }
-
-    cobo_debug(3, "In cobo_init():\n" \
-        "COBO_CONNECT_TIMEOUT: %d, COBO_CONNECT_BACKOFF: %d, COBO_CONNECT_SLEEP: %d, COBO_CONNECT_TIMELIMIT: %d",
-        cobo_connect_timeout, cobo_connect_backoff, cobo_connect_sleep, (int) cobo_connect_timelimit
-    );
+    debug_printf3("In cobo_init():\n" \
+        "COBO_CONNECT_TIMEOUT: %d, COBO_CONNECT_BACKOFF: %d, COBO_CONNECT_SLEEP: %d, COBO_CONNECT_TIMELIMIT: %d\n",
+        cobo_connect_timeout, cobo_connect_backoff, cobo_connect_sleep, (int) cobo_connect_timelimit);
 
     /* copy port list from user */
     cobo_num_ports = num_ports;
     cobo_ports = cobo_int_dup(portlist, num_ports);
     if (cobo_ports == NULL) {
-        cobo_error("Failed to copy port list @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Failed to copy port list\n");
         exit(1);
     }
 
@@ -1570,15 +1396,13 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
 
     /* need to check that tree opened successfully before returning, so do a barrier */
     if (cobo_barrier() != COBO_SUCCESS) {
-        cobo_error("Failed to open tree @ %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Failed to open tree\n");
         exit(1);
     }
 
     if (cobo_me == 0) {
         cobo_gettimeofday(&tree_end);
-        cobo_debug(1, "Exiting cobo_close(), took %f seconds for %d procs", cobo_getsecs(&tree_end,&tree_start), cobo_nprocs);
+        debug_printf3("Exiting cobo_close(), took %f seconds for %d procs\n", cobo_getsecs(&tree_end,&tree_start), cobo_nprocs);
     }
 
     /* return our rank and the number of ranks in our world */
@@ -1586,7 +1410,7 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
     *num_ranks = cobo_nprocs;
 
     cobo_gettimeofday(&end);
-    cobo_debug(2, "Exiting cobo_init(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Exiting cobo_init(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     return COBO_SUCCESS;
 }
 
@@ -1595,7 +1419,7 @@ int cobo_close()
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    cobo_debug(3, "Starting cobo_close()");
+    debug_printf3("Starting cobo_close()");
 
     /* shut down the tree */
     cobo_close_tree();
@@ -1605,8 +1429,8 @@ int cobo_close()
 
     cobo_gettimeofday(&end);
     cobo_gettimeofday(&time_close);
-    cobo_debug(2, "Exiting cobo_close(), took %f seconds for %d procs", cobo_getsecs(&end,&start), cobo_nprocs);
-    cobo_debug(1, "Total time from cobo_open() to cobo_close() took %f seconds for %d procs",
+    debug_printf3("Exiting cobo_close(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
+    debug_printf3("Total time from cobo_open() to cobo_close() took %f seconds for %d procs\n",
         cobo_getsecs(&time_close, &time_open), cobo_nprocs);
     return COBO_SUCCESS;
 }
@@ -1657,9 +1481,8 @@ int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int
     cobo_hostlist_size = num_hosts * sizeof(int) + size;
     cobo_hostlist = cobo_malloc(cobo_hostlist_size, "Buffer for hostlist data structure");
     if (cobo_hostlist == NULL) {
-        cobo_error("Failed to allocate hostname table of %lu bytes @ file %s:%d",
-                   (unsigned long) cobo_hostlist_size, __FILE__, __LINE__
-        );
+        err_printf("Failed to allocate hostname table of %lu bytes\n",
+                   (unsigned long) cobo_hostlist_size);
         return (!COBO_SUCCESS);
     }
 
@@ -1675,27 +1498,23 @@ int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int
     cobo_num_ports = num_ports;
     cobo_ports = cobo_int_dup(portlist, num_ports);
     if (cobo_ports == NULL) {
-        cobo_error("Failed to copy port list @ file %s:%d",
-                   __FILE__, __LINE__
-        );
+        err_printf("Failed to copy port list\n");
         return (!COBO_SUCCESS);
     }
 
     /* connect to first host */
     cobo_root_fd = cobo_connect_hostname(hostlist[0], 0);
     if (cobo_root_fd == -1) {
-        cobo_error("Failed to connect to child (rank %d) on %s failed @ file %s:%d",
-                   0, hostlist[0], __FILE__, __LINE__
-        );
+        err_printf("Failed to connect to child (rank %d) on %s failed\n",
+                   0, hostlist[0]);
         return (!COBO_SUCCESS);
     }
 
     /* forward the hostlist table to the first host */
     int forward = cobo_send_hostlist(cobo_root_fd, hostlist[0], 0, num_hosts, cobo_hostlist, cobo_hostlist_size);
     if (forward != COBO_SUCCESS) {
-        cobo_error("Failed to forward hostname table to child (rank %d) on %s failed @ file %s:%d",
-                   0, hostlist[0], __FILE__, __LINE__
-        );
+        err_printf("Failed to forward hostname table to child (rank %d) on %s failed\n",
+                   0, hostlist[0]);
         return (!COBO_SUCCESS);
     }
 

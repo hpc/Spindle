@@ -106,9 +106,9 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
 
   /* go into listen loop to enable startup CB functions, 
      the listen loop will exists after startup ofd msocket is completed */
-  debug_printf("msocket listen loop starting\n");
+  debug_printf3("msocket listen loop starting\n");
   ldcs_listen();
-  debug_printf("msocket listen loop finished\n");
+  debug_printf3("msocket listen loop finished\n");
 
   ldcs_listen_unregister_fd(serverfd);
 
@@ -117,10 +117,10 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
     int ldcs_locmod=atoi(ldcs_locmodstr);
     if(ldcs_locmod>0) {
       char buffer[MAX_PATH_LEN];
-      debug_printf("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
+      debug_printf3("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
       if(strlen(ldcs_process_data->location)+10<MAX_PATH_LEN) {
 	sprintf(buffer,"%s-%02d",ldcs_process_data->location,ldcs_process_data->md_rank%ldcs_locmod);
-	debug_printf("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
+	debug_printf3("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
 	free(ldcs_process_data->location);
 	ldcs_process_data->location=strdup(buffer);
       } else _error("location path too long");
@@ -140,7 +140,7 @@ int ldcs_audit_server_md_distribute ( ldcs_process_data_t *ldcs_process_data, ld
   msg->header.source=ldcs_msocket_data.hostinfo.rank;  msg->header.from=ldcs_msocket_data.hostinfo.rank; 
 
   /* sent message to first host */
-  debug_printf("route bcast msg %d->%d\n",msg->header.source, msg->header.dest);
+  debug_printf3("route bcast msg %d->%d\n",msg->header.source, msg->header.dest);
   ldcs_audit_server_md_msocket_route_msg(&ldcs_msocket_data, msg);
 
   return(rc);
@@ -149,7 +149,7 @@ int ldcs_audit_server_md_distribute ( ldcs_process_data_t *ldcs_process_data, ld
 
 int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) {
   int rc=0;
-  debug_printf("call not used for md_msocket\n");
+  debug_printf3("call not used for md_msocket\n");
   return(rc);
 }
 
@@ -191,10 +191,10 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data ) {
     cobo_get_parent_socket(&root_fd);
     
     ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
-    debug_printf("sent FE client signal to stop %d\n",ack);
+    debug_printf3("sent FE client signal to stop %d\n",ack);
 
     ldcs_cobo_read_fd(root_fd, &ack, sizeof(ack));
-    debug_printf("read from FE client ack to signal to stop %d\n",ack);
+    debug_printf3("read from FE client ack to signal to stop %d\n",ack);
   } else {
 
     /* receive all other server signal to destroy */
@@ -204,7 +204,7 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data ) {
   }
   
   if (cobo_close() != COBO_SUCCESS) {
-    debug_printf("Failed to close\n");
+    debug_printf3("Failed to close\n");
     printf("Failed to close\n");
     exit(1);
   }
@@ -228,7 +228,7 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
     rc=0;
   }
 
-  debug_printf("responsible: fn=%s rank=%d  --> %s \n",filename, ldcs_process_data->md_rank, (rc)?"YES":"NO");
+  debug_printf3("responsible: fn=%s rank=%d  --> %s \n",filename, ldcs_process_data->md_rank, (rc)?"YES":"NO");
 
   return(rc);
 }
@@ -261,7 +261,7 @@ int _ldcs_audit_server_md_msocket_server_CB ( int infd, int serverid, void *data
 
   cb_starttime=ldcs_get_time();
 
-  debug_printf("starting callback\n");
+  debug_printf3("starting callback\n");
 
   more_avail=1;
   while(more_avail) {
@@ -290,7 +290,7 @@ int _ldcs_audit_server_md_msocket_server_CB ( int infd, int serverid, void *data
   ldcs_msocket_data->server_stat.server_cb.cnt++;
   ldcs_msocket_data->server_stat.server_cb.time+=(ldcs_get_time()-cb_starttime);
 
-  debug_printf("ending callback\n");
+  debug_printf3("ending callback\n");
 
   return(rc);
 }
@@ -309,17 +309,17 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
   cb_starttime=ldcs_get_time();
 
   connid=ldcs_msocket_data->connection_table[nc].connid;
-  debug_printf("starting callback for fd=%d nc=%d connid=%d lfd=%d rrank=%d\n",fd,nc,connid,ldcs_get_fd(connid),ldcs_msocket_data->connection_table[nc].remote_rank);
+  debug_printf3("starting callback for fd=%d nc=%d connid=%d lfd=%d rrank=%d\n",fd,nc,connid,ldcs_get_fd(connid),ldcs_msocket_data->connection_table[nc].remote_rank);
   
   /* get message  */
   starttime=ldcs_get_time();
   msg=ldcs_recv_msg_socket(connid, LDCS_READ_BLOCK);
 #ifdef LDCSDEBUG
   msg_time=ldcs_get_time()-starttime;
-#endif
-  debug_printf("received message on connection  nc=%d connid=%d routing: %d -> %d %s %s (%10.4fs) \n", nc, connid, 
+  debug_printf3("received message on connection  nc=%d connid=%d routing: %d -> %d %s %s (%10.4fs) \n", nc, connid, 
 	       msg->header.source, msg->header.dest,
 	       _message_type_to_str(msg->header.type),(msg->header.mtype==LDCS_MSG_MTYPE_P2P)?"P2P":"BCAST", msg_time);
+#endif
 
   /* check if msg dest is not addressed me or must be bcast */
 
@@ -339,7 +339,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
     }
   }
 
-  debug_printf("do_route=%d, do_process=%d \n", do_route, do_process); 
+  debug_printf3("do_route=%d, do_process=%d \n", do_route, do_process); 
 
   if(do_route) {
     ldcs_audit_server_md_msocket_route_msg(ldcs_msocket_data, msg);
@@ -355,7 +355,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
   case LDCS_MSG_PRELOAD_FILE:
     {
-      debug_printf("MDSERVER[%02d]: new preload file name received %d (%s)\n",
+      debug_printf3("MDSERVER[%02d]: new preload file name received %d (%s)\n",
 		   ldcs_process_data->md_rank,msg->header.len, msg->data);
       
       rc=_ldcs_client_process_fe_preload_requests ( ldcs_process_data, msg->data );
@@ -386,7 +386,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
       /* store info about local server only, action at hostlist msg  */
       ldcs_msocket_hostinfo_t *hostinfo=(ldcs_msocket_hostinfo_t *) msg->data;
-      debug_printf("HOSTINFO: received %d of %d  (%d of %d)\n", hostinfo->rank, hostinfo->size, ldcs_msocket_data->hostinfo.rank, ldcs_msocket_data->hostinfo.size); 
+      debug_printf3("HOSTINFO: received %d of %d  (%d of %d)\n", hostinfo->rank, hostinfo->size, ldcs_msocket_data->hostinfo.rank, ldcs_msocket_data->hostinfo.size); 
       if(ldcs_msocket_data->hostinfo.rank>=0) {
 	if(ldcs_msocket_data->hostinfo.rank!=hostinfo->rank) {
 	  _error("different rank from external fabric ...");
@@ -413,7 +413,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 	  ldcs_msocket_data->connection_table[nc].ctype=LDCS_CONNECTION_TYPE_CONTROL;
 	} 
       }
-      debug_printf("MDSERVER[%02d]: hostinfo received from %d (%d of %d, depth %d)\n",ldcs_process_data->md_rank,
+      debug_printf3("MDSERVER[%02d]: hostinfo received from %d (%d of %d, depth %d)\n",ldcs_process_data->md_rank,
 		   msg->header.source, hostinfo->rank,hostinfo->size,hostinfo->depth); 
     }
     break;
@@ -431,7 +431,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 	ldcs_msocket_data->hostlist[rank]=ldcs_audit_server_md_msocket_expand_hostname(msg->data,msg->header.len,rank);
 	ldcs_msocket_data->portlist[rank]=-1;
       }
-      debug_printf("MDSERVER[%02d]: hostlist received from %d (%d bytes)\n",ldcs_process_data->md_rank,msg->header.len);
+      debug_printf3("MDSERVER: hostlist received from %d (%d bytes)\n",ldcs_process_data->md_rank,msg->header.len);
 
     }
     break;
@@ -440,10 +440,10 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
   case LDCS_MSG_MD_BOOTSTRAP:
     {
       if(ldcs_msocket_data->hostinfo.rank==0) {
-	debug_printf("MDSERVER[%02d]: initiate bootstrap of network topology on root node\n");
+	debug_printf3("MDSERVER: initiate bootstrap of network topology on root node\n");
 	ldcs_audit_server_md_msocket_init_topo_bootstrap(ldcs_msocket_data);
       } else {
-	debug_printf("MDSERVER[%02d]: run bootstrap of network topology on non-root node\n");
+	debug_printf3("MDSERVER: run bootstrap of network topology on non-root node\n");
 	ldcs_audit_server_md_msocket_run_topo_bootstrap(ldcs_msocket_data, (char *) msg->data, msg->header.len);
       }
       
@@ -456,7 +456,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
       
       
       /* sent message to first host */
-      debug_printf("switch off initial listening for bootstrap\n");
+      debug_printf3("switch off initial listening for bootstrap\n");
            
       /* signal listener, that listen loop should be ended */
       ldcs_listen_signal_end_listen_loop();
@@ -474,7 +474,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
 	
 	/* sent message to first host */
-	debug_printf("send msg bootstrap end ok\n");
+	debug_printf3("send msg bootstrap end ok\n");
 	ldcs_send_msg_socket(connid,out_msg);
 	
 	ldcs_msg_free(&out_msg);
@@ -488,7 +488,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
   case LDCS_MSG_CACHE_ENTRIES:
     {
-      debug_printf("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
+      debug_printf3("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
 		   ldcs_process_data->md_rank,msg->header.len);
       /* printf("MDSERVER[%02d]: recvd NEW ENTRIES: \n", ldcs_process_data->md_rank); */
       
@@ -508,7 +508,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
       double starttime;
       int domangle;
 
-      debug_printf("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
+      debug_printf3("MDSERVER[%02d]: new cache entries received, insert %d bytes in local cache\n",
 		   ldcs_process_data->md_rank,msg->header.len);
       /* printf("MDSERVER[%02d]: recvd NEW ENTRIES: \n", ldcs_process_data->md_rank); */
       
@@ -535,9 +535,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
   case LDCS_MSG_END:
     {
-      debug_printf("MDSERVER[%02d]: END message received dont listen to parent from now\n",
-		   ldcs_process_data->md_rank,msg->header.len);
-      printf("MDSERVER[%02d]: END message received \n", ldcs_process_data->md_rank);
+       debug_printf3("MDSERVER[%02d]: END message received \n", ldcs_process_data->md_rank);
       
       ldcs_audit_server_md_unregister_fd ( ldcs_process_data );
       
@@ -549,7 +547,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
     
   default: ;
     {
-      debug_printf("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
+      debug_printf3("MDSERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", 
 		   ldcs_process_data->md_rank,
 		   _message_type_to_str(msg->header.type),
 		   msg->header.len, msg->data );
@@ -613,14 +611,14 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **dat
   /* connect to first host */
   if(ldcs_msocket_external_fabric_CB_registered) {
     connid=ldcs_audit_server_md_msocket_connect(ehostlist[0], eportlist, 1);
-    debug_printf("after connect connid=%d (E: %s,%d)\n",connid,ehostlist[0], eportlist[0]);
+    debug_printf3("after connect connid=%d (E: %s,%d)\n",connid,ehostlist[0], eportlist[0]);
   } else {
     connid=ldcs_audit_server_md_msocket_connect(hostlist[0], portlist, num_ports);
-    debug_printf("after connect connid=%d (D: %s,%d)\n",connid,hostlist[0], portlist[0]);
+    debug_printf3("after connect connid=%d (D: %s,%d)\n",connid,hostlist[0], portlist[0]);
   }
 
   /* message for hostinfo */
-  debug_printf("send msg hostinfo\n");
+  debug_printf3("send msg hostinfo\n");
   msg=ldcs_msg_new();
 
   hostinfo.rank=0;
@@ -639,9 +637,9 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **dat
 
   if(!ldcs_msocket_external_fabric_CB_registered) {
 
-    debug_printf("processing hostlist of size %d\n",hostlistsize);
+    debug_printf3("processing hostlist of size %d\n",hostlistsize);
     ldcs_audit_server_md_msocket_serialize_hostlist(hostlist, hostlistsize, &serdata, &sersize);
-    debug_printf("serialized hostlist has size %d\n",sersize);
+    debug_printf3("serialized hostlist has size %d\n",sersize);
     
     /* message for hostlist */
     msg->header.type=LDCS_MSG_MD_HOSTLIST;
@@ -651,7 +649,7 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **dat
     msg->data=serdata;
 
     /* sent message to first host */
-    debug_printf("send msg hostlist\n");
+    debug_printf3("send msg hostlist\n");
     ldcs_send_msg_socket(connid,msg);
   }
 
@@ -663,7 +661,7 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **dat
   msg->data=NULL;
 
   /* sent message to first host */
-  debug_printf("send msg bootstrap\n");
+  debug_printf3("send msg bootstrap\n");
   ldcs_send_msg_socket(connid,msg);
 
   /* message for ending bootstrap */
@@ -675,7 +673,7 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **dat
   msg->data=NULL;
 
   /* sent message to first host */
-  debug_printf("send msg bootstrap end\n");
+  debug_printf3("send msg bootstrap end\n");
   ldcs_send_msg_socket(connid,msg);
 
 
@@ -731,7 +729,7 @@ int ldcs_audit_server_fe_md_preload ( char *filename, void *data  ) {
     }
     out_msg.header.len=strlen(buffer)+1;
     
-    debug_printf("SERVERFE: sent preload msg(%s)  to tree root connid=%d\n",out_msg.data, fe_data->connid);
+    debug_printf3("SERVERFE: sent preload msg(%s)  to tree root connid=%d\n",out_msg.data, fe_data->connid);
     ldcs_send_msg_socket(fe_data->connid,&out_msg);
     
     fprintf(stderr, "SERVERFE: sent preload msg(%s)  to tree root\n",out_msg.data);

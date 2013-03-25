@@ -3,7 +3,7 @@ noinst_LTLIBRARIES = libserverbase.la
 
 #bin_PROGRAMS = ldcs_audit_server_socket ldcs_audit_server_pipe ldcs_audit_server_par_pipe ldcs_audit_server_par_pipe_md ldcs_audit_server_par_pipe_msocket
 
-AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/tools/cobo/src
+AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/logging
 LDADD = $(top_builddir)/cache/libldcs_cache.la
 AM_LDFLAGS = -all-static
 

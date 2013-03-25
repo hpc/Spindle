@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   char remote_cwd[MAX_PATH_LEN];
 
   if (argc < 4) {
-    fprintf(stderr,"no location and number provided, use ENVs LDCS_LOCATION LDCS_NUMBER\n");
+    err_printf(stderr,"no location and number provided, use ENVs LDCS_LOCATION LDCS_NUMBER\n");
     location = getenv("LDCS_LOCATION");
     number   = atoi(getenv("LDCS_NUMBER"));
   } else {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     number   = atoi(argv[3]);
   } 
 
-  debug_printf("create server (%s, %d)\n",location,number);
+  debug_printf("Create server (%s, %d)\n",location,number);
 
   serverid = ldcs_create_server(location,number);
 
@@ -67,62 +67,53 @@ int main(int argc, char *argv[])
       
       /* prevent infinite loop */
       if(in_msg.header.len==0) {
-	debug_printf("null_msg_cnt = %d\n",null_msg_cnt);
-	null_msg_cnt++;
+         debug_printf3("null_msg_cnt = %d\n",null_msg_cnt);
+         null_msg_cnt++;
       } else {
-	null_msg_cnt=0;
+         null_msg_cnt=0;
       }
-	
+        
 
       switch(in_msg.header.type) {
       case LDCS_MSG_END:
-	debug_printf("end message received\n");
-	end_message_received=1;
-	printf("SERVER: recvd END: closing pipe\n");
-
-	break;
+        debug_printf2("End message received\n");
+        end_message_received=1;
+        break;
 
       case LDCS_MSG_CWD:
-	strncpy(remote_cwd,in_msg.data,MAX_PATH_LEN);
-	debug_printf("cwd message received -> %s\n",remote_cwd);
-
-	printf("SERVER: recvd CWD: '%s'\n", in_msg.data );
-
-	break;
-	
+        strncpy(remote_cwd,in_msg.data,MAX_PATH_LEN);
+        debug_printf2("cwd message received -> %s\n",remote_cwd);
+        break;
+        
       case LDCS_MSG_FILE_QUERY:
-	debug_printf("file query message received\n");
-
-	printf("SERVER: recvd FILE_QUERY:        '%s'\n", in_msg.data );
-
-	out_msg.header.type=LDCS_MSG_FILE_QUERY_ANSWER;
-	out_msg.data[0]='\0';
-	newfn=findDirForFile(in_msg.data,remote_cwd);
-	if(newfn) {
-	  strncpy(out_msg.data,newfn,MAX_PATH_LEN);	  
-	  out_msg.header.len=strlen(newfn);
-	  free(newfn);
-	} else {
-	  out_msg.header.len=0;
-	}
-	ldcs_send_msg(connid,&out_msg);
-	printf("SERVER: send  FILE_QUERY_ANSWER: '%s'\n", out_msg.data );
+        debug_printf2("file query message received\n");
+        out_msg.header.type=LDCS_MSG_FILE_QUERY_ANSWER;
+        out_msg.data[0]='\0';
+        newfn=findDirForFile(in_msg.data,remote_cwd);
+        if(newfn) {
+          strncpy(out_msg.data,newfn,MAX_PATH_LEN);          
+          out_msg.header.len=strlen(newfn);
+          free(newfn);
+        } else {
+          out_msg.header.len=0;
+        }
+        ldcs_send_msg(connid,&out_msg);
  
-	break;
-      default: ;
-	printf("SERVER: recvd unknown message of type: %s len=%d data=%s ...\n",
-	       _message_type_to_str(in_msg.header.type),
-	       in_msg.header.len, in_msg.data );
-	break;
+        break;
+      default:
+         err_printf("recvd unknown message of type: %s len=%d data=%s ...\n",
+                    _message_type_to_str(in_msg.header.type),
+                    in_msg.header.len, in_msg.data );
+         break;
       }
 
     }
     ldcs_cache_dump("./hash.dump");
-    debug_printf("close connection %d\n",connid);
+    debug_printf3("close connection %d\n",connid);
     ldcs_close_server_connection(connid);
   }
 
-  debug_printf("destroy server (%s,%d)\n",location,number);
+  debug_printf3("destroy server (%s,%d)\n",location,number);
   ldcs_destroy_server(serverid);
  
 

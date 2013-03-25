@@ -71,7 +71,7 @@ int ldcs_notify_init(char *path) {
     _error("failure while running inotify_init");
   }
   
-  debug_printf("add watch: ntfd=%d dir=%s\n",ldcs_fdlist_nt[fd].ntfd, path);
+  debug_printf3("add watch: ntfd=%d dir=%s\n",ldcs_fdlist_nt[fd].ntfd, path);
   ldcs_fdlist_nt[fd].wd = inotify_add_watch(ldcs_fdlist_nt[fd].ntfd, path, IN_CREATE);
   if (ldcs_fdlist_nt[fd].wd < 0) {
     _error ("inotify_add_watch");  
@@ -100,7 +100,7 @@ int ldcs_notify_get_fd(int fd) {
   if(ldcs_fdlist_nt[fd].inuse) {
     realfd=ldcs_fdlist_nt[fd].ntfd;
   }
-  debug_printf("return ntfd=%d\n",realfd);
+  debug_printf3("return ntfd=%d\n",realfd);
 
   return(realfd);
 }
@@ -115,10 +115,10 @@ char *ldcs_notify_get_next_file(int fd) {
   if ((ldcs_fdlist_nt[fd].buffer_next<0) 
       || (ldcs_fdlist_nt[fd].buffer_next>=ldcs_fdlist_nt[fd].buffer_enddata)) {
     ldcs_fdlist_nt[fd].buffer_next = 0;
-    debug_printf("read new events ...\n");
+    debug_printf3("read new events ...\n");
     ldcs_fdlist_nt[fd].buffer_enddata = 
       read (ldcs_fdlist_nt[fd].ntfd, ldcs_fdlist_nt[fd].buffer, ldcs_fdlist_nt[fd].buffer_len);
-    debug_printf("read new events ... %d bytes read\n",ldcs_fdlist_nt[fd].buffer_enddata);
+    debug_printf3("read new events ... %d bytes read\n",ldcs_fdlist_nt[fd].buffer_enddata);
 
     if (ldcs_fdlist_nt[fd].buffer_enddata < 0) {
       if (errno == EINTR) {
@@ -131,19 +131,19 @@ char *ldcs_notify_get_next_file(int fd) {
     }
   }
   
-  debug_printf("scan for next events ... buffer_next=%d\n",ldcs_fdlist_nt[fd].buffer_next);
+  debug_printf3("scan for next events ... buffer_next=%d\n",ldcs_fdlist_nt[fd].buffer_next);
   event = (struct inotify_event *) &ldcs_fdlist_nt[fd].buffer[ldcs_fdlist_nt[fd].buffer_next];
 
-  debug_printf("got event... wd=%d mask=%u cookie=%u len=%u \n",
+  debug_printf3("got event... wd=%d mask=%u cookie=%u len=%u \n",
 	       event->wd, event->mask,event->cookie, event->len);
 
   if (event->len) {
     result=strdup(event->name);
-    debug_printf("          name=%s \n",event->name);
+    debug_printf3("          name=%s \n",event->name);
   }
     
   ldcs_fdlist_nt[fd].buffer_next += EVENT_SIZE + event->len;
-  debug_printf("shift buffer buffer_next=%d of enddata=%d event_size=%d event_len=%d\n",
+  debug_printf3("shift buffer buffer_next=%d of enddata=%d event_size=%ld event_len=%u\n",
 	       ldcs_fdlist_nt[fd].buffer_next,ldcs_fdlist_nt[fd].buffer_enddata,EVENT_SIZE,event->len);
   
   return(result);

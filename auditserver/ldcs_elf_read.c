@@ -108,7 +108,7 @@ static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size
 int read_file_and_strip(FILE *f, void *data, size_t *size) {
    int result = readLoadableFileSections(f, (unsigned char *) data, size);
    if (result == ERR) {
-      debug_printf("Error reading from file\n");
+      debug_printf3("Error reading from file\n");
       return -1;
    }
    return 0;

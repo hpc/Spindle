@@ -5,8 +5,8 @@ COD = $(top_builddir)/tools/cobo/src
 CAD = $(top_builddir)/cache
 LCD = $(top_builddir)/comlib
 
-LDADD = $(COD)/libldcs_cobo.la
-AM_CPPFLAGS = -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/auditserver -I$(top_srcdir)/comlib -I$(top_srcdir)/cache
+LDADD = $(COD)/libldcs_cobo.la $(top_builddir)/logging/libspindlelogc.la
+AM_CPPFLAGS = -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/auditserver -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/logging
 
 client_SOURCES = client.c
 server_rsh_SOURCES = server_rsh.c

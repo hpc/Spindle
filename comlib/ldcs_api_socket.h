@@ -12,6 +12,8 @@ int ldcs_destroy_server_socket(int fd);
 int ldcs_send_msg_socket(int fd, ldcs_message_t * msg);
 ldcs_message_t * ldcs_recv_msg_socket(int fd, ldcs_read_block_t block );
 int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+char *ldcs_get_connection_string_socket(int fd);
+int ldcs_register_connection_socket(char *connection_str);
 
 /* internal */
 int _ldcs_write_socket(int fd, const void *data, int bytes );

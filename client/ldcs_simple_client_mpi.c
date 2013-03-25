@@ -44,14 +44,14 @@ int main(int argc, char *argv[])
   if(ldcs_locmodstr) {
     int ldcs_locmod=atoi(ldcs_locmodstr);
     char buffer[MAX_PATH_LEN];
-    debug_printf("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
+    debug_printf3("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
     if(strlen(ldcs_location)+10<MAX_PATH_LEN) {
       sprintf(buffer,"%s-%02d",ldcs_location,getpid()%ldcs_locmod);
-      debug_printf("open connection to ldcs %s %d\n",buffer,ldcs_number);
+      debug_printf3("open connection to ldcs %s %d\n",buffer,ldcs_number);
       ldcsid=ldcs_open_connection(buffer,ldcs_number);
     } else _error("location path too long");
   } else {
-    debug_printf("open connection to ldcs %s %d\n",ldcs_location,ldcs_number);
+    debug_printf3("open connection to ldcs %s %d\n",ldcs_location,ldcs_number);
     ldcsid=ldcs_open_connection(ldcs_location,ldcs_number);
   }
   if(ldcsid>-1) {

@@ -1,3 +1,7 @@
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -94,57 +98,97 @@ int ldcs_open_connection_pipe(char* location, int number) {
   struct stat st;
   int stat_cnt;
   char fifo[MAX_PATH_LEN];
+  char ready[MAX_PATH_LEN];
 
   fd=get_new_fd_pipe();
   if(fd<0) return(-1);
   
   ldcs_pipe_fdlist[fd].type=LDCS_PIPE_FD_TYPE_CONN;
 
-  /* don't use the number, use instead the pid  */
-  number=getpid();
-
   /* TBD: remove pipe if already existing */
   
   /* wait for directory (at most one minute) */
   stat_cnt=0;
-  while ((stat(location, &st) == -1) && (stat_cnt<60)) {
-    debug_printf("waiting: location %s does not exists (after %d seconds)\n",location,stat_cnt);
-    sleep(1);
+  snprintf(ready, MAX_PATH_LEN, "%s/spindle_comm.%d/ready", location, number);
+  while ((stat(ready, &st) == -1) && (stat_cnt<600)) {
+    debug_printf3("waiting: location %s does not exists (after %d seconds)\n",location,stat_cnt);
+    usleep(100000); /* .1 seconds */
     stat_cnt++;
   }
   
-
   /* create incomming fifo */
-  sprintf(fifo, "%s/fifo-%d-0", location , number );
+  sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-0", location, number, getpid());
   _ldcs_mkfifo(fifo);
-  debug_printf("after make fifo: -> path=%s\n",fifo);
+  debug_printf3("after make fifo: -> path=%s\n",fifo);
   if (NULL == (ldcs_pipe_fdlist[fd].in_fn = (char *) malloc(strlen(fifo)+1))) return -1;
   strcpy(ldcs_pipe_fdlist[fd].in_fn,fifo);
 
   /* create outgoing fifo */
-  sprintf(fifo, "%s/fifo-%d-1", location , number );
+  sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-1", location, number, getpid());
   _ldcs_mkfifo(fifo);
-  debug_printf("after make fifo: -> path=%s\n",fifo);  
+  debug_printf3("after make fifo: -> path=%s\n",fifo);  
   if (NULL == (ldcs_pipe_fdlist[fd].out_fn = (char *) malloc(strlen(fifo)+1))) return -1;
   strcpy(ldcs_pipe_fdlist[fd].out_fn,fifo);
 
   /* open incomming fifo */
   /* |O_NONBLOCK not for client */
-  debug_printf("before open fifo %s\n",ldcs_pipe_fdlist[fd].in_fn);
+  debug_printf3("before open fifo %s\n",ldcs_pipe_fdlist[fd].in_fn);
   if (-1 == (fifoid = open(ldcs_pipe_fdlist[fd].in_fn, O_RDONLY))) _error("open fifo failed");
-  debug_printf("after  open fifo: -> fifoid=%d\n",fifoid);
+  debug_printf3("after  open fifo: -> fifoid=%d\n",fifoid);
   ldcs_pipe_fdlist[fd].in_fd=fifoid;
 
   /* open outgoing fifo */
-  debug_printf("before open fifo %s\n",ldcs_pipe_fdlist[fd].out_fn);
+  debug_printf3("before open fifo %s\n",ldcs_pipe_fdlist[fd].out_fn);
   if (-1 == (fifoid = open(ldcs_pipe_fdlist[fd].out_fn, O_WRONLY))) _error("open fifo failed");
-  debug_printf("after open fifo: -> fifoid=%d\n",fifoid);
+  debug_printf3("after open fifo: -> fifoid=%d\n",fifoid);
   ldcs_pipe_fdlist[fd].out_fd=fifoid;
 
 
 
   return(fd);
   
+}
+
+char *ldcs_get_connection_string_pipe(int fd)
+{
+   char *in_name = ldcs_pipe_fdlist[fd].in_fn;
+   char *out_name = ldcs_pipe_fdlist[fd].out_fn;
+   int in_fd = ldcs_pipe_fdlist[fd].in_fd;
+   int out_fd = ldcs_pipe_fdlist[fd].out_fd;
+   
+   int slen = strlen(in_name) + strlen(out_name) + 64;
+   char *str = (char *) malloc(slen);
+   if (!str)
+      return NULL;
+   snprintf(str, slen, "%s %s %d %d", in_name, out_name, in_fd, out_fd);
+   return str;
+}
+
+int ldcs_register_connection_pipe(char *connection_str)
+{
+   char *in_name = NULL, *out_name = NULL;
+   int in_fd, out_fd, result;
+
+   result = sscanf(connection_str, "%as %as %d %d", &in_name, &out_name, &in_fd, &out_fd);
+   if (result != 4) {
+      err_printf("Reading connection string.  Returned %d on '%s' (%s %s %d %d)\n", result, connection_str,
+                 in_name, out_name, in_fd, out_fd);
+      return -1;
+   }
+
+   int fd = get_new_fd_pipe();
+   if (fd < 0) {
+      err_printf("Could not create new pipe\n");
+      return -1;
+   }
+
+   ldcs_pipe_fdlist[fd].type = LDCS_PIPE_FD_TYPE_CONN;
+   ldcs_pipe_fdlist[fd].in_fn = in_name;
+   ldcs_pipe_fdlist[fd].out_fn = out_name;
+   ldcs_pipe_fdlist[fd].in_fd = in_fd;
+   ldcs_pipe_fdlist[fd].out_fd = out_fd;
+
+   return fd;
 }
 
 int ldcs_close_connection_pipe(int fd) {
@@ -154,29 +198,29 @@ int ldcs_close_connection_pipe(int fd) {
   
   rc=close(ldcs_pipe_fdlist[fd].in_fd);
   if(rc!=0) {
-    debug_printf("error while closing fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].in_fn,errno,strerror(errno));
+    debug_printf3("error while closing fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].in_fn,errno,strerror(errno));
   }
   rc=close(ldcs_pipe_fdlist[fd].out_fd);
   if(rc!=0) {
-    debug_printf("error while closing fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].out_fn,errno,strerror(errno));
+    debug_printf3("error while closing fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].out_fn,errno,strerror(errno));
   }
 
   if (stat(ldcs_pipe_fdlist[fd].in_fn, &st)) _error("stat failed");
   if(S_ISFIFO(st.st_mode)) {
     rc=unlink(ldcs_pipe_fdlist[fd].in_fn); 
     if(rc!=0) {
-      debug_printf("error while unlink fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].in_fn,errno,strerror(errno));
+      debug_printf3("error while unlink fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].in_fn,errno,strerror(errno));
     }
-    debug_printf("unlink: %s\n",ldcs_pipe_fdlist[fd].in_fn);
+    debug_printf3("unlink: %s\n",ldcs_pipe_fdlist[fd].in_fn);
   }
 
   if (stat(ldcs_pipe_fdlist[fd].out_fn, &st)) _error("stat failed");
   if(S_ISFIFO(st.st_mode)) {
     rc=unlink(ldcs_pipe_fdlist[fd].out_fn);
     if(rc!=0) {
-      debug_printf("error while unlink fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].out_fn,errno,strerror(errno));
+      debug_printf3("error while unlink fifo %s errno=%d (%s)\n",ldcs_pipe_fdlist[fd].out_fn,errno,strerror(errno));
     }
-    debug_printf("unlink: %s\n",ldcs_pipe_fdlist[fd].in_fn);
+    debug_printf3("unlink: %s\n",ldcs_pipe_fdlist[fd].in_fn);
   }
 
   free_fd_pipe(fd);
@@ -192,19 +236,23 @@ int ldcs_create_server_pipe(char* location, int number) {
   fd=get_new_fd_pipe();
   if(fd<0) return(-1);
 
-  debug_printf("test direcrory before mkdir %s\n",location);
-  if (stat(location, &st) == -1) {
+  int len = strlen(location) + 32;
+  char *staging_dir = (char *) malloc(len);
+  snprintf(staging_dir, len, "%s/spindle_comm.%d", location, number);
+
+  debug_printf3("test direcrory before mkdir %s\n",staging_dir);
+  if (stat(staging_dir, &st) == -1) {
     /* try create directory */
-    if (-1 == mkdir(location, 0766)) {
-      printf("mkdir: ERROR during mkdir %s\n", location);
+    if (-1 == mkdir(staging_dir, 0766)) {
+      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
       _error("mkdir failed");
     }
-    debug_printf("after mkdir %s\n",location);
+    debug_printf3("after mkdir %s\n",staging_dir);
   } else {
     if(S_ISDIR(st.st_mode)) {
-      debug_printf("%s already exists, using this direcory\n",location);
+      debug_printf3("%s already exists, using this direcory\n",staging_dir);
     } else {
-      printf("mkdir: ERROR %s exists and is not a directory\n", location);
+      printf("mkdir: ERROR %s exists and is not a directory\n", staging_dir);
       _error("mkdir failed");
     }
   }
@@ -212,12 +260,17 @@ int ldcs_create_server_pipe(char* location, int number) {
   /* FiFos will be created by client */
   /* -> setup notify to get new connections */
   ldcs_pipe_fdlist[fd].type=LDCS_PIPE_FD_TYPE_SERVER;
-  ldcs_pipe_fdlist[fd].notify_fd=ldcs_notify_init(location);
+  ldcs_pipe_fdlist[fd].notify_fd=ldcs_notify_init(staging_dir);
   ldcs_pipe_fdlist[fd].conn_list=NULL;
   ldcs_pipe_fdlist[fd].conn_list_size=0;
   ldcs_pipe_fdlist[fd].conn_list_used=0;
-  ldcs_pipe_fdlist[fd].path=strdup(location);
+  ldcs_pipe_fdlist[fd].path=staging_dir;
   
+  char path[MAX_PATH_LEN];
+  snprintf(path, MAX_PATH_LEN, "%s/ready", staging_dir);
+  int readyfd = creat(path, 0600);
+  close(readyfd);
+
   return(fd);
 }
 
@@ -259,15 +312,15 @@ int ldcs_open_server_connections_pipe(int fd, int *more_avail) {
   sprintf(fifo, "%s/fifo-%d-1", ldcs_pipe_fdlist[fd].path , pid );
   ldcs_pipe_fdlist[connfd].in_fn = strdup(fifo);
 
-  debug_printf("before open fifo '%s'\n",ldcs_pipe_fdlist[connfd].out_fn);
+  debug_printf3("before open fifo '%s'\n",ldcs_pipe_fdlist[connfd].out_fn);
   if (-1 == (fifoid = open(ldcs_pipe_fdlist[connfd].out_fn, O_WRONLY))) _error("open fifo failed");
-  debug_printf("after open fifo (out): -> fifoid=%d\n",fifoid);
+  debug_printf3("after open fifo (out): -> fifoid=%d\n",fifoid);
   ldcs_pipe_fdlist[connfd].out_fd=fifoid;
 
-  debug_printf("before open fifo '%s'\n",ldcs_pipe_fdlist[connfd].in_fn);
+  debug_printf3("before open fifo '%s'\n",ldcs_pipe_fdlist[connfd].in_fn);
   if (-1 == (fifoid = open(ldcs_pipe_fdlist[connfd].in_fn, O_RDONLY|O_NONBLOCK)))  _error("open fifo failed");
   /* if (-1 == (fifoid = open(ldcs_pipe_fdlist[connfd].in_fn, O_RDONLY)))  _error("open fifo failed"); */
-  debug_printf("after open fifo (in) : -> fifoid=%d\n",fifoid);
+  debug_printf3("after open fifo (in) : -> fifoid=%d\n",fifoid);
   ldcs_pipe_fdlist[connfd].in_fd=fifoid;
 
   /* add info to server fd data structure */
@@ -290,9 +343,9 @@ int ldcs_close_server_connection_pipe(int fd) {
 
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   
-  debug_printf(" closing fd %d for conn %d, closing connection\n",ldcs_pipe_fdlist[fd].in_fd,fd);
+  debug_printf3(" closing fd %d for conn %d, closing connection\n",ldcs_pipe_fdlist[fd].in_fd,fd);
   close(ldcs_pipe_fdlist[fd].in_fd);
-  debug_printf(" closing fd %d for conn %d, closing connection\n",ldcs_pipe_fdlist[fd].out_fd,fd);
+  debug_printf3(" closing fd %d for conn %d, closing connection\n",ldcs_pipe_fdlist[fd].out_fd,fd);
   close(ldcs_pipe_fdlist[fd].out_fd);
 
   /* remove connection from server list */
@@ -311,12 +364,15 @@ int ldcs_close_server_connection_pipe(int fd) {
 int ldcs_destroy_server_pipe(int fd) {
 
   int rc=0;
+  char path[MAX_PATH_LEN];
 
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   
   ldcs_notify_destroy(ldcs_pipe_fdlist[fd].notify_fd);
-  
 
+  snprintf(path, MAX_PATH_LEN, "%s/ready", ldcs_pipe_fdlist[fd].path);
+  unlink(path);
+  rmdir(ldcs_pipe_fdlist[fd].path);
   free_fd_pipe(fd);
 
   return(rc);
@@ -331,7 +387,7 @@ int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg) {
 
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   
-  debug_printf("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,msg->data );  
 
@@ -377,7 +433,7 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
     msg->data = NULL;
   }
 
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len, msg->data );
 
@@ -397,7 +453,7 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
   if (n < 0) _error("ERROR reading header from connection");
 
   if(msg->header.len>msg->alloclen) {
-    debug_printf("ERROR message too long: %s len=%d ...\n",
+    debug_printf3("ERROR message too long: %s len=%d ...\n",
 		 _message_type_to_str(msg->header.type),msg->header.len );
     _error("ERROR message too long");
   }
@@ -413,7 +469,7 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
     *msg->data = '\0';
   }
 
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len, msg->data );
 
@@ -434,18 +490,18 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
 
   while (left > 0)  {
     btoread    = left;
-    debug_printf("before read from fifo %d \n",fd);
+    debug_printf3("before read from fifo %d \n",fd);
     bread      = read(fd, dataptr, btoread);
     if(bread<0) {
-      if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf("read from fifo: got EAGAIN or EWOULDBLOCK\n");
-	if(block==LDCS_READ_NO_BLOCK) return(0);
-	else continue;
-      } else { 
-	debug_printf("read from fifo: %d bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
-      }
+       if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
+          debug_printf3("read from fifo: got EAGAIN or EWOULDBLOCK\n");
+          if(block==LDCS_READ_NO_BLOCK) return(0);
+          else continue;
+       } else { 
+          debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+       }
     } else {
-      debug_printf("read from fifo: %d bytes ...\n",bread);
+       debug_printf3("read from fifo: %ld bytes ...\n",bread);
     }
     if(bread>0) {
       left      -= bread;
@@ -483,9 +539,9 @@ int _ldcs_write_pipe(int fd, const void *data, int bytes ) {
 int _ldcs_mkfifo(char *fifo) {
   int rc=0;
   
-  debug_printf("mkfifo: %s \n", fifo);
+  debug_printf3("mkfifo: %s \n", fifo);
   rc=mkfifo(fifo, 0666);
-  debug_printf("mkfifo: %s --> %d (%d,%s)\n", fifo,rc,errno,strerror(errno));
+  debug_printf3("mkfifo: %s --> %d (%d,%s)\n", fifo,rc,errno,strerror(errno));
     
   if (rc == -1) {
     if(errno==EEXIST) {

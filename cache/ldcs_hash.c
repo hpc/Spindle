@@ -23,7 +23,7 @@ void ldcs_hash_addEntry(char *dirname, char *filename) {
    ldcs_hash_key_t key = ldcs_hash_Val(filename);
    unsigned int index = (unsigned int) key % HASH_SIZE;
 
-   /* debug_printf("Adding dir='%s' fn='%s' to cache at index %u\n", dirname, filename, index); */
+   /* debug_printf3("Adding dir='%s' fn='%s' to cache at index %u\n", dirname, filename, index); */
    newentry = ldcs_hash_table + index;
    if (newentry->dirname != NULL) {
       while (newentry->next != NULL)
@@ -44,10 +44,10 @@ void ldcs_hash_addEntry(char *dirname, char *filename) {
 struct ldcs_hash_entry_t *ldcs_hash_updateEntryLocalPath(char *dirname, char *filename, char *localpath) {
    struct ldcs_hash_entry_t *entry;
 
-   debug_printf("Update localpath dir='%s' fn='%s' to cache %s\n", dirname, filename, localpath);
+   debug_printf3("Update localpath dir='%s' fn='%s' to cache %s\n", dirname, filename, localpath);
    entry=ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
    if(!entry) {
-      debug_printf("No key for %s at \n", filename);
+      debug_printf3("No key for %s at \n", filename);
       return NULL;
    }   
    if(entry->localpath) free(entry->localpath);
@@ -58,10 +58,10 @@ struct ldcs_hash_entry_t *ldcs_hash_updateEntryLocalPath(char *dirname, char *fi
 struct ldcs_hash_entry_t *ldcs_hash_updateEntryOState(char *filename, char *dirname, int ostate) {
    struct ldcs_hash_entry_t *entry;
 
-   debug_printf("Update ostate=%d fn='%s' to cache\n", ostate, filename);
+   debug_printf3("Update ostate=%d fn='%s' to cache\n", ostate, filename);
    entry=ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
    if(!entry) {
-      debug_printf("No key for %s at \n", filename);
+      debug_printf3("No key for %s at \n", filename);
       return NULL;
    }   
    
@@ -76,19 +76,19 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup(const char *filename) {
    unsigned int index = (unsigned int) key % HASH_SIZE;
    
    if (ldcs_hash_table[index].dirname == NULL) {
-      debug_printf("No key for %s at index %u\n", filename, index);
+      debug_printf3("No key for %s at index %u\n", filename, index);
       return NULL;
    }
 
    entry = ldcs_hash_table+index;
    while (entry != NULL) {
       if (entry->hash_val == key && strcmp(filename, entry->filename) == 0) {
-         /* debug_printf("Found entry for %s\n", filename); */
+         /* debug_printf3("Found entry for %s\n", filename); */
          return entry;
       }
       entry = entry->next;
    } 
-   debug_printf("No key for %s at index %u\n", filename, index);
+   debug_printf3("No key for %s at index %u\n", filename, index);
    return NULL;
 }
 
@@ -98,7 +98,7 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_Ostate(const char *filename, i
    unsigned int index = (unsigned int) key % HASH_SIZE;
    
    if (ldcs_hash_table[index].dirname == NULL) {
-      debug_printf("No key for %s at index %u\n", filename, index);
+      debug_printf3("No key for %s at index %u\n", filename, index);
       return NULL;
    }
 
@@ -106,12 +106,12 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_Ostate(const char *filename, i
    while (entry != NULL) {
       if (entry->hash_val == key && strcmp(filename, entry->filename) == 0
 	  && entry->ostate==ostate) {
-         /* debug_printf("Found entry for %s\n", filename); */
+         /* debug_printf3("Found entry for %s\n", filename); */
          return entry;
       }
       entry = entry->next;
    } 
-   debug_printf("No key for %s at index %u\n", filename, index);
+   debug_printf3("No key for %s at index %u\n", filename, index);
    return NULL;
 }
 
@@ -121,7 +121,7 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_DIR(const char *filename, cons
    unsigned int index = (unsigned int) key % HASH_SIZE;
    
    if (ldcs_hash_table[index].dirname == NULL) {
-      debug_printf("No key for %s at index %u\n", filename, index);
+      debug_printf3("No key for %s at index %u\n", filename, index);
       return NULL;
    }
 
@@ -129,12 +129,12 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_DIR(const char *filename, cons
    while (entry != NULL) {
      if (entry->hash_val == key && strcmp(filename, entry->filename) == 0 &&
 	 strcmp(dirname, entry->dirname) == 0 ) {
-	    /* debug_printf("Found entry for %s in dir %s\n", filename, dirname); */
+	    /* debug_printf3("Found entry for %s in dir %s\n", filename, dirname); */
        return entry;
      }
      entry = entry->next;
    } 
-     debug_printf("No key for %s in dir %d at index %u\n", filename, dirname,index);
+     debug_printf3("No key for %s in dir %s at index %u\n", filename, dirname,index);
    return NULL;
 }
 
@@ -144,7 +144,7 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_DIR_Ostate(const char *filenam
    unsigned int index = (unsigned int) key % HASH_SIZE;
    
    if (ldcs_hash_table[index].dirname == NULL) {
-      debug_printf("No key for %s at index %u\n", filename, index);
+      debug_printf3("No key for %s at index %u\n", filename, index);
       return NULL;
    }
 
@@ -152,12 +152,12 @@ struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_DIR_Ostate(const char *filenam
    while (entry != NULL) {
      if (entry->hash_val == key && strcmp(filename, entry->filename) == 0 &&
 	 strcmp(dirname, entry->dirname) == 0  && entry->ostate==ostate ) {
-	    /* debug_printf("Found entry for %s in dir %s\n", filename, dirname); */
+	    /* debug_printf3("Found entry for %s in dir %s\n", filename, dirname); */
        return entry;
      }
      entry = entry->next;
    } 
-     debug_printf("No key for %s in dir %d at index %u\n", filename, dirname,index);
+     debug_printf3("No key for %s in dir %s at index %u\n", filename, dirname,index);
    return NULL;
 }
 
@@ -189,12 +189,12 @@ void ldcs_hash_dump(char *tofile) {
 struct ldcs_hash_entry_t *ldcs_hash_getNextNewEntry() {
   
   while(ldcs_hash_last_new_entry_index<HASH_SIZE) {
-    /* debug_printf("scan entry at %d\n", ldcs_hash_last_new_entry_index); */
+    /* debug_printf3("scan entry at %d\n", ldcs_hash_last_new_entry_index); */
     while (ldcs_hash_last_new_entry_ptr != NULL) {
-      /* debug_printf("scan entry at %d ptr=%x\n", ldcs_hash_last_new_entry_index,ldcs_hash_last_new_entry_ptr); */
+      /* debug_printf3("scan entry at %d ptr=%x\n", ldcs_hash_last_new_entry_index,ldcs_hash_last_new_entry_ptr); */
       if(ldcs_hash_last_new_entry_ptr->state == HASH_ENTRY_STATUS_NEW) {
 	ldcs_hash_last_new_entry_ptr->state = HASH_ENTRY_STATUS_USED;
-	/* debug_printf("found entry at %d\n", ldcs_hash_last_new_entry_index); */
+	/* debug_printf3("found entry at %d\n", ldcs_hash_last_new_entry_index); */
 	return(ldcs_hash_last_new_entry_ptr);
       }
       ldcs_hash_last_new_entry_ptr = ldcs_hash_last_new_entry_ptr->next;

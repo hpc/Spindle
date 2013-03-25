@@ -29,7 +29,7 @@ int spindle_external_fabric_be_CB ( char *myhostname, int myport, int *myrank, i
   *myrank=spindle_external_fabric_data->md_rank;
   *size=spindle_external_fabric_data->md_size;
 
-  debug_printf("starting external fabric cb on BE rank %d\n",*myrank);
+  debug_printf3("starting external fabric cb on BE rank %d\n",*myrank);
 
   if ( LMON_be_amIMaster() == LMON_YES ) {
     host_port_list.size=*size;
@@ -78,7 +78,7 @@ int spindle_external_fabric_be_CB ( char *myhostname, int myport, int *myrank, i
     printf("[LMON FE] HOSTLIST[%d] %s, %d\n", i, &host_port_list.hostlist[i*HOSTNAME_LEN], host_port_list.portlist[i] );
     myhostlist[hc] = strdup(host_port_list.hostlist+i*HOSTNAME_LEN);
     myportlist[hc] = host_port_list.portlist[i];
-    debug_printf("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
+    debug_printf3("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
     hc++;
   }
 
@@ -88,7 +88,7 @@ int spindle_external_fabric_be_CB ( char *myhostname, int myport, int *myrank, i
 
 
 
-  debug_printf("ending external fabric cb on BE\n");
+  debug_printf3("ending external fabric cb on BE\n");
   return(rc);
 }
 

@@ -1,6 +1,3 @@
-#define TARGET_JOB_LAUNCHER_PATH "/usr/bin/srun"
-#define RM_SLURM_SRUN 1
-
 #include "lmon_api/common.h"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_fe.h"
@@ -14,6 +11,7 @@ extern "C" {
 #endif
 
 #include "ldcs_audit_server_md.h"
+#include "ldcs_api.h"
 
 #ifdef __cplusplus
 }
@@ -49,11 +47,6 @@ const int MAXPROCOUNT  = 12000;
 
 static char *ldcs_location = NULL;
 static unsigned int ldcs_number = 0;
-
-/*
- * OUR PARALLEL JOB LAUNCHER 
- */
-const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
 
 double __get_time()
 {
@@ -134,6 +127,14 @@ int main (int argc, char* argv[])
   void *md_data_ptr;
   spindle_external_fabric_data_t spindle_external_fabric_data;
 
+  LOGGING_INIT(const_cast<char *>("FE"));
+
+  debug_printf("Spindle Command Line: ");
+  for (int i = 0; i < argc; i++) {
+     bare_printf("%s ", argv[i]);
+  }
+  bare_printf("\n");
+
   result = parseCmdLine(&argc, &argv);
   if (result != 0) {
      usage();
@@ -148,6 +149,8 @@ int main (int argc, char* argv[])
   /**
    * If number and location weren't set, then set them.
    **/
+  if (getenv("TMPDIR"))
+     ldcs_location = strdup(getenv("TMPDIR"));
   if (!ldcs_location) {
      int name_size;
      const char *username = getUserName();
@@ -159,9 +162,12 @@ int main (int argc, char* argv[])
      snprintf(ldcs_location, name_size, "%s%s", DEFAULT_LDCS_NAME_PREFIX, username);
   }
   if (!ldcs_number) {
-     ldcs_number = DEFAULT_LDCS_NUMBER;
+     ldcs_number = getpid(); //Just needs to be unique across spindle jobs shared
+                             //by the same user with overlapping nodes.
   }
   snprintf(ldcs_number_s, 32, "%d", ldcs_number);
+
+  debug_printf("Location = %s, Number = %s\n", ldcs_location, ldcs_number_s);
 
   /**
    * Setup the launcher command line
@@ -196,57 +202,57 @@ int main (int argc, char* argv[])
    **/
   rc = LMON_fe_init(LMON_VERSION);
   if (rc != LMON_OK )  {
-      fprintf ( stderr, "[LMON FE] LMON_fe_init FAILED\n" );
+      err_printf("[LMON FE] LMON_fe_init FAILED\n" );
       return EXIT_FAILURE;
   }
 
   rc = LMON_fe_createSession(&aSession);
   if (rc != LMON_OK)  {
-    fprintf ( stderr,   "[LMON FE] LMON_fe_createFEBESession FAILED\n");
+     err_printf(  "[LMON FE] LMON_fe_createFEBESession FAILED\n");
     return EXIT_FAILURE;
   }
 
   rc = LMON_fe_regStatusCB(aSession, onLaunchmonStatusChange);
   if (rc != LMON_OK) {
-    fprintf ( stderr,   "[LMON FE] LMON_fe_regStatusCB FAILED\n");     
+    err_printf(  "[LMON FE] LMON_fe_regStatusCB FAILED\n");     
     return EXIT_FAILURE;
   }
   
   rc = LMON_fe_regPackForFeToBe(aSession, packfebe_cb);
   if (rc != LMON_OK) {
-    fprintf (stderr, "[LMON FE] LMON_fe_regPackForFeToBe FAILED\n");
+    err_printf("[LMON FE] LMON_fe_regPackForFeToBe FAILED\n");
     return EXIT_FAILURE;
   } 
   
   rc = LMON_fe_regUnpackForBeToFe(aSession, unpackfebe_cb);
   if (rc != LMON_OK) {
-     fprintf (stderr,"[LMON FE] LMON_fe_regUnpackForBeToFe FAILED\n");
+     err_printf("[LMON FE] LMON_fe_regUnpackForBeToFe FAILED\n");
     return EXIT_FAILURE;
   }
 
   int i = 0;
-  printf("launcher: ");
+  debug_printf2("launcher: ");
   for (i = 0; launcher_argv[i]; i++) {
-     printf("%s ", launcher_argv[i]);
+     bare_printf2("%s ", launcher_argv[i]);
   }
-  printf("\n");
-  printf("daemon: ");
+  bare_printf2("\n");
+  debug_printf2("daemon: ");
   for (i = 0; daemon_opts[i]; i++) {
-     printf("%s ", daemon_opts[i]);
+     bare_printf2("%s ", daemon_opts[i]);
   }
-  printf("\n");
+  bare_printf2("\n");
 
   rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
                                      launcher_argv[0], launcher_argv,
                                      daemon_opts[0], const_cast<char **>(daemon_opts+1),
                                      NULL, NULL);
   if (rc != LMON_OK) {
-     fprintf(stderr, "[LMON FE] LMON_fe_launchAndSpawnDaemons FAILED\n");
+     err_printf("[LMON FE] LMON_fe_launchAndSpawnDaemons FAILED\n");
      return EXIT_FAILURE;
   }
 
   /* set SION debug file name */
-  if(1){
+  if(0){
     char hostname[HOSTNAME_LEN];
     bzero(hostname,HOSTNAME_LEN);
     gethostname(hostname,HOSTNAME_LEN);
@@ -266,13 +272,13 @@ int main (int argc, char* argv[])
   unsigned int ptable_size, actual_size;
   rc = LMON_fe_getProctableSize(aSession, &ptable_size);
   if (rc != LMON_OK) {
-     fprintf(stderr, "LMON_fe_getProctableSize failed\n");
+     err_printf("LMON_fe_getProctableSize failed\n");
      return EXIT_FAILURE;
   }
   MPIR_PROCDESC_EXT *proctab = (MPIR_PROCDESC_EXT *) malloc(sizeof(MPIR_PROCDESC_EXT) * ptable_size);
   rc = LMON_fe_getProctable(aSession, proctab, &actual_size, ptable_size);
   if (rc != LMON_OK) {
-     fprintf(stderr, "LMON_fe_getProctable failed\n");
+     err_printf("LMON_fe_getProctable failed\n");
      return EXIT_FAILURE;
   }
 
@@ -291,20 +297,16 @@ int main (int argc, char* argv[])
 
   /* Close the server */
   ldcs_audit_server_fe_md_close(md_data_ptr);
-  
+  /*
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
   if ( (rc == LMON_EBDARG )
        || ( rc == LMON_ENOMEM )
        || ( rc == LMON_EINVAL ) )  {
-      fprintf ( stderr, "[LMON FE] FAILED\n");
+      err_printf("[LMON FE] FAILED\n");
       return EXIT_FAILURE;
   }
-
-  sleep (3);
-
-  fprintf ( stdout,
-    "\n[LMON FE] PASS: run through the end\n");
-  
+  */
+  debug_printf("Exiting with success\n");
   return EXIT_SUCCESS;
 }
 

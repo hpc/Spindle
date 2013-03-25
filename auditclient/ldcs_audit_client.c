@@ -47,7 +47,6 @@ static int rankinfo[4]={-1,-1,-1,-1};
 /* compare the pointer top the cookie not the cookie itself, it may be changed during runtime by audit library  */
 static uintptr_t *firstcookie=NULL;
 static signed long cookie_shift = 0;
-/* static int use_ldcs = 1;  WF DEBUG*/
 static int use_ldcs = 1;
 
 
@@ -65,18 +64,76 @@ char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_l
 }
 
 
+static int init_server_connection()
+{
+   char *location, *connection, *rankinfo_s;
+   int number;
+   
+   debug_printf("Initializing connection to server\n");
+
+   if (ldcsid != -1)
+      return 0;
+   if (!use_ldcs)
+      return 0;
+
+   location = getenv("LDCS_LOCATION");
+   number = atoi(getenv("LDCS_NUMBER"));
+   connection = getenv("LDCS_CONNECTION");
+   rankinfo_s = getenv("LDCS_RANKINFO");
+
+   if (connection) {
+      /* boostrapper established the connection for us.  Reuse it. */
+      debug_printf("Recreating exiting connection to server\n");
+      debug_printf3("location = %s, number = %d, connection = %s, rankinfo = %s\n",
+                    location, number, connection, rankinfo_s);
+      ldcsid  = ldcs_register_connection(connection);
+      if (ldcsid == -1)
+         return -1;
+      assert(rankinfo_s);
+      sscanf(rankinfo_s, "%d %d %d %d", rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
+   }
+   else {
+      /* Establish a new connection */
+      debug_printf("open connection to ldcs %s %d\n", location, number);
+      ldcsid = ldcs_open_connection(location, number);
+      if (ldcsid == -1)
+         return -1;
+
+      ldcs_send_CWD(ldcsid);
+      ldcs_send_HOSTNAME(ldcsid);
+      ldcs_send_PID(ldcsid);
+      ldcs_send_LOCATION(ldcsid, location);
+      ldcs_send_MYRANKINFO_QUERY (ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);
+   }
+
+#if defined(SIONDEBUG)
+   char* ldcs_auditdebug=getenv("LDCS_AUDITDEBUG");
+   if(ldcs_auditdebug) {
+      if((rankinfo[0]==0) && ((rankinfo[2]%2)==0)) {
+         char filename[MAX_PATH_LEN];
+         sprintf(filename,"%s_%02d_%02d.log",ldcs_auditdebug,rankinfo[0],rankinfo[2]);
+         sion_debug_on(1023,filename);
+      }
+   }
+#endif
+      return 0;
+}
+
 /* rtld-audit interface functions */
 
 unsigned int la_version(unsigned int version)
 {
   char buf[256];
   int len;
-  debug_printf("la_version(): %d\n", version);
+  
+  LOGGING_INIT("Client");
+
+  debug_printf3("la_version(): %d\n", version);
   
   len=readlink("/proc/self/exe", buf, sizeof(buf)-1);
   if(len>0) {
     buf[len]='\0';
-    debug_printf("la_version(): progname=%s\n", buf);
+    debug_printf3("la_version(): progname=%s\n", buf);
     /* switch of ldcs if exe is the starter */
     if ( 
 	(strstr(buf,"/usr/bin/srun")!=NULL)
@@ -89,114 +146,61 @@ unsigned int la_version(unsigned int version)
       ||
 	(strstr(buf,"launchmon")!=NULL)
 	 )
-      {
-      debug_printf("la_version(): prg is the starter disable caching ... \n");
-      use_ldcs=0;
+    {
+       debug_printf2("la_version(): prg is the starter disable caching ... \n");
+       use_ldcs=0;
     }
   }
 
-  /* printf("la_version(): %d\n", version);  */
-   /* use_ldcs=0;	 */	/* WF */
-
-  /* if(getpid()%128==0) { */
-  /*   fprintf(stderr, "AUDITCLIENT for %s (%d) start time -> %14.4f\n",buf, getpid(), ldcs_get_time()); */
-  /* } */
+  if (use_ldcs)
+     init_server_connection();
 
   return version;
 }
 
-static int get_process_rank()
-{
-#if defined(os_linux)
-   return getpid();
-#elif defined(os_bgq)
-#error BGQ TODO: return rank rather than PID here
-#endif
-}
-
 char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 {
-  char *myname, *newname;
+   char *myname, *newname, *pos_slash;
 
-  myname=(char *) name;
-  debug_printf("la_objsearch():         name = %s; cookie = %p; flag = %s\n", name, cookie,
-	       (flag == LA_SER_ORIG) ?    "LA_SER_ORIG" :
-	       (flag == LA_SER_LIBPATH) ? "LA_SER_LIBPATH" :
-	       (flag == LA_SER_RUNPATH) ? "LA_SER_RUNPATH" :
-	       (flag == LA_SER_DEFAULT) ? "LA_SER_DEFAULT" :
-	       (flag == LA_SER_CONFIG) ?  "LA_SER_CONFIG" :
-	       (flag == LA_SER_SECURE) ?  "LA_SER_SECURE" :
-	       "???");
-
-  if ((ldcsid==-1) && (use_ldcs)) {
-    char* ldcs_location = getenv("LDCS_LOCATION");
-    int ldcs_number = atoi(getenv("LDCS_NUMBER"));
-
-    char buffer[MAX_PATH_LEN];
-    if (strlen(ldcs_location)+10>=MAX_PATH_LEN) {
-       _error("location path too long");
-    }
-//    sprintf(buffer, "%s-%d", ldcs_location, get_process_rank());
-    sprintf(buffer, "%s", ldcs_location);
-    debug_printf("open connection to ldcs %s %d\n", buffer, ldcs_number);
-    ldcsid = ldcs_open_connection(buffer, ldcs_number);
-
-    if(ldcsid > -1) {
-       ldcs_send_CWD(ldcsid);
-       ldcs_send_HOSTNAME(ldcsid);
-       ldcs_send_PID(ldcsid);
-       ldcs_send_LOCATION(ldcsid,ldcs_location);
-       ldcs_send_MYRANKINFO_QUERY (ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);
-       fprintf(stderr, "AUDITCLIENT: pid=%6d local rank: %2d of %2d, MD rank: %2d of %2d start time -> %14.4f\n",
-               getpid(), rankinfo[0],rankinfo[1],rankinfo[2],rankinfo[3],ldcs_get_time());
-#if defined(SIONDEBUG)
-       char* ldcs_auditdebug=getenv("LDCS_AUDITDEBUG");
-       if(ldcs_auditdebug) {
-          if((rankinfo[0]==0) && ((rankinfo[2]%2)==0)) {
-             char filename[MAX_PATH_LEN];
-             sprintf(filename,"%s_%02d_%02d.log",ldcs_auditdebug,rankinfo[0],rankinfo[2]);
-             sion_debug_on(1023,filename);
-          }
-       }
-#endif
-    }
-  }
+   myname=(char *) name;
+   debug_printf3("la_objsearch():         name = %s; cookie = %p; flag = %s\n", name, cookie,
+                 (flag == LA_SER_ORIG) ?    "LA_SER_ORIG" :
+                 (flag == LA_SER_LIBPATH) ? "LA_SER_LIBPATH" :
+                 (flag == LA_SER_RUNPATH) ? "LA_SER_RUNPATH" :
+                 (flag == LA_SER_DEFAULT) ? "LA_SER_DEFAULT" :
+                 (flag == LA_SER_CONFIG) ?  "LA_SER_CONFIG" :
+                 (flag == LA_SER_SECURE) ?  "LA_SER_SECURE" :
+                 "???");
 
   /* check if direct name given --> return name  */
-  {
-     char *pos_slash = strchr(name, '/');
-     if(!pos_slash) {
-        debug_printf("Returning direct name %s after input %s\n", name, name);
-        return (char *) name;
-     }
-  }
   
+   pos_slash = strchr(name, '/');
+   if(!pos_slash) {
+      debug_printf3("Returning direct name %s after input %s\n", name, name);
+      return (char *) name;
+   }
   
-  debug_printf("AUDITSEND: L:%s\n",myname);
-  /* fprintf(stderr,"AUDITSEND: L:%s\n",myname); */
+  debug_printf2("AUDITSEND: L:%s\n",myname);
   if ((ldcsid>=0) && (use_ldcs)) {
      ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
-     debug_printf("AUDITRECV: L:%s\n",newname);
-    /* fprintf(stderr,"AUDITRECV: %s:%s\n",myname,newname); */
+     debug_printf2("AUDITRECV: L:%s\n",newname);
      
      if(!newname) {
         newname=concatStrings(NOT_FOUND_PREFIX, NOT_FOUND_PREFIX_SIZE, myname, strlen(myname));
      }
-     debug_printf(" found %s -> %s\n",myname,newname);
+     debug_printf3(" found %s -> %s\n",myname,newname);
   } else {
      newname=myname;
   }
   
-
-  debug_printf("la_objsearch():         name = %s; cookie = %p -> '%s'\n", name, cookie,newname);
-  /* fprintf(stderr,"la_objsearch():         name = %s; cookie = %p -> '%s'\n", name, cookie,newname); */
+  debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
   
   return newname;
 }
 
 void la_activity (uintptr_t *cookie, unsigned int flag)
 {
-  debug_printf("la_activity():          cookie = %p; flag = %s\n", cookie,
+  debug_printf3("la_activity():          cookie = %p; flag = %s\n", cookie,
 	 (flag == LA_ACT_CONSISTENT) ? "LA_ACT_CONSISTENT" :
 	 (flag == LA_ACT_ADD) ?        "LA_ACT_ADD" :
 	 (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
@@ -209,13 +213,13 @@ la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
    signed long shift;
 
-   debug_printf("la_objopen():           loading \"%s\"; lmid = %s; cookie=%p\n",
+   debug_printf3("la_objopen():           loading \"%s\"; lmid = %s; cookie=%p\n",
 		map->l_name, (lmid == LM_ID_BASE) ?  "LM_ID_BASE" :
 		(lmid == LM_ID_NEWLM) ? "LM_ID_NEWLM" : 
 		"???", cookie);
 
    if (!firstcookie) {
-     debug_printf("cookie store %u \n",*cookie);
+      debug_printf3("cookie store %lx\n", (unsigned long) *cookie);
      firstcookie=cookie;
    }
    
@@ -232,32 +236,20 @@ la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 void
 la_preinit(uintptr_t *cookie)
 {
-  debug_printf("la_preinit():           %p\n", cookie);
+  debug_printf3("la_preinit():           %p\n", cookie);
 }
 
 unsigned int
 la_objclose (uintptr_t *cookie)
 {
-  debug_printf("la_objclose():          %p\n", cookie);
+  debug_printf3("la_objclose():          %p\n", cookie);
 
-  debug_printf("cookie compare %p %p\n",cookie,firstcookie);
+  debug_printf3("cookie compare %p %p\n",cookie,firstcookie);
   if(cookie == firstcookie) {
     if ((ldcsid>=0) && (use_ldcs)) {
-#if defined(SIONDEBUG)
-      /*
-	char* ldcs_auditdebug=getenv("LDCS_AUDITDEBUG");
-	if(ldcs_auditdebug) {
-	  if((rankinfo[0]==0) && ((rankinfo[2]%2)==0)) {
-	     ldcs_dump_memmaps(getpid()); 
-	  }
-	}
-      */
-#endif
-      debug_printf("close connection %d\n",ldcsid);
+      debug_printf2("AUDITSEND: Closing connection %d\n", ldcsid);
       ldcs_send_END(ldcsid);
       ldcs_close_connection(ldcsid);
-      
-   
     }
   }
 
@@ -265,48 +257,11 @@ la_objclose (uintptr_t *cookie)
   
 }
 
-#if 0
-uintptr_t
-la_symbind32(Elf32_Sym *sym, unsigned int ndx, uintptr_t *refcook,
-	     uintptr_t *defcook, unsigned int *flags, const char *symname)
-{
-#ifdef VERYVERBOSE
-  debug_printf("la_symbind32():         symname = %s; sym->st_value = %p\n",
-	 symname, sym->st_value);
-  debug_printf("                        ndx = %d; flags = 0x%x", ndx, *flags);
-  debug_printf("; refcook = %x; defcook = %x\n", refcook, defcook);
-#endif	   
-
-  return sym->st_value;
-}
-
-uintptr_t
-la_symbind64(Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
-	     uintptr_t *defcook, unsigned int *flags, const char *symname)
-{
-  printf("la_symbind64(): symname = %s; sym->st_value = %p\n",
-	 symname, sym->st_value);
-#ifdef VERYVERBOSE
-  debug_printf("la_symbind64(): symname = %s; sym->st_value = %p\n",
-	 symname, sym->st_value);
-  debug_printf("        ndx = %d; flags = 0x%x", ndx, *flags);
-  debug_printf("; refcook = %x; defcook = %x\n", refcook, defcook);
-#endif	   
-
-  return sym->st_value;
-}
-#endif
-
 #if (!defined(arch_x86_64)) && (!defined(arch_ppc64))
-Elf32_Addr
-la_i86_gnu_pltenter(Elf32_Sym *sym, unsigned int ndx,
+Elf32_Addr la_i86_gnu_pltenter(Elf32_Sym *sym, unsigned int ndx,
 		    uintptr_t *refcook, uintptr_t *defcook, La_i86_regs *regs,
 		    unsigned int *flags, const char *symname, long int *framesizep)
 {
-#ifdef VERYVERBOSE
-  debug_printf("la_i86_gnu_pltenter():  %s (%p)\n", symname, sym->st_value);
-#endif	   
-
   return sym->st_value;
 }
 #endif
@@ -359,28 +314,27 @@ int do_check_file(const char *path, char **newpath) {
   myname=(char *) path;
 
   if ((ldcsid>=0) && (use_ldcs)) {
-    debug_printf("AUDITSEND: E:%s\n",path);
+    debug_printf2("AUDITSEND: E:%s\n",path);
     /* fprintf(stderr,"AUDITSEND: E:%s\n",path); */
     ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
-    debug_printf("AUDITRECV: E:%s\n",newname);
+    debug_printf2("AUDITRECV: E:%s\n",newname);
     /* fprintf(stderr,"AUDITRECV: E %s:%s\n",myname,newname); */
   } else {
-    debug_printf("no ldcs: open file query %s\n",myname);
+    debug_printf3("no ldcs: open file query %s\n",myname);
     return -1;
   }
 
   if (newname != NULL) {
     *newpath=newname;
-    debug_printf("file found under path %s\n",*newpath);
+    debug_printf3("file found under path %s\n",*newpath);
     return 1;
   } else {
     *newpath=NULL;
     errno = ENOENT;
-    debug_printf("file not found file, set errno to ENOENT\n");
+    debug_printf3("file not found file, set errno to ENOENT\n");
     return(0);
   }
 }
-
 
 static int rtcache_open(const char *path, int oflag, ...)
 {
@@ -393,7 +347,7 @@ static int rtcache_open(const char *path, int oflag, ...)
    mode = va_arg(argp, mode_t);
    va_end(argp);
 
-   debug_printf("open redirection of %s\n", path);
+   debug_printf3("open redirection of %s\n", path);
 
    if (!open_filter(path) || !open_filter_flags(oflag) || (ldcsid<0) )  {
      return orig_open(path, oflag, mode);
@@ -404,7 +358,7 @@ static int rtcache_open(const char *path, int oflag, ...)
    else if(rc<0) {
      return orig_open(path, oflag, mode);
    } else {
-     debug_printf(" redirect %s to %s\n", path, newpath);
+     debug_printf("Redirecting 'open' call, %s to %s\n", path, newpath);
      return orig_open(newpath, oflag, mode);
      free(newpath);
    }
@@ -422,7 +376,7 @@ static int rtcache_open64(const char *path, int oflag, ...)
    mode = va_arg(argp, mode_t);
    va_end(argp);
 
-   debug_printf("open64 redirection of %s\n", path);
+   debug_printf3("open64 redirection of %s\n", path);
 
    if (!open_filter(path) || !open_filter_flags(oflag) || (ldcsid<0) )  {
      return orig_open64(path, oflag, mode);
@@ -433,7 +387,7 @@ static int rtcache_open64(const char *path, int oflag, ...)
    else if(rc<0) {
      return orig_open64(path, oflag, mode);
    } else {
-     debug_printf(" redirect %s to %s\n", path, newpath);
+     debug_printf("Redirecting 'open64' call, %s to %s\n", path, newpath);
      return orig_open64(newpath, oflag, mode);
      free(newpath);
    }
@@ -445,7 +399,7 @@ static FILE *rtcache_fopen(const char *path, const char *mode)
 {
    int rc;
    char *newpath;
-   debug_printf("fopen redirection of %s\n", path);
+   debug_printf3("fopen redirection of %s\n", path);
    if (!open_filter(path) || !open_filter_str(mode) || (ldcsid<0) )  {
      return orig_fopen(path, mode);
    } else {
@@ -455,7 +409,7 @@ static FILE *rtcache_fopen(const char *path, const char *mode)
    else if(rc<0) {
      return orig_fopen(path, mode);
    } else {
-     debug_printf(" redirect %s to %s\n", path, newpath);
+     debug_printf("Redirecting 'fopen' call, %s to %s\n", path, newpath);
      return orig_fopen(newpath, mode);
      free(newpath);
    }
@@ -468,7 +422,7 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    char *newpath=NULL;
    FILE *fp;
 
-   debug_printf("fopen64 redirection of %s\n", path);
+   debug_printf3("fopen64 redirection of %s\n", path);
 
    if (!open_filter(path) || !open_filter_str(mode) || (ldcsid<0) )  {
      return orig_fopen64(path, mode);
@@ -479,9 +433,8 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    else if(rc<0) {
      return orig_fopen64(path, mode);
    } else {
-     debug_printf(" redirect %s to %s\n", path, newpath);
+     debug_printf("Redirecting 'fopen64' call, %s to %s\n", path, newpath);
      fp=orig_fopen64(newpath, mode);
-     debug_printf(" orig_fopen64 of %s %p\n", newpath, fp);
      free(newpath);
      return(fp); 
    }

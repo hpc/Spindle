@@ -12,6 +12,8 @@ int ldcs_destroy_server_pipe(int fd);
 int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg);
 ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block );
 int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+char *ldcs_get_connection_string_pipe(int fd);
+int ldcs_register_connection_pipe(char *connection_str);
 
 /* internal */
 int _ldcs_write_pipe(int fd, const void *data, int bytes );

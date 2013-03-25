@@ -17,12 +17,12 @@ void error(const char *msg)
 }
 
 #if defined(DEBUG)
-#define debug_printf(format, ...) \
+#define debug_printf3(format, ...) \
   do { \
      fprintf(stderr, "[%s:%u@%d] - " format, __FILE__, __LINE__, getpid(), ## __VA_ARGS__); \
   } while (0)
 #else
-#define debug_printf(format, ...)
+#define debug_printf3(format, ...)
 #endif
 
 int main(int argc, char *argv[])
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   location = argv[1];
   number   = atoi(argv[2]);
 
-  debug_printf("create server (%s,%d)\n",location,number);
+  debug_printf3("create server (%s,%d)\n",location,number);
 
   serverid = ldcs_create_server(location,number);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
       /* prevent infinite loop */
       if(message_ptr->len==0) {
-	debug_printf("null_msg_cnt = %d\n",null_msg_cnt);
+	debug_printf3("null_msg_cnt = %d\n",null_msg_cnt);
 	null_msg_cnt++;
       } else {
 	null_msg_cnt=0;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
       switch(message_ptr->type) {
       case LDCS_MSG_END:
-	debug_printf("end message received\n");
+	debug_printf3("end message received\n");
 	end_message_received=1;
 	break;
       default: ;
@@ -80,11 +80,11 @@ int main(int argc, char *argv[])
 
       ldcs_msg_free(&message_ptr);
     }
-    debug_printf("close connection %d\n",connid);
+    debug_printf3("close connection %d\n",connid);
     ldcs_close_server_connection(connid);
   }
 
-  debug_printf("destroy server (%s,%d)\n",location,number);
+  debug_printf3("destroy server (%s,%d)\n",location,number);
   ldcs_destroy_server(serverid);
  
 

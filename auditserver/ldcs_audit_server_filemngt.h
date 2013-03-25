@@ -9,4 +9,6 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
 int ldcs_audit_server_filemngt_store_file ( ldcs_message_t* msg, char **filename, 
 					    char **dirname, char **localpath, int *domangle );
 
+int ldcs_audit_server_filemngt_clean();
+
 #endif

@@ -87,46 +87,46 @@ int main(int argc, char *argv[])
 
   /* init semaphore for DECIDING WHO IS SERVER */ 
   ldcs_sem_server=sem_open(semname, O_CREAT, FILE_MODE, 1);
-  debug_printf("after sem_open semname=%s %x errno(%d,%s)\n",semname, ldcs_sem_server,errno,strerror(errno));
+  debug_printf3("after sem_open semname=%s %x errno(%d,%s)\n",semname, ldcs_sem_server,errno,strerror(errno));
   /* server is who graps the semaphore */
   if(!sem_trywait(ldcs_sem_server))  iamserver=1;
   else iamserver=0;
-  debug_printf("after check sem ldcs_sem_server iamserver = %d\n",iamserver);
+  debug_printf3("after check sem ldcs_sem_server iamserver = %d\n",iamserver);
 
   /* INIT SHMEM DATA STRUCTURE */ 
   
   /* get lock for data structure */
   ldcs_sem_lock=sem_open(semshmemlockname, O_CREAT, FILE_MODE, 1);
-  debug_printf("after open sem ldcs_sem_lock %s %x errno(%d,%s)\n",semshmemlockname,ldcs_sem_lock,errno,strerror(errno));
+  debug_printf3("after open sem ldcs_sem_lock %s %x errno(%d,%s)\n",semshmemlockname,ldcs_sem_lock,errno,strerror(errno));
   sem_wait(ldcs_sem_lock);
-  debug_printf("after sem_wait(ldcs_sem_lock)\n");
+  debug_printf3("after sem_wait(ldcs_sem_lock)\n");
 
   /* check if data structure is initialized */
   /* -->  get lock for init, init will not neccesary done by server  */
   ldcs_sem_init=sem_open(semshmeminitname, O_CREAT, FILE_MODE, 1);
-  debug_printf("after open sem ldcs_sem_init %s %x errno(%d,%s)\n",semshmeminitname,ldcs_sem_lock,errno,strerror(errno));
+  debug_printf3("after open sem ldcs_sem_init %s %x errno(%d,%s)\n",semshmeminitname,ldcs_sem_lock,errno,strerror(errno));
   if(!sem_trywait(ldcs_sem_init)) {
-    debug_printf("open shmem file = %s + create\n",shmemfile);
+    debug_printf3("open shmem file = %s + create\n",shmemfile);
     fd=shm_open(shmemfile, O_RDWR|O_CREAT, 0600);
-    debug_printf("after open fd=%d\n",fd);
+    debug_printf3("after open fd=%d\n",fd);
 
     ftruncate(fd, sizeof(shm_data_t));
-    debug_printf("after ftruncate to %d bytes\n",sizeof(shm_data_t));
+    debug_printf3("after ftruncate to %d bytes\n",sizeof(shm_data_t));
 
     shm_data=mmap(NULL, sizeof(shm_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    debug_printf("after mmap: %x\n",shm_data);
+    debug_printf3("after mmap: %x\n",shm_data);
     
     /* init data structure */
     shm_data->c_clients=0;
     sem_post(ldcs_sem_lock);
 
   } else {
-    debug_printf("open shmem file = %s\n",shmemfile);
+    debug_printf3("open shmem file = %s\n",shmemfile);
     fd=shm_open(shmemfile, O_RDWR, 0600);
-    debug_printf("after open fd=%d\n",fd);
+    debug_printf3("after open fd=%d\n",fd);
 
     shm_data=mmap(NULL, sizeof(shm_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    debug_printf("after mmap: %x\n",shm_data);
+    debug_printf3("after mmap: %x\n",shm_data);
     
     /* register as client */
     myclientnr=shm_data->c_clients;
@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
   
   sem_wait(ldcs_sem_lock);
   
-  debug_printf("open shmem file = %s\n",shmemfile);
+  debug_printf3("open shmem file = %s\n",shmemfile);
   fd=shm_open(shmemfile, O_RDWR, 0600);
-  debug_printf("after open fd=%d\n",fd);
+  debug_printf3("after open fd=%d\n",fd);
 
   printf("Hello World: Number of clients: %d of %d\n",myclientnr,shm_data->c_clients);
 
@@ -156,9 +156,9 @@ int main(int argc, char *argv[])
 
   MPI_Barrier(MPI_COMM_WORLD);
 
-  debug_printf("close shmem file fd = %d\n",fd);
+  debug_printf3("close shmem file fd = %d\n",fd);
   close(fd);
-  debug_printf("after close fd=%d\n",fd);
+  debug_printf3("after close fd=%d\n",fd);
 
 
   if(iamserver) {

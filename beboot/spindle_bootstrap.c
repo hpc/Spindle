@@ -4,70 +4,140 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/types.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
+#include "spindle_debug.h"
 #include "config.h"
 
 #if !defined(LIBDIR)
 #error Expected to be built with libdir defined
 #endif
 
+#include "ldcs_api.h"
+
+static int rankinfo[4]={-1,-1,-1,-1};
+static int ldcs_id;
+static int number;
+static char *location, *number_s;
+static char **cmdline;
+static char *executable;
+
 char libstr_socket[] = LIBDIR "/libldcs_audit_client_socket.so";
 char libstr_pipe[] = LIBDIR "/libldcs_audit_client_pipe.so";
-
 #if defined(COMM_SOCKET)
-char *default_libstr = libstr_socket;
+static char *default_libstr = libstr_socket;
 #elif defined(COMM_PIPES)
-char *default_libstr = libstr_pipe;
+static char *default_libstr = libstr_pipe;
 #else
 #error Unknown connection type
 #endif
 
+static int establish_connection()
+{
+   debug_printf2("Opening connection to server\n");
+   ldcs_id = ldcs_open_connection(location, number);
+   if (ldcs_id == -1) 
+      return -1;
+
+   ldcs_send_CWD(ldcs_id);
+   ldcs_send_HOSTNAME(ldcs_id);
+   ldcs_send_PID(ldcs_id);
+   ldcs_send_LOCATION(ldcs_id, location);
+   ldcs_send_MYRANKINFO_QUERY(ldcs_id, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
+
+   return 0;
+}
+
+static void setup_environment()
+{
+   char rankinfo_str[256];
+   snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcs_id, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
+
+   char *connection_str = ldcs_get_connection_string(ldcs_id);
+   assert(connection_str);
+
+   setenv("LD_AUDIT", default_libstr, 1);
+   setenv("LDCS_LOCATION", location, 1);
+   setenv("LDCS_NUMBER", number_s, 1);
+   setenv("LDCS_RANKINFO", rankinfo_str, 1);
+   setenv("LDCS_CONNECTION", connection_str, 1);
+}
+
+static int parse_cmdline(int argc, char *argv[])
+{
+   if (argc < 3)
+      return -1;
+
+   location = argv[1];
+   number_s = argv[2];
+   number = atoi(number_s);
+   cmdline = argv + 3;
+
+   return 0;
+}
+
+static void get_executable()
+{
+   ldcs_send_FILE_QUERY_EXACT_PATH(ldcs_id, *cmdline, &executable);
+   if (executable == NULL) {
+      executable = *cmdline;
+      err_printf("Failed to relocate executable %s\n", executable);
+   }
+   else {
+      debug_printf("Relocated executable %s to %s\n", *cmdline, executable);
+      chmod(executable, 0700);
+   }
+}
+
 int main(int argc, char *argv[])
 {
-   int error, i;
+   int error, i, result;
 
-   /* TODO: Start boostrapping executable */
+   LOGGING_INIT_PREEXEC("Client");
+   debug_printf("Launched Spindle Bootstrapper\n");
 
-   printf("At top of Spindle Bootstrap\n");
+   result = parse_cmdline(argc, argv);
+   if (result == -1) {
+      fprintf(stderr, "spindle_boostrap cannot be invoked directly\n");
+      return -1;
+   }
+
+   result = establish_connection();
+   if (result == -1) {
+      err_printf("spindle_bootstrap failed to connect to daemons\n");
+      return -1;
+   }
+
+   get_executable();
 
    /**
-    * Setup LD_AUDIT in target program
+    * Exec setup
     **/
-   assert(argc >= 3);
-   setenv("LD_AUDIT", default_libstr, 1);
-   setenv("LDCS_LOCATION", argv[1], 1);
-   setenv("LDCS_NUMBER", argv[2], 1);
-
-   fprintf(stderr, "In app process.  libstr_pipe = %s, location = %s, number = %s\n",
-           libstr_pipe, argv[1], argv[2]);
-
-
-   /**
-    * Pause ourselves to sync up with the daemon.  We'll get continued when 
-    * it's ready for us.
-    **/
-   kill(getpid(), SIGSTOP);
+   debug_printf("Spindle bootstrap launching: ");
+   if (argc == 3) {
+      bare_printf("<no executable given>");
+   }
+   else {
+      bare_printf("%s ", executable);
+      for (i=4; i<argc; i++) {
+         bare_printf("%s ", argv[i]);
+      }
+   }
+   bare_printf("\n");
 
    /**
     * Exec the user's application.
     **/
-   execv(argv[3], argv+3);
+   setup_environment();
+   execv(executable, cmdline);
 
    /**
     * Exec error handling
     **/
    error = errno;
-   fprintf(stderr, "Spindle BE error launching: ");
-   if (argc == 3) {
-      fprintf(stderr, "<no executable given>");
-   }
-   else {
-      for (i=3; i<argc; i++) {
-         fprintf(stderr, "%s ", argv[i]);
-      }
-   }
-   fprintf(stderr, ": %s\n", strerror(error));
+   err_printf("Error execing app: %s\n", strerror(errno));
+
    return -1;
 }

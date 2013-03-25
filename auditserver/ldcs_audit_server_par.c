@@ -39,12 +39,12 @@ int main(int argc, char *argv[])
     number   = atoi(argv[3]);
   } 
 
-  debug_printf("startup server (%s, %d)\n",location,number);
+  debug_printf3("startup server (%s, %d)\n",location,number);
   printf("SERVER: startup server (%s, %d)\n",location,number);
 
   ldcs_audit_server_process(location,number,&_ready_cb_func, NULL);
 
-  debug_printf("shutdown server (%s, %d)\n",location,number);
+  debug_printf3("shutdown server (%s, %d)\n",location,number);
   printf("SERVER: shutdown server (%s, %d)\n",location,number);
 
   /* needed this sleep so that server prints out all debug info (don't know why yet) */

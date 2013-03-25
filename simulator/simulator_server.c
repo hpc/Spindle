@@ -36,7 +36,7 @@ int simulator_server ( MPI_Comm mycomm,
   MPI_Comm_size(mycomm,&size);
 
   
-  debug_printf("startup server (%s, %d)\n",location,number);
+  debug_printf3("startup server (%s, %d)\n",location,number);
   printf("SERVER: startup server (%s, %d)\n",location,number);
   
   sprintf(helpstr,"%d",locmod);
@@ -59,7 +59,7 @@ int simulator_server ( MPI_Comm mycomm,
   }
 
   
-  debug_printf("shutdown server (%s, %d)\n",location,number);
+  debug_printf3("shutdown server (%s, %d)\n",location,number);
   printf("SERVER: shutdown server (%s, %d)\n",location,number);
 
 

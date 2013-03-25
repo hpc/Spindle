@@ -40,7 +40,7 @@ void check_sbuffer(char* op)
     value = (char) ((i+1)*(my_rank+1) + i);
     if (sbuffer[i] != value)
     {
-      printf("%d: %s: Send buffer corruption detected at sbuffer[%d]\n",
+      printf("%d: %s: Send buffer corruption detected at sbuffer[%lu]\n",
              my_rank, op, i);
     }
   }
@@ -57,7 +57,7 @@ void check_rbuffer(char* buffer, size_t byte_offset, int rank, size_t src_byte_o
     value = (char) ((j+1)*(rank+1) + j);
     if (buffer[i] != value)
     {
-      printf("%d: %s: Receive buffer corruption detected at rbuffer[%d] from rank %d\n",
+      printf("%d: %s: Receive buffer corruption detected at rbuffer[%lu] from rank %d\n",
              my_rank, op, byte_offset+i, rank);
     }
   }

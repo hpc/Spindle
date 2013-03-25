@@ -237,7 +237,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = tools/sion_debug comlib auditclient cache tools/cobo/src auditserver client launchmon simulator tools/cobo/test beboot
+SUBDIRS = tools/sion_debug logging comlib auditclient cache tools/cobo/src auditserver client launchmon simulator tools/cobo/test beboot
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

@@ -24,7 +24,7 @@ int spindle_external_fabric_fe_CB ( char *myhostname, int myport, int *myrank, i
   ldcs_host_port_list_t host_port_list;
   int hc,i;
 
-  debug_printf("starting external fabric cb on FE\n");
+  debug_printf3("starting external fabric cb on FE\n");
 
   if ( ( lrc = LMON_fe_recvUsrDataBe ( spindle_external_fabric_data->asession, (void*) &host_port_list )) != LMON_OK )    {
     fprintf(stdout, "[LMON FE: FAILED] LMON_be_sendUsrData\n" );
@@ -39,7 +39,7 @@ int spindle_external_fabric_fe_CB ( char *myhostname, int myport, int *myrank, i
     printf("[LMON FE] HOSTLIST[%d] %s, %d\n", i, &host_port_list.hostlist[i*HOSTNAME_LEN], host_port_list.portlist[i] );
     myhostlist[hc] = strdup(host_port_list.hostlist+i*HOSTNAME_LEN);
     myportlist[hc] = host_port_list.portlist[i];
-    debug_printf("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
+    debug_printf3("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
     hc++;
   }
 
@@ -48,7 +48,7 @@ int spindle_external_fabric_fe_CB ( char *myhostname, int myport, int *myrank, i
   *hostlist=myhostlist;
   *portlist=myportlist;
 
-  debug_printf("ending external fabric cb on FE\n");
+  debug_printf3("ending external fabric cb on FE\n");
   return(rc);
 
 }

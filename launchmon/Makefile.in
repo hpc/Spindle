@@ -35,7 +35,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = spindle_fe$(EXEEXT) spindle_be$(EXEEXT)
+bin_PROGRAMS = spindle$(EXEEXT)
+pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
 @COBO_TRUE@am__append_1 = $(top_builddir)/auditserver/libaudit_server_cobo.la
 @COBO_TRUE@am__append_2 = $(top_builddir)/auditserver/libaudit_server_cobo.la
 @MSOCKET_TRUE@am__append_3 = $(top_builddir)/auditserver/libaudit_server_msocket.la
@@ -56,29 +57,29 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)"
-PROGRAMS = $(bin_PROGRAMS)
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)"
+PROGRAMS = $(bin_PROGRAMS) $(pkglibexec_PROGRAMS)
+am_spindle_OBJECTS = spindle-spindle_fe.$(OBJEXT) \
+	spindle-spindle_usrdata.$(OBJEXT) \
+	spindle-spindle_external_fabric_fe.$(OBJEXT) \
+	spindle-parse_launcher.$(OBJEXT)
+spindle_OBJECTS = $(am_spindle_OBJECTS)
+spindle_DEPENDENCIES = $(top_builddir)/logging/libspindlelogc.la \
+	$(am__append_1) $(am__append_3) $(am__append_5) \
+	$(am__append_7) $(top_builddir)/cache/libldcs_cache.la
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
 am_spindle_be_OBJECTS = spindle_be-spindle_be.$(OBJEXT) \
 	spindle_be-spindle_usrdata.$(OBJEXT) \
 	spindle_be-spindle_external_fabric_be.$(OBJEXT)
 spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
 spindle_be_DEPENDENCIES = $(top_builddir)/cache/libldcs_cache.la \
-	$(am__append_2) $(am__append_4) $(am__append_6) \
-	$(am__append_8)
-AM_V_lt = $(am__v_lt_$(V))
-am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
-am__v_lt_0 = --silent
+	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
+	$(am__append_4) $(am__append_6) $(am__append_8)
 spindle_be_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(spindle_be_LDFLAGS) $(LDFLAGS) -o $@
-am_spindle_fe_OBJECTS = spindle_fe-spindle_fe.$(OBJEXT) \
-	spindle_fe-spindle_usrdata.$(OBJEXT) \
-	spindle_fe-spindle_external_fabric_fe.$(OBJEXT) \
-	spindle_fe-parse_launcher.$(OBJEXT)
-spindle_fe_OBJECTS = $(am_spindle_fe_OBJECTS)
-spindle_fe_DEPENDENCIES = $(am__append_1) $(am__append_3) \
-	$(am__append_5) $(am__append_7) \
-	$(top_builddir)/cache/libldcs_cache.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -105,8 +106,8 @@ am__v_CXXLD_0 = @echo "  CXXLD " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(spindle_be_SOURCES) $(spindle_fe_SOURCES)
-DIST_SOURCES = $(spindle_be_SOURCES) $(spindle_fe_SOURCES)
+SOURCES = $(spindle_SOURCES) $(spindle_be_SOURCES)
+DIST_SOURCES = $(spindle_SOURCES) $(spindle_be_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -237,18 +238,19 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_LDFLAGS = $(LAUNCHMON_LIB)
-AM_CPPFLAGS = $(LAUNCHMON_INC)
+AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
-spindle_fe_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(bindir)\"
-spindle_fe_SOURCES = spindle_fe.cc spindle_usrdata.cc spindle_external_fabric_fe.cc parse_launcher.cc
+spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
+spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc spindle_external_fabric_fe.cc parse_launcher.cc
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -all-static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
 spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc spindle_external_fabric_be.cc
 spindle_be_LDADD = -lmonbeapi $(top_builddir)/cache/libldcs_cache.la \
-	$(am__append_2) $(am__append_4) $(am__append_6) \
-	$(am__append_8)
-spindle_fe_LDADD = -lmonfeapi $(am__append_1) $(am__append_3) \
-	$(am__append_5) $(am__append_7) -lmonfeapi \
+	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
+	$(am__append_4) $(am__append_6) $(am__append_8)
+spindle_LDADD = -lmonfeapi $(top_builddir)/logging/libspindlelogc.la \
+	$(am__append_1) $(am__append_3) $(am__append_5) \
+	$(am__append_7) -lmonfeapi \
 	$(top_builddir)/cache/libldcs_cache.la
 all: all-am
 
@@ -327,12 +329,55 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+install-pkglibexecPROGRAMS: $(pkglibexec_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	test -z "$(pkglibexecdir)" || $(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)"
+	@list='$(pkglibexec_PROGRAMS)'; test -n "$(pkglibexecdir)" || list=; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p || test -f $$p1; \
+	  then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(pkglibexecdir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(pkglibexecdir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-pkglibexecPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkglibexec_PROGRAMS)'; test -n "$(pkglibexecdir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' `; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(pkglibexecdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pkglibexecdir)" && rm -f $$files
+
+clean-pkglibexecPROGRAMS:
+	@list='$(pkglibexec_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+spindle$(EXEEXT): $(spindle_OBJECTS) $(spindle_DEPENDENCIES) 
+	@rm -f spindle$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(spindle_OBJECTS) $(spindle_LDADD) $(LIBS)
 spindle_be$(EXEEXT): $(spindle_be_OBJECTS) $(spindle_be_DEPENDENCIES) 
 	@rm -f spindle_be$(EXEEXT)
 	$(AM_V_CXXLD)$(spindle_be_LINK) $(spindle_be_OBJECTS) $(spindle_be_LDADD) $(LIBS)
-spindle_fe$(EXEEXT): $(spindle_fe_OBJECTS) $(spindle_fe_DEPENDENCIES) 
-	@rm -f spindle_fe$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(spindle_fe_OBJECTS) $(spindle_fe_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -340,13 +385,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_external_fabric_fe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_fe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_usrdata.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_external_fabric_be.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_usrdata.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-parse_launcher.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-spindle_fe.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_fe-spindle_usrdata.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -371,6 +416,70 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+spindle-spindle_fe.o: spindle_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_fe.o -MD -MP -MF $(DEPDIR)/spindle-spindle_fe.Tpo -c -o spindle-spindle_fe.o `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_fe.Tpo $(DEPDIR)/spindle-spindle_fe.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_fe.cc' object='spindle-spindle_fe.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_fe.o `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
+
+spindle-spindle_fe.obj: spindle_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_fe.obj -MD -MP -MF $(DEPDIR)/spindle-spindle_fe.Tpo -c -o spindle-spindle_fe.obj `if test -f 'spindle_fe.cc'; then $(CYGPATH_W) 'spindle_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_fe.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_fe.Tpo $(DEPDIR)/spindle-spindle_fe.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_fe.cc' object='spindle-spindle_fe.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_fe.obj `if test -f 'spindle_fe.cc'; then $(CYGPATH_W) 'spindle_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_fe.cc'; fi`
+
+spindle-spindle_usrdata.o: spindle_usrdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_usrdata.o -MD -MP -MF $(DEPDIR)/spindle-spindle_usrdata.Tpo -c -o spindle-spindle_usrdata.o `test -f 'spindle_usrdata.cc' || echo '$(srcdir)/'`spindle_usrdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_usrdata.Tpo $(DEPDIR)/spindle-spindle_usrdata.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_usrdata.cc' object='spindle-spindle_usrdata.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_usrdata.o `test -f 'spindle_usrdata.cc' || echo '$(srcdir)/'`spindle_usrdata.cc
+
+spindle-spindle_usrdata.obj: spindle_usrdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_usrdata.obj -MD -MP -MF $(DEPDIR)/spindle-spindle_usrdata.Tpo -c -o spindle-spindle_usrdata.obj `if test -f 'spindle_usrdata.cc'; then $(CYGPATH_W) 'spindle_usrdata.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_usrdata.Tpo $(DEPDIR)/spindle-spindle_usrdata.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_usrdata.cc' object='spindle-spindle_usrdata.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_usrdata.obj `if test -f 'spindle_usrdata.cc'; then $(CYGPATH_W) 'spindle_usrdata.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.cc'; fi`
+
+spindle-spindle_external_fabric_fe.o: spindle_external_fabric_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_external_fabric_fe.o -MD -MP -MF $(DEPDIR)/spindle-spindle_external_fabric_fe.Tpo -c -o spindle-spindle_external_fabric_fe.o `test -f 'spindle_external_fabric_fe.cc' || echo '$(srcdir)/'`spindle_external_fabric_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_external_fabric_fe.Tpo $(DEPDIR)/spindle-spindle_external_fabric_fe.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_external_fabric_fe.cc' object='spindle-spindle_external_fabric_fe.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_external_fabric_fe.o `test -f 'spindle_external_fabric_fe.cc' || echo '$(srcdir)/'`spindle_external_fabric_fe.cc
+
+spindle-spindle_external_fabric_fe.obj: spindle_external_fabric_fe.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_external_fabric_fe.obj -MD -MP -MF $(DEPDIR)/spindle-spindle_external_fabric_fe.Tpo -c -o spindle-spindle_external_fabric_fe.obj `if test -f 'spindle_external_fabric_fe.cc'; then $(CYGPATH_W) 'spindle_external_fabric_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_fe.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_external_fabric_fe.Tpo $(DEPDIR)/spindle-spindle_external_fabric_fe.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_external_fabric_fe.cc' object='spindle-spindle_external_fabric_fe.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_external_fabric_fe.obj `if test -f 'spindle_external_fabric_fe.cc'; then $(CYGPATH_W) 'spindle_external_fabric_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_fe.cc'; fi`
+
+spindle-parse_launcher.o: parse_launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_launcher.o -MD -MP -MF $(DEPDIR)/spindle-parse_launcher.Tpo -c -o spindle-parse_launcher.o `test -f 'parse_launcher.cc' || echo '$(srcdir)/'`parse_launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_launcher.Tpo $(DEPDIR)/spindle-parse_launcher.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher.cc' object='spindle-parse_launcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher.o `test -f 'parse_launcher.cc' || echo '$(srcdir)/'`parse_launcher.cc
+
+spindle-parse_launcher.obj: parse_launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_launcher.obj -MD -MP -MF $(DEPDIR)/spindle-parse_launcher.Tpo -c -o spindle-parse_launcher.obj `if test -f 'parse_launcher.cc'; then $(CYGPATH_W) 'parse_launcher.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_launcher.Tpo $(DEPDIR)/spindle-parse_launcher.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher.cc' object='spindle-parse_launcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher.obj `if test -f 'parse_launcher.cc'; then $(CYGPATH_W) 'parse_launcher.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.cc'; fi`
 
 spindle_be-spindle_be.o: spindle_be.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-spindle_be.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be.Tpo -c -o spindle_be-spindle_be.o `test -f 'spindle_be.cc' || echo '$(srcdir)/'`spindle_be.cc
@@ -419,70 +528,6 @@ spindle_be-spindle_external_fabric_be.obj: spindle_external_fabric_be.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_external_fabric_be.cc' object='spindle_be-spindle_external_fabric_be.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_be-spindle_external_fabric_be.obj `if test -f 'spindle_external_fabric_be.cc'; then $(CYGPATH_W) 'spindle_external_fabric_be.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_be.cc'; fi`
-
-spindle_fe-spindle_fe.o: spindle_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_fe.o -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_fe.Tpo -c -o spindle_fe-spindle_fe.o `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_fe.Tpo $(DEPDIR)/spindle_fe-spindle_fe.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_fe.cc' object='spindle_fe-spindle_fe.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_fe.o `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
-
-spindle_fe-spindle_fe.obj: spindle_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_fe.obj -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_fe.Tpo -c -o spindle_fe-spindle_fe.obj `if test -f 'spindle_fe.cc'; then $(CYGPATH_W) 'spindle_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_fe.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_fe.Tpo $(DEPDIR)/spindle_fe-spindle_fe.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_fe.cc' object='spindle_fe-spindle_fe.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_fe.obj `if test -f 'spindle_fe.cc'; then $(CYGPATH_W) 'spindle_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_fe.cc'; fi`
-
-spindle_fe-spindle_usrdata.o: spindle_usrdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_usrdata.o -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_usrdata.Tpo -c -o spindle_fe-spindle_usrdata.o `test -f 'spindle_usrdata.cc' || echo '$(srcdir)/'`spindle_usrdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_usrdata.Tpo $(DEPDIR)/spindle_fe-spindle_usrdata.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_usrdata.cc' object='spindle_fe-spindle_usrdata.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_usrdata.o `test -f 'spindle_usrdata.cc' || echo '$(srcdir)/'`spindle_usrdata.cc
-
-spindle_fe-spindle_usrdata.obj: spindle_usrdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_usrdata.obj -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_usrdata.Tpo -c -o spindle_fe-spindle_usrdata.obj `if test -f 'spindle_usrdata.cc'; then $(CYGPATH_W) 'spindle_usrdata.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_usrdata.Tpo $(DEPDIR)/spindle_fe-spindle_usrdata.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_usrdata.cc' object='spindle_fe-spindle_usrdata.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_usrdata.obj `if test -f 'spindle_usrdata.cc'; then $(CYGPATH_W) 'spindle_usrdata.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_usrdata.cc'; fi`
-
-spindle_fe-spindle_external_fabric_fe.o: spindle_external_fabric_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_external_fabric_fe.o -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Tpo -c -o spindle_fe-spindle_external_fabric_fe.o `test -f 'spindle_external_fabric_fe.cc' || echo '$(srcdir)/'`spindle_external_fabric_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Tpo $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_external_fabric_fe.cc' object='spindle_fe-spindle_external_fabric_fe.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_external_fabric_fe.o `test -f 'spindle_external_fabric_fe.cc' || echo '$(srcdir)/'`spindle_external_fabric_fe.cc
-
-spindle_fe-spindle_external_fabric_fe.obj: spindle_external_fabric_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-spindle_external_fabric_fe.obj -MD -MP -MF $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Tpo -c -o spindle_fe-spindle_external_fabric_fe.obj `if test -f 'spindle_external_fabric_fe.cc'; then $(CYGPATH_W) 'spindle_external_fabric_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_fe.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Tpo $(DEPDIR)/spindle_fe-spindle_external_fabric_fe.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_external_fabric_fe.cc' object='spindle_fe-spindle_external_fabric_fe.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-spindle_external_fabric_fe.obj `if test -f 'spindle_external_fabric_fe.cc'; then $(CYGPATH_W) 'spindle_external_fabric_fe.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_external_fabric_fe.cc'; fi`
-
-spindle_fe-parse_launcher.o: parse_launcher.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-parse_launcher.o -MD -MP -MF $(DEPDIR)/spindle_fe-parse_launcher.Tpo -c -o spindle_fe-parse_launcher.o `test -f 'parse_launcher.cc' || echo '$(srcdir)/'`parse_launcher.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-parse_launcher.Tpo $(DEPDIR)/spindle_fe-parse_launcher.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher.cc' object='spindle_fe-parse_launcher.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-parse_launcher.o `test -f 'parse_launcher.cc' || echo '$(srcdir)/'`parse_launcher.cc
-
-spindle_fe-parse_launcher.obj: parse_launcher.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_fe-parse_launcher.obj -MD -MP -MF $(DEPDIR)/spindle_fe-parse_launcher.Tpo -c -o spindle_fe-parse_launcher.obj `if test -f 'parse_launcher.cc'; then $(CYGPATH_W) 'parse_launcher.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_fe-parse_launcher.Tpo $(DEPDIR)/spindle_fe-parse_launcher.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher.cc' object='spindle_fe-parse_launcher.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_fe_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_fe-parse_launcher.obj `if test -f 'parse_launcher.cc'; then $(CYGPATH_W) 'parse_launcher.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -576,7 +621,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -606,7 +651,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-pkglibexecPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -632,7 +678,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-binPROGRAMS
+install-exec-am: install-binPROGRAMS install-pkglibexecPROGRAMS
 
 install-html: install-html-am
 
@@ -672,23 +718,25 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS
+uninstall-am: uninstall-binPROGRAMS uninstall-pkglibexecPROGRAMS
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libtool ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-binPROGRAMS
+	clean-generic clean-libtool clean-pkglibexecPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-pkglibexecPROGRAMS install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS \
+	uninstall-pkglibexecPROGRAMS
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

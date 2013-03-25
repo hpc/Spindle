@@ -55,7 +55,8 @@ am_ldcs_simple_client_pipe_OBJECTS = ldcs_simple_client.$(OBJEXT)
 ldcs_simple_client_pipe_OBJECTS =  \
 	$(am_ldcs_simple_client_pipe_OBJECTS)
 ldcs_simple_client_pipe_DEPENDENCIES =  \
-	$(top_builddir)/comlib/libldcs_pipe.la
+	$(top_builddir)/comlib/libldcs_pipe.la \
+	$(top_builddir)/logging/libspindlelogc.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -65,12 +66,14 @@ ldcs_simple_client_pipe_mpi_OBJECTS =  \
 	$(am_ldcs_simple_client_pipe_mpi_OBJECTS)
 am__DEPENDENCIES_1 =
 ldcs_simple_client_pipe_mpi_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(top_builddir)/comlib/libldcs_pipe.la
+	$(top_builddir)/comlib/libldcs_pipe.la \
+	$(top_builddir)/logging/libspindlelogc.la
 am_ldcs_simple_client_socket_OBJECTS = ldcs_simple_client.$(OBJEXT)
 ldcs_simple_client_socket_OBJECTS =  \
 	$(am_ldcs_simple_client_socket_OBJECTS)
 ldcs_simple_client_socket_DEPENDENCIES =  \
-	$(top_builddir)/comlib/libldcs_socket.la
+	$(top_builddir)/comlib/libldcs_socket.la \
+	$(top_builddir)/logging/libspindlelogc.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -232,13 +235,13 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_srcdir)/comlib
+AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/logging
 ldcs_simple_client_socket_SOURCES = ldcs_simple_client.c
-ldcs_simple_client_socket_LDADD = $(top_builddir)/comlib/libldcs_socket.la
+ldcs_simple_client_socket_LDADD = $(top_builddir)/comlib/libldcs_socket.la $(top_builddir)/logging/libspindlelogc.la
 ldcs_simple_client_pipe_SOURCES = ldcs_simple_client.c
-ldcs_simple_client_pipe_LDADD = $(top_builddir)/comlib/libldcs_pipe.la
+ldcs_simple_client_pipe_LDADD = $(top_builddir)/comlib/libldcs_pipe.la $(top_builddir)/logging/libspindlelogc.la
 ldcs_simple_client_pipe_mpi_SOURCES = ldcs_simple_client_mpi.c
-ldcs_simple_client_pipe_mpi_LDADD = $(MPI_CLDFLAGS) $(top_builddir)/comlib/libldcs_pipe.la
+ldcs_simple_client_pipe_mpi_LDADD = $(MPI_CLDFLAGS) $(top_builddir)/comlib/libldcs_pipe.la $(top_builddir)/logging/libspindlelogc.la
 ldcs_simple_client_pipe_mpi_CPPFLAGS = $(AM_CPPFLAGS) $(MPI_CFLAGS)
 all: all-am
 

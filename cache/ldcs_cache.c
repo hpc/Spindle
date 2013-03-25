@@ -15,7 +15,7 @@
 ldcs_cache_result_t ldcs_cache_findDirInCache(char *dirname) {
    struct ldcs_hash_entry_t *e = ldcs_hash_Lookup(dirname);
    if(e) {
-     debug_printf("directory entry exists %d %x %x '%s' '%s'\n",e->dirname == e-> filename,e->dirname,e-> filename, e->dirname,e-> filename);
+     debug_printf3("directory entry exists %d %s %s '%s' '%s'\n",e->dirname == e-> filename,e->dirname,e-> filename, e->dirname,e-> filename);
      return (strcmp(e->dirname,e-> filename)==0) ? LDCS_CACHE_DIR_PARSED_AND_EXISTS : LDCS_CACHE_DIR_PARSED_AND_NOT_EXISTS;
    } else {
      return LDCS_CACHE_DIR_NOT_PARSED;
@@ -94,9 +94,9 @@ ldcs_cache_result_t ldcs_cache_findFileDirInCachePrio(char *filename, char *dirn
 }
 
 ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname) {
-  debug_printf("Processing directory %s\n", dirname);
+  debug_printf3("Processing directory %s\n", dirname);
   if (directoryParsed(dirname)) {
-    debug_printf("Directory %s already parsed\n", dirname);
+    debug_printf3("Directory %s already parsed\n", dirname);
     return(LDCS_CACHE_DIR_PARSED_AND_EXISTS);
   }
   cacheLibraries(dirname);
@@ -140,14 +140,14 @@ int ldcs_cache_getNewEntriesSerList(char **data, int *len) {
   int new_entries_size=0;
   int new_entries_used=0;
 
-  debug_printf(" CACHE: start getNewEntries \n");
+  debug_printf3(" CACHE: start getNewEntries \n");
   entry=ldcs_hash_getFirstNewEntry();
   while(entry!=NULL) {
-    /* debug_printf(" CACHE: got entry '%s' '%s'\n",entry->filename,entry->dirname); */
+    /* debug_printf3(" CACHE: got entry '%s' '%s'\n",entry->filename,entry->dirname); */
     if(new_entries_used>=new_entries_size) {
       new_entries=realloc(new_entries,(new_entries_size+100)*sizeof(struct hash_entry_t *));
       new_entries_size+=100;
-      debug_printf(" CACHE: realloc %d of %d\n",new_entries_used,new_entries_size);
+      debug_printf3(" CACHE: realloc %d of %d\n",new_entries_used,new_entries_size);
     }
     new_entries[new_entries_used]=entry;
     new_entries_used++;
@@ -156,7 +156,7 @@ int ldcs_cache_getNewEntriesSerList(char **data, int *len) {
     length_dir= (entry->dirname)?strlen(entry->dirname):0;
 
     ser_len+=2*sizeof(int)+length_fn+length_dir + 2; /* for \0 */
-    /*    debug_printf("found entry #%03d: %d:%s %d:%s  ser_len=%d\n",new_entries_used,
+    /*    debug_printf3("found entry #%03d: %d:%s %d:%s  ser_len=%d\n",new_entries_used,
 		 length_fn, entry->filename,
 		 length_dir, entry->dirname,		 ser_len); */
     entry=ldcs_hash_getNextNewEntry();
@@ -176,7 +176,7 @@ int ldcs_cache_getNewEntriesSerList(char **data, int *len) {
     length_fn = (entry->filename)?strlen(entry->filename):0;
     length_dir= (entry->dirname)?strlen(entry->dirname):0;
     
-    /*    debug_printf("Entry #%03d: %d:%s %d:%s offset %d\n",index,
+    /*    debug_printf3("Entry #%03d: %d:%s %d:%s offset %d\n",index,
 		 length_fn, entry->filename,
 		 length_dir, entry->dirname, p-ser_data ); */
     memcpy(p,&length_fn,sizeof(int));p+=sizeof(int);
@@ -190,11 +190,11 @@ int ldcs_cache_getNewEntriesSerList(char **data, int *len) {
 
   p=ser_data;sum=0;
   for(c=0;c<ser_len;c++) sum+=ser_data[c];
-  debug_printf("send now %d bytes sum=%8d\n",ser_len, sum );
+  debug_printf3("send now %d bytes sum=%8d\n",ser_len, sum );
   
   free(new_entries);
   
-  debug_printf(" CACHE: end getNewEntries \n");
+  debug_printf3(" CACHE: end getNewEntries \n");
 
   return(rc);
 }
@@ -206,19 +206,19 @@ int   ldcs_cache_storeNewEntriesSerList(char *ser_data, int ser_len) {
 
   p=ser_data;sum=0;
   for(c=0;c<ser_len;c++) sum+=ser_data[c];
-  debug_printf("got %d bytes sum=%8d\n",ser_len, sum );
+  debug_printf3("got %d bytes sum=%8d\n",ser_len, sum );
 
   p=ser_data;pos=0;count=0;
   while(pos<ser_len) {
-    /* debug_printf("Next entry #%03d: at offset %d\n",count, p-ser_data ); */
+    /* debug_printf3("Next entry #%03d: at offset %d\n",count, p-ser_data ); */
 
     memcpy(&length,p,sizeof(int));p+=sizeof(int);pos+=sizeof(int);
     filename=(length)?p:NULL;p+=length+1;pos+=length+1;
-    /* debug_printf("Entry #%03d: fn=  %d:%s \n",count, length, filename ); */
+    /* debug_printf3("Entry #%03d: fn=  %d:%s \n",count, length, filename ); */
 
     memcpy(&length,p,sizeof(int));p+=sizeof(int);pos+=sizeof(int);
     dirname=(length)?p:NULL;p+=length+1;pos+=length+1;
-    /* debug_printf("Entry #%03d: dir= %d:%s \n",count, length, dirname ); */
+    /* debug_printf3("Entry #%03d: dir= %d:%s \n",count, length, dirname ); */
 
     ldcs_hash_addEntry(dirname, filename);count++;
   }
@@ -247,23 +247,23 @@ char *findDirForFile(const char *name, const char *remote_cwd) {
    char *newdirname;
 
    breakUpFilename(name, &filename, &dirname);
-   debug_printf(" after breakUpFilename name='%s' filename=%s dirname=%s\n", name,filename,dirname);
+   debug_printf3(" after breakUpFilename name='%s' filename=%s dirname=%s\n", name,filename,dirname);
 
    if (!dirname) {
-      debug_printf("Returning direct name %s after input '%s'\n", name, name);
+      debug_printf3("Returning direct name %s after input '%s'\n", name, name);
       printf(" CACHE: returning direct name for: '%s' \n", name);
       return (char *) strdup(name);
    }
       
    addCWDtoPath(dirname,remote_cwd,&newdirname);
-   debug_printf(" after addCWDtoPath dirname='%s'remote_cwd=%s newdirename=%s\n", dirname,remote_cwd, newdirname);
+   debug_printf3(" after addCWDtoPath dirname='%s'remote_cwd=%s newdirename=%s\n", dirname,remote_cwd, newdirname);
 
    processDirectory(newdirname);
 
-   debug_printf("lookup for file '%s' name=%s newndirame=%s\n", dirname,name,newdirname);
+   debug_printf3("lookup for file '%s' name=%s newndirame=%s\n", dirname,name,newdirname);
    
   if (!directoryParsedAndExists(newdirname)) {
-      debug_printf("directory %s does not exists. Returning NULL\n", newdirname);
+      debug_printf3("directory %s does not exists. Returning NULL\n", newdirname);
       printf(" CACHE: directory does not exists: '%s' \n", newdirname);
       free(newdirname); free(dirname);
       return NULL;
@@ -273,22 +273,22 @@ char *findDirForFile(const char *name, const char *remote_cwd) {
 
    found_dirname = lookupDirectoryForFile(filename);
    if (!found_dirname) {
-      debug_printf("File %s not found in cache. Returning NULL\n", filename);
+      debug_printf3("File %s not found in cache. Returning NULL\n", filename);
       printf(" CACHE: file not found in cache for: '%s' \n", filename);
       return NULL;
    }
 
    result = concatStrings(found_dirname, strlen(found_dirname), filename, strlen(filename));
-   debug_printf("Returning %s after input %s\n", result, name);
+   debug_printf3("Returning %s after input %s\n", result, name);
    printf(" CACHE: file found in cache for: '%s' -> '%s' \n", filename,result);
    return result;
 }
 
 void processDirectory(char *dirname) {
 
-  debug_printf("Processing directory %s\n", dirname);
+  debug_printf3("Processing directory %s\n", dirname);
   if (directoryParsed(dirname)) {
-    debug_printf("Directory %s already parsed\n", dirname);
+    debug_printf3("Directory %s already parsed\n", dirname);
     return;
   }
   cacheLibraries(dirname);
@@ -316,14 +316,14 @@ int directoryParsedAndExists(char *dirname) {
 void cacheLibraries(char *dirname) {
    size_t len;
    int count;
-   debug_printf("cacheLibraries for directory %s\n", dirname);
+   debug_printf3("cacheLibraries for directory %s\n", dirname);
    
    DIR *d = opendir(dirname);
    struct dirent *dent = NULL, *entry;
 
    if (!d) {
      ldcs_hash_addEntry("-", dirname);
-     debug_printf("Could not open directory %s, empty entry added\n", dirname);
+     debug_printf3("Could not open directory %s, empty entry added\n", dirname);
      return;
    } else {
      ldcs_hash_addEntry(dirname, dirname);
@@ -340,7 +340,7 @@ void cacheLibraries(char *dirname) {
       if (dent == NULL)
          break;
       if (dent->d_type != DT_LNK && dent->d_type != DT_REG && dent->d_type != DT_UNKNOWN) {
-	//         debug_printf("Not adding file %s%s due to being non-so type\n", dirname, dent->d_name);
+	//         debug_printf3("Not adding file %s%s due to being non-so type\n", dirname, dent->d_name);
          continue;
       }
       

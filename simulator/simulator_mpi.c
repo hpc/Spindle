@@ -199,7 +199,7 @@ int simulator_external_fabric_CB ( char *myhostname, int myport, int *myrank, in
   MPI_Comm_size(*mycomm,&lsize);
   num_server=lsize-1;
 
-  debug_printf("starting external fabric CB %d of %d (%s,%d)\n",lrank,lsize,myhostname,myport);
+  debug_printf3("starting external fabric CB %d of %d (%s,%d)\n",lrank,lsize,myhostname,myport);
 
   /* build hostlist on root server node*/
   if(lrank==1) {
@@ -211,9 +211,9 @@ int simulator_external_fabric_CB ( char *myhostname, int myport, int *myrank, in
 
     hc=0;
     myhostlist[hc]=strdup(myhostname);
-    debug_printf("hostname[%d]=%s\n",hc,myhostlist[hc]);
+    debug_printf3("hostname[%d]=%s\n",hc,myhostlist[hc]);
     myportlist[hc]=myport;
-    debug_printf("portlist[%d]=%d\n",hc,myportlist[hc]);
+    debug_printf3("portlist[%d]=%d\n",hc,myportlist[hc]);
     
     hc++;
     for (i = 1; i < num_server; i++) {
@@ -222,7 +222,7 @@ int simulator_external_fabric_CB ( char *myhostname, int myport, int *myrank, in
 
       MPI_Recv(&rport,1,MPI_INT, 1+i, 2001, *mycomm, &status);
       myportlist[hc]=rport;
-      debug_printf("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
+      debug_printf3("hostname[%d]=%s portlist[%d]=%d\n",hc,myhostlist[hc],hc,myportlist[hc]);
       hc++;
 
     }
@@ -251,7 +251,7 @@ int simulator_external_fabric_CB ( char *myhostname, int myport, int *myrank, in
     *hostlist=myhostlist;
     *portlist=myportlist;
 
-    debug_printf("got rhostname[0]=%s rport[0]=%d\n",myhostlist[0],myportlist[0]);
+    debug_printf3("got rhostname[0]=%s rport[0]=%d\n",myhostlist[0],myportlist[0]);
   }
 
   /* non root server */
@@ -265,9 +265,9 @@ int simulator_external_fabric_CB ( char *myhostname, int myport, int *myrank, in
 
   *myrank=lrank-1;
   *size=num_server;
-  debug_printf(" return:  myrank=%d size=%d\n",*myrank,*size);
+  debug_printf3(" return:  myrank=%d size=%d\n",*myrank,*size);
 
-  debug_printf("leaving external fabric CB %d of %d\n",lrank,lsize);
+  debug_printf3("leaving external fabric CB %d of %d\n",lrank,lsize);
 
   return(rc);
 }

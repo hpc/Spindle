@@ -38,16 +38,16 @@ int simulator_fe ( MPI_Comm mycomm, int num_server,
     } else {
       hostlist[i] = strdup(rhostname);
     }
-    debug_printf("fe got hostname[%d]=%s\n",i,hostlist[i]);
+    debug_printf3("fe got hostname[%d]=%s\n",i,hostlist[i]);
   }
   
-  debug_printf("startup fe (%s, %d)\n",location,number);
+  debug_printf3("startup fe (%s, %d)\n",location,number);
   printf("FE: startup fe (%s, %d)\n",location,number);
 
   /* open the server */
   ldcs_audit_server_fe_md_open(hostlist, num_server, &md_data_ptr);
 
-  debug_printf("startup fe (%s, %d) ready\n",location,number);
+  debug_printf3("startup fe (%s, %d) ready\n",location,number);
   printf("FE: startup fe (%s, %d) ready\n",location,number);
 
   /* signal that server are started */
@@ -57,7 +57,7 @@ int simulator_fe ( MPI_Comm mycomm, int num_server,
   printf("FE: starting preload (%s, %d) ready\n",location,number);
   ldcs_audit_server_fe_md_preload("./file_preload.dat", md_data_ptr );
 
-  debug_printf("preload fe (%s, %d) ready\n",location,number);
+  debug_printf3("preload fe (%s, %d) ready\n",location,number);
   printf("FE: preload fe (%s, %d) ready\n",location,number);
 
   /* signal clients that server are ready */
@@ -68,7 +68,7 @@ int simulator_fe ( MPI_Comm mycomm, int num_server,
   
   for (i = 0; i < num_server; i++) free(hostlist[i]);
   free(hostlist);
-  debug_printf("shutdown server (%s, %d)\n",location,number);
+  debug_printf3("shutdown server (%s, %d)\n",location,number);
   printf("FE: shutdown server (%s, %d)\n",location,number);
   
   return(rc);

@@ -25,7 +25,7 @@ int ldcs_send_FILE_QUERY (int fd, char* path, char** newpath) {
   if (message.header.len>MAX_PATH_LEN)  _error("path too long for message");
   strncpy(message.data,path,message.header.len);
 
-  debug_printf("sending message of type: %s len=%d data='%s' ...(%s)\n",
+  debug_printf3("sending message of type: %s len=%d data='%s' ...(%s)\n",
 	       _message_type_to_str(message.header.type),
 	       message.header.len,message.data, path );  
 
@@ -56,7 +56,7 @@ int ldcs_send_FILE_QUERY_EXACT_PATH (int fd, char* path, char** newpath) {
   if (message.header.len>MAX_PATH_LEN)  _error("path too long for message");
   strncpy(message.data,path,message.header.len);
 
-  debug_printf("sending message of type: %s len=%d data='%s' ...(%s)\n",
+  debug_printf3("sending message of type: %s len=%d data='%s' ...(%s)\n",
 	       _message_type_to_str(message.header.type),
 	       message.header.len,message.data, path );  
 
@@ -101,7 +101,7 @@ int ldcs_send_HOSTNAME (int fd) {
   message.header.type=LDCS_MSG_HOSTNAME;
   message.alloclen=MAX_PATH_LEN;
   rc=gethostname(buffer, MAX_PATH_LEN);
-  debug_printf("gethostname: rc=%d buffer=%s\n", rc, buffer);  
+  debug_printf3("gethostname: rc=%d buffer=%s\n", rc, buffer);  
   
   if(rc!=0) {
     return(-1);
@@ -140,7 +140,7 @@ int ldcs_send_LOCATION (int fd, char *location) {
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_LOCATION;
   message.alloclen=MAX_PATH_LEN;
-  debug_printf("location is %s\n", rc, location);  
+  debug_printf3("location is %s\n", location);  
   
   if(rc!=0) {
     return(-1);
@@ -163,7 +163,7 @@ int ldcs_send_MYRANKINFO_QUERY (int fd, int *mylrank, int *mylsize, int *mymdran
   message.header.len=0;
   message.data=buffer;
   
-  debug_printf("sending message of type: %s len=%d\n",
+  debug_printf3("sending message of type: %s len=%d\n",
 	       _message_type_to_str(message.header.type),message.header.len);  
 
   ldcs_send_msg(fd,&message);
@@ -176,7 +176,7 @@ int ldcs_send_MYRANKINFO_QUERY (int fd, int *mylrank, int *mylsize, int *mymdran
     *mylsize= *p; p++;
     *mymdrank= *p; p++;
     *mymdsize= *p;
-    debug_printf("received rank info: local: %d of %d md: %d of %d\n", *mylrank, *mylsize, *mymdrank, *mymdsize);  
+    debug_printf3("received rank info: local: %d of %d md: %d of %d\n", *mylrank, *mylsize, *mymdrank, *mymdsize);  
     
   } else {
     *mylrank=*mylsize=*mymdrank=*mymdsize=-1;

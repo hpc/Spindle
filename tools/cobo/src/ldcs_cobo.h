@@ -37,6 +37,7 @@
 #define cobo_server_get_root_socket COMBINE(COBO_NAMESPACE, cobo_server_get_root_socket)
 #define __cobo_ts COMBINE(COBO_NAMESPACE, __cobo_ts)
 #define cobo_get_num_childs COMBINE(COBO_NAMESPACE, cobo_get_num_childs)
+#define cobo_bcast_down COMBINE(COBO_NAMESPACE, cobo_bcast_down)
 #endif
 
 /*
@@ -64,6 +65,9 @@ int cobo_barrier();
 
 /* root sends sendcount bytes from buf, each task recevies sendcount bytes into buf */
 int cobo_bcast    (void* buf, int sendcount, int root);
+
+/* like bcast, but every task takes a message rather than receives one */
+int cobo_bcast_down(void *buf, int sendcount);
 
 /* each task sends sendcount bytes from buf, root receives N*sendcount bytes into recvbuf */
 int cobo_gather   (void* sendbuf, int sendcount, void* recvbuf, int root);

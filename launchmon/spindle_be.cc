@@ -42,30 +42,28 @@ int _ready_cb_func (  void * data) {
   lrc = LMON_be_getMyProctabSize(&proctab_size);
   if (lrc != LMON_OK)
   {
-     fprintf(stderr,
-             "[LMON BE(%d)] FAILED: LMON_be_getMyProctabSize\n",spindle_external_fabric_data->md_rank);
+     err_printf("LMON_be_getMyProctabSize\n",spindle_external_fabric_data->md_rank);
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
   
   proctab = (MPIR_PROCDESC_EXT *) malloc (proctab_size*sizeof(MPIR_PROCDESC_EXT));
   if ( proctab == NULL )  {
-     fprintf (stderr, 
-              "[LMON BE(%d): FAILED] malloc return null\n",spindle_external_fabric_data->md_rank);
+     err_printf("Proctable malloc return null\n",spindle_external_fabric_data->md_rank);
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
 
   lrc = LMON_be_getMyProctab(proctab, &proctab_size, proctab_size);
   if (lrc != LMON_OK)   {    
-    fprintf(stderr, "[LMON BE(%d): FAILED] LMON_be_getMyProctab\n",spindle_external_fabric_data->md_rank );
-    LMON_be_finalize();
-    return EXIT_FAILURE;
+     err_printf("LMON_be_getMyProctab\n",spindle_external_fabric_data->md_rank );
+     LMON_be_finalize();
+     return EXIT_FAILURE;
   }
 
   /* Continue application tasks */
   for(i=0; i < proctab_size; i++)  {
-    debug_printf("[LMON BE(%d)] kill %d, %d\n", spindle_external_fabric_data->md_rank, proctab[i].pd.pid, signum );
+    debug_printf3("[LMON BE(%d)] kill %d, %d\n", spindle_external_fabric_data->md_rank, proctab[i].pd.pid, signum );
     kill(proctab[i].pd.pid, signum);
   }
   
@@ -85,18 +83,18 @@ int main(int argc, char* argv[])
   int number;
   char *location, *numberstr;
 
-/*  fprintf(stderr, "Here - %d\n", getpid());
-  static volatile int done = 0;
-  while (!done) {     
-     sleep(1);
-     }*/
+  LOGGING_INIT(const_cast<char *>("Server"));
+
+  debug_printf("Spindle Server Cmdline: ");
+  for (int i=0; i<argc; i++) {
+     bare_printf("%s ", argv[i]);
+  }
+  bare_printf("\n");
 
   /* Initialization of LMON  */
   lrc = LMON_be_init(LMON_VERSION, &argc, &argv);
-  if (lrc != LMON_OK)
-  {      
-     fprintf(stdout, 
-             "[LMON BE: FAILED] LMON_be_init\n");
+  if (lrc != LMON_OK) {      
+     err_printf("Failed LMON_be_init\n");
      return EXIT_FAILURE;
   }
 
@@ -106,11 +104,12 @@ int main(int argc, char* argv[])
 
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);
+  debug_printf("Launchmon rank %d/%d\n", rank, size);
 
   lrc = LMON_be_handshake(NULL);
   if (lrc != LMON_OK)
   {
-     fprintf(stdout, "[LMON BE(%d)] FAILED: LMON_be_handshake\n", rank);
+     err_printf("Failed LMON_be_handhshake\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
   lrc = LMON_be_ready(NULL);
   if (lrc != LMON_OK )
   {     
-     fprintf(stdout, "[LMON BE(%d)] FAILED: LMON_be_ready\n", rank);
+     err_printf("Failed LMON_be_ready\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   } 
@@ -127,25 +126,14 @@ int main(int argc, char* argv[])
   if ( LMON_be_amIMaster() == LMON_YES ) {
     
     if ( ( lrc = LMON_be_regPackForBeToFe (packbefe_cb )) != LMON_OK ) {
-      fprintf (stdout, "[LMON BE(%d)] LMON_be_regPackForBeToFe FAILED\n",  rank);
-      return EXIT_FAILURE;
+       err_printf("Failed LMON_be_regPackForBeToFe\n");
+       return EXIT_FAILURE;
     } 
     
     if ( ( lrc = LMON_be_regUnpackForFeToBe ( unpackfebe_cb )) != LMON_OK ) {
-      fprintf (stdout,"[LMON BE(%d)] LMON_be_regUnpackForFeToBe FAILED\n", rank);
-      return EXIT_FAILURE;
+       err_printf("Failed LMON_be_regUnpackForBeToFe\n");
+       return EXIT_FAILURE;
     } 
-  }
-
-  /* set SION debug file name */
-  if(1){
-    char hostname[HOSTNAME_LEN];
-    bzero(hostname,HOSTNAME_LEN);
-    gethostname(hostname,HOSTNAME_LEN);
-
-    char helpstr[MAX_PATH_LEN];
-    sprintf(helpstr,"_debug_spindle_%s_l_%02d_of_%02d_%s","DAEMON",rank+1,size,hostname);
-    setenv("SION_DEBUG",helpstr,1);
   }
 
   /* Register external fabric CB to SPINDLE */
@@ -156,21 +144,11 @@ int main(int argc, char* argv[])
   /* start SPINDLE server */
   ldcs_audit_server_process(location,number,&_ready_cb_func, &spindle_external_fabric_data);
 
-  /* sending this to mark the end of the BE session */
-  /* This should be used to determine PASS/FAIL criteria */
-  if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
-       || ( lrc == LMON_EINVAL )
-       || ( lrc == LMON_ENOMEM ))
-    {
-      fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_sendUsrData\n",
-	      rank, lrc );
-      LMON_be_finalize();
-      return EXIT_FAILURE;
-    }
-
-  fprintf(stdout, "[LMON BE: ] starting LMON_be_finalize \n");
   LMON_be_finalize();
-  fprintf(stdout, "[LMON BE: ] finished LMON_be_finalize \n");
+
+  debug_printf("Finished server process.  Exiting with success\n");
+  
+  LOGGING_FINI;
 
   return EXIT_SUCCESS;
 }

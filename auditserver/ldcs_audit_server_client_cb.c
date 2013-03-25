@@ -32,25 +32,24 @@ int _ldcs_client_CB ( int fd, int nc, void *data ) {
   ldcs_process_data->last_action_on_nc=nc;
 
   connid=ldcs_process_data->client_table[nc].connid;
-  debug_printf("starting callback for fd=%d nc=%d connid=%d lfd=%d\n",fd,nc,connid,ldcs_get_fd(connid));
+  debug_printf3("starting callback for fd=%d nc=%d connid=%d lfd=%d\n",fd,nc,connid,ldcs_get_fd(connid));
   in_msg.header.type=LDCS_MSG_UNKNOWN;  in_msg.alloclen=MAX_PATH_LEN;  in_msg.header.len=0;  in_msg.data=buffer_in;
 
   /* get message from client */
   ldcs_recv_msg_static(connid,&in_msg, LDCS_READ_BLOCK);
 
   /* printf("SERVER[%03d]: received message on connection connid=%d\n", nc, connid); */
-  debug_printf("received message on connection nc=%d connid=%d\n", nc, connid);
+  debug_printf3("received message on connection nc=%d connid=%d\n", nc, connid);
 
   /* prevent infinite loop */
   if(in_msg.header.len==0) {
-    debug_printf("connid=%d null_msg_cnt = %d\n",connid, ldcs_process_data->client_table[nc].null_msg_cnt);
+    debug_printf3("connid=%d null_msg_cnt = %d\n",connid, ldcs_process_data->client_table[nc].null_msg_cnt);
     ldcs_process_data->client_table[nc].null_msg_cnt++;
   } else {
     ldcs_process_data->client_table[nc].null_msg_cnt=0;
   }
   if(ldcs_process_data->client_table[nc].null_msg_cnt>8) {
-    debug_printf(" too many null byte messages on conn %d, closing connection\n",connid);
-    printf("SERVER[%03d]: too many null byte messages: closing connection\n", nc);
+    err_printf(" too many null byte messages on conn %d, closing connection\n",connid);
     ldcs_close_server_connection(connid);
     ldcs_process_data->client_table[nc].state = LDCS_CLIENT_STATUS_FREE;
     ldcs_process_data->client_table_used--;
@@ -86,7 +85,7 @@ int _ldcs_client_CB ( int fd, int nc, void *data ) {
     break;
 
   default: ;
-    debug_printf("SERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", nc,
+    debug_printf3("SERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", nc,
 	   _message_type_to_str(in_msg.header.type),
 	   in_msg.header.len, in_msg.data );
     printf("SERVER[%03d]: recvd unknown message of type: %s len=%d data=%s ...\n", nc,
@@ -95,7 +94,7 @@ int _ldcs_client_CB ( int fd, int nc, void *data ) {
     break;
   }
   
-  debug_printf("leaving callback for fd %d nc = %d\n",fd,nc);
+  debug_printf3("leaving callback for fd %d nc = %d\n",fd,nc);
 
   ldcs_process_data->server_stat.client_cb.cnt++;
   ldcs_process_data->server_stat.client_cb.time+=(ldcs_get_time()-cb_starttime);
@@ -142,7 +141,7 @@ int _ldcs_client_process_fe_preload_requests ( ldcs_process_data_t *ldcs_process
   char *fe_cwd=""; 		
   ldcs_cache_result_t cache_filedir_result=LDCS_CACHE_UNKNOWN;
 
-  debug_printf(" got preload request for %s\n", fn);
+  debug_printf3(" got preload request for %s\n", fn);
 
   /* TDB: transfer CWD path to server */
   strncpy(ldcs_process_data->client_table[nc].remote_cwd,(fe_cwd)?fe_cwd:"\0",MAX_PATH_LEN);
@@ -183,10 +182,10 @@ ldcs_state_t _ldcs_client_dump_info ( ldcs_process_data_t *ldcs_process_data ) {
   int rc=0;
 
   for(nc=0;nc<ldcs_process_data->client_table_used;nc++) {
-    debug_printf("  CLIENT DUMP: nc = %2d, connid=%d fd=%d\n",nc,
+    debug_printf3("  CLIENT DUMP: nc = %2d, connid=%d fd=%d\n",nc,
 		 ldcs_process_data->client_table[nc].connid,
 		 ldcs_get_fd(ldcs_process_data->client_table[nc].connid));
-    /*debug_printf("               pid= %6d, hostname=%s, cwd=%s fd=%d\n",
+    /*debug_printf3("               pid= %6d, hostname=%s, cwd=%s fd=%d\n",
 		 ldcs_process_data->client_table[nc].remote_pid,
 		 ldcs_process_data->client_table[nc].remote_hostname,
 		 ldcs_process_data->client_table[nc].remote_cwd, 

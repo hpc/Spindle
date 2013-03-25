@@ -32,7 +32,7 @@ int ldcs_audit_server_md_msocket_init_topo_bootstrap(ldcs_msocket_data_t *ldcs_m
   compute_binom_tree(hostinfo->size,  &connlist, &connlistsize, &max_connections);
 
   for(c=0;c<connlistsize;c++) {
-    debug_printf("connection list: %2d -> %2d \n",connlist[2*c+0],connlist[2*c+1]);
+    debug_printf3("connection list: %2d -> %2d \n",connlist[2*c+0],connlist[2*c+1]);
   }
 
   /* allocate bootstrap data structure */
@@ -73,7 +73,7 @@ int ldcs_audit_server_md_msocket_init_topo_bootstrap(ldcs_msocket_data_t *ldcs_m
 	msg->data=serdata;
 	
 	/* sent message to first host */
-	debug_printf("rank=%d route bootstrap msg %d->%d\n",rank,msg->header.source, msg->header.dest);
+	debug_printf3("rank=%d route bootstrap msg %d->%d\n",rank,msg->header.source, msg->header.dest);
 
 	ldcs_audit_server_md_msocket_route_msg(ldcs_msocket_data, msg);
 
@@ -107,7 +107,7 @@ int _ldcs_audit_server_md_msocket_run_topo_bootstrap(ldcs_msocket_data_t *ldcs_m
   ldcs_message_t* msg;
   ldcs_msocket_hostinfo_t hostinfo;  
 
-  debug_printf("starting run bootstrab ..\n");
+  debug_printf3("starting run bootstrab ..\n");
   ldcs_audit_server_md_msocket_dump_bootstrap(bootstrap);
 
   for(c=0;c<bootstrap->size;c++) {
@@ -131,7 +131,7 @@ int _ldcs_audit_server_md_msocket_run_topo_bootstrap(ldcs_msocket_data_t *ldcs_m
 	   ldcs_msocket_data->hostname, 
 	   nc, ldcs_msocket_data->connection_table[nc].remote_rank,ldcs_get_time());
 
-    debug_printf("SERVER[%02d]: open connection on host %s #c=%02d rrank=%d at %12.4f\n", ldcs_msocket_data->md_rank, 
+    debug_printf3("SERVER[%02d]: open connection on host %s #c=%02d rrank=%d at %12.4f\n", ldcs_msocket_data->md_rank, 
 		 ldcs_msocket_data->hostname, ldcs_msocket_data->connection_counter, 
 		 ldcs_msocket_data->connection_table[nc].remote_rank,ldcs_get_time());
     
@@ -142,7 +142,7 @@ int _ldcs_audit_server_md_msocket_run_topo_bootstrap(ldcs_msocket_data_t *ldcs_m
     
     /* send hostinfo */
       /* message for hostinfo */
-    debug_printf("send msg hostinfo\n");
+    debug_printf3("send msg hostinfo\n");
     msg=ldcs_msg_new();
     
     hostinfo.rank=bootstrap->tolist[c];    hostinfo.size=ldcs_msocket_data->hostinfo.size;
@@ -175,14 +175,14 @@ int ldcs_audit_server_md_msocket_route_msg_binom_tree(ldcs_msocket_data_t *ldcs_
   int rc=0;
   int dest=msg->header.dest;
 
-  debug_printf("start route on msg %s %d -> %d -> %d\n",_message_type_to_str(msg->header.type),msg->header.source, msg->header.from, msg->header.dest);
+  debug_printf3("start route on msg %s %d -> %d -> %d\n",_message_type_to_str(msg->header.type),msg->header.source, msg->header.from, msg->header.dest);
   
   if(msg->header.mtype==LDCS_MSG_MTYPE_P2P) {
     found=0; foundnc=-1;maxrank=-1;
     /* searching for max remote rank which less than dest */
     for(nc=0;(nc<ldcs_msocket_data->connection_table_used) && (!found);nc++) {
       rrank=ldcs_msocket_data->connection_table[nc].remote_rank;
-      debug_printf("  check for msg with dest %d child nc=%d with rrank=%d maxrank=%d\n",dest,nc,rrank,maxrank);
+      debug_printf3("  check for msg with dest %d child nc=%d with rrank=%d maxrank=%d\n",dest,nc,rrank,maxrank);
       if(rrank<0) continue; /* not to front end */
       if(rrank==dest) {
 	found=1;foundnc=nc;maxrank=rrank;
@@ -194,7 +194,7 @@ int ldcs_audit_server_md_msocket_route_msg_binom_tree(ldcs_msocket_data_t *ldcs_
       }
     }
     if(found || (foundnc>=0) ) {
-      debug_printf("SEND msg with dest %d child nc=%d with rrank=%d connid=%d\n",dest,foundnc,maxrank,ldcs_msocket_data->connection_table[foundnc].connid);
+      debug_printf3("SEND msg with dest %d child nc=%d with rrank=%d connid=%d\n",dest,foundnc,maxrank,ldcs_msocket_data->connection_table[foundnc].connid);
       ldcs_send_msg_socket(ldcs_msocket_data->connection_table[foundnc].connid,msg);
     }
   }
@@ -204,16 +204,16 @@ int ldcs_audit_server_md_msocket_route_msg_binom_tree(ldcs_msocket_data_t *ldcs_
     msg->header.from=ldcs_msocket_data->hostinfo.rank;
     for(nc=0;(nc<ldcs_msocket_data->connection_table_used);nc++) {
       rrank=ldcs_msocket_data->connection_table[nc].remote_rank;
-      debug_printf("check for bcast msg with dest %d child nc=%d with rrank=%d iam=%d\n",dest,nc,rrank,ldcs_msocket_data->hostinfo.rank);
+      debug_printf3("check for bcast msg with dest %d child nc=%d with rrank=%d iam=%d\n",dest,nc,rrank,ldcs_msocket_data->hostinfo.rank);
       if(rrank<0) continue; 	/* not to front end */
       if(rrank<=ldcs_msocket_data->hostinfo.rank) continue; /* not upward in tree */
 
-      debug_printf("BCAST msg with dest %d to child nc=%d with rrank=%d connid=%d\n",dest,nc,rrank,ldcs_msocket_data->connection_table[nc].connid);
+      debug_printf3("BCAST msg with dest %d to child nc=%d with rrank=%d connid=%d\n",dest,nc,rrank,ldcs_msocket_data->connection_table[nc].connid);
       ldcs_send_msg_socket(ldcs_msocket_data->connection_table[nc].connid,msg);
     }
   }
 
-  debug_printf("end route on msg %s %d -> %d -> %d\n",_message_type_to_str(msg->header.type),msg->header.source, msg->header.from, msg->header.dest);
+  debug_printf3("end route on msg %s %d -> %d -> %d\n",_message_type_to_str(msg->header.type),msg->header.source, msg->header.from, msg->header.dest);
 
   return(rc);
 }

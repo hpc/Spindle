@@ -145,10 +145,20 @@ int ldcs_open_connection_shmem(char* hostname, int portno) {
   
   _ldcs_init_datastruct_shmem(fd);
 
-  debug_printf("after connect: -> port=%d\n",portno);
+  debug_printf3("after connect: -> port=%d\n",portno);
  
   return(fd);
   
+}
+
+char *ldcs_get_connection_string_shmem(int fd)
+{
+   return "";
+}
+
+int ldcs_register_connection_shmem(char *connection_str)
+{
+   return ldcs_open_connection_shmem("", 0);
 }
 
 int ldcs_close_connection_shmem(int fd) {
@@ -236,25 +246,25 @@ int _ldcs_init_datastruct_shmem(int fd) {
 
   /* get lock for data structure */
   ldcs_shmem_fdlist[fd].sem_lock=sem_open(ldcs_shmem_fdlist[fd].sem_lock_name, O_CREAT, FILE_MODE, 1);
-  debug_printf("after open sem ldcs_sem_lock %s %x errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_lock_name,ldcs_shmem_fdlist[fd].sem_lock,errno,strerror(errno));
+  debug_printf3("after open sem ldcs_sem_lock %s %p errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_lock_name,ldcs_shmem_fdlist[fd].sem_lock,errno,strerror(errno));
   sem_wait(ldcs_shmem_fdlist[fd].sem_lock);
-  debug_printf("after sem_wait(ldcs_sem_lock)\n");
+  debug_printf3("after sem_wait(ldcs_sem_lock)\n");
 
   /* check if data structure is initialized */
   /* -->  get lock for init, init will not neccesary done by server  */
   ldcs_shmem_fdlist[fd].sem_init=sem_open(ldcs_shmem_fdlist[fd].sem_init_name, O_CREAT, FILE_MODE, 1);
-  debug_printf("after open sem ldcs_sem_init %s %x errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_init_name,ldcs_shmem_fdlist[fd].sem_init,errno,strerror(errno));
+  debug_printf3("after open sem ldcs_sem_init %s %p errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_init_name,ldcs_shmem_fdlist[fd].sem_init,errno,strerror(errno));
   if(!sem_trywait(ldcs_shmem_fdlist[fd].sem_init)) {
 
-    debug_printf("open shmem file = %s + create\n",ldcs_shmem_fdlist[fd].shmfile_name);
+    debug_printf3("open shmem file = %s + create\n",ldcs_shmem_fdlist[fd].shmfile_name);
     ldcs_shmem_fdlist[fd].shmemfd=shm_open(ldcs_shmem_fdlist[fd].shmfile_name, O_RDWR|O_CREAT, 0600);
-    debug_printf("after open fd=%d\n",ldcs_shmem_fdlist[fd].shmemfd);
+    debug_printf3("after open fd=%d\n",ldcs_shmem_fdlist[fd].shmemfd);
 
     ftruncate(ldcs_shmem_fdlist[fd].shmemfd, sizeof(ldcs_shmem_data_t));
-    debug_printf("after ftruncate to %d bytes\n",sizeof(ldcs_shmem_data_t));
+    debug_printf3("after ftruncate to %ld bytes\n",sizeof(ldcs_shmem_data_t));
 
     ldcs_shmem_fdlist[fd].shmem_data=mmap(NULL, sizeof(ldcs_shmem_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, ldcs_shmem_fdlist[fd].shmemfd, 0);
-    debug_printf("after mmap: %x\n",ldcs_shmem_fdlist[fd].shmem_data);
+    debug_printf3("after mmap: %p\n",ldcs_shmem_fdlist[fd].shmem_data);
     
     /* init data structure */
     ldcs_shmem_fdlist[fd].shmem_data->c_clients=0;
@@ -263,12 +273,12 @@ int _ldcs_init_datastruct_shmem(int fd) {
     sem_post(ldcs_shmem_fdlist[fd].sem_lock);
 
   } else {
-    debug_printf("open shmem file = %s\n",ldcs_shmem_fdlist[fd].shmfile_name);
+    debug_printf3("open shmem file = %s\n",ldcs_shmem_fdlist[fd].shmfile_name);
     ldcs_shmem_fdlist[fd].shmemfd=shm_open(ldcs_shmem_fdlist[fd].shmfile_name, O_RDWR, 0600);
-    debug_printf("after open fd=%d\n",ldcs_shmem_fdlist[fd].shmemfd);
+    debug_printf3("after open fd=%d\n",ldcs_shmem_fdlist[fd].shmemfd);
 
     ldcs_shmem_fdlist[fd].shmem_data=mmap(NULL, sizeof(ldcs_shmem_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, ldcs_shmem_fdlist[fd].shmemfd, 0);
-    debug_printf("after mmap: %x\n",ldcs_shmem_fdlist[fd].shmem_data);
+    debug_printf3("after mmap: %p\n",ldcs_shmem_fdlist[fd].shmem_data);
     
     /* release lock */
     sem_post(ldcs_shmem_fdlist[fd].sem_lock);
@@ -326,14 +336,14 @@ int ldcs_create_server_or_client_shmem(char* location, int number) {
 
   /* init semaphore for DECIDING WHO IS SERVER */ 
   ldcs_shmem_fdlist[fd].sem_decide=sem_open(ldcs_shmem_fdlist[fd].sem_decide_name, O_CREAT, FILE_MODE, 1);
-  debug_printf("after sem_open semname=%s %x errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_decide_name, 
+  debug_printf3("after sem_open semname=%s %p errno(%d,%s)\n",ldcs_shmem_fdlist[fd].sem_decide_name, 
 	       ldcs_shmem_fdlist[fd].sem_decide, errno,strerror(errno));
 
 
   /* server is who graps the semaphore */
   if(!sem_trywait(ldcs_shmem_fdlist[fd].sem_decide))  iamserver=1;
   else iamserver=0;
-  debug_printf("after check sem ldcs_sem_server iamserver = %d\n",iamserver);
+  debug_printf3("after check sem ldcs_sem_server iamserver = %d\n",iamserver);
 
   if(iamserver) {
     ldcs_shmem_fdlist[fd].type=LDCS_SHMEM_FD_TYPE_SERVER;
@@ -373,7 +383,7 @@ int ldcs_send_msg_shmem(int fd, ldcs_message_t * msg) {
   connfd=ldcs_shmem_fdlist[fd].fd;
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 
@@ -424,7 +434,7 @@ ldcs_message_t * ldcs_recv_msg_shmem(int fd,  ldcs_read_block_t block) {
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 
@@ -466,7 +476,7 @@ int ldcs_recv_msg_static_shmem(int fd, ldcs_message_t *msg,  ldcs_read_block_t b
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%d data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 #endif
@@ -489,15 +499,15 @@ int _ldcs_read_shmem(int fd, void *data, int bytes, ldcs_read_block_t block) {
     btoread    = left;
     bread      = read(fd, dataptr, btoread);
     if(bread<0) {
-      if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf("read from shmem: got EAGAIN or EWOULDBLOCK\n");
-	if(block==LDCS_READ_NO_BLOCK) return(0);
-	else continue;
-      } else { 
-	debug_printf("read from shmem: %d bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
-      }
+       if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
+          debug_printf3("read from shmem: got EAGAIN or EWOULDBLOCK\n");
+          if(block==LDCS_READ_NO_BLOCK) return(0);
+          else continue;
+       } else { 
+          debug_printf3("read from shmem: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+       }
     } else {
-      debug_printf("read from shmem: %d bytes ...\n",bread);
+       debug_printf3("read from shmem: %ld bytes ...\n",bread);
     }
 
     if(bread>0) {

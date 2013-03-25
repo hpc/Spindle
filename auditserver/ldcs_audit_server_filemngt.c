@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <dirent.h>
 
 #include "ldcs_api.h"
 #include "ldcs_cache.h"
@@ -19,33 +19,29 @@
  long _ldcs_file_read(FILE *infile, void *data, int bytes );
  long _ldcs_file_write(FILE *outfile, const void *data, int bytes );
 
- int ldcs_audit_server_filemngt_init (char* location) {
+int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;
    struct stat st;
 
-   if(strlen(location)+10<MAX_PATH_LEN) {
-     sprintf(_ldcs_audit_server_tmpdir,"%s-%s",location,"tmp");
-     debug_printf("defined location for tmp files to to %s\n",_ldcs_audit_server_tmpdir);
-   } else _error("location path too long");
-
+   snprintf(_ldcs_audit_server_tmpdir, MAX_PATH_LEN, "%s/spindle.%d", location, getpid());
 
    if (stat(_ldcs_audit_server_tmpdir, &st) == -1) {
      /* try create directory */
-     if (-1 == mkdir(_ldcs_audit_server_tmpdir, 0766)) {
-       printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
-       _error("mkdir failed");
-     }
+      if (-1 == mkdir(_ldcs_audit_server_tmpdir, 0700)) {
+         err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
+         _error("mkdir failed");
+      }
    } else {
      if(S_ISDIR(st.st_mode)) {
-       debug_printf("%s already exists, using this direcory\n",_ldcs_audit_server_tmpdir);
+       debug_printf3("%s already exists, using this direcory\n",_ldcs_audit_server_tmpdir);
      } else {
-       printf("mkdir: ERROR %s exists and is not a directory\n", _ldcs_audit_server_tmpdir);
-       _error("mkdir failed");
+        err_printf("mkdir: ERROR %s exists and is not a directory\n", _ldcs_audit_server_tmpdir);
+        _error("mkdir failed");
      }
    }
 
    return(rc);
- }
+}
 
 
 int read_file_and_strip(FILE *f, void *data, size_t *size);
@@ -59,15 +55,15 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
   int fullname_len;
   long file_data_len, file_len;
 
-  debug_printf("read file data for file: '%s' (%s)  \n", filename, fullname);
+  debug_printf3("read file data for file: '%s' (%s)  \n", filename, fullname);
   infile = fopen(fullname, "rb");
   if (!infile)  _error("Could not open file");
-  debug_printf("  file open successful \n");
+  debug_printf3("  file open successful \n");
   
   fseek(infile, 0, SEEK_END);
   file_len=ftell(infile);
   fseek(infile, 0, SEEK_SET);
-  debug_printf("  file size %ld bytes (%10.4f MB)\n", file_len, file_len/1024.0/1024.0);
+  debug_printf3("  file size %ld bytes (%10.4f MB)\n", file_len, file_len/1024.0/1024.0);
 
   file_data_len=0;
   file_data_len+=sizeof(domangle);
@@ -100,7 +96,7 @@ int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *
   read_file_and_strip(infile, p, (size_t *) &file_len);
   p += file_len;
   fclose(infile);
-  debug_printf("  file read and closed %ld bytes\n", file_len);
+  debug_printf3("  file read and closed %ld bytes\n", file_len);
 
   memcpy(len_pos, &file_len, sizeof(file_len));
   
@@ -163,21 +159,21 @@ int ldcs_audit_server_filemngt_store_file ( ldcs_message_t* msg, char **_filenam
     newname= (char*) malloc(newname_len); if(!newname) _error("could malloc memory for newname");
     sprintf(newname, "%s/%s",_ldcs_audit_server_tmpdir,filename);
   }
-  debug_printf("store file data for file: '%s'/'%s' (%s) %ld bytes  %10.4f MB to %s\n", 
+  debug_printf3("store file data for file: '%s'/'%s' (%s) %ld bytes  %10.4f MB to %s\n", 
 	       dirname, filename, fullname, file_len, file_len/1024.0/1024.0, newname); 
-  debug_printf("store file data for file: '%s' to %s\n", filename, newname); 
+  debug_printf3("store file data for file: '%s' to %s\n", filename, newname); 
 
   
   outfile = fopen(newname, "wb");
   if (!outfile)  _error("Could not open file");
-  debug_printf("  file open successful \n");
+  debug_printf3("  file open successful \n");
   
 #ifdef LDCSDEBUG
   fwrote=
 #endif
     _ldcs_file_write(outfile, p, file_len);
   fclose(outfile);
-  debug_printf("  file wrote and closed %ld bytes\n", fwrote);
+  debug_printf3("  file wrote and closed %ld bytes\n", fwrote);
 
   *_filename  = filename;
   *_dirname   = dirname;
@@ -205,12 +201,12 @@ long _ldcs_file_read(FILE *infile, void *data, int bytes ) {
 
   while (left > 0)  {
     btoread    = left;
-    debug_printf("before read from file \n");
+    debug_printf3("before read from file \n");
     bread      = fread(dataptr, 1, btoread, infile);
     if(bread<0) {
-      debug_printf("read from fifo: %d bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+      debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
     } else {
-      debug_printf("read from fifo: %d bytes ...\n",bread);
+      debug_printf3("read from fifo: %ld bytes ...\n",bread);
     }
     if(bread>0) {
       left      -= bread;
@@ -244,5 +240,41 @@ long _ldcs_file_write(FILE *outfile, const void *data, int bytes ) {
   return (bsumwrote);
 }
 
+/**
+ * Clear files from the local ramdisk
+ **/
+int ldcs_audit_server_filemngt_clean()
+{
+   DIR *tmpdir;
+   struct dirent *dp;
+   char path[MAX_PATH_LEN];
+   struct stat finfo;
+   int result;
 
+   debug_printf("Cleaning tmpdir %s\n", _ldcs_audit_server_tmpdir);
 
+   tmpdir = opendir(_ldcs_audit_server_tmpdir);
+   if (!tmpdir) {
+      err_printf("Failed to open %s for cleaning: %s\n", _ldcs_audit_server_tmpdir,
+                 strerror(errno));
+      return -1;
+   }
+   
+   
+   while ((dp = readdir(tmpdir))) {
+      snprintf(path, MAX_PATH_LEN, "%s/%s", _ldcs_audit_server_tmpdir, dp->d_name);
+      result = lstat(path, &finfo);
+      if (result == -1) {
+         err_printf("Failed to stat %s\n", path);
+         continue;
+      }
+      if (!S_ISREG(finfo.st_mode)) {
+         debug_printf3("Not cleaning file %s\n", path);
+         continue;
+      }
+      unlink(path);
+   }
+
+   rmdir(_ldcs_audit_server_tmpdir);
+   return 0;
+}

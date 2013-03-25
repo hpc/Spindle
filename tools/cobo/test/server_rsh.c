@@ -1046,7 +1046,7 @@ static int read_hostfile(char *hostfile_name)
             }
         } else {
             fprintf(stderr, "End of file reached on "
-                    "hostfile at %d of %d hostnames\n", i, nprocs);
+                    "hostfile at %lu of %d hostnames\n", i, nprocs);
             exit(EXIT_FAILURE);
         }
     }
@@ -1132,7 +1132,7 @@ char *read_param_file(char *paramfile,char *env)
         env_left -= e_len;
         if (param_debug) {
             printf("Added: [%s]\n", buf);
-            printf("env len = %d, env left = %d\n", strlen(env), env_left);
+            printf("env len = %lu, env left = %d\n", strlen(env), env_left);
         }
     }
     fclose(pf);
@@ -1176,10 +1176,10 @@ void pglist_print(void) {
 	    fprintf(stderr, " %p", pglist->index[i]);
 	}
 
-	fprintf(stderr, "\nnpgs/allocated: %d/%d (%d%%)\n", pglist->npgs,
+	fprintf(stderr, "\nnpgs/allocated: %lu/%lu (%u%%)\n", pglist->npgs,
 		pglist->npgs_allocated, (int)(pglist->npgs_allocated ? 100. *
 		    pglist->npgs / pglist->npgs_allocated : 100.));
-	fprintf(stderr, "npids/allocated: %d/%d (%d%%)\n", npids,
+	fprintf(stderr, "npids/allocated: %lu/%lu (%u%%)\n", npids,
 		npids_allocated, (int)(npids_allocated ? 100. * npids /
 		    npids_allocated : 100.));
 	fprintf(stderr, "--pglist--\n\n");
