@@ -24,8 +24,8 @@ static char *location, *number_s;
 static char **cmdline;
 static char *executable;
 
-char libstr_socket[] = LIBDIR "/libldcs_audit_client_socket.so";
-char libstr_pipe[] = LIBDIR "/libldcs_audit_client_pipe.so";
+char libstr_socket[] = LIBDIR "/libspindle_client_socket.so";
+char libstr_pipe[] = LIBDIR "/libspindle_client_pipe.so";
 #if defined(COMM_SOCKET)
 static char *default_libstr = libstr_socket;
 #elif defined(COMM_PIPES)

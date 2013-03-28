@@ -9,10 +9,24 @@ COD = $(top_builddir)/tools/cobo/src
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
 spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc spindle_external_fabric_fe.cc parse_launcher.cc
 
-spindle_be_LDFLAGS = $(AM_LDFLAGS) -all-static
+spindle_be_LDFLAGS = $(AM_LDFLAGS) -static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
 spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc spindle_external_fabric_be.cc
-spindle_be_LDADD = -lmonbeapi $(top_builddir)/cache/libldcs_cache.la $(top_builddir)/logging/libspindlelogc.la
+spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la $(top_builddir)/logging/libspindlelogc.la
+
+if LINK_LIBSTDCXX_STATIC
+spindle_be_LDFLAGS += $(STATIC_LIBGCC_OPT) -L.
+CLEANFILES = ./libstdc++.a
+./libstdc++.a:
+	$(AM_V_GEN)$(LN_S) $(STATIC_LIBSTDCXX) $@
+BUILT_SOURCES=./libstdc++.a
+endif
+
+if LMON_DYNAMIC
+spindle_be_LDADD += -lmonbeapi -lcobo -lgcrypt
+else
+spindle_be_LDADD += $(LAUNCHMON_STATIC_LIBS)
+endif
 
 spindle_LDADD = -lmonfeapi $(top_builddir)/logging/libspindlelogc.la
 if COBO

@@ -1,5 +1,4 @@
-lib_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la
-noinst_LTLIBRARIES = libserverbase.la
+noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
 
 #bin_PROGRAMS = ldcs_audit_server_socket ldcs_audit_server_pipe ldcs_audit_server_par_pipe ldcs_audit_server_par_pipe_md ldcs_audit_server_par_pipe_msocket
 

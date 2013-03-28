@@ -37,14 +37,17 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = spindle$(EXEEXT)
 pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
-@COBO_TRUE@am__append_1 = $(top_builddir)/auditserver/libaudit_server_cobo.la
-@COBO_TRUE@am__append_2 = $(top_builddir)/auditserver/libaudit_server_cobo.la
-@MSOCKET_TRUE@am__append_3 = $(top_builddir)/auditserver/libaudit_server_msocket.la
-@MSOCKET_TRUE@am__append_4 = $(top_builddir)/auditserver/libaudit_server_msocket.la
-@SOCKETS_TRUE@am__append_5 = $(top_builddir)/comlib/libldcs_socket.la
-@SOCKETS_TRUE@am__append_6 = $(top_builddir)/comlib/libldcs_socket.la
-@PIPES_TRUE@am__append_7 = $(top_builddir)/comlib/libldcs_pipe.la
-@PIPES_TRUE@am__append_8 = $(top_builddir)/comlib/libldcs_pipe.la
+@LINK_LIBSTDCXX_STATIC_TRUE@am__append_1 = $(STATIC_LIBGCC_OPT) -L.
+@LMON_DYNAMIC_TRUE@am__append_2 = -lmonbeapi -lcobo -lgcrypt
+@LMON_DYNAMIC_FALSE@am__append_3 = $(LAUNCHMON_STATIC_LIBS)
+@COBO_TRUE@am__append_4 = $(top_builddir)/auditserver/libaudit_server_cobo.la
+@COBO_TRUE@am__append_5 = $(top_builddir)/auditserver/libaudit_server_cobo.la
+@MSOCKET_TRUE@am__append_6 = $(top_builddir)/auditserver/libaudit_server_msocket.la
+@MSOCKET_TRUE@am__append_7 = $(top_builddir)/auditserver/libaudit_server_msocket.la
+@SOCKETS_TRUE@am__append_8 = $(top_builddir)/comlib/libldcs_socket.la
+@SOCKETS_TRUE@am__append_9 = $(top_builddir)/comlib/libldcs_socket.la
+@PIPES_TRUE@am__append_10 = $(top_builddir)/comlib/libldcs_pipe.la
+@PIPES_TRUE@am__append_11 = $(top_builddir)/comlib/libldcs_pipe.la
 subdir = launchmon
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -65,8 +68,8 @@ am_spindle_OBJECTS = spindle-spindle_fe.$(OBJEXT) \
 	spindle-parse_launcher.$(OBJEXT)
 spindle_OBJECTS = $(am_spindle_OBJECTS)
 spindle_DEPENDENCIES = $(top_builddir)/logging/libspindlelogc.la \
-	$(am__append_1) $(am__append_3) $(am__append_5) \
-	$(am__append_7) $(top_builddir)/cache/libldcs_cache.la
+	$(am__append_4) $(am__append_6) $(am__append_8) \
+	$(am__append_10) $(top_builddir)/cache/libldcs_cache.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -74,9 +77,12 @@ am_spindle_be_OBJECTS = spindle_be-spindle_be.$(OBJEXT) \
 	spindle_be-spindle_usrdata.$(OBJEXT) \
 	spindle_be-spindle_external_fabric_be.$(OBJEXT)
 spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
+am__DEPENDENCIES_1 =
+@LMON_DYNAMIC_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 spindle_be_DEPENDENCIES = $(top_builddir)/cache/libldcs_cache.la \
-	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
-	$(am__append_4) $(am__append_6) $(am__append_8)
+	$(top_builddir)/logging/libspindlelogc.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) $(am__append_5) \
+	$(am__append_7) $(am__append_9) $(am__append_11)
 spindle_be_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(spindle_be_LDFLAGS) $(LDFLAGS) -o $@
@@ -148,7 +154,9 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAUNCHMON_INC = @LAUNCHMON_INC@
 LAUNCHMON_LIB = @LAUNCHMON_LIB@
+LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
+LDD = @LDD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -178,6 +186,8 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+STATIC_LIBGCC_OPT = @STATIC_LIBGCC_OPT@
+STATIC_LIBSTDCXX = @STATIC_LIBSTDCXX@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -242,17 +252,21 @@ AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
 spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc spindle_external_fabric_fe.cc parse_launcher.cc
-spindle_be_LDFLAGS = $(AM_LDFLAGS) -all-static
+spindle_be_LDFLAGS = $(AM_LDFLAGS) -static $(am__append_1)
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
 spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc spindle_external_fabric_be.cc
-spindle_be_LDADD = -lmonbeapi $(top_builddir)/cache/libldcs_cache.la \
+spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la \
 	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
-	$(am__append_4) $(am__append_6) $(am__append_8)
+	$(am__append_3) $(am__append_5) $(am__append_7) \
+	$(am__append_9) $(am__append_11)
+@LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
+@LINK_LIBSTDCXX_STATIC_TRUE@BUILT_SOURCES = ./libstdc++.a
 spindle_LDADD = -lmonfeapi $(top_builddir)/logging/libspindlelogc.la \
-	$(am__append_1) $(am__append_3) $(am__append_5) \
-	$(am__append_7) -lmonfeapi \
+	$(am__append_4) $(am__append_6) $(am__append_8) \
+	$(am__append_10) -lmonfeapi \
 	$(top_builddir)/cache/libldcs_cache.la
-all: all-am
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .cc .lo .o .obj
@@ -618,13 +632,15 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(PROGRAMS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -641,6 +657,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -649,6 +666,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-libtool \
@@ -720,7 +738,7 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-pkglibexecPROGRAMS
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
 	clean-generic clean-libtool clean-pkglibexecPROGRAMS ctags \
@@ -738,6 +756,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-pkglibexecPROGRAMS
 	uninstall-am uninstall-binPROGRAMS \
 	uninstall-pkglibexecPROGRAMS
 
+@LINK_LIBSTDCXX_STATIC_TRUE@./libstdc++.a:
+@LINK_LIBSTDCXX_STATIC_TRUE@	$(AM_V_GEN)$(LN_S) $(STATIC_LIBSTDCXX) $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
