@@ -23,6 +23,7 @@ static int number;
 static char *location, *number_s;
 static char **cmdline;
 static char *executable;
+static char *client_lib;
 
 char libstr_socket[] = LIBDIR "/libspindle_client_socket.so";
 char libstr_pipe[] = LIBDIR "/libspindle_client_pipe.so";
@@ -58,7 +59,7 @@ static void setup_environment()
    char *connection_str = ldcs_get_connection_string(ldcs_id);
    assert(connection_str);
 
-   setenv("LD_AUDIT", default_libstr, 1);
+   setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
@@ -91,6 +92,19 @@ static void get_executable()
    }
 }
 
+static void get_clientlib()
+{
+   ldcs_send_FILE_QUERY_EXACT_PATH(ldcs_id, default_libstr, &client_lib);
+   if (client_lib == NULL) {
+      client_lib = default_libstr;
+      err_printf("Failed to relocate client library %s\n", default_libstr);
+   }
+   else {
+      debug_printf("Relocated client library %s to %s\n", default_libstr, client_lib);
+      chmod(client_lib, 0600);
+   }
+}
+
 int main(int argc, char *argv[])
 {
    int error, i, result;
@@ -111,6 +125,7 @@ int main(int argc, char *argv[])
    }
 
    get_executable();
+   get_clientlib();
 
    /**
     * Exec setup
