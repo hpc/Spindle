@@ -1,18 +1,18 @@
 #include <dirent.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 
 #define _GNU_SOURCE
 #define __USE_GNU
 #include <link.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "ldcs_api.h" 
 #include "config.h"
@@ -48,9 +48,9 @@ static int rankinfo[4]={-1,-1,-1,-1};
 static uintptr_t *firstcookie=NULL;
 static signed long cookie_shift = 0;
 static int use_ldcs = 1;
+static const char *libc_name = NULL;
 
-
-char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_len) {
+static char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_len) {
    char *buffer = NULL;
    unsigned cur_size = str1_len + str2_len + 1;
 
@@ -63,6 +63,21 @@ char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_l
    return buffer;
 }
 
+static int find_libc_iterator(struct dl_phdr_info *lib,
+                       size_t size,
+                       void *data)
+{
+   if (strstr(lib->dlpi_name, "libc"))
+      libc_name = lib->dlpi_name;
+   return 0;
+}
+
+static void find_libc_name()
+{
+   if (libc_name)
+      return;
+   dl_iterate_phdr(find_libc_iterator, NULL);
+}
 
 static int init_server_connection()
 {
@@ -174,12 +189,20 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 
   /* check if direct name given --> return name  */
   
-   pos_slash = strchr(name, '/');
+   pos_slash = strrchr(name, '/');
    if(!pos_slash) {
       debug_printf3("Returning direct name %s after input %s\n", name, name);
       return (char *) name;
    }
-  
+   
+   /* Don't relocate a new copy of libc, it's already loaded into the process. */
+   find_libc_name();
+   if (libc_name && strcmp(name, libc_name) == 0) {
+      debug_printf("la_objsearch not redirecting libc %s\n", name);
+      return (char *) name;
+   }
+   
+
   debug_printf2("AUDITSEND: L:%s\n",myname);
   if ((ldcsid>=0) && (use_ldcs)) {
      ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
