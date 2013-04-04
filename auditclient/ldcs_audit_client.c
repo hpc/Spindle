@@ -188,7 +188,6 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
                  "???");
 
   /* check if direct name given --> return name  */
-  
    pos_slash = strrchr(name, '/');
    if(!pos_slash) {
       debug_printf3("Returning direct name %s after input %s\n", name, name);
@@ -201,8 +200,6 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
       debug_printf("la_objsearch not redirecting libc %s\n", name);
       return (char *) name;
    }
-   
-
   debug_printf2("AUDITSEND: L:%s\n",myname);
   if ((ldcsid>=0) && (use_ldcs)) {
      ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
