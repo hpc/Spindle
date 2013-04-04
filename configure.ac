@@ -1,4 +1,4 @@
-AC_INIT([spindle], [0.4], [legendre1@llnl.gov])
+<AC_INIT([spindle], [0.4], [legendre1@llnl.gov])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
@@ -15,11 +15,8 @@ AC_CONFIG_FILES([Makefile
                  cache/Makefile
                  tools/cobo/src/Makefile
                  auditserver/Makefile
-                 client/Makefile
                  launchmon/Makefile
-                 beboot/Makefile
-                 simulator/Makefile
-                 tools/cobo/test/Makefile])
+                 beboot/Makefile])
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 AC_PROG_LN_S

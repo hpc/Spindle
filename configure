@@ -4362,7 +4362,7 @@ fi
 
 ac_config_headers="$ac_config_headers config.h"
 
-ac_config_files="$ac_config_files Makefile logging/Makefile tools/sion_debug/Makefile comlib/Makefile auditclient/Makefile cache/Makefile tools/cobo/src/Makefile auditserver/Makefile client/Makefile launchmon/Makefile beboot/Makefile simulator/Makefile tools/cobo/test/Makefile"
+ac_config_files="$ac_config_files Makefile logging/Makefile tools/sion_debug/Makefile comlib/Makefile auditclient/Makefile cache/Makefile tools/cobo/src/Makefile auditserver/Makefile launchmon/Makefile beboot/Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -17855,11 +17855,8 @@ do
     "cache/Makefile") CONFIG_FILES="$CONFIG_FILES cache/Makefile" ;;
     "tools/cobo/src/Makefile") CONFIG_FILES="$CONFIG_FILES tools/cobo/src/Makefile" ;;
     "auditserver/Makefile") CONFIG_FILES="$CONFIG_FILES auditserver/Makefile" ;;
-    "client/Makefile") CONFIG_FILES="$CONFIG_FILES client/Makefile" ;;
     "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
     "beboot/Makefile") CONFIG_FILES="$CONFIG_FILES beboot/Makefile" ;;
-    "simulator/Makefile") CONFIG_FILES="$CONFIG_FILES simulator/Makefile" ;;
-    "tools/cobo/test/Makefile") CONFIG_FILES="$CONFIG_FILES tools/cobo/test/Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

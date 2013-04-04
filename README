@@ -74,103 +74,16 @@ Directories:
 Compilation:
 ============
 
-1) Adapt Makefiles (in each director)
+1) Make a build directory, and run spindle/configure from that directory.
 
-2) Run make:
-   gmake -f Makefile DEBUG=SIONDEBUG HWBIT=BIT64 
-   
-   Variables:
-     DEBUG=SIONDEBUG
-           --> using SION debug: 
-               - set environment variable SION_DEBUG=<fn_prefix> to enable debugging 
-                 for all tasks (each task writes to file <fn_prefix>.pid)
-               - set environment variable LDCS_AUDITDEBUG=<fn_prefix> to enable debugging 
-                 for some client tasks (task writes to file <fn_prefix>.pid)
-     DEBUG=DEBUG
-           --> using COBO debugging (only cobo communication)
-     
-     HWBIT=BIT64
-           --> enables open intercepting with pltenter for 64bit platforms 
-     HWBIT=BIT32
-           --> enables open intercepting with pltenter for 32bit platforms 
-        
+2) make install from the build directory
+
 Usage:
 ======
 
-- LaunchMON:
-   - ... TDB
+spindle <job launch command>
 
+ e.g,
 
-- RSH:
-  - Starting server:
+spindle mpirun -n 128 mpi_hello_world
 
-    cd ./audit_server;
-  
-    # Files
-    ./cobo_param.dat: (Envs-Vars exported to server processes)
-    ------------------------------
-    LDCS_LOCATION=/tmp/myfifo
-    LDCS_NUMBER=7777
-    LDCS_NPORTS=10
-    LDCS_EXIT_AFTER_SESSION=1
-    SION_DEBUG=../auditserver/_debug_audit_server_md
-    COBO_CLIENT_DEBUG=7
-    ------------------------------
-    
-    ./hostlist.dat (nodes on which SPINDLE server should be started)
-    ------------------------------
-    sierra... 
-    sierra... 
-    ------------------------------
-
-   ../tools/cobo/test/server_rsh_ldcs -np <nodes> -paramfile ./cobo_param.dat \
-                                                  -hostfile ./hostlist.dat \
-		                              ./ldcs_audit_server_par_pipe_cobo
-
-   - Starting application:
-
-    cd ./audit_client;
-
-    LD_AUDIT=`pwd`/ldcs_audit_client_pipe.so
-    export LD_AUDIT
-
-    # path to directory used for pipes 
-    LDCS_LOCATION=/tmp/myfifo
-    export LDCS_LOCATION
-    # not used for pipes 
-    LDCS_NUMBER=7777
-    export LDCS_NUMBER
-    # number of task per server (multiple server per node, -1 --> disabled)
-    LDCS_LOCATION_MOD=-1
-    export LDCS_LOCATION_MOD
-
-    srun -N <nodes> -n <tasks>  ./helloworld3_mpi
-
-
-Pynamic:
-	
-   cd pynamic-pyMPI-2.6a1;
-
-   # generate benchmark
-   ./config_pynamic.py 495 1850 -e -u 215 1850 -n 100 -t
-
-   mkdir ~/benchmarkx
-   cp *.so pyMPI pyMPI2.6 pyMPI2.6_linker pyMPI_linker pynamic-pyMPI pynamic_driver.py ~/benchmarkx
-
-   cd ~/benchmarkx
-   cp .../tools/slurm/runit_multi_bm.sh .
-   cp .../tools/slurm/job_sierra.sh
-   cp .../tools/slurm/generate_hostfiles.pl .
-
-   cp .../tools/slurm/file_preload.dat .
-   # --> adapt pathes in file_preload.dat
-
-   mkdir log tmp strace
-   
-   # --> adapt job_sierra.sh
-   
-   # salloc or mxterm ... 
-
-   # starts fe, servers and pynamic
-   ./job_sierra.sh
-    
