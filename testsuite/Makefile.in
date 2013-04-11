@@ -35,7 +35,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = tools/sion_debug
+noinst_PROGRAMS = libgenerator$(EXEEXT) test_driver$(EXEEXT) \
+	test_driver_libs$(EXEEXT)
+subdir = testsuite
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/lx_find_mpi.m4 \
@@ -47,13 +49,26 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-LTLIBRARIES = $(noinst_LTLIBRARIES)
-libsiondebug_la_LIBADD =
-am_libsiondebug_la_OBJECTS = sion_debug.lo sion_printts.lo
-libsiondebug_la_OBJECTS = $(am_libsiondebug_la_OBJECTS)
+PROGRAMS = $(noinst_PROGRAMS)
+am_libgenerator_OBJECTS = libgenerator.$(OBJEXT)
+libgenerator_OBJECTS = $(am_libgenerator_OBJECTS)
+libgenerator_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+am_test_driver_OBJECTS = test_driver-test_driver.$(OBJEXT)
+test_driver_OBJECTS = $(am_test_driver_OBJECTS)
+test_driver_DEPENDENCIES =
+test_driver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_driver_CFLAGS) \
+	$(CFLAGS) $(test_driver_LDFLAGS) $(LDFLAGS) -o $@
+am_test_driver_libs_OBJECTS = test_driver_libs-test_driver.$(OBJEXT)
+test_driver_libs_OBJECTS = $(am_test_driver_libs_OBJECTS)
+test_driver_libs_DEPENDENCIES =
+test_driver_libs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_driver_libs_CFLAGS) $(CFLAGS) \
+	$(test_driver_libs_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -80,8 +95,10 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libsiondebug_la_SOURCES)
-DIST_SOURCES = $(libsiondebug_la_SOURCES)
+SOURCES = $(libgenerator_SOURCES) $(test_driver_SOURCES) \
+	$(test_driver_libs_SOURCES)
+DIST_SOURCES = $(libgenerator_SOURCES) $(test_driver_SOURCES) \
+	$(test_driver_libs_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -216,9 +233,22 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libsiondebug.la
-libsiondebug_la_SOURCES = sion_debug.c sion_printts.c
-all: all-am
+ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
+libgenerator_SOURCES = libgenerator.c
+test_driver_SOURCES = test_driver.c
+test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS)
+test_driver_LDADD = -ldl -ltestoutput -lfuncdict
+test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
+test_driver_libs_SOURCES = test_driver.c
+test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS)
+test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB
+test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
+REGLIB_SRC = $(srcdir)/registerlib.c
+LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
+CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -231,9 +261,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign tools/sion_debug/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign testsuite/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign tools/sion_debug/Makefile
+	  $(AUTOMAKE) --foreign testsuite/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -253,16 +283,23 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-clean-noinstLTLIBRARIES:
-	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
-	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" != "$$p" || dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
-	done
-libsiondebug.la: $(libsiondebug_la_OBJECTS) $(libsiondebug_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libsiondebug_la_OBJECTS) $(libsiondebug_la_LIBADD) $(LIBS)
+clean-noinstPROGRAMS:
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+libgenerator$(EXEEXT): $(libgenerator_OBJECTS) $(libgenerator_DEPENDENCIES) 
+	@rm -f libgenerator$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(libgenerator_OBJECTS) $(libgenerator_LDADD) $(LIBS)
+test_driver$(EXEEXT): $(test_driver_OBJECTS) $(test_driver_DEPENDENCIES) 
+	@rm -f test_driver$(EXEEXT)
+	$(AM_V_CCLD)$(test_driver_LINK) $(test_driver_OBJECTS) $(test_driver_LDADD) $(LIBS)
+test_driver_libs$(EXEEXT): $(test_driver_libs_OBJECTS) $(test_driver_libs_DEPENDENCIES) 
+	@rm -f test_driver_libs$(EXEEXT)
+	$(AM_V_CCLD)$(test_driver_libs_LINK) $(test_driver_libs_OBJECTS) $(test_driver_libs_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -270,8 +307,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sion_debug.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sion_printts.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgenerator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_driver-test_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_driver_libs-test_driver.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -296,6 +334,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+test_driver-test_driver.o: test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -MT test_driver-test_driver.o -MD -MP -MF $(DEPDIR)/test_driver-test_driver.Tpo -c -o test_driver-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver-test_driver.Tpo $(DEPDIR)/test_driver-test_driver.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver-test_driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -c -o test_driver-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
+
+test_driver-test_driver.obj: test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -MT test_driver-test_driver.obj -MD -MP -MF $(DEPDIR)/test_driver-test_driver.Tpo -c -o test_driver-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver-test_driver.Tpo $(DEPDIR)/test_driver-test_driver.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver-test_driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -c -o test_driver-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
+
+test_driver_libs-test_driver.o: test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -MT test_driver_libs-test_driver.o -MD -MP -MF $(DEPDIR)/test_driver_libs-test_driver.Tpo -c -o test_driver_libs-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver_libs-test_driver.Tpo $(DEPDIR)/test_driver_libs-test_driver.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver_libs-test_driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -c -o test_driver_libs-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
+
+test_driver_libs-test_driver.obj: test_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -MT test_driver_libs-test_driver.obj -MD -MP -MF $(DEPDIR)/test_driver_libs-test_driver.Tpo -c -o test_driver_libs-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver_libs-test_driver.Tpo $(DEPDIR)/test_driver_libs-test_driver.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver_libs-test_driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -c -o test_driver_libs-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -386,10 +456,12 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
-all-am: Makefile $(LTLIBRARIES)
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
+all-am: Makefile $(PROGRAMS)
 installdirs:
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -406,6 +478,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -414,9 +487,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -485,10 +559,10 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
+	clean-libtool clean-noinstPROGRAMS ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
@@ -500,6 +574,100 @@ uninstall-am:
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am
 
+
+libtest10.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest10.c 10 t10
+
+libtest50.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest50.c 50 t50
+
+libtest100.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest100.c 100 t100
+
+libtest500.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest500.c 500 t500
+
+libtest1000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest1000.c 1000 t1000
+
+libtest2000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest2000.c 2000 t2000
+
+libtest4000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest4000.c 4000 t4000
+
+libtest6000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest6000.c 6000 t6000
+
+libtest8000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest8000.c 8000 t8000
+
+libtest10000.c: libgenerator
+	$(AM_V_GEN)./libgenerator libtest10000.c 10000 t10000
+
+libtest10.so: libtest10.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t10_calc $(LD_FUNCDICT)
+
+libtest50.so: libtest50.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t50_calc $(LD_FUNCDICT)
+
+libtest100.so: libtest100.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t100_calc $(LD_FUNCDICT)
+
+libtest500.so: libtest500.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t500_calc $(LD_FUNCDICT)
+
+libtest1000.so: libtest1000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t1000_calc $(LD_FUNCDICT)
+
+libtest2000.so: libtest2000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t2000_calc $(LD_FUNCDICT)
+
+libtest4000.so: libtest4000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t4000_calc $(LD_FUNCDICT)
+
+libtest6000.so: libtest6000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t6000_calc $(LD_FUNCDICT)
+
+libtest8000.so: libtest8000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t8000_calc $(LD_FUNCDICT)
+
+libtest10000.so: libtest10000.c $(REGLIB_SRC) libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t10000_calc $(LD_FUNCDICT)
+
+libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
+
+libdepB.so: libdepB.c libdepC.so
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared -L. -ldepC
+
+libdepC.so: libdepC.c
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared
+
+libcxxexceptA.so: libcxxexceptA.cc $(REGLIB_SRC) libcxxexceptB.so libfuncdict.so
+	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -lcxxexceptB -DSO_NAME=$@ -DFUNC_NAME=cxxexceptA_calc $(LD_FUNCDICT)
+
+libcxxexceptB.so: libcxxexceptB.cc
+	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< -shared
+
+libtestoutput.so: testoutput.c
+	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< -shared
+
+libfuncdict.so: funcdict.c
+	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared
+
+runTests: $(srcdir)/runTests_template
+	$(AM_V_GEN) cp $(srcdir)/runTests_template $(top_builddir)/testsuite/runTests
+	@chmod 700 $(top_builddir)/testsuite/runTests
+
+run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile
+	@rm -f ./run_driver
+	$(AM_V_GEN)$(SED) -e s,SPINDLE_EXEC,$(bindir)/spindle,g\;s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/run_driver_template > $(top_builddir)/testsuite/run_driver
+	@chmod 700 $(top_builddir)/testsuite/run_driver
+
+run_driver_rm: $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/Makefile
+	$(AM_V_GEN)cp $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/testsuite/run_driver_rm
+	@chmod 700 $(top_builddir)/testsuite/run_driver_rm
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

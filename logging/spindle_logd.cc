@@ -15,6 +15,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <string>
+#include <vector>
+#include <set>
 #include <map>
 #include <cstring>
 #include <cassert>
@@ -31,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -38,7 +41,9 @@ using namespace std;
 #define TIMEOUT 10
 
 string tmpdir;
-string output_fname;
+string debug_fname;
+string test_fname;
+
 
 void clean();
 void cleanFiles();
@@ -46,10 +51,16 @@ void cleanFiles();
 class UniqueProcess;
 class OutputLog;
 class MsgReader;
+class TestLog;
 
 UniqueProcess *lockProcess;
-OutputLog *outputLog;
-MsgReader *reader;
+OutputLog *debug_log;
+MsgReader *debug_reader;
+TestLog *test_log;
+MsgReader *test_reader;
+
+bool runTests = false;
+bool runDebug = false;
 
 static char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
 
@@ -99,7 +110,42 @@ public:
    }
 };
 
-class OutputLog
+class OutputInterface
+{
+public:
+   OutputInterface()
+   {
+   }
+
+   virtual ~OutputInterface()
+   {
+   }
+
+   bool isExitCode(const char *msg1, int msg1_size, const char *msg2, int msg2_size)
+   {
+      if (msg1[0] != exitcode[0])
+         return false;
+      if (msg1_size + msg2_size != 8)
+         return false;
+      
+      char code[8];
+      unsigned i=0;
+      for (i=0; i<msg1_size; i++) 
+         code[i] = msg1[i];
+      for (unsigned int j=0; j<msg2_size; i++, j++)
+         code[i] = msg2[j];
+      
+      for (i = 0; i<8; i++) {
+         if (code[i] != exitcode[i]) 
+            return false;
+      }
+      return true;
+   }
+
+   virtual void writeMessage(int proc, const char *msg1, int msg1_size, const char *msg2, int msg2_size) = 0;
+};
+
+class OutputLog : public OutputInterface
 {
    int fd;
    string output_file;
@@ -127,34 +173,13 @@ public:
       }
    }
 
-   ~OutputLog()
+   virtual ~OutputLog()
    {
       if (fd != -1 && fd != 2)
          close(fd);
    }
 
-   bool isExitCode(const char *msg1, int msg1_size, const char *msg2, int msg2_size)
-   {
-      if (msg1[0] != exitcode[0])
-         return false;
-      if (msg1_size + msg2_size != 8)
-         return false;
-      
-      char code[8];
-      unsigned i=0;
-      for (i=0; i<msg1_size; i++) 
-         code[i] = msg1[i];
-      for (unsigned int j=0; j<msg2_size; i++, j++)
-         code[i] = msg2[j];
-      
-      for (i = 0; i<8; i++) {
-         if (code[i] != exitcode[i]) 
-            return false;
-      }
-      return true;
-   }
-
-   void writeMessage(const char *msg1, int msg1_size, const char *msg2, int msg2_size)
+   virtual void writeMessage(int proc, const char *msg1, int msg1_size, const char *msg2, int msg2_size)
    {
       if (isExitCode(msg1, msg1_size, msg2, msg2_size)) {
          /* We've received the exitcode */
@@ -165,6 +190,170 @@ public:
       write(fd, msg1, msg1_size);
       if (msg2)
          write(fd, msg2, msg2_size);
+   }
+};
+
+class TestVerifier
+{
+private:
+   vector<string> err_strings;
+   set<pair<int, string> > target_libs;
+   set<pair<int, string> > libs_loaded;
+   string tmp_dir;
+
+   void logerror(string s)
+   {
+      if (debug_log)
+         debug_log->writeMessage(0, s.c_str(), s.size(), "\n", 1);
+      err_strings.push_back(s);
+   }
+   
+   void checkLoadedVsTarget() {
+      set<pair<int, string> >::iterator i, j;
+      for (i = target_libs.begin(); i != target_libs.end(); i++) {
+         const string &target = i->second;
+         if (strstr(target.c_str(), "libnoexist.so") != NULL)
+            continue;
+         bool found = false;
+         for (j = libs_loaded.begin(); j != libs_loaded.end(); j++) {
+            if (i->first != j->first)
+               continue;
+            const string &loaded = j->second;
+            if (strstr(loaded.c_str(), target.c_str()) != NULL) {
+               found = true;
+               break;
+            }
+         }
+         if (!found) {
+            logerror(string("Error: Didn't load target: ") + i->second);
+         }
+      }
+   }
+
+public:
+   TestVerifier()
+   {
+      const char *tmp_s = getenv("TMPDIR");
+      if (!tmp_s)
+         tmp_s = getenv("TEMPDIR");
+      if (!tmp_s)
+         tmp_s = getenv("/tmp");
+      tmp_dir = tmp_s;
+   }
+
+   ~TestVerifier()
+   {
+   }
+
+   bool parseOpenNotice(int proc, char *filename)
+   {
+      bool result = target_libs.insert(make_pair(proc, string(filename))).second;
+      return true;
+   }
+
+   bool parseOpen(int proc, char *filename, int ret_code)
+   {
+      if (strstr(filename, ".so") == NULL)
+         return true;
+      bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL);
+
+      if (is_from_temp && ret_code == -1) {
+         string msg = string("Error: Failed to load from ramdisk: ") + string(filename);
+         logerror(msg);
+         return false;
+      }
+      
+      if (!is_from_temp && ret_code != -1 && strstr(filename, "libc.so") == NULL) {
+         string msg = string("Error: Read shared object from non-ramdisk: ") + string(filename);
+         logerror(msg);
+         return false;
+      }
+
+      if (ret_code != -1) {
+         libs_loaded.insert(make_pair(proc, string(filename)));
+      }
+
+      return true;
+   }
+
+   bool parseLine(int proc, const char *s) {
+      char buffer[4096];
+      int ret;
+
+      if (strstr(s, "open(") == s) {
+         const char *first_quote, *last_quote, *equals;
+         int len;
+
+         first_quote = strchr(s, '"');
+         last_quote = strrchr(s, '"');
+         if (!first_quote || !last_quote || first_quote == last_quote) {assert(0); return false; }
+         len = last_quote - first_quote;
+         if (len > 4096) len = 4096;
+         strncpy(buffer, first_quote+1, len-1);
+         buffer[len-1] = '\0';
+
+         equals = strrchr(s, '=');
+         if (!equals || equals[1] != ' ') {assert(0); return false; }
+         ret = atoi(equals+2);
+         
+         parseOpen(proc, buffer, ret);
+         return true;
+      }
+      const char *spindle_open = strstr(s, "dlstart");
+      if (spindle_open) {
+         sscanf(spindle_open, "dlstart %s\n", &buffer);
+         return parseOpenNotice(proc, buffer);
+      }
+      if (strcmp(s, "done\n") == 0) {
+         checkLoadedVsTarget();
+         string fname;
+         if (err_strings.empty())
+            fname = tmpdir + string("/spindle_test_passed");
+         else
+            fname = tmpdir + string("/spindle_test_failed");
+         int result = creat(fname.c_str(), 0600);
+         if (result == -1) {
+            fprintf(stderr, "Error created test result file %s: %s\n", fname.c_str(), strerror(errno));
+            return false;
+         }
+         write(result, "0", 1);
+         close(result);
+         return true;
+      }
+
+      if (debug_log)
+         debug_log->writeMessage(0, s, strlen(s), NULL, 0);
+      return true;
+   }
+};
+
+class TestLog : public OutputInterface
+{
+private:
+   TestVerifier *test_verifier;   
+public:
+   TestLog()
+   {
+      test_verifier = new TestVerifier();
+   }
+
+   virtual ~TestLog()
+   {
+      delete test_verifier;
+   }
+
+   virtual void writeMessage(int proc, const char *msg1, int msg1_size, const char *msg2, int msg2_size)
+   {
+      if (isExitCode(msg1, msg1_size, msg2, msg2_size)) {
+         /* We've received the exitcode */
+         cleanFiles();
+         return;
+      }
+      
+      string s(msg1, msg1_size);
+      if (msg2)
+         s += string(msg2, msg2_size);
+      test_verifier->parseLine(proc, s.c_str());
    }
 };
 
@@ -187,6 +376,8 @@ private:
    size_t recv_buffer_size, named_buffer_size;
    bool error;
    string socket_path;
+   pthread_t thrd;
+   OutputInterface *log;
 
    bool addNewConnection() {
       Connection *con = new Connection();
@@ -253,7 +444,7 @@ private:
                readMessage(i->second);
             }
          }
-
+         
          bool foundShutdownProc;
          do {
             foundShutdownProc = false;
@@ -296,12 +487,12 @@ private:
             continue;
 
          if (con->unfinished_msg[0] != '\0') {
-            outputLog->writeMessage(con->unfinished_msg, strlen(con->unfinished_msg),
-                                    msg + msg_begin, i+1 - msg_begin);
+            log->writeMessage(con->fd, con->unfinished_msg, strlen(con->unfinished_msg),
+                              msg + msg_begin, i+1 - msg_begin);
          }
          else {
-            outputLog->writeMessage(msg + msg_begin, i+1 - msg_begin,
-                                    NULL, 0);
+            log->writeMessage(con->fd, msg + msg_begin, i+1 - msg_begin,
+                              NULL, 0);
          }
          con->unfinished_msg[0] = '\0';
          msg_begin = i+1;
@@ -315,9 +506,21 @@ private:
       return true;
    }
 
+   static void *main_wrapper(void *mreader)
+   {
+      return static_cast<MsgReader *>(mreader)->main_loop();
+   }
+
+   void *main_loop()
+   {
+      while (waitAndHandleMessage());
+      return NULL;
+   }
+
 public:
    
-   MsgReader()
+   MsgReader(string socket_suffix, OutputInterface *log_) :
+      log(log_)
    {
       error = true;
 
@@ -330,7 +533,7 @@ public:
       struct sockaddr_un saddr;
       bzero(&saddr, sizeof(saddr));
       int pathsize = sizeof(saddr.sun_path);
-      socket_path = tmpdir + string("/spindle_log");
+      socket_path = tmpdir + string("/spindle_") + socket_suffix;
       saddr.sun_family = AF_UNIX;
       if (socket_path.length() > (unsigned) pathsize-1) {
          fprintf(stderr, "[%s:%u] - Socket path overflows AF_UNIX size (%d): %s\n",
@@ -379,20 +582,43 @@ public:
       return error;
    }
 
-   void run()
+   void *run()
    {
-      while (waitAndHandleMessage());
+      int result = pthread_create(&thrd, NULL, main_wrapper, (void *) this);
+      if (result < 0) {
+         fprintf(stderr, "Failed to spawn thread: %s\n", strerror(errno));
+         return NULL;
+      }
+      return NULL;
+   }
+
+   void join()
+   {
+      void *result;
+      pthread_join(thrd, &result);
    }
 };
 
 void parseArgs(int argc, char *argv[])
 {
-   if (argc != 3) {
+   if (argc < 3) {
       fprintf(stderr, "spindle_logd cannot be directly invoked\n");
       exit(-1);
    }
+
    tmpdir = argv[1];
-   output_fname = argv[2];
+   for (unsigned i=0; i<argc; i++) {
+      if (strcmp(argv[i], "-debug") == 0) {
+         i++;
+         debug_fname = argv[i];
+         runDebug = true;
+      }
+      else if (strcmp(argv[i], "-test") == 0) {
+         i++;
+         test_fname = argv[i];
+         runTests = true;
+      }
+   }
 }
 
 void clean()
@@ -400,20 +626,25 @@ void clean()
    if (lockProcess)
       delete lockProcess;
    lockProcess = NULL;
-   if (outputLog)
-      delete outputLog;
-   outputLog = NULL;
-   if (reader)
-      delete reader;
-   reader = NULL;
+   if (debug_log)
+      delete debug_log;
+   debug_log = NULL;
+   if (test_log)
+      delete test_log;
+   test_log = NULL;
+   if (debug_reader)
+      delete debug_reader;
+   debug_reader = NULL;
 }
 
 void cleanFiles()
 {
    if (lockProcess)
       lockProcess->cleanFile();
-   if (reader)
-      reader->cleanFile();
+   if (debug_reader)
+      debug_reader->cleanFile();
+   if (test_reader)
+      test_reader->cleanFile();
 }
 
 void on_sig(int)
@@ -428,8 +659,11 @@ void registerCrashHandlers()
    signal(SIGTERM, on_sig);
 }
 
+static volatile int here = 0;
 int main(int argc, char *argv[])
 {
+   int i;
+
    registerCrashHandlers();
    parseArgs(argc, argv);
 
@@ -437,15 +671,32 @@ int main(int argc, char *argv[])
    if (!lockProcess->isUnique())
       return 0;
 
-   outputLog = new OutputLog(output_fname);
-   reader = new MsgReader();
-
-   if (reader->hadError()) {
-      fprintf(stderr, "Reader error termination\n");
-      return -1;
+   if (runDebug) {
+      debug_log = new OutputLog(debug_fname);
+      debug_reader = new MsgReader("log", debug_log);
+      if (debug_reader->hadError()) {
+         fprintf(stderr, "Debug reader error termination\n");
+         return -1;
+      }
+   }
+   if (runTests) {
+      test_log = new TestLog();
+      test_reader = new MsgReader(string("test"), test_log);
+      if (test_reader->hadError()) {
+         fprintf(stderr, "Test reader error termination\n");
+         return -1;
+      }      
    }
 
-   reader->run();
+   if (runDebug)
+      debug_reader->run();
+   if (runTests)
+      test_reader->run();
+
+   if (runDebug)
+      debug_reader->join();
+   if (runTests)
+      test_reader->join();
 
    clean();
    return 0;

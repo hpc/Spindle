@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ x$SPINDLE_TEST_ARGS = x ] ; then
+((PROCS=$SLURM_NNODES*$SLURM_CPUS_ON_NODE))
+else
+PROCS=$SPINDLE_TEST_ARGS
+fi
+
+$SPINDLE srun -n $PROCS $*

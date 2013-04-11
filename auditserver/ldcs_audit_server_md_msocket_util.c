@@ -28,7 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 int ldcs_audit_server_md_msocket_create_server(char *hostname, int *portlist, int num_ports, int *portused) {
   int fd=-1;
-  int port, portindex;
+  int port=0, portindex;
 
   portindex=0;
   

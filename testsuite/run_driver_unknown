@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo Error. Spindle was not configured with support for a testing resource manager.
+echo Create a run_driver_RM file in spindle/testsuite/, where RM is a name for
+echo your resource manager.  Then re-run configure with the option --with-testrm=RM.
+echo
+echo The run_driver_RM file should be a simple script that launches an MPI job in 
+echo under Spindle in your environment.  The arguments to your mpi job are passed
+echo on the run_driver_RM command line, and any arguments passed to runTests are
+echo forwarded on in the SPINDLE_TEST_ARGS environment variable.  The \$SPINDLE
+echo environment variable will contain the path to the spindle executable.
+echo A basic example that uses mpirun is:
+echo
+echo \#!/bin/sh
+echo \$SPINDLE /usr/bin/mpirun \$\*
+echo
+exit
+

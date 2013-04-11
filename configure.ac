@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_SILENT_RULES([yes])
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_SED
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
                  logging/Makefile
@@ -16,7 +17,8 @@ AC_CONFIG_FILES([Makefile
                  tools/cobo/src/Makefile
                  auditserver/Makefile
                  launchmon/Makefile
-                 beboot/Makefile])
+                 beboot/Makefile
+                 testsuite/Makefile])
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 AC_PROG_LN_S
@@ -126,6 +128,11 @@ if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
   fi
 fi
 
+AC_ARG_WITH(testrm,
+            [AS_HELP_STRING([--with-testrm],[Resource manager to use for tests (valid options are 'slurm')])],
+            [TESTRM=${withval}],
+            [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
+AC_SUBST(TESTRM)
 
 AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)

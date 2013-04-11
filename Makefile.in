@@ -183,6 +183,7 @@ SHELL = @SHELL@
 STATIC_LIBGCC_OPT = @STATIC_LIBGCC_OPT@
 STATIC_LIBSTDCXX = @STATIC_LIBSTDCXX@
 STRIP = @STRIP@
+TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -241,7 +242,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = logging tools/sion_debug comlib auditclient cache tools/cobo/src auditserver launchmon beboot
+SUBDIRS = logging tools/sion_debug comlib auditclient cache tools/cobo/src auditserver launchmon beboot testsuite
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

@@ -64,7 +64,7 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)"
 PROGRAMS = $(pkglibexec_PROGRAMS)
 am_spindle_logd_OBJECTS = spindle_logd.$(OBJEXT)
 spindle_logd_OBJECTS = $(am_spindle_logd_OBJECTS)
-spindle_logd_LDADD = $(LDADD)
+spindle_logd_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -184,6 +184,7 @@ SHELL = @SHELL@
 STATIC_LIBGCC_OPT = @STATIC_LIBGCC_OPT@
 STATIC_LIBSTDCXX = @STATIC_LIBSTDCXX@
 STRIP = @STRIP@
+TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -244,6 +245,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libspindlelogc.la
 spindle_logd_SOURCES = spindle_logd.cc
+spindle_logd_LDADD = -lpthread
 libspindlelogc_la_SOURCES = spindle_logc.c
 libspindlelogc_la_CFLAGS = -DLIBEXEC=${pkglibexecdir}
 all: all-am

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+export SPINDLE_TEST_ARGS="$@"
+./run_driver --dependency
+./run_driver --dlopen
+./run_driver --dlreopen
+./run_driver --reorder
+./run_driver --partial
+./run_driver --preload
+
+./run_driver --dependency --fork
+./run_driver --dlopen --fork
+./run_driver --dlreopen --fork
+./run_driver --reorder --fork
+./run_driver --partial --fork
+./run_driver --preload --fork
+
+./run_driver --dependency --forkexec
+./run_driver --dlopen --forkexec
+./run_driver --dlreopen --forkexec
+./run_driver --reorder --forkexec
+./run_driver --partial --forkexec
+./run_driver --preload --forkexec

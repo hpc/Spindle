@@ -38,10 +38,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define STR(S) STR2(S)
 #define LOG_DAEMON STR(LIBEXEC) "/spindle_logd"
 
-static int fd;
+static int debug_fd = -1;
+static int test_fd = -1;
+static char *tempdir;
+static char *debug_location;
+static char *test_location;
+
+FILE *spindle_test_output_f;
 FILE *spindle_debug_output_f;
 char *spindle_debug_name = "UNKNOWN";
 int spindle_debug_prints;
+int run_tests;
 
 //Timeout in tenths of a second
 #define SPAWN_TIMEOUT 300
@@ -53,17 +60,25 @@ int fileExists(char *name)
    return (stat(name, &buf) != -1);
 }
 
-void spawnLogDaemon(char *logfile, char *tempdir)
+void spawnLogDaemon(char *tempdir)
 {
    int result = fork();
    if (result == 0) {
       result = fork();
       if (result == 0) {
-         char *params[4];
-         params[0] = LOG_DAEMON;
-         params[1] = tempdir;
-         params[2] = logfile;
-         params[3] = NULL;
+         char *params[7];
+         int cur = 0;
+         params[cur++] = LOG_DAEMON;
+         params[cur++] = tempdir;
+         if (spindle_debug_prints) {
+            params[cur++] = "-debug";
+            params[cur++] = "spindle_output";
+         }
+         if (run_tests) {
+            params[cur++] = "-test";
+            params[cur++] = "spindle_test";
+         }
+         params[cur++] = NULL;
          
          execv(LOG_DAEMON, params);
          fprintf(stderr, "Error executing %s: %s\n", LOG_DAEMON, strerror(errno));
@@ -88,6 +103,7 @@ int clearDaemon(char *tmpdir)
    char reset_buffer[512];
    char lock_buffer[512];
    char log_buffer[512];
+   char test_buffer[512];
    int pid;
 
    /* Only one process can reset the daemon */
@@ -99,6 +115,7 @@ int clearDaemon(char *tmpdir)
 
    snprintf(lock_buffer, 512, "%s/spindle_log_lock", tmpdir);
    snprintf(log_buffer, 512, "%s/spindle_log", tmpdir);
+   snprintf(test_buffer, 512, "%s/spindle_test", tmpdir);
 
    fd = open(lock_buffer, O_RDONLY);
    if (fd != -1) {
@@ -113,6 +130,7 @@ int clearDaemon(char *tmpdir)
    }
 
    unlink(log_buffer);
+   unlink(test_buffer);
    unlink(lock_buffer);
    unlink(reset_buffer);
 
@@ -154,75 +172,11 @@ int connectToLogDaemon(char *path)
    return sockfd;
 }
 
-void init_spindle_debugging(char *name, int survive_exec)
+static void setConnectionSurvival(int fd, int survive_exec)
 {
-   char *tempdir, *socket_file, *location, *already_setup, *log_level_str;
-   int socket_file_len, result, log_level;
-
-   if (spindle_debug_prints)
+   if (fd == -1)
       return;
 
-   log_level_str = getenv("SPINDLE_DEBUG");
-   if (!log_level_str)
-      return;
-   log_level = atoi(log_level_str);
-   if (log_level <= 0)
-      log_level = 1;
-
-   /* Setup locations for temp and output files */
-   location = "./spindle_output";
-   tempdir = getenv("TMPDIR");
-   if (!tempdir || !*tempdir)
-      tempdir = "/tmp";
-
-   already_setup = getenv("SPINDLE_DEBUG_SOCKET");
-   if (already_setup) {
-      fd = atoi(already_setup);
-   }
-   else {
-      socket_file_len = strlen(tempdir) + strlen("/spindle_log") + 2;
-      socket_file = (char *) malloc(socket_file_len);
-      snprintf(socket_file, socket_file_len, "%s/spindle_log", tempdir);
-
-      int tries = 5;
-      for (;;) {
-         /* If the daemon doesn't exist, create it and wait for its existance */
-         if (!fileExists(socket_file)) {
-            spawnLogDaemon(location, tempdir);
-            
-            int timeout = 0;
-            while (!fileExists(socket_file) && timeout < SPAWN_TIMEOUT) {
-               usleep(100000); /* .1 seconds */
-               timeout++;
-            }
-            
-            if (timeout == SPAWN_TIMEOUT) {
-               free(socket_file);
-               return;
-            }
-         }
-
-         /* Establish connection to daemon */
-         fd = connectToLogDaemon(socket_file);
-         if (fd != -1)
-            break;
-         
-         /* Handle failed connection. */
-         if (--tries == 0) {
-            free(socket_file);            
-            return;
-         }
-         result = clearDaemon(tempdir);
-         if (!result) {
-            /* Give the process clearing the daemon a chance to finish, then
-               try again */
-            sleep(1);
-         }
-      }
-      free(socket_file);
-   }
-
-   /* Set the connection to close on exec so we don't leak fds */
    if (!survive_exec) {
       int fdflags = fcntl(fd, F_GETFD, 0);
       if (fdflags < 0)
@@ -236,15 +190,114 @@ void init_spindle_debugging(char *name, int survive_exec)
          fdflags = 0;
       fcntl(fd, F_SETFD, fdflags & ~O_CLOEXEC);
       char fd_str[32];
-      snprintf(fd_str, 32, "%d", fd);
+      snprintf(fd_str, 32, "%d %d", debug_fd, test_fd);
       setenv("SPINDLE_DEBUG_SOCKET", fd_str, 1);
    }
+}
+
+static int setup_connection(char *connection_name)
+{
+   char *socket_file;
+   int socket_file_len;
+   int fd, result;
+
+   socket_file_len = strlen(tempdir) + strlen(connection_name) + 2;
+   socket_file = (char *) malloc(socket_file_len);
+   snprintf(socket_file, socket_file_len, "%s/%s", tempdir, connection_name);
+
+   int tries = 5;
+   for (;;) {
+      /* If the daemon doesn't exist, create it and wait for its existance */
+      if (!fileExists(socket_file)) {
+         spawnLogDaemon(tempdir);
+            
+         int timeout = 0;
+         while (!fileExists(socket_file) && timeout < SPAWN_TIMEOUT) {
+            usleep(100000); /* .1 seconds */
+            timeout++;
+         }
+            
+         if (timeout == SPAWN_TIMEOUT) {
+            free(socket_file);
+            return;
+         }
+      }
+
+      /* Establish connection to daemon */
+      fd = connectToLogDaemon(socket_file);
+      if (fd != -1)
+         break;
+         
+      /* Handle failed connection. */
+      if (--tries == 0) 
+         break;
+
+      result = clearDaemon(tempdir);
+      if (!result) {
+         /* Give the process clearing the daemon a chance to finish, then
+            try again */
+         sleep(1);
+      }
+   }
+   free(socket_file);
+   return fd;
+}
+
+void reset_spindle_debugging()
+{
+   spindle_debug_prints = 0;
+   run_tests = 0;
+   init_spindle_debugging(spindle_debug_name, 0);
+}
+
+void init_spindle_debugging(char *name, int survive_exec)
+{
+   char *already_setup, *log_level_str;
+   int result, log_level = 0;
+
+   if (spindle_debug_prints || run_tests)
+      return;
+
+   run_tests = (getenv("SPINDLE_TEST") != NULL);
+
+   log_level_str = getenv("SPINDLE_DEBUG");
+   if (log_level_str)
+      log_level = atoi(log_level_str);
+   spindle_debug_prints = log_level;
+   if (!log_level && !run_tests)
+      return;
+
+   /* Setup locations for temp and output files */
+   tempdir = getenv("TMPDIR");
+   if (!tempdir)
+      tempdir = getenv("TEMPDIR");
+   if (!tempdir || !*tempdir)
+      tempdir = "/tmp";
+   debug_location = log_level ? "./spindle_output" : NULL;
+   test_location  = run_tests ? "./spindle_test" : NULL;
+
+   already_setup = getenv("SPINDLE_DEBUG_SOCKET");
+   if (already_setup) {
+      sscanf(already_setup, "%d %d", &debug_fd, &test_fd);
+   }
+   else {
+      if (log_level)
+         debug_fd = setup_connection("spindle_log");
+      if (run_tests)
+         test_fd = setup_connection("spindle_test");
+   }
+
+   setConnectionSurvival(debug_fd, survive_exec);
+   setConnectionSurvival(test_fd, survive_exec);
 
    /* Setup the variables */
-   spindle_debug_output_f = fdopen(fd, "w");
+   if (debug_fd != -1)
+      spindle_debug_output_f = fdopen(debug_fd, "w");
+   if (test_fd != -1)
+      spindle_test_output_f = fdopen(test_fd, "w");
+      
 
    spindle_debug_name = name;
-   spindle_debug_prints = log_level;
 }
 
 void spindle_dump_on_error()
@@ -270,5 +323,8 @@ void spindle_dump_on_error()
 void fini_spindle_debugging()
 {
    static char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
-   write(fd, &exitcode, sizeof(exitcode));
+   if (debug_fd != -1)
+      write(debug_fd, &exitcode, sizeof(exitcode));
+   if (test_fd != -1)
+      write(test_fd, &exitcode, sizeof(exitcode));
 }

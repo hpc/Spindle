@@ -632,7 +632,7 @@ int ldcs_audit_server_fe_md_close ( void *data  ) {
    ldcs_message_t out_msg;
    int root_fd;
 
-   debug_printf("Sending exit message to daemons");
+   debug_printf("Sending exit message to daemons\n");
    out_msg.header.type = LDCS_MSG_EXIT;
    out_msg.alloclen = 0;
    out_msg.data = NULL;

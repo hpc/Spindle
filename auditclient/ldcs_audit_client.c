@@ -59,6 +59,7 @@ static FILE* (*orig_fopen64)(const char *pathname, const char *mode);
 
 static int ldcsid=-1;
 static int rankinfo[4]={-1,-1,-1,-1};
+static void check_for_fork();
 
 /* compare the pointer top the cookie not the cookie itself, it may be changed during runtime by audit library  */
 static uintptr_t *firstcookie=NULL;
@@ -95,11 +96,16 @@ static void find_libc_name()
    dl_iterate_phdr(find_libc_iterator, NULL);
 }
 
+static void spindle_test_log_msg(char *buffer)
+{
+   test_printf("%s", buffer);
+}
+
 static int init_server_connection()
 {
    char *location, *connection, *rankinfo_s;
    int number;
-   
+
    debug_printf("Initializing connection to server\n");
 
    if (ldcsid != -1)
@@ -122,6 +128,7 @@ static int init_server_connection()
          return -1;
       assert(rankinfo_s);
       sscanf(rankinfo_s, "%d %d %d %d", rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
+      unsetenv("LDCS_CONNECTION");
    }
    else {
       /* Establish a new connection */
@@ -150,13 +157,37 @@ static int init_server_connection()
       return 0;
 }
 
+static void reset_server_connection()
+{
+   ldcsid = -1;
+   init_server_connection();
+}
+
+static void check_for_fork()
+{
+   static int cached_pid = 0;
+   int current_pid = getpid();
+   if (!cached_pid) {
+      cached_pid = current_pid;
+      return;
+   }
+   if (cached_pid == current_pid) {
+      return;
+   }
+
+   cached_pid = current_pid;
+   reset_spindle_debugging();
+   reset_server_connection();
+}
+
 /* rtld-audit interface functions */
 
 unsigned int la_version(unsigned int version)
 {
   char buf[256];
   int len;
-  
+
+  printf("[%s:%u] - HERE\n", __FILE__, __LINE__);
   LOGGING_INIT("Client");
 
   debug_printf3("la_version(): %d\n", version);
@@ -189,6 +220,17 @@ unsigned int la_version(unsigned int version)
   return version;
 }
 
+static void test_log(const char *name)
+{
+   int result;
+   if (!run_tests)
+      return;
+   result = open(name, O_RDONLY);
+   if (result != -1)
+      close(result);
+   test_printf("open(\"%s\", O_RDONLY) = %d\n", name, result);
+}
+
 char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 {
    char *myname, *newname, *pos_slash;
@@ -203,6 +245,8 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
                  (flag == LA_SER_SECURE) ?  "LA_SER_SECURE" :
                  "???");
 
+   check_for_fork();
+
   /* check if direct name given --> return name  */
    pos_slash = strrchr(name, '/');
    if(!pos_slash) {
@@ -214,6 +258,7 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
    find_libc_name();
    if (libc_name && strcmp(name, libc_name) == 0) {
       debug_printf("la_objsearch not redirecting libc %s\n", name);
+      test_log(name);
       return (char *) name;
    }
   debug_printf2("AUDITSEND: L:%s\n",myname);
@@ -230,7 +275,8 @@ char * la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
   }
   
   debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
-  
+  test_log(newname);
+
   return newname;
 }
 
@@ -278,8 +324,8 @@ la_preinit(uintptr_t *cookie)
 unsigned int
 la_objclose (uintptr_t *cookie)
 {
+  check_for_fork();
   debug_printf3("la_objclose():          %p\n", cookie);
-
   debug_printf3("cookie compare %p %p\n",cookie,firstcookie);
   if(cookie == firstcookie) {
     if ((ldcsid>=0) && (use_ldcs)) {
@@ -347,14 +393,13 @@ static int open_filter_str(const char *mode)
 int do_check_file(const char *path, char **newpath) {
   char *myname, *newname;
   
+  check_for_fork();
   myname=(char *) path;
 
   if ((ldcsid>=0) && (use_ldcs)) {
     debug_printf2("AUDITSEND: E:%s\n",path);
-    /* fprintf(stderr,"AUDITSEND: E:%s\n",path); */
     ldcs_send_FILE_QUERY_EXACT_PATH(ldcsid,myname,&newname);
     debug_printf2("AUDITRECV: E:%s\n",newname);
-    /* fprintf(stderr,"AUDITRECV: E %s:%s\n",myname,newname); */
   } else {
     debug_printf3("no ldcs: open file query %s\n",myname);
     return -1;
@@ -538,6 +583,9 @@ Elf64_Addr la_x86_64_gnu_pltenter (Elf64_Sym *sym,
       else
          target = sym->st_value;
    }
+   else if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0) {
+      target = (uintptr_t) spindle_test_log_msg;
+   }
    else
      target = sym->st_value;
    return doPermanentBinding(map, reloc_index, target);
@@ -593,4 +641,3 @@ Elf64_Addr la_ppc64_gnu_pltenter (Elf64_Sym *sym,
    return target;
 }
 #endif
-
