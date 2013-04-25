@@ -246,7 +246,7 @@ public:
    }
 
    bool parseOpenNotice(int proc, char *filename)
-   {
+   {      
       bool result = target_libs.insert(make_pair(proc, string(filename))).second;
       return true;
    }
@@ -297,11 +297,15 @@ public:
          ret = atoi(equals+2);
          
          parseOpen(proc, buffer, ret);
+         if (debug_log)
+            debug_log->writeMessage(proc, s, strlen(s), NULL, 0);
          return true;
       }
       const char *spindle_open = strstr(s, "dlstart");
       if (spindle_open) {
          sscanf(spindle_open, "dlstart %s\n", &buffer);
+         if (debug_log)
+            debug_log->writeMessage(proc, s, strlen(s), NULL, 0);
          return parseOpenNotice(proc, buffer);
       }
       if (strcmp(s, "done\n") == 0) {

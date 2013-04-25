@@ -50,18 +50,7 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data ) {
   return(rc);
 }
 
-int ldcs_audit_server_md_distribute ( ldcs_process_data_t *ldcs_process_data, ldcs_message_t* msg) {
-  int rc=0;
-
-  return(rc);
-}
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *msg ) {
-  int rc=0;
-
-  return(rc);
-}
-
-int ldcs_audit_server_md_distribution_required ( ldcs_process_data_t *data, char *msg ) {
   int rc=0;
 
   return(rc);

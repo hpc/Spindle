@@ -1,4 +1,0 @@
-CLIENT[0]:FILE_QUERY: './lib/dir1/libA1.so' -> '/tmp/myfifo-00-tmp/libA1.so'
-CLIENT[0]:FILE_QUERY: './lib/dir1/libA2.so' -> '/tmp/myfifo-00-tmp/libA2.so'
-CLIENT[0]:FILE_QUERY: './lib/dir1/libA1.so' -> '/tmp/myfifo-00-tmp/libA1.so'
-CLIENT[0]:FILE_QUERY: './lib/dir1/libA2.so' -> '/tmp/myfifo-00-tmp/libA2.so'

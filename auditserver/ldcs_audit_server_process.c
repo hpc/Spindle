@@ -74,12 +74,12 @@ int ldcs_audit_server_process (char *location, int number,
   ldcs_process_data.client_table[0].state=LDCS_CLIENT_STATUS_ACTIVE_PSEUDO;
   ldcs_process_data.client_table[0].connid=-1;
 
+  ldcs_process_data.dist_model = LDCS_PULL;
   ldcs_process_data.md_rank=0; 
   ldcs_process_data.md_size=1; 
   ldcs_process_data.md_fan_out=0; 
   ldcs_process_data.client_counter=0; /* number of clients ever connected */
   ldcs_process_data.clients_connected=0; /* will set to one once a client was connected */
-  ldcs_process_data.update=LDCS_UPDATE_STATE_NONE;
 
   {
     char buffer[MAX_PATH_LEN];

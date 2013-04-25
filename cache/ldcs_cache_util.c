@@ -22,106 +22,94 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "ldcs_cache.h"
 
-int mangleFileDirName(const char *filename, const char *dirname, char **mname) {
-  int rc=0, dirnamelen;
-  char *newdirname; 
-  dirnamelen=strlen(dirname);
-  if(dirname[dirnamelen-1]!='/') {
-    newdirname = concatStrings(dirname,dirnamelen , "/", 1);
-    *mname = concatStrings(newdirname, strlen(newdirname), filename, strlen(filename));
-    free(newdirname);
-  } else {
-    *mname = concatStrings(dirname, dirnamelen, filename, strlen(filename));
-  }
-  mangleName(mname);
-  return(rc);
-};
+int addCWDToDir(const char *cwd, char *dir, int result_size)
+{
+   int cwd_len, dir_len, i;
+   if (dir[0] == '/')
+      return 0;
+   cwd_len = strlen(cwd);
+   dir_len = strlen(dir);
+   if (!cwd_len)
+      return 0;
+   if (cwd[cwd_len-1] == '/')
+      cwd_len = cwd_len - 1;
+   if (dir_len + cwd_len + 1 >= result_size)
+      return -1;
 
-int mangleName(char **mname) {
-  char *c;
-  int rc=0;
-  for(c=*mname;*c!='\0';c++) {
-    if(*c=='/') *c='_';
-  }
-  return(rc);
-};
+   if (dir[0] == '\0') {
+      strncpy(dir, cwd, cwd_len);
+      dir[cwd_len] = '\0';
+      return 0;
+   }
 
-int parseFilename(const char *name, const char *remote_cwd, char **filename, char **dirname) {
-  int rc=0;
-  char *lfn, *ldir, *lndir;
-  breakUpFilename(name, &lfn, &ldir);
-  debug_printf3("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
-  if (!ldir) {
-    *dirname  = ldir;
-    *filename = lfn;
-  } else {
-    addCWDtoPath(ldir,remote_cwd,&lndir);
-    debug_printf3(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", ldir,remote_cwd, lndir);
-    *dirname  = lndir;
-    *filename = lfn;
-    free(ldir);
-  }
-  return(rc);
+   for (i = dir_len; i >= 0; i--)
+      dir[i + cwd_len + 1] = dir[i];
+   dir[cwd_len] = '/';
+   strncpy(dir, cwd, cwd_len);
+   return 0;
 }
 
-/* prepend also cwd if name has no slash, needed for exact path queries */
-int parseFilenameExact(const char *name, const char *remote_cwd, char **filename, char **dirname) {
-  int rc=0;
-  char *lfn, *ldir, *lndir;
-  breakUpFilename(name, &lfn, &ldir);
-  debug_printf3("after breakUpFilename name='%s' filename=%s dirname=%s\n", name,lfn, ldir);
-  if (!ldir) {
-    addCWDtoPath("",remote_cwd,&lndir);
-    *dirname  = lndir;
-    *filename = lfn;
-  }  else {
-    addCWDtoPath(ldir,remote_cwd,&lndir);
-    debug_printf3(" after addCWDtoPath dirname='%s' remote_cwd=%s newdirname=%s\n", *dirname,remote_cwd, lndir);
-    *dirname  = lndir;
-    *filename = lfn;
-    free(ldir);
-  }
-  return(rc);
-}
-
-void addCWDtoPath(const char *path, const char *cwd, char **newpath) {
-  char *newcwd=NULL; 
-  *newpath=NULL;
-
-  if(*path=='/') {
-    *newpath = strdup(path);
-    return;
-  }
-  
-  newcwd = concatStrings(cwd, strlen(cwd), "/", 1);
-
-  if(strlen(path)>=2) {
-    if( (path[0]=='.') && (path[1]=='/') ) {
-      *newpath = concatStrings(newcwd, strlen(newcwd), path+2, strlen(path)-2);
-    }    
-  }
-  if(!*newpath){
-    *newpath = concatStrings(newcwd, strlen(newcwd), path, strlen(path));
-  }
-
-  free(newcwd);
-  return;
-}
-
-void breakUpFilename(const char *name, char **filename, char **dirname) {
-  char *last_slash = strrchr(name, '/');
-
+int parseFilenameNoAlloc(const char *name, char *file, char *dir, int result_size)
+{
+   char *last_slash = strrchr(name, '/');
+   int size;
    if (last_slash) {
-     debug_printf3(" before breakUpFilename name='%s'\n", name);
-     *dirname = concatStrings(name, last_slash-name+1, NULL, 0);
-     *filename = strdup(last_slash+1);
-     debug_printf3(" after breakUpFilename name='%s' dirname='%s' filename='%s'\n", name, *dirname,*filename);
-
+      strncpy(file, last_slash+1, result_size);
+      file[result_size-1] = '\0';
+      size = last_slash - name;
+      if (size >= result_size)
+         size = result_size-1;
+      strncpy(dir, name, size);
+      dir[size] = '\0'; 
    }
    else {
-     *dirname = NULL;
-     *filename = strdup(name);
+      strncpy(file, name, result_size);
+      file[result_size-1] = '\0';
+      dir[0] = '\0';
    }
+   return 0;
+}
+
+/* Remove '.', '..', '//' from directory strings to normalize name.  We don't
+   use the glibc functions that do this because they might access disk, which 
+   isn't appropriate for Spindle.  Note that this means we can't resolve symlinks
+   to a normalized name here. */
+int reducePath(char *dir)
+{
+   int slash_begin = 0, slash_end, i, tmpdir_loc = 0;
+   int dir_len = strlen(dir);
+   char tmpdir[MAX_PATH_LEN+1];
+
+   while (dir[slash_begin]) {
+      slash_end = slash_begin+1;
+      while (dir[slash_end] != '\0' && dir[slash_end] != '/') slash_end++;
+
+      if (slash_end == slash_begin + 1) {
+         /* / case.  Do nothing, we will just advance past the directory */
+      }
+      else if (dir[slash_begin+1] == '.' && slash_end == slash_begin + 2) {
+         /* /./ case.  Do nothing, we will just advance past the directory */
+      }
+      else if (dir[slash_begin+1] == '.' && dir[slash_begin+2] == '.' && slash_end == slash_begin + 3) {
+         /* /../ case.  Back up tmpdir one directory */
+         if (tmpdir_loc == 0) {
+            return -1;
+         }
+         while (tmpdir[tmpdir_loc] != '/' && tmpdir_loc != 0)
+            tmpdir_loc--;
+         tmpdir[tmpdir_loc] = '\0';
+      }
+      else {
+         /* Normal directory.  Copy from dir to dir */
+         for (i = slash_begin; i != slash_end; i++, tmpdir_loc++) {
+            tmpdir[tmpdir_loc] = dir[i];
+         }
+         tmpdir[tmpdir_loc] = '\0';
+      }
+      slash_begin = slash_end;
+   }
+   strncpy(dir, tmpdir, dir_len);
+   return 0;
 }
 
 char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_len) {
@@ -137,49 +125,3 @@ char *concatStrings(const char *str1, int str1_len, const char *str2, int str2_l
    return buffer;
 }
 
-/* adapted from http://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c */
-char * replacePatString(
-    char const * const original, 
-    char const * const pattern, 
-    char const * const replacement
-) {
-  size_t const replen = strlen(replacement);
-  size_t const patlen = strlen(pattern);
-  size_t const orilen = strlen(original);
-
-  size_t patcnt = 0;
-  const char * oriptr;
-  const char * patloc;
-
-  // find how many times the pattern occurs in the original string
-  for (oriptr = original; (patloc = strstr(oriptr, pattern)); oriptr = patloc + patlen)
-  {
-    patcnt++;
-  }
-
-  {
-    // allocate memory for the new string
-    size_t const retlen = orilen + patcnt * (replen - patlen);
-    char * const returned = (char *) malloc( sizeof(char) * (retlen + 1) );
-
-    if (returned != NULL)
-    {
-      // copy the original string, 
-      // replacing all the instances of the pattern
-      char * retptr = returned;
-      for (oriptr = original; (patloc = strstr(oriptr, pattern)); oriptr = patloc + patlen)
-      {
-        size_t const skplen = patloc - oriptr;
-        // copy the section until the occurence of the pattern
-        strncpy(retptr, oriptr, skplen);
-        retptr += skplen;
-        // copy the replacement 
-        strncpy(retptr, replacement, replen);
-        retptr += replen;
-      }
-      // copy the rest of the string.
-      strcpy(retptr, oriptr);
-    }
-    return returned;
-  }
-}

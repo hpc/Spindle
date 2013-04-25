@@ -71,11 +71,6 @@ int ldcs_msg_free(ldcs_message_t **msg) {
 int ldcs_msg_init(ldcs_message_t *msg) {
   msg->header.type=LDCS_MSG_UNKNOWN;
   msg->header.len=0;
-  msg->header.source=-1;
-  msg->header.dest=-1;
-  msg->header.mtype=LDCS_MSG_MTYPE_UNKNOWN;
-  msg->header.mdir=LDCS_MSG_MDIR_UNKNOWN;
-  msg->alloclen=0;
   
   msg->data=NULL;
   return(0);
@@ -95,10 +90,6 @@ ldcs_message_t* ldcs_msg_copy(ldcs_message_t *msg) {
   if (!new_msg)  _error("could not allocate memory for message");
   new_msg->header.type   = msg->header.type;
   new_msg->header.len    = msg->header.len;
-  new_msg->header.source = msg->header.source;
-  new_msg->header.dest   = msg->header.dest;
-  new_msg->header.mtype  = msg->header.mtype;
-  new_msg->header.mdir   = msg->header.mdir;
   if(new_msg->header.len>0) {
     new_msg->data = (char *) malloc(sizeof(new_msg->header.len));
     if (!new_msg->data)  _error("could not allocate memory for message data");

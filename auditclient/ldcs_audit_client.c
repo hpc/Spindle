@@ -120,7 +120,7 @@ static int init_server_connection()
 
    if (connection) {
       /* boostrapper established the connection for us.  Reuse it. */
-      debug_printf("Recreating exiting connection to server\n");
+      debug_printf("Recreating existing connection to server\n");
       debug_printf3("location = %s, number = %d, connection = %s, rankinfo = %s\n",
                     location, number, connection, rankinfo_s);
       ldcsid  = ldcs_register_connection(connection);

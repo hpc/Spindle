@@ -26,7 +26,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "config.h"
 #include "spindle_usrdata.h"
-#include "spindle_external_fabric.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +40,6 @@ static int rank, size;
 
 int _ready_cb_func (  void * data) {
   int rc=0;
-  spindle_external_fabric_data_t *spindle_external_fabric_data = (spindle_external_fabric_data_t *) data;
   MPIR_PROCDESC_EXT *proctab;
   int proctab_size;
   lmon_rc_e lrc;
@@ -58,28 +56,28 @@ int _ready_cb_func (  void * data) {
   lrc = LMON_be_getMyProctabSize(&proctab_size);
   if (lrc != LMON_OK)
   {
-     err_printf("LMON_be_getMyProctabSize\n",spindle_external_fabric_data->md_rank);
+     err_printf("LMON_be_getMyProctabSize\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
   
   proctab = (MPIR_PROCDESC_EXT *) malloc (proctab_size*sizeof(MPIR_PROCDESC_EXT));
   if ( proctab == NULL )  {
-     err_printf("Proctable malloc return null\n",spindle_external_fabric_data->md_rank);
+     err_printf("Proctable malloc return null\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
 
   lrc = LMON_be_getMyProctab(proctab, &proctab_size, proctab_size);
   if (lrc != LMON_OK)   {    
-     err_printf("LMON_be_getMyProctab\n",spindle_external_fabric_data->md_rank );
+     err_printf("LMON_be_getMyProctab\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   }
 
   /* Continue application tasks */
   for(i=0; i < proctab_size; i++)  {
-    debug_printf3("[LMON BE(%d)] kill %d, %d\n", spindle_external_fabric_data->md_rank, proctab[i].pd.pid, signum );
+    debug_printf3("[LMON BE] kill %d, %d\n", proctab[i].pd.pid, signum );
     kill(proctab[i].pd.pid, signum);
   }
   
@@ -95,11 +93,19 @@ int _ready_cb_func (  void * data) {
 int main(int argc, char* argv[])
 {
   lmon_rc_e lrc;
-  spindle_external_fabric_data_t spindle_external_fabric_data;
   int number;
   char *location, *numberstr;
 
   LOGGING_INIT(const_cast<char *>("Server"));
+  if (spindle_debug_output_f) {
+     int fd = fileno(spindle_debug_output_f);
+     close(1);
+     close(2);
+     dup2(fd, 1);
+     dup2(fd, 2);
+     fprintf(stdout, "Test-stdout\n");
+     fprintf(stderr, "Test-stderr\n");
+  }
 
   debug_printf("Spindle Server Cmdline: ");
   for (int i=0; i<argc; i++) {
@@ -152,13 +158,8 @@ int main(int argc, char* argv[])
     } 
   }
 
-  /* Register external fabric CB to SPINDLE */
-  spindle_external_fabric_data.md_rank=rank;
-  spindle_external_fabric_data.md_size=size;
-  ldcs_register_external_fabric_CB( &spindle_external_fabric_be_CB, (void *) &spindle_external_fabric_data);
-
   /* start SPINDLE server */
-  ldcs_audit_server_process(location,number,&_ready_cb_func, &spindle_external_fabric_data);
+  ldcs_audit_server_process(location,number, &_ready_cb_func, NULL);
 
   LMON_be_finalize();
 

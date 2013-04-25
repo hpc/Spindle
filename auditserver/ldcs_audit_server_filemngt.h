@@ -17,14 +17,19 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_FILEMNGT_H
 #define LDCS_AUDIT_SERVER_FILEMNGT_H
 
+#include "ldcs_audit_server_md.h"
 
 int ldcs_audit_server_filemngt_init (char* location);
 
-int ldcs_audit_server_filemngt_read_file ( char *filename, char *dirname, char *fullname, 
-					   int domangle, ldcs_message_t* msg );
-int ldcs_audit_server_filemngt_store_file ( ldcs_message_t* msg, char **filename, 
-					    char **dirname, char **localpath, int *domangle );
+int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip);
+int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize, 
+                           char **buffer, size_t *buffer_size);
+int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, size_t *buffer_size);
+char *filemngt_calc_localname(char *global_name);
 
 int ldcs_audit_server_filemngt_clean();
 
+int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, int *fd_out);
+void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size, size_t newsize);
+size_t filemngt_get_file_size(char *pathname);
 #endif

@@ -56,18 +56,12 @@ libaudit_server_cobo_la_OBJECTS =  \
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-libaudit_server_msocket_la_DEPENDENCIES = $(LDADD) libserverbase.la
-am_libaudit_server_msocket_la_OBJECTS =  \
-	ldcs_audit_server_md_msocket.lo \
-	ldcs_audit_server_md_msocket_util.lo \
-	ldcs_audit_server_md_msocket_topo.lo
-libaudit_server_msocket_la_OBJECTS =  \
-	$(am_libaudit_server_msocket_la_OBJECTS)
 libserverbase_la_LIBADD =
 am_libserverbase_la_OBJECTS = ldcs_audit_server_client_cb.lo \
 	ldcs_audit_server_server_cb.lo ldcs_audit_server_par.lo \
 	ldcs_audit_server_process.lo ldcs_audit_server_filemngt.lo \
-	ldcs_audit_server_stateloop.lo ldcs_elf_read.lo
+	ldcs_audit_server_handlers.lo ldcs_elf_read.lo \
+	ldcs_audit_server_requestors.lo
 libserverbase_la_OBJECTS = $(am_libserverbase_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
@@ -96,10 +90,8 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libaudit_server_cobo_la_SOURCES) \
-	$(libaudit_server_msocket_la_SOURCES) \
 	$(libserverbase_la_SOURCES)
 DIST_SOURCES = $(libaudit_server_cobo_la_SOURCES) \
-	$(libaudit_server_msocket_la_SOURCES) \
 	$(libserverbase_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -235,21 +227,19 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
 
-#bin_PROGRAMS = ldcs_audit_server_socket ldcs_audit_server_pipe ldcs_audit_server_par_pipe ldcs_audit_server_par_pipe_md ldcs_audit_server_par_pipe_msocket
+#noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
+noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/tools/cobo/src -I$(top_srcdir)/logging
 LDADD = $(top_builddir)/cache/libldcs_cache.la
 AM_LDFLAGS = -all-static
+libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_par.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c
 
-#ldcs_audit_server_socket_SOURCES = ldcs_audit_server.c
-#ldcs_audit_server_pipe_SOURCES = ldcs_audit_server.c
-libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_par.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_stateloop.c ldcs_elf_read.c
-libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c
+#libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
 libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/tools/cobo/src
-libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
+#libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
 libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
 all: all-am
 
@@ -296,8 +286,6 @@ clean-noinstLTLIBRARIES:
 	done
 libaudit_server_cobo.la: $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_LIBADD) $(LIBS)
-libaudit_server_msocket.la: $(libaudit_server_msocket_la_OBJECTS) $(libaudit_server_msocket_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libaudit_server_msocket_la_OBJECTS) $(libaudit_server_msocket_la_LIBADD) $(LIBS)
 libserverbase.la: $(libserverbase_la_OBJECTS) $(libserverbase_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libserverbase_la_OBJECTS) $(libserverbase_la_LIBADD) $(LIBS)
 
@@ -309,14 +297,12 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_client_cb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_filemngt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_handlers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_msocket.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_msocket_topo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_msocket_util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_par.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_process.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_requestors.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_server_cb.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_stateloop.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_elf_read.Plo@am__quote@
 
 .c.o:
@@ -546,16 +532,6 @@ uninstall-am:
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am
 
-
-#ldcs_audit_server_par_pipe_SOURCES = ldcs_audit_server_md_none.c
-#ldcs_audit_server_par_pipe_md_SOURCES = ldcs_audit_server_md_cobo.c
-#ldcs_audit_server_par_pipe_msocket_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c
-
-#ldcs_audit_server_socket_LDADD = $(LDADD) $(LCD)/libldcs_socket.la
-#ldcs_audit_server_pipe_LDADD = $(LDADD) $(LCD)/libldcs_pipe.la
-#ldcs_audit_server_par_pipe_LDADD = $(LDADD) $(LCD)/libldcs_pipe.la
-#ldcs_audit_server_par_pipe_md_LDADD = $(LDADD) $(LCD)/libldcs_pipe.la $(COD)/libcobo.la $(COD)/libcobocomm.la
-#ldcs_audit_server_par_pipe_msocket_LDADD = $(LDADD) $(LCD)/libldcs_pipe.la $(LCD)/libldcs_socket_wo_wrapper.la $(COD)/libcobo.la $(COD)/libcobocomm.la
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

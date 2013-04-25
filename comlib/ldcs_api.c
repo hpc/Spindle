@@ -29,12 +29,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 int ldcs_send_FILE_QUERY (int fd, char* path, char** newpath) {
   ldcs_message_t message;
-  char buffer[MAX_PATH_LEN];
+  char buffer[MAX_PATH_LEN+1];
+  buffer[MAX_PATH_LEN] = '\0';
   
   /* only static allocation for funtions running during rtld_audit */
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_FILE_QUERY;
-  message.alloclen=MAX_PATH_LEN;
   message.header.len=strlen(path)+1;
   message.data=buffer;
   
@@ -60,12 +60,12 @@ int ldcs_send_FILE_QUERY (int fd, char* path, char** newpath) {
 
 int ldcs_send_FILE_QUERY_EXACT_PATH (int fd, char* path, char** newpath) {
   ldcs_message_t message;
-  char buffer[MAX_PATH_LEN];
+  char buffer[MAX_PATH_LEN+1];
+  buffer[MAX_PATH_LEN] = '\0';
   
   /* only static allocation for funtions running during rtld_audit */
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_FILE_QUERY_EXACT_PATH;
-  message.alloclen=MAX_PATH_LEN;
   message.header.len=strlen(path)+1;
   message.data=buffer;
   
@@ -91,17 +91,17 @@ int ldcs_send_FILE_QUERY_EXACT_PATH (int fd, char* path, char** newpath) {
 
 int ldcs_send_CWD (int fd) {
   ldcs_message_t message;
-  char buffer[MAX_PATH_LEN];
+  char buffer[MAX_PATH_LEN+1];
   int rc=0;
-
+  buffer[MAX_PATH_LEN] = '\0';
+  
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_CWD;
-  message.alloclen=MAX_PATH_LEN;
 
   if(! getcwd(buffer, MAX_PATH_LEN)) {
     return(-1);
   }
-  message.header.len=strlen(buffer);
+  message.header.len=strlen(buffer)+1;
   message.data=buffer;
 
   ldcs_send_msg(fd,&message);
@@ -110,19 +110,19 @@ int ldcs_send_CWD (int fd) {
 
 int ldcs_send_HOSTNAME (int fd) {
   ldcs_message_t message;
-  char buffer[MAX_PATH_LEN];
+  char buffer[MAX_PATH_LEN+1];
   int rc=0;
+  buffer[MAX_PATH_LEN] = '\0';
 
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_HOSTNAME;
-  message.alloclen=MAX_PATH_LEN;
   rc=gethostname(buffer, MAX_PATH_LEN);
   debug_printf3("gethostname: rc=%d buffer=%s\n", rc, buffer);  
   
   if(rc!=0) {
     return(-1);
   }
-  message.header.len=strlen(buffer);
+  message.header.len=strlen(buffer)+1;
   message.data=buffer;
 
   ldcs_send_msg(fd,&message);
@@ -137,7 +137,6 @@ int ldcs_send_PID (int fd) {
 
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_PID;
-  message.alloclen=16;
 
   mypid=getpid();
   sprintf(buffer,"%15d",mypid);
@@ -155,13 +154,12 @@ int ldcs_send_LOCATION (int fd, char *location) {
 
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_LOCATION;
-  message.alloclen=MAX_PATH_LEN;
   debug_printf3("location is %s\n", location);  
   
   if(rc!=0) {
     return(-1);
   }
-  message.header.len=strlen(location);
+  message.header.len=strlen(location)+1;
   message.data=location;
 
   ldcs_send_msg(fd,&message);
@@ -175,7 +173,6 @@ int ldcs_send_MYRANKINFO_QUERY (int fd, int *mylrank, int *mylsize, int *mymdran
   /* only static allocation for funtions running during rtld_audit */
   ldcs_msg_init(&message);
   message.header.type=LDCS_MSG_MYRANKINFO_QUERY;
-  message.alloclen=MAX_PATH_LEN;
   message.header.len=0;
   message.data=buffer;
   

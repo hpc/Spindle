@@ -17,29 +17,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_STATELOOP_H
 #define LDCS_AUDIT_SERVER_STATELOOP_H
 
-typedef enum {
-  LDCS_STATE_READY,
-  LDCS_STATE_DONE,
-  LDCS_STATE_CLIENT_INFO_MSG,
-  LDCS_STATE_CLIENT_END_MSG,  
-  LDCS_STATE_CLIENT_FILE_QUERY_MSG,
-  LDCS_STATE_CLIENT_FILE_QUERY_EXACT_PATH_MSG,
-  LDCS_STATE_CLIENT_FILE_QUERY_CHECK,
-  LDCS_STATE_CLIENT_FORWARD_QUERY,
-  LDCS_STATE_CLIENT_PROCESS_FILE,
-  LDCS_STATE_CLIENT_PROCESS_DIR,
-  LDCS_STATE_CLIENT_PROCESS_LOCAL_FILE_QUERY,
-  LDCS_STATE_CLIENT_PROCESS_REJECTED_QUERY,
-  LDCS_STATE_CLIENT_PROCESS_FULFILLED_QUERY,
-  LDCS_STATE_CLIENT_PROCESS_NODIR_QUERY,
-  LDCS_STATE_CLIENT_MYRANKINFO_MSG,
-  LDCS_STATE_CLIENT_START_UPDATE,
-  LDCS_STATE_CLIENT_UPDATE,
-  LDCS_STATE_CLIENT_RECV_EXIT_BCAST,
-  LDCS_STATE_UNKNOWN
-} ldcs_state_t;
+#include "ldcs_audit_server_process.h"
 
-ldcs_state_t ldcs_server_process_state ( ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg, ldcs_state_t state );
-char* _state_type_to_str (ldcs_state_t state);
+int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg);
+int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
+int handle_client_end(ldcs_process_data_t *procdata, int nc);
 
 #endif

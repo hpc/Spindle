@@ -147,7 +147,7 @@ int ldcs_listen() {
       /* collect all fds */
       for(c=0;c<ldcs_listen_data.item_table_size;c++) {
          if ( ldcs_listen_data.item_table[c].state == LDCS_LISTEN_STATUS_ACTIVE ) {
-            fd     = ldcs_listen_data.item_table[c].fd;
+            fd = ldcs_listen_data.item_table[c].fd;
             debug_printf3("add fd to FDSET %d\n",fd);
             FD_SET(fd, &rd);
             nfds = max(nfds, fd);  

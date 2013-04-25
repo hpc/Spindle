@@ -134,7 +134,7 @@ void get_calc_function(int (*func)(void), char *name)
 
 typedef int (*func_t)(void);
 typedef void (*cb_func_t)(func_t, char *);
-extern setup_func_callback(cb_func_t);
+extern void setup_func_callback(cb_func_t);
 
 char *libpath(char *s) {
    static char path[4096];
@@ -176,11 +176,11 @@ void dependency_mode()
 {
    /* Should be auto loaded */
    int i;
-   test_printf("dlstart %s\n", libraries[i].libname);
    for (i = 0; i<num_libraries; i++) {
       if (libraries[i].flags & FLAGS_NOEXIST)
          continue;
       libraries[i].opened = STARTUP_LOAD;
+      test_printf("dlstart %s\n", libraries[i].libname);
    }
 }
 

@@ -24,6 +24,7 @@ typedef enum {
    LDCS_MSG_FILE_QUERY,
    LDCS_MSG_FILE_QUERY_ANSWER,
    LDCS_MSG_FILE_QUERY_EXACT_PATH,
+   LDCS_MSG_FILE_REQUEST,
    LDCS_MSG_END,
    LDCS_MSG_CWD,
    LDCS_MSG_HOSTNAME,
@@ -74,18 +75,12 @@ struct ldcs_message_header_struct
 {
   ldcs_message_ids_t type;
   int   len;
-  int   source; 		/* rank of server which create msg */
-  int   from; 			/* rank of server which sending msg to me */
-  int   dest;			/* destination of msg */
-  int   mtype;
-  ldcs_msg_mtype_t mdir;
 };
 typedef struct ldcs_message_header_struct ldcs_message_header_t;
 
 struct ldcs_message_struct
 {
   ldcs_message_header_t header;
-  int   alloclen;
   char *data;
 };
 typedef struct ldcs_message_struct ldcs_message_t;
@@ -139,6 +134,6 @@ double ldcs_get_time();
 /* Force exit */
 void mark_exit();
 
-#define MAX_PATH_LEN 1024
-
+#define MAX_PATH_LEN 4096
+#define MAX_NAME_LEN 255
 #endif

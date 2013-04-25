@@ -29,11 +29,9 @@ typedef enum {
 } ldcs_client_status_t;
 
 typedef enum {
-  LDCS_UPDATE_STATE_NONE,
-  LDCS_UPDATE_STATE_INITIATE,
-  LDCS_UPDATE_STATE_ONGOING,
-  LDCS_UPDATE_STATE_UNKNOWN,
-} ldcs_update_state_t;
+   LDCS_PULL,
+   LDCS_PUSH
+} ldcs_dist_model_t;
 
 struct ldcs_server_stat_entry_struct
 {
@@ -82,16 +80,13 @@ struct ldcs_client_struct
   int                  remote_pid;
   char                 remote_cwd[MAX_PATH_LEN];
   int                  query_open;
-  int                  query_forwarded;
-  int                  query_exact_path;
   char                 query_filename[MAX_PATH_LEN];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN];  /* path to file in global fs (dirname+filename) */
-  char                 query_localpath[MAX_PATH_LEN];   /* path to file in local temporary fs (dirname+filename) */
+  char                 *query_localpath;                /* path to file in local temporary fs (dirname+filename) */
   double               query_arrival_time;
 };
 typedef struct ldcs_client_struct ldcs_client_t;
-
 
 struct ldcs_process_data_struct
 {
@@ -102,9 +97,7 @@ struct ldcs_process_data_struct
   int client_counter;
   int serverid;
   int serverfd;
-  int last_action_on_nc;
-  ldcs_update_state_t update;
-  ldcs_update_state_t update_next_nc;
+  ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
   char *location;
   char *hostname;
@@ -121,7 +114,6 @@ struct ldcs_process_data_struct
 };
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
-
 int ldcs_audit_server_process (char *location, int number,
 			       int ready_cb_func ( void *data ), 
 			       void * ready_cb_data );
@@ -129,7 +121,6 @@ int ldcs_audit_server_process (char *location, int number,
 int _ldcs_client_CB ( int fd, int nc, void *data );
 int _ldcs_server_CB ( int infd, int serverid, void *data );
 
-int _ldcs_client_process_clients_requests_after_update ( ldcs_process_data_t *ldcs_process_data );
 int _ldcs_client_process_clients_requests_after_end ( ldcs_process_data_t *ldcs_process_data );
 int _ldcs_client_process_fe_preload_requests ( ldcs_process_data_t *ldcs_process_data, char *fn );
 

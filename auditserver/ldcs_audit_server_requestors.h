@@ -14,10 +14,13 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef LDCS_SIMULATOR_SERVER_H
-#define LDCS_SIMULATOR_SERVER_H
+#if !defined(LDCS_AUDIT_SERVER_REQUESTORS_H_)
+#define LDCS_AUDIT_SERVER_REQUESTORS_H_
 
-int simulator_server ( MPI_Comm mycomm,
-		       char  *location, int locmod, int number);
+#include "ldcs_audit_server_md.h"
 
+int been_requested(char *file);
+void add_requestor(char *file, node_peer_t peer);
+void clear_requestor(char *file);
+int get_requestors(char *file, node_peer_t **requestor_list, int *requestor_list_size);
 #endif

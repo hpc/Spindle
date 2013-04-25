@@ -38,6 +38,7 @@
 #define __cobo_ts COMBINE(COBO_NAMESPACE, __cobo_ts)
 #define cobo_get_num_childs COMBINE(COBO_NAMESPACE, cobo_get_num_childs)
 #define cobo_bcast_down COMBINE(COBO_NAMESPACE, cobo_bcast_down)
+#define cobo_get_child_socket COMBINE(COBO_NAMESPACE, cobo_get_child_socket)
 #endif
 
 /*
@@ -124,5 +125,8 @@ int cobo_server_get_root_socket(int* fd);
 extern double __cobo_ts;
 
 int cobo_get_num_childs(int* num_childs);
+
+/* Methods to access child fds */
+int cobo_get_child_socket(int num, int *fd);
 
 #endif /* _COBO_H */

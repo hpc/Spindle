@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <assert.h>
 
 #include "ldcs_cobo.h"
 #include "spindle_debug.h"
@@ -1099,6 +1100,13 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
     }
 
     return rc;
+}
+
+int cobo_get_child_socket(int num, int *fd)
+{
+   assert(num < cobo_num_child);
+   *fd = cobo_child_fd[num];
+   return COBO_SUCCESS;
 }
 
 /*

@@ -6,12 +6,12 @@ BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest100
 libgenerator_SOURCES = libgenerator.c
 
 test_driver_SOURCES = test_driver.c
-test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS)
+test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS) -Wall
 test_driver_LDADD = -ldl -ltestoutput -lfuncdict
 test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
 
 test_driver_libs_SOURCES = test_driver.c
-test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS)
+test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS) -Wall
 test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB
 test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
 

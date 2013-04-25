@@ -19,7 +19,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "lmon_api/lmon_fe.h"
 #include "parse_launcher.h"
 #include "spindle_usrdata.h"
-#include "spindle_external_fabric.h"
 #include "config.h"
 
 #ifdef __cplusplus
@@ -130,7 +129,7 @@ const char *string_to_cstr(const std::string &str) { return str.c_str(); }
 int main (int argc, char* argv[])
 {  
   int aSession    = 0;
-  int launcher_argc;
+  int launcher_argc, i;
   char **launcher_argv        = NULL;
   //char **daemon_opts          = NULL;
   const char **daemon_opts = NULL;
@@ -141,7 +140,6 @@ int main (int argc, char* argv[])
   char ldcs_number_s[32];
   lmon_rc_e rc;
   void *md_data_ptr;
-  spindle_external_fabric_data_t spindle_external_fabric_data;
 
   LOGGING_INIT(const_cast<char *>("FE"));
 
@@ -207,11 +205,15 @@ int main (int argc, char* argv[])
   /**
    * Setup the daemon command line
   **/
-  daemon_opts = (const char **) malloc(4 * sizeof(char *));
-  daemon_opts[0] = daemon;
-  daemon_opts[1] = ldcs_location;
-  daemon_opts[2] = ldcs_number_s;
-  daemon_opts[3] = NULL;
+  daemon_opts = (const char **) malloc(8 * sizeof(char *));
+  i = 0;
+  //daemon_opts[i++] = "/usr/local/bin/valgrind";
+  //daemon_opts[i++] = "--tool=memcheck";
+  //daemon_opts[i++] = "--leak-check=full";
+  daemon_opts[i++] = daemon;
+  daemon_opts[i++] = ldcs_location;
+  daemon_opts[i++] = ldcs_number_s;
+  daemon_opts[i++] = NULL;
 
   /**
    * Setup LaunchMON
@@ -246,7 +248,6 @@ int main (int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  int i = 0;
   debug_printf2("launcher: ");
   for (i = 0; launcher_argv[i]; i++) {
      bare_printf2("%s ", launcher_argv[i]);
@@ -278,12 +279,6 @@ int main (int argc, char* argv[])
     setenv("SION_DEBUG",helpstr,1);
   }
   
-  /* Register external fabric CB to SPINDLE */
-  spindle_external_fabric_data.md_rank=-1;
-  spindle_external_fabric_data.md_size=-1;
-  spindle_external_fabric_data.asession=aSession;
-  ldcs_register_external_fabric_CB( &spindle_external_fabric_fe_CB, (void *) &spindle_external_fabric_data);
-
   /* Get the process table */
   unsigned int ptable_size, actual_size;
   rc = LMON_fe_getProctableSize(aSession, &ptable_size);
@@ -313,15 +308,7 @@ int main (int argc, char* argv[])
 
   /* Close the server */
   ldcs_audit_server_fe_md_close(md_data_ptr);
-  /*
-  rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
-  if ( (rc == LMON_EBDARG )
-       || ( rc == LMON_ENOMEM )
-       || ( rc == LMON_EINVAL ) )  {
-      err_printf("[LMON FE] FAILED\n");
-      return EXIT_FAILURE;
-  }
-  */
+
   debug_printf("Exiting with success\n");
   return EXIT_SUCCESS;
 }

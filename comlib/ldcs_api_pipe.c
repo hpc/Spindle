@@ -296,24 +296,24 @@ int ldcs_open_server_connection_pipe(int fd) {
 }
 
 int ldcs_open_server_connections_pipe(int fd, int *more_avail) {
-  int  fifoid, finished, inout, connfd;
+  int  fifoid, inout, connfd;
   char fifo[MAX_PATH_LEN];
   char *fifo_file;
   int  pid;
   
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   
-  finished=0;
 
   /* wait until a <pid>-1 fifo is created */
-  while(!finished) {
+  for (;;) {
     fifo_file=ldcs_notify_get_next_file(ldcs_pipe_fdlist[fd].notify_fd);
     if(fifo_file) {
-      sscanf(fifo_file, "fifo-%d-%d", &pid, &inout);
-      if(inout==1) {
-	finished=1;
-      }
-      free(fifo_file);
+       inout = 0; pid = 0;
+       sscanf(fifo_file, "fifo-%d-%d", &pid, &inout);
+       free(fifo_file);
+       if(inout==1) {
+          break;
+       }
     }
   }
 
@@ -439,7 +439,6 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
 
     msg->data = (char *) malloc(sizeof(msg->header.len));
     if (!msg)  _error("could not allocate memory for message data");
-    msg->alloclen=msg->header.len;    
 
     n = _ldcs_read_pipe(ldcs_pipe_fdlist[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
     if (n < 0) _error("ERROR reading message data from socket");
@@ -456,7 +455,6 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
   return(msg);
 }
 
-
 int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
   int n;
   int rc=0;
@@ -465,17 +463,17 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
 
   n = _ldcs_read_pipe(ldcs_pipe_fdlist[fd].in_fd,&msg->header,sizeof(msg->header), block);
-  if (n == 0) return(rc);
+  if (n == 0) {
+     /* Disconnect.  Return an artificial client end message */
+     debug_printf2("Client disconnected.  Returning END message\n");
+     msg->header.type = LDCS_MSG_END;
+     msg->header.len = 0;
+     msg->data = NULL;
+     return(rc);
+  }
   if (n < 0) _error("ERROR reading header from connection");
 
-  if(msg->header.len>msg->alloclen) {
-    debug_printf3("ERROR message too long: %s len=%d ...\n",
-		 _message_type_to_str(msg->header.type),msg->header.len );
-    _error("ERROR message too long");
-  }
-
   if(msg->header.len>0) {
-    bzero(msg->data,msg->alloclen);
     n = _ldcs_read_pipe(ldcs_pipe_fdlist[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
     if (n == 0) return(rc);
     if (n < 0) _error("ERROR reading message data from socket");

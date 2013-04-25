@@ -512,7 +512,8 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
       ldcs_process_data->server_stat.distdir.bytes+=msg->header.len;
       ldcs_process_data->server_stat.distdir.time+=(ldcs_get_time()-starttime);
     
-      ldcs_cache_storeNewEntriesSerList(msg->data,msg->header.len);
+#warning Fix here
+      //ldcs_cache_storeNewEntriesSerList(msg->data,msg->header.len);
       
       /* _ldcs_client_process_clients_requests_after_update( ldcs_process_data ); */
     }
@@ -530,7 +531,8 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
       
       /* store file */
       starttime=ldcs_get_time();
-      rc=ldcs_audit_server_filemngt_store_file(msg, &filename, &dirname, &localpath, &domangle);
+#warning Fix here
+      //rc=ldcs_audit_server_filemngt_store_file(msg, &filename, &dirname, &localpath, &domangle);
       ldcs_process_data->server_stat.libstore.cnt++;
       ldcs_process_data->server_stat.libstore.bytes+=rc;
       ldcs_process_data->server_stat.libstore.time+=(ldcs_get_time()-starttime);

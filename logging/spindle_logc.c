@@ -316,8 +316,11 @@ void spindle_dump_on_error()
    syms = backtrace_symbols(stacktrace, size);
    
    for (i = 0; i<size; i++) {
-      fprintf(spindle_debug_output_f, "%p - %s\n", stacktrace[i], syms[i]);
+      fprintf(spindle_debug_output_f, "%p - %s\n", stacktrace[i], syms && syms[i] ? syms[i] : "<NO NAME>");
    }
+   
+   if (syms)
+      free(syms);
 }
 
 void fini_spindle_debugging()

@@ -371,10 +371,6 @@ int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t 
   if (n == 0) return(rc);
   if (n < 0) _error("ERROR reading header from socket");
 
-  if(msg->header.len>msg->alloclen) {
-    _error("ERROR message too long");
-  }
-
   if(msg->header.len>0) {
 
     msg->data = (char *) malloc(msg->header.len);
