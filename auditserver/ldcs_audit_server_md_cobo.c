@@ -35,6 +35,8 @@
 int ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data );
 int ldcs_audit_server_md_cobo_send_msg ( int fd, ldcs_message_t *msg );
 
+#define NUM_PORTS 25
+
 extern unsigned int shared_secret;
 
 static int ll_read(int fd, void *buf, size_t count)
@@ -134,20 +136,17 @@ static int write_msg(int fd, ldcs_message_t *msg)
 
 int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
    int rc=0;
+   int portlist[NUM_PORTS];
+   int my_rank, ranks, fanout;
+   int i;
 
-   int* portlist = NULL;
-   int num_ports = 20;
-   int i, my_rank, ranks, fanout;
-
-   portlist = malloc(num_ports * sizeof(int));
-
-   for (i=0; i<num_ports; i++) {
-      portlist[i] = 5000 + i;
+   for (i = 0; i < NUM_PORTS; i++) {
+      portlist[i] = ldcs_process_data->md_port + i;
    }
 
    /* initialize the client (read environment variables) */
-   debug_printf2("Opening cobo\n");
-   if (cobo_open(shared_secret, portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
+   debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[NUM_PORTS-1]);
+   if (cobo_open(shared_secret, portlist, NUM_PORTS, &my_rank, &ranks) != COBO_SUCCESS) {
       printf("Failed to init\n");
       exit(1);
    }
@@ -159,8 +158,6 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
 
    cobo_get_num_childs(&fanout);
    ldcs_process_data->server_stat.md_fan_out=ldcs_process_data->md_fan_out = fanout;
-
-   free(portlist);
 
    cobo_barrier();
 
@@ -311,19 +308,18 @@ int ldcs_audit_server_md_cobo_CB(int fd, int nc, void *data)
    return(rc);
 }
 
-int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, void **data  ) {
+int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, void **data  ) {
    int rc=0;
-   int num_ports   = 20;
-   int* portlist = malloc(num_ports * sizeof(int));
-   int i;
+   int portlist[NUM_PORTS];
    int root_fd, ack;
+   int i;
 
-   /* build our portlist */
-   for (i=0; i<num_ports; i++) {
-      portlist[i] = 5000 + i;
+   for (i = 0; i < NUM_PORTS; i++) {
+      portlist[i] = port + i;
    }
 
-   cobo_server_open(shared_secret, hostlist, numhosts, portlist, num_ports);
+   debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[NUM_PORTS-1]);
+   cobo_server_open(shared_secret, hostlist, numhosts, portlist, NUM_PORTS);
 
    cobo_server_get_root_socket(&root_fd);
   

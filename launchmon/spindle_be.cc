@@ -93,11 +93,16 @@ int _ready_cb_func (  void * data) {
   return(rc);
 }
 
+extern "C" {
+   char *parse_location(char *loc);
+}
+
 int main(int argc, char* argv[])
 {
   lmon_rc_e lrc;
   int number;
-  char *location, *numberstr, *optsstr;
+  unsigned int port;
+  char *location, *numberstr, *optsstr, *portstr;
 
   LOGGING_INIT(const_cast<char *>("Server"));
   if (spindle_debug_output_f) {
@@ -126,9 +131,11 @@ int main(int argc, char* argv[])
   location  = argv[1];
   numberstr = argv[2];
   number = numberstr ? atoi(numberstr) : -1;
-  optsstr = argv[3];
+  portstr = argv[3];
+  optsstr = argv[4];
   opts = atoi(optsstr);
-  shared_secret = atoi(argv[4]);
+  shared_secret = atoi(argv[5]);
+  port = atoi(portstr);
 
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);
@@ -150,6 +157,12 @@ int main(int argc, char* argv[])
      return EXIT_FAILURE;
   } 
 
+  location = parse_location(location);
+  if (!location) {
+     LMON_be_finalize();
+     return -1;
+  }
+
   /* Register pack/unpack functions to LMON  */
   if ( LMON_be_amIMaster() == LMON_YES ) {
     
@@ -165,7 +178,7 @@ int main(int argc, char* argv[])
   }
 
   /* start SPINDLE server */
-  ldcs_audit_server_process(location,number, &_ready_cb_func, NULL);
+  ldcs_audit_server_process(location, port, number, &_ready_cb_func, NULL);
 
   LMON_be_finalize();
 

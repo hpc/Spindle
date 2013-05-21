@@ -106,7 +106,7 @@ int ldcs_create_server_pipe(char* location, int number) {
 
   int len = strlen(location) + 32;
   char *staging_dir = (char *) malloc(len);
-  snprintf(staging_dir, len, "%s/spindle_comm.%d", location, number);
+  snprintf(staging_dir, len, "%s/spindle_comm", location);
 
   debug_printf3("test direcrory before mkdir %s\n",staging_dir);
   if (stat(staging_dir, &st) == -1) {

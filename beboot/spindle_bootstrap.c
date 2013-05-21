@@ -59,6 +59,8 @@ static char *default_libstr = libstr_pipe;
 #error Unknown connection type
 #endif
 
+extern char *parse_location(char *loc);
+
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
@@ -149,6 +151,11 @@ int main(int argc, char *argv[])
       fprintf(stderr, "spindle_boostrap cannot be invoked directly\n");
       return -1;
    }
+   location = parse_location(location);
+   if (!location) {
+      return -1;
+   }
+   
 
    result = establish_connection();
    if (result == -1) {

@@ -96,7 +96,7 @@ int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_d
 
 /* Called in the spindle FE during network initialization.  The opaque 'data' returned
    by _fe_md_open will also be passed to _fe_md_broadcast and _fe_md_close */
-int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **data  );
+int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, unsigned int port, void **data  );
 /* Do a top-level broadcast. Send from the FE to the top level nodes. */
 int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
 

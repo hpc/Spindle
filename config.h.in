@@ -70,6 +70,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* The default local directory for Spindle */
+#undef SPINDLE_LOC
+
+/* The default port for Spindle */
+#undef SPINDLE_PORT
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

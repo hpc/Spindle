@@ -17,7 +17,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(PARSEARGS_H_)
 #define PARSEARGS_H_
 
+#include <string>
+
 unsigned long parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
+unsigned int getPort();
+std::string getLocation(int number);
 
 #endif

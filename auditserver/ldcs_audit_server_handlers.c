@@ -702,7 +702,6 @@ static int handle_exit_broadcast(ldcs_process_data_t *procdata)
 {
    ldcs_message_t out_msg;
    debug_printf("Setting up Exiting after receiving exit bcast message\n");
-   ldcs_audit_server_filemngt_clean();
 
    out_msg.header.type = LDCS_MSG_EXIT;
    out_msg.header.len = 0;

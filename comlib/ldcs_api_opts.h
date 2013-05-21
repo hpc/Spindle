@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define OPT_RELOCEXEC  (1 << 9)
 #define OPT_RELOCPY    (1 << 10)
 #define OPT_STRIP      (1 << 11)
+#define OPT_NOCLEAN    (1 << 12)
 
 extern unsigned long opts;
 

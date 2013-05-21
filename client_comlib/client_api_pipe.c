@@ -181,7 +181,7 @@ int client_open_connection_pipe(char* location, int number)
 
    /* wait for directory (at most one minute) */
    stat_cnt = 0;
-   snprintf(ready, MAX_PATH_LEN, "%s/spindle_comm.%d/ready", location, number);
+   snprintf(ready, MAX_PATH_LEN, "%s/spindle_comm/ready", location);
    while ((stat(ready, &st) == -1) && (stat_cnt<600)) {
       debug_printf3("waiting: location %s does not exists (after %d seconds)\n", location, stat_cnt/10);
       usleep(100000); /* .1 seconds */
@@ -189,7 +189,7 @@ int client_open_connection_pipe(char* location, int number)
    }
   
    /* create incomming fifo */
-   sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-0", location, number, getpid());
+   sprintf(fifo, "%s/spindle_comm/fifo-%d-0", location, getpid());
    result = ldcs_mkfifo(fifo);
    if (result == -2)
       find_r_fd = 1;
@@ -199,7 +199,7 @@ int client_open_connection_pipe(char* location, int number)
    assert(fdlist_pipe[fd].in_fn);
 
    /* create outgoing fifo */
-   sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-1", location, number, getpid());
+   sprintf(fifo, "%s/spindle_comm/fifo-%d-1", location, getpid());
    result = ldcs_mkfifo(fifo);
    if (result == -2)
       find_w_fd = 1;

@@ -1,13 +1,11 @@
 =============================================================================
 == SPINDLE: Scalable Parallel Input Network for Dynamic Load Environments  ==
 =============================================================================
-Authors:    SPINDLE:              W.Frings <frings1@llnl.gov>
-	    			           <W.Frings@fz-juelich.de>	  
- 	    	                  ...
-            Auditing Interface:  Matthew LeGendre (legendre1@llnl.gov)		     
- 	    COBO:                Adam Moody <moody20@llnl.gov>
+Authors:    SPINDLE:              W.Frings <W.Frings at fz-juelich dot de>
+                                  Matthew LeGendre (legendre1 at llnl dot gov)
+            COBO:                 Adam Moody <moody20 at llnl dot gov>
 
-Version:    0.3 (August 24, 2012)
+Version:    0.6 (May 2013)
 
 Introduction:
 ============

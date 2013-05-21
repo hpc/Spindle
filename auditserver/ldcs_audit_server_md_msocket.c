@@ -587,7 +587,7 @@ int _ldcs_audit_server_md_msocket_connection_CB ( int fd, int nc, void *data ) {
 
 
 /* FRONT END functions */
-int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **data  ) {
+int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, unsigned int port, void **data  ) {
   int rc=0;
   int num_ports   = 20;
   int num_hosts   = -1;

@@ -63,7 +63,7 @@ int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, l
 }
 
 
-int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, void **data  ) {
+int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, void **data  ) {
   int rc=0;
 
   return(rc);

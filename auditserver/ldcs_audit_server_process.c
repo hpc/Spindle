@@ -56,7 +56,7 @@ int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
   return(rc);
 }
     
-int ldcs_audit_server_process (char *location, int number,
+int ldcs_audit_server_process (char *location, unsigned int port, int number,
 			       int ready_cb_func ( void *data ), 
 			       void * ready_cb_data ) {
   int rc=0;
@@ -86,7 +86,8 @@ int ldcs_audit_server_process (char *location, int number,
   }
 
   ldcs_process_data.md_rank=0; 
-  ldcs_process_data.md_size=1; 
+  ldcs_process_data.md_size=1;
+  ldcs_process_data.md_port = port;
   ldcs_process_data.md_fan_out=0; 
   ldcs_process_data.client_counter=0; /* number of clients ever connected */
   ldcs_process_data.clients_connected=0; /* will set to one once a client was connected */
@@ -175,6 +176,10 @@ int ldcs_audit_server_process (char *location, int number,
 
    /* destroy md support (multi-daemon) */
    ldcs_audit_server_md_destroy(&ldcs_process_data);
+
+   /* destroy file cache */
+   if (!(opts & OPT_NOCLEAN))
+      ldcs_audit_server_filemngt_clean();
 
    return(rc);
  }

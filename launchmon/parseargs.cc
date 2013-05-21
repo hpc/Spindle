@@ -17,7 +17,15 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <argp.h>
 #include <cstring>
 #include <cassert>
+#include <stdlib.h>
+#include <string>
 #include "config.h"
+#include "ldcs_api_opts.h"
+
+#if !defined(STR)
+#define STR2(X) #X
+#define STR(X) STR2(X)
+#endif
 
 #define RELOCAOUT 'a'
 #define COBO 'c'
@@ -25,9 +33,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define PRELOAD 'e'
 #define FOLLOWFORK 'f'
 #define RELOCSO 'l'
+#define NOCLEAN 'n'
+#define LOCATION 'o'
 #define PUSH 'p'
 #define PULL 'q'
 #define STRIP 's'
+#define PORT 't'
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
 
@@ -36,25 +47,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define GROUP_NETWORK 3
 #define GROUP_MISC 4
 
-#define OPT_COBO       (1 << 1)
-#define OPT_DEBUG      (1 << 2)
-#define OPT_FOLLOWFORK (1 << 3)
-#define OPT_PRELOAD    (1 << 4)
-#define OPT_PUSH       (1 << 5)
-#define OPT_PULL       (1 << 6)
-#define OPT_RELOCAOUT  (1 << 7)
-#define OPT_RELOCSO    (1 << 8)
-#define OPT_RELOCEXEC  (1 << 9)
-#define OPT_RELOCPY    (1 << 10)
-#define OPT_STRIP      (1 << 11)
-
 static const char *YESNO = "yes|no";
 
 static const unsigned long all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC | 
                                             OPT_RELOCPY | OPT_FOLLOWFORK;
 static const unsigned long all_network_opts = OPT_COBO;
 static const unsigned long all_pushpull_opts = OPT_PUSH | OPT_PULL;
-static const unsigned long all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD;
+static const unsigned long all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN;
 
 static const unsigned long default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC | 
                                                 OPT_RELOCPY | OPT_FOLLOWFORK;
@@ -68,8 +67,10 @@ static unsigned long disabled_opts = 0;
 static char *preload_file;
 static char **mpi_argv;
 static int mpi_argc;
-static unsigned long opts;
 static bool done = false;
+
+static unsigned int spindle_port = SPINDLE_PORT;
+std::string spindle_location(SPINDLE_LOC);
 
 struct argp_option options[] = {
    { "reloc-exec", RELOCAOUT, YESNO, 0, 
@@ -88,14 +89,20 @@ struct argp_option options[] = {
      "Use a pull model where objects are only made available to processes that require them", GROUP_PUSHPULL },
    { "cobo", COBO, NULL, 0,
      "Use a tree-based cobo network for distributing objects", GROUP_NETWORK },
+   { "port", PORT, "number", 0,
+     "TCP Port for Spindle servers.  Default: " STR(SPINDLE_PORT), GROUP_NETWORK },
+   { "location", LOCATION, "directory", 0,
+     "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_NETWORK },
    { "debug", DEBUG, YESNO, 0,
      "Hide spindle from debuggers so they think libraries come from the original locations. " 
-     "Enablng this disables reloc-exec.  Default: no", GROUP_MISC },
+     "Enabling this disables reloc-exec.  Default: no", GROUP_MISC },
    { "preload", PRELOAD, "FILE", 0,
      "Provides a text file containing a white-space separated list of files that should be "
      "relocated to each node before execution begins", GROUP_MISC },
    { "strip", STRIP, YESNO, 0,
      "Strip debug and symbol information from binaries before distributing them. Default: yes", GROUP_MISC },
+   { "noclean", NOCLEAN, YESNO, 0,
+     "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
    {0}
 };
 
@@ -113,6 +120,7 @@ static int opt_key_to_code(int key)
       case STRIP: return OPT_STRIP;
       case RELOCEXEC: return OPT_RELOCEXEC;
       case RELOCPY: return OPT_RELOCPY;
+      case NOCLEAN: return OPT_NOCLEAN;
       default: return 0;
    }
 }
@@ -155,6 +163,17 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (entry->key == PRELOAD) {
       enabled_opts |= opt;
       preload_file = arg;
+      return 0;
+   }
+   else if (entry->key == PORT) {
+      spindle_port = atoi(arg);
+      if (!spindle_port) {
+         argp_error(state, "Port was given a 0 value");
+      }
+      return 0;
+   }
+   else if (entry->key == LOCATION) {
+      spindle_location = arg;
       return 0;
    }
    else if (key == ARGP_KEY_ARG) {
@@ -202,7 +221,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       return 0;
    }
    else if (key == ARGP_KEY_NO_ARGS) {
-      argp_error(state, "Spindle must be given an MPI command line");
+      argp_error(state, "No MPI command line found");
    }
    else {
       return 0;
@@ -232,4 +251,16 @@ unsigned long parseArgs(int argc, char *argv[])
 char *getPreloadFile()
 {
    return preload_file;
+}
+
+unsigned int getPort()
+{
+   return spindle_port;
+}
+
+const std::string getLocation(int number)
+{
+   char num_s[32];
+   snprintf(num_s, 32, "%d", number);
+   return spindle_location + std::string("/spindle.") + std::string(num_s);
 }

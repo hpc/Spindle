@@ -64,10 +64,10 @@ unsigned long opts;
 unsigned int shared_secret;
 
 #define DEFAULT_LDCS_NAME_PREFIX "/tmp/"
-#define DEFAULT_LDCS_NUMBER 7777
-
-static char *ldcs_location = NULL;
-static unsigned int ldcs_number = 0;
+std::string ldcs_location_str;
+static const char *ldcs_location;
+static unsigned int ldcs_number;
+static unsigned int ldcs_port;
 
 double __get_time()
 {
@@ -156,7 +156,7 @@ int main (int argc, char* argv[])
   int result;
   const char *bootstrapper = spindle_bootstrap;
   const char *daemon = spindle_daemon;
-  char ldcs_number_s[32], ldcs_opts_s[32];
+  char ldcs_number_s[32], ldcs_opts_s[32], ldcs_port_s[32];
   char *ldcs_shared_secret;
   lmon_rc_e rc;
   void *md_data_ptr;
@@ -180,25 +180,17 @@ int main (int argc, char* argv[])
   /**
    * If number and location weren't set, then set them.
    **/
-  if (getenv("TMPDIR"))
-     ldcs_location = strdup(getenv("TMPDIR"));
-  if (!ldcs_location) {
-     int name_size;
-     const char *username = getUserName();
-     if (!username) {
-        username = "spindleuser";
-     }
-     name_size = strlen(username) + strlen(DEFAULT_LDCS_NAME_PREFIX) + 1;
-     ldcs_location = (char *) malloc(name_size);
-     snprintf(ldcs_location, name_size, "%s%s", DEFAULT_LDCS_NAME_PREFIX, username);
-  }
-  if (!ldcs_number) {
-     ldcs_number = getpid(); //Just needs to be unique across spindle jobs shared
-                             //by the same user with overlapping nodes.
-  }
+  ldcs_port = getPort();
+  ldcs_number = getpid(); //Just needs to be unique across spindle jobs shared
+                          // by the same user with overlapping nodes.  Launcher
+                          // pid should suffice
+  ldcs_location_str = getLocation(ldcs_number);
+  ldcs_location = ldcs_location_str.c_str();
+
+  snprintf(ldcs_port_s, 32, "%d", ldcs_port);
   snprintf(ldcs_number_s, 32, "%d", ldcs_number);
 
-  debug_printf("Location = %s, Number = %s\n", ldcs_location, ldcs_number_s);
+  debug_printf("Location = %s, Number = %u, Port = %u\n", ldcs_location, ldcs_number, ldcs_port);
 
   /**
    * Setup the launcher command line
@@ -222,7 +214,7 @@ int main (int argc, char* argv[])
   /**
    * Setup the daemon command line
    **/
-  daemon_opts = (const char **) malloc(9 * sizeof(char *));
+  daemon_opts = (const char **) malloc(10 * sizeof(char *));
   i = 0;
   //daemon_opts[i++] = "/usr/local/bin/valgrind";
   //daemon_opts[i++] = "--tool=memcheck";
@@ -230,6 +222,7 @@ int main (int argc, char* argv[])
   daemon_opts[i++] = daemon;
   daemon_opts[i++] = ldcs_location;
   daemon_opts[i++] = ldcs_number_s;
+  daemon_opts[i++] = ldcs_port_s;
   daemon_opts[i++] = ldcs_opts_s;
   daemon_opts[i++] = get_shared_secret();
   daemon_opts[i++] = NULL;
@@ -331,7 +324,7 @@ int main (int argc, char* argv[])
   free(proctab);
 
   /* SPINDLE FE start */
-  ldcs_audit_server_fe_md_open( const_cast<char **>(hosts), hosts_size, &md_data_ptr );
+  ldcs_audit_server_fe_md_open( const_cast<char **>(hosts), hosts_size, ldcs_port, &md_data_ptr );
 
   if (preload_msg) {
      debug_printf("Sending message with preload information\n");

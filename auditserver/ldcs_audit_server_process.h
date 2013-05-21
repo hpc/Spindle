@@ -112,14 +112,14 @@ struct ldcs_process_data_struct
   int md_size;
   int md_fan_out; 		/* number of childs */
   int md_listen_to_parent;
-
+  unsigned int md_port;
   
   /* statistics */
   ldcs_server_stat_t server_stat;
 };
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
-int ldcs_audit_server_process (char *location, int number,
+int ldcs_audit_server_process (char *location, unsigned int port, int number,
 			       int ready_cb_func ( void *data ), 
 			       void * ready_cb_data );
 

@@ -139,25 +139,38 @@ AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
 
+#Network port and local storage location
+DEFAULT_PORT=21940
+DEFAULT_LOC='$TMPDIR'
+AC_ARG_WITH(default-port,
+            [AS_HELP_STRING([--with-default-port],[TCP Port for Spindle server communication])],
+            [SPINDLE_PORT=${withval}],
+            [SPINDLE_PORT=$DEFAULT_PORT])
+AC_ARG_WITH(localstorage,
+            [AS_HELP_STRING([--with-localstorage],[Directory on back-ends for storing relocated files])],
+            [SPINDLE_LOC=${withval}],
+            [SPINDLE_LOC=$DEFAULT_LOC])
+AC_DEFINE_UNQUOTED([SPINDLE_PORT],[$SPINDLE_PORT],[The default port for Spindle])
+AC_DEFINE_UNQUOTED([SPINDLE_LOC],"[$SPINDLE_LOC]",[The default local directory for Spindle])
 
 #Runmode detection (pipe/socket or cobo/msocket communications)
 CLIENT_SERVER_COM=pipes
 SERVER_SERVER_COM=cobo
 AC_ARG_ENABLE(pipes,
-              [AS_HELP_STRING([--with-pipes],[Use pipes for server/client communication])],
+              [AS_HELP_STRING([--enable-pipes],[Use pipes for server/client communication])],
               [CLIENT_SERVER_COM=pipes;],)
 AC_ARG_ENABLE(socket,
-              [AS_HELP_STRING([--with-socket],[Use sockets for server/client communication])],
+              [AS_HELP_STRING([--enable-socket],[Use sockets for server/client communication])],
               [CLIENT_SERVER_COM=sockets;],)
 AC_ARG_ENABLE(shmem,
-              [AS_HELP_STRING([--with-shmem],[Use shared memory for server/client communication])],
+              [AS_HELP_STRING([--enable-shmem],[Use shared memory for server/client communication])],
               [CLIENT_SERVER_COM=shmem;],)
 
 AC_ARG_ENABLE(msocket,
-              [AS_HELP_STRING([--with-msocket],[Use msocket for inter-server communication])]
+              [AS_HELP_STRING([--enable-msocket],[Use msocket for inter-server communication])],
               [SERVER_SERVER_COM=msocket;],)
 AC_ARG_ENABLE(cobo,
-              [AS_HELP_STRING([--with-cobo],[Use msocket for inter-server communication])]
+              [AS_HELP_STRING([--enable-cobo],[Use msocket for inter-server communication])],
               [SERVER_SERVER_COM=cobo;],)
 
 AM_CONDITIONAL([LMON_DYNAMIC], [test "x$LAUNCHMON_STATIC_LIBS" == "x"])

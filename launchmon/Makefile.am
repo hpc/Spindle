@@ -11,7 +11,7 @@ spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.c
 
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
-spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc
+spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc $(top_srcdir)/beboot/parseloc.c
 spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la $(top_builddir)/logging/libspindlelogc.la
 
 if LINK_LIBSTDCXX_STATIC
