@@ -57,7 +57,8 @@ typedef enum {
 
 typedef enum {
    preload_broadcast,
-   request_broadcast
+   request_broadcast,
+   suppress_broadcast
 } broadcast_t;
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -102,6 +103,8 @@ static int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t
                                    void *secondary_data, size_t secondary_size, int force_broadcast);
 static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_preload_done(ldcs_process_data_t *procdata);
+static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *filename);
+static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -565,11 +568,13 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    }
 
    /* distribute file data */
-   result = handle_broadcast_file(procdata, pathname, buffer, newsize, bcast);
-   if (result == -1) {
-      global_result = -1;
-      goto done;
-   }   
+   if (bcast != suppress_broadcast) {
+      result = handle_broadcast_file(procdata, pathname, buffer, newsize, bcast);
+      if (result == -1) {
+         global_result = -1;
+         goto done;
+      }   
+   }
 
   done:
    if (fd != -1)
@@ -791,11 +796,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
          result = handle_broadcast_file(procdata, pathname, buffer, size, request_broadcast);
          return result;
       case NO_FILE:
-#warning TODO: Figure out what to do here
-         /* Other nodes know about a file we don't know about.  Maybe a local file?  Maybe send some kind of "read it yourself" message */
-         err_printf("Client requested file %s, but it should know that doesn't exist\n", pathname);
-         assert(0);
-         return -1;
+         return handle_create_selfload_file(procdata, pathname);
       case READ_DIRECTORY:
          result = handle_read_and_broadcast_dir(procdata, dirname);
          if (result == -1)
@@ -1066,6 +1067,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_file_recv(procdata, msg, peer, preload_broadcast);
       case LDCS_MSG_PRELOAD_DONE:
          return handle_preload_done(procdata);
+      case LDCS_MSG_SELFLOAD_FILE:
+         return handle_recv_selfload_file(procdata, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -1173,4 +1176,57 @@ static int handle_preload_done(ldcs_process_data_t *procdata)
    debug_printf2("Handle preload done\n");
    procdata->preload_done = 1;
    return handle_progress(procdata);
+}
+
+static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *filename)
+{
+   /* Other nodes know about a file we don't know about.  Maybe a local file? 
+      Send a "read it yourself" message */
+   ldcs_message_t msg;
+   msg.header.type = LDCS_MSG_SELFLOAD_FILE;
+   msg.header.len = strlen(filename) + 1;
+   msg.data = filename;
+
+   return handle_send_msg_to_keys(procdata, &msg, filename, NULL, 0, request_broadcast);
+}
+
+static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message_t *msg)
+{
+   char *filename = (char *) msg->data;
+   int result, nc, global_result = 0, found_client = 0;
+
+   debug_printf("Recieved notice to selfload file %s\n", filename);
+   result = handle_send_msg_to_keys(procdata, msg, filename, NULL, 0, request_broadcast);
+   if (result == -1) {
+      err_printf("Could not send selfload file message\n");
+      global_result = -1;
+   }
+
+   for (nc = 0; nc < procdata->client_table_used; nc++) {
+      ldcs_client_t *client = procdata->client_table + nc;
+      if (client->state == LDCS_CLIENT_STATUS_FREE || client->state == LDCS_CLIENT_STATUS_ACTIVE_PSEUDO)
+         continue;
+      if (!client->query_open)
+         continue;
+      if (strcmp(filename, client->query_globalpath) != 0)
+         continue;
+
+      debug_printf("We have a requesting client--self loading file %s\n", filename);
+      result = handle_read_and_broadcast_file(procdata, filename, suppress_broadcast);
+      if (result == -1) {
+         err_printf("Could not read and broadcast local file %s\n", filename);
+         global_result = -1;
+      }
+      found_client = 1;
+   }
+
+   if (found_client) {
+      result = handle_progress(procdata);
+      if (result == -1) {
+         err_printf("Error from handle_progress\n");
+         global_result = -1;
+      }
+   }
+
+   return global_result;
 }
