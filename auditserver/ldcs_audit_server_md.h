@@ -49,6 +49,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 typedef void* node_peer_t;
 #define NODE_PEER_CLIENT ((node_peer_t) 1)
+#define NODE_PEER_ALL ((node_peer_t) 2)
 #define NODE_PEER_NULL NULL
 
 /* Any initialization can be done here. */

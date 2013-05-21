@@ -19,6 +19,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "ldcs_api.h"
 
+typedef void* requestor_list_t;
+
 /* client description structure */
 typedef enum {
    LDCS_CLIENT_STATUS_ACTIVE,
@@ -102,6 +104,8 @@ struct ldcs_process_data_struct
   char *hostname;
   int number;
   int preload_done;
+  requestor_list_t pending_requests;
+  requestor_list_t completed_requests;
 
   /* multi daemon support */
   int md_rank;
@@ -109,6 +113,7 @@ struct ldcs_process_data_struct
   int md_fan_out; 		/* number of childs */
   int md_listen_to_parent;
 
+  
   /* statistics */
   ldcs_server_stat_t server_stat;
 };

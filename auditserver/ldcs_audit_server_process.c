@@ -29,6 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
 #include "ldcs_api_opts.h"
+#include "ldcs_audit_server_requestors.h"
 
 ldcs_process_data_t ldcs_process_data;
 
@@ -90,6 +91,9 @@ int ldcs_audit_server_process (char *location, int number,
   ldcs_process_data.client_counter=0; /* number of clients ever connected */
   ldcs_process_data.clients_connected=0; /* will set to one once a client was connected */
 
+  ldcs_process_data.preload_done=0;
+  ldcs_process_data.pending_requests = new_requestor_list();
+  ldcs_process_data.completed_requests = new_requestor_list();
   {
     char buffer[MAX_PATH_LEN];
     

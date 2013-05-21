@@ -18,9 +18,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define LDCS_AUDIT_SERVER_REQUESTORS_H_
 
 #include "ldcs_audit_server_md.h"
+#include "ldcs_audit_server_process.h"
 
-int been_requested(char *file);
-void add_requestor(char *file, node_peer_t peer);
-void clear_requestor(char *file);
-int get_requestors(char *file, node_peer_t **requestor_list, int *requestor_list_size);
+requestor_list_t new_requestor_list();
+int been_requested(requestor_list_t list, char *file);
+void add_requestor(requestor_list_t list, char *file, node_peer_t peer);
+void clear_requestor(requestor_list_t list, char *file);
+int get_requestors(requestor_list_t list, char *file, node_peer_t **requestor_list, int *requestor_list_size);
+int peer_requested(requestor_list_t list, char *file, node_peer_t peer);
+
 #endif

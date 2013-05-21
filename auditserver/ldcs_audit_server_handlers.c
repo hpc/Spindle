@@ -308,11 +308,11 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
          return (client_result == -1 || read_result == -1) ? -1 : 0;
       case REQ_DIRECTORY:
          client_result = handle_send_query(procdata, client->query_dirname, 1);
-         add_requestor(client->query_dirname, NODE_PEER_CLIENT);
+         add_requestor(procdata->pending_requests, client->query_dirname, NODE_PEER_CLIENT);
          return client_result;
       case REQ_FILE:
          client_result = handle_send_query(procdata, client->query_globalpath, 0);
-         add_requestor(client->query_globalpath, NODE_PEER_CLIENT);
+         add_requestor(procdata->pending_requests, client->query_globalpath, NODE_PEER_CLIENT);
          return client_result;
    }
    assert(0);
@@ -751,15 +751,15 @@ static int handle_request_directory(ldcs_process_data_t *procdata, node_peer_t f
    debug_printf2("Received request for directory %s from network\n", pathname);
    switch (result) {
       case READ_DIRECTORY:
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          return handle_read_and_broadcast_dir(procdata, pathname);
       case REQ_DIRECTORY:
          res = handle_send_query(procdata, pathname, 1);
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          return res;
       case NO_FILE:
       case FOUND_FILE:
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          return handle_broadcast_dir(procdata, pathname, request_broadcast);
       default:
          err_printf("Unexpected return from handle_how_directory: %d\n", (int) result);
@@ -792,7 +792,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
             err_printf("Failed to lookup %s / %s in cache\n", dirname, filename);
             return -1;
          }
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          result = handle_broadcast_file(procdata, pathname, buffer, size, request_broadcast);
          return result;
       case NO_FILE:
@@ -803,15 +803,15 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
             return -1;
          return handle_request_file(procdata, from, pathname);
       case READ_FILE:
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          return handle_read_and_broadcast_file(procdata, pathname, request_broadcast);
       case REQ_DIRECTORY:
          dir_result = handle_send_query(procdata, dirname, 1);
-         add_requestor(dirname, from);
+         add_requestor(procdata->pending_requests, dirname, from);
          /* Fall through to next case and request file */
       case REQ_FILE:
          result = handle_send_query(procdata, pathname, 0);
-         add_requestor(pathname, from);
+         add_requestor(procdata->pending_requests, pathname, from);
          return (result == -1 || dir_result == -1) ? -1 : 0;
    }
    assert(0);
@@ -824,7 +824,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
  **/
 static int handle_send_query(ldcs_process_data_t *procdata, char *path, int is_dir)
 {
-   if (been_requested(path)) {
+   if (been_requested(procdata->pending_requests, path)) {
       debug_printf2("File %s has already been requested.  Not re-sending request\n", path);
       return 0;
    }
@@ -899,7 +899,8 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
       goto done;
    }
 
-   debug_printf("Receiving file contents for file %s\n", pathname);
+   debug_printf("Receiving file contents for file %s from %s\n", pathname, 
+                bcast == preload_broadcast ? "preload" : "request");
 
    /* Setup up a memory buffer for us to read into, which is mapped to the
       local file.  Also fills in the hash table.  Does not actually read
@@ -956,7 +957,8 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
    char *filename, *dirname, *dir = NULL;;
    double starttime = ldcs_get_time();
 
-   debug_printf2("New directory cache entries received\n");
+   debug_printf2("New directory cache entries received from %s\n",
+                 bcast == preload_broadcast ? "preload" : "request");
 
    /* For each directory/file in packet add it to the cache. */
    foreach_filedir(msg->data, msg->header.len, pos, filename, dirname) {
@@ -986,19 +988,30 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
                             void *secondary_data, size_t secondary_size, int force_broadcast)
 {
    int result, global_result = 0;
+   static int have_done_broadcast = 0;
+
+   if (have_done_broadcast) {
+      /* Test whether this file has already been broadcast to all */
+      if (peer_requested(procdata->completed_requests, key, NODE_PEER_ALL)) {
+         debug_printf2("Not sending message for %s, because it's already been broadcast\n", key);
+         return 0;
+      }
+   }
 
    if (procdata->dist_model == LDCS_PUSH || force_broadcast) {
       debug_printf3("Pushing message to all children\n");
       result = ldcs_audit_server_md_broadcast_noncontig(procdata, msg, secondary_data, secondary_size);
       if (result == -1)
          global_result = -1;
+      have_done_broadcast = 1;
+      add_requestor(procdata->completed_requests, key, NODE_PEER_ALL);
    }
    else if (procdata->dist_model == LDCS_PULL) {
       node_peer_t *nodes = NULL;
       int nodes_size, i;
 
       debug_printf3("Sending messages to select children via pull model\n");
-      result = get_requestors(key, &nodes, &nodes_size);
+      result = get_requestors(procdata->pending_requests, key, &nodes, &nodes_size);
       if (result == -1) {
          return 0;
       }
@@ -1006,17 +1019,22 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
       for (i = 0; i < nodes_size; i++) {
          if (nodes[i] == NODE_PEER_CLIENT || nodes[i] == NODE_PEER_NULL)
             continue;
+         if (peer_requested(procdata->completed_requests, key, nodes[i])) {
+            debug_printf2("Not sending message for %s to child, because it's already been sent\n", key);
+            continue;
+         }
          result = ldcs_audit_server_md_send_noncontig(procdata, msg, nodes[i], secondary_data, secondary_size);
          if (result == -1)
             global_result = -1;
+         else
+            add_requestor(procdata->completed_requests, key, nodes[i]);
       }
    }
    else {
       assert(0);
    }
 
-#warning TODO: Track whats been sent so we never double-send
-   clear_requestor(key);
+   clear_requestor(procdata->pending_requests, key);
 
    return global_result;
 }
@@ -1102,7 +1120,6 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
    int num_dirs, num_files, i;
    char *data = (char *) msg->data;
    char *pathname;
-   ldcs_message_t done_msg;
    
    debug_printf2("At top of handle_preload_filelist\n");
 
@@ -1157,6 +1174,23 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
       }
    }
 
+   result = handle_preload_done(procdata);
+   if (result == -1) {
+      err_printf("Error from handle_preload_done");
+      global_result = -1;
+   }
+
+   return global_result;
+}
+
+static int handle_preload_done(ldcs_process_data_t *procdata)
+{
+   ldcs_message_t done_msg;
+   int result;
+
+   debug_printf2("Handle preload done\n");
+   procdata->preload_done = 1;
+
    done_msg.header.type = LDCS_MSG_PRELOAD_DONE;
    done_msg.header.len = 0;
    done_msg.data = NULL;
@@ -1164,17 +1198,9 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
    result = ldcs_audit_server_md_broadcast(procdata, &done_msg);
    if (result == -1) {
       err_printf("Error broadcasting done message during preload\n");
-      global_result = -1;
+      return -1;
    }
-   handle_preload_done(procdata);
 
-   return global_result;
-}
-
-static int handle_preload_done(ldcs_process_data_t *procdata)
-{
-   debug_printf2("Handle preload done\n");
-   procdata->preload_done = 1;
    return handle_progress(procdata);
 }
 
