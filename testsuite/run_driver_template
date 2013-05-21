@@ -19,8 +19,14 @@ else
 export TEST_EXEC=./test_driver
 fi
 
-if [ "$#" -ne 1 ] && [ $2 == --preload ] ; then 
+if [ $2 == --preload ] ; then 
 export SPINDLE_OPTS="--preload=preload_file_list"
+fi
+if [ $2 == --push ] ; then 
+export SPINDLE_OPTS="--push"
+fi
+if [ $2 == --pull ] ; then 
+export SPINDLE_OPTS="--pull"
 fi
 
 export SPINDLE=SPINDLE_EXEC

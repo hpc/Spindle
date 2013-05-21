@@ -76,8 +76,10 @@ int get_new_fd_pipe()
 void free_fd_pipe (int fd) {
     fdlist_pipe[fd].inuse = 0;
     fdlist_pipe_cnt--;
-    free(fdlist_pipe[fd].in_fn);
-    free(fdlist_pipe[fd].out_fn);
+    if (fdlist_pipe[fd].in_fn)
+       free(fdlist_pipe[fd].in_fn);
+    if (fdlist_pipe[fd].out_fn)
+       free(fdlist_pipe[fd].out_fn);
 }
 
 int ldcs_get_fd_pipe (int fd) {
@@ -131,6 +133,8 @@ int ldcs_create_server_pipe(char* location, int number) {
   fdlist_pipe[fd].conn_list_size=0;
   fdlist_pipe[fd].conn_list_used=0;
   fdlist_pipe[fd].path=staging_dir;
+  fdlist_pipe[fd].in_fn=NULL;
+  fdlist_pipe[fd].out_fn=NULL;
   
   char path[MAX_PATH_LEN];
   snprintf(path, MAX_PATH_LEN, "%s/ready", staging_dir);
