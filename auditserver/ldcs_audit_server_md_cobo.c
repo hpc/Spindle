@@ -35,6 +35,8 @@
 int ldcs_audit_server_md_cobo_CB ( int fd, int nc, void *data );
 int ldcs_audit_server_md_cobo_send_msg ( int fd, ldcs_message_t *msg );
 
+extern unsigned int shared_secret;
+
 static int ll_read(int fd, void *buf, size_t count)
 {
    int result;
@@ -145,7 +147,7 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
 
    /* initialize the client (read environment variables) */
    debug_printf2("Opening cobo\n");
-   if (cobo_open(2384932, portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
+   if (cobo_open(shared_secret, portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
       printf("Failed to init\n");
       exit(1);
    }
@@ -321,7 +323,7 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, void **data  )
       portlist[i] = 5000 + i;
    }
 
-   cobo_server_open(2384932, hostlist, numhosts, portlist, num_ports);
+   cobo_server_open(shared_secret, hostlist, numhosts, portlist, num_ports);
 
    cobo_server_get_root_socket(&root_fd);
   

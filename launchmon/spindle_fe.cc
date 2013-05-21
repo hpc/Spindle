@@ -40,6 +40,8 @@ extern "C" {
 #include <pwd.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <set>
 #include <algorithm>
@@ -59,6 +61,7 @@ using namespace std;
 char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
 char spindle_daemon[] = BINDIR "/spindle_be";
 unsigned long opts;
+unsigned int shared_secret;
 
 #define DEFAULT_LDCS_NAME_PREFIX "/tmp/"
 #define DEFAULT_LDCS_NUMBER 7777
@@ -116,6 +119,29 @@ static int onLaunchmonStatusChange(int *pstatus) {
    return 0;
 }
 
+static char *get_shared_secret()
+{
+   static char shared_secret_s[32];
+
+   int fd = open("/dev/urandom", O_RDONLY);
+   if (fd == -1)
+      fd = open("/dev/random", O_RDONLY);
+   if (fd == -1) {
+      fprintf(stderr, "Error: Could not open /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
+      exit(-1);
+   }
+      
+   int result = read(fd, &shared_secret, sizeof(shared_secret));
+   close(fd);
+   if (result == -1) {
+      fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
+      exit(-1);
+   }
+   
+   snprintf(shared_secret_s, 32, "%u", shared_secret);
+   return shared_secret_s;
+}
+
 string pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
 const char *string_to_cstr(const std::string &str) { return str.c_str(); }
 
@@ -131,6 +157,7 @@ int main (int argc, char* argv[])
   const char *bootstrapper = spindle_bootstrap;
   const char *daemon = spindle_daemon;
   char ldcs_number_s[32], ldcs_opts_s[32];
+  char *ldcs_shared_secret;
   lmon_rc_e rc;
   void *md_data_ptr;
 
@@ -194,8 +221,8 @@ int main (int argc, char* argv[])
 
   /**
    * Setup the daemon command line
-  **/
-  daemon_opts = (const char **) malloc(8 * sizeof(char *));
+   **/
+  daemon_opts = (const char **) malloc(9 * sizeof(char *));
   i = 0;
   //daemon_opts[i++] = "/usr/local/bin/valgrind";
   //daemon_opts[i++] = "--tool=memcheck";
@@ -204,6 +231,7 @@ int main (int argc, char* argv[])
   daemon_opts[i++] = ldcs_location;
   daemon_opts[i++] = ldcs_number_s;
   daemon_opts[i++] = ldcs_opts_s;
+  daemon_opts[i++] = get_shared_secret();
   daemon_opts[i++] = NULL;
 
   /**

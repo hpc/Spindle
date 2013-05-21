@@ -39,6 +39,7 @@ extern "C" {
 
 static int rank, size;
 unsigned long opts;
+unsigned int shared_secret;
 
 int _ready_cb_func (  void * data) {
   int rc=0;
@@ -127,6 +128,7 @@ int main(int argc, char* argv[])
   number = numberstr ? atoi(numberstr) : -1;
   optsstr = argv[3];
   opts = atoi(optsstr);
+  shared_secret = atoi(argv[4]);
 
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);
