@@ -6,18 +6,32 @@ export SPINDLE_TEST_ARGS="$@"
 ./run_driver --dlreopen
 ./run_driver --reorder
 ./run_driver --partial
-./run_driver --preload
+./run_driver --ldpreload
 
 ./run_driver --dependency --fork
 ./run_driver --dlopen --fork
 ./run_driver --dlreopen --fork
 ./run_driver --reorder --fork
 ./run_driver --partial --fork
-./run_driver --preload --fork
+./run_driver --ldpreload --fork
 
 ./run_driver --dependency --forkexec
 ./run_driver --dlopen --forkexec
 ./run_driver --dlreopen --forkexec
 ./run_driver --reorder --forkexec
 ./run_driver --partial --forkexec
-./run_driver --preload --forkexec
+./run_driver --ldpreload --forkexec
+
+./run_driver --dependency --chdir
+./run_driver --dlopen --chdir
+./run_driver --dlreopen --chdir
+./run_driver --reorder --chdir
+./run_driver --partial --chdir
+./run_driver --ldpreload --chdir
+
+./run_driver --dependency --preload
+./run_driver --dlopen --preload
+./run_driver --dlreopen --preload
+./run_driver --reorder --preload
+./run_driver --partial --preload
+./run_driver --ldpreload --preload

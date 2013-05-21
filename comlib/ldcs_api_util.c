@@ -49,9 +49,9 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
 	 (type == LDCS_MSG_MD_BOOTSTRAP_END)      ? "LDCS_MSG_MD_BOOTSTRAP_END" :
 	 (type == LDCS_MSG_MD_BOOTSTRAP_END_OK)      ? "LDCS_MSG_MD_BOOTSTRAP_END_OK" :
 	 (type == LDCS_MSG_MD_BOOTSTRAP_END_NOT_OK)      ? "LDCS_MSG_MD_BOOTSTRAP_END_NOT_OK" :
+	 (type == LDCS_MSG_PRELOAD_FILELIST)      ? "LDCS_MSG_PRELOAD_FILELIST" :
 	 (type == LDCS_MSG_PRELOAD_FILE)      ? "LDCS_MSG_PRELOAD_FILE" :
-	 (type == LDCS_MSG_PRELOAD_FILE_OK)      ? "LDCS_MSG_PRELOAD_FILE_OK" :
-	 (type == LDCS_MSG_PRELOAD_FILE_NOT_FOUND)      ? "LDCS_MSG_PRELOAD_FILE_NOT_FOUND" :
+	 (type == LDCS_MSG_PRELOAD_DIR)      ? "LDCS_MSG_PRELOAD_DIR" :
     (type == LDCS_MSG_EXIT)              ? "LDCS_MSG_EXIT" :
 	 (type == LDCS_MSG_UNKNOWN)           ? "LDCS_MSG_UNKNOWN" :
 	 "???");

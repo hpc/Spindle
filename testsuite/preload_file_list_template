@@ -1,0 +1,17 @@
+TEST_RUN_DIR/libcxxexceptA.so
+TEST_RUN_DIR/libcxxexceptB.so
+TEST_RUN_DIR/libdepA.so
+TEST_RUN_DIR/libdepB.so
+TEST_RUN_DIR/libdepC.so
+TEST_RUN_DIR/libtest10.so
+TEST_RUN_DIR/libtest100.so
+TEST_RUN_DIR/libtest1000.so
+TEST_RUN_DIR/libtest10000.so
+TEST_RUN_DIR/libtest2000.so
+TEST_RUN_DIR/libtest4000.so
+TEST_RUN_DIR/libtest50.so
+TEST_RUN_DIR/libtest500.so
+TEST_RUN_DIR/libtest6000.so
+TEST_RUN_DIR/libtest8000.so
+TEST_RUN_DIR/test_driver
+TEST_RUN_DIR/test_driver_libs

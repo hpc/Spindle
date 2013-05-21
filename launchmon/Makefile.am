@@ -7,7 +7,7 @@ AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
 
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
-spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.cc
+spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.cc parse_preload.cc
 
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver

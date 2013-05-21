@@ -109,8 +109,10 @@ static void get_executable()
 {
    if (!(opts & OPT_RELOCAOUT)) {
       executable = *cmdline;
+      return;
    }
 
+   debug_printf2("Sending request for executable %s\n", *cmdline);
    send_file_query(ldcs_id, *cmdline, &executable);
    if (executable == NULL) {
       executable = *cmdline;

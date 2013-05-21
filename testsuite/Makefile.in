@@ -234,7 +234,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list
 libgenerator_SOURCES = libgenerator.c
 test_driver_SOURCES = test_driver.c
 test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS) -Wall
@@ -668,6 +668,10 @@ run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile
 run_driver_rm: $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/Makefile
 	$(AM_V_GEN)cp $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/testsuite/run_driver_rm
 	@chmod 700 $(top_builddir)/testsuite/run_driver_rm
+
+preload_file_list: $(srcdir)/preload_file_list_template $(top_builddir)/Makefile
+	@rm -f ./preload_file_list
+	$(AM_V_GEN)$(SED) -e s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/preload_file_list_template > $(top_builddir)/testsuite/preload_file_list
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

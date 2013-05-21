@@ -39,10 +39,6 @@ static struct fdlist_entry_t ldcs_socket_fdlist[MAX_FD];
 static int get_new_fd_socket()
 {
    /* Each client should establish one connection */
-   static int called_once = 0;
-   assert(called_once == 0);
-   called_once = 1;
-
    return 0;
 }
 

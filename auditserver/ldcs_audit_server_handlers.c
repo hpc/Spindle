@@ -31,7 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_cache.h"
 #include "ldcs_audit_server_handlers.h"
 #include "ldcs_audit_server_requestors.h"
-
+#include "ldcs_api_opts.h"
 
 /** 
  * This function contains the "brains" of Spindle.  It's public interface,
@@ -55,6 +55,11 @@ typedef enum {
    REQ_FILE
 } handle_file_result_t;
 
+typedef enum {
+   preload_broadcast,
+   request_broadcast
+} broadcast_t;
+
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -65,13 +70,14 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc);
 static int handle_progress(ldcs_process_data_t *procdata);
 
 static int handle_read_directory(ldcs_process_data_t *procdata, char *dir);
-static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir);
+static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir, broadcast_t bcast);
 static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *dir);
 
-static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *filename);
-static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size);
-static void * handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size, 
-                                       int *fd, char **localpath, int *already_loaded);
+static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *filename, broadcast_t bcast);
+static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size,
+                                 broadcast_t bcast);
+static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size, 
+                                      int *fd, char **localpath, int *already_loaded);
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, 
                                       char *localname, char *pathname, int *fd,
                                       void *buffer, size_t size, size_t newsize);
@@ -87,12 +93,15 @@ static int handle_send_query(ldcs_process_data_t *procdata, char *path, int is_d
 static int handle_send_directory_query(ldcs_process_data_t *procdata, char *directory);
 static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath);
 
-static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer);
-static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer, 
+                            broadcast_t bcast);
+static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast);
 
 static int handle_exit_broadcast(ldcs_process_data_t *procdata);
 static int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
-                                   void *secondary_data, size_t secondary_size);
+                                   void *secondary_data, size_t secondary_size, int force_broadcast);
+static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_preload_done(ldcs_process_data_t *procdata);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -269,6 +278,11 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
    ldcs_client_t *client = procdata->client_table + nc;
    if (!client->query_open)
       return 0;
+   if ((opts & OPT_PRELOAD) && !procdata->preload_done) {
+      /* Postpone client requests until preload is complete */
+      return 0;
+   }
+
    result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
                               client->query_dirname, &client->query_localpath);
    switch (result) {
@@ -279,12 +293,12 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
       case READ_DIRECTORY:
          read_result = handle_read_directory(procdata, client->query_dirname);
          if (read_result == -1)
-            return -1;
-         broadcast_result = handle_broadcast_dir(procdata, client->query_dirname);
+            return -1; 
+         broadcast_result = handle_broadcast_dir(procdata, client->query_dirname, request_broadcast);
          client_result = handle_client_progress(procdata, nc);
          return (client_result == -1 || broadcast_result == -1) ? -1 : 0;
       case READ_FILE:
-         read_result = handle_read_and_broadcast_file(procdata, client->query_globalpath);
+         read_result = handle_read_and_broadcast_file(procdata, client->query_globalpath, request_broadcast);
          if (read_result == -1)
             return -1;
          client_result = handle_client_progress(procdata, nc);
@@ -331,7 +345,7 @@ static int handle_read_directory(ldcs_process_data_t *procdata, char *dir)
    /* check directory */
    cache_dir_result = ldcs_cache_findDirInCache(dir);
    if (cache_dir_result != LDCS_CACHE_DIR_NOT_PARSED) {
-      return handle_progress(procdata);
+      return 0;
    }
 
    /* process directory */
@@ -356,12 +370,13 @@ static int handle_read_directory(ldcs_process_data_t *procdata, char *dir)
  * Broadcast a directory contents to the specified client (if any),
  * and on the network.
  **/
-static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir)
+static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir, broadcast_t bcast)
 {
    ldcs_message_t msg;
    char *data;
    int data_len;
    int result;
+   int force_broadcast;
 
    debug_printf2("Sending directory result to other servers\n");      
    result = ldcs_cache_getNewEntriesForDir(dir, &data, &data_len);
@@ -370,11 +385,19 @@ static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir)
       return -1;
    }
 
-   msg.header.type = LDCS_MSG_CACHE_ENTRIES;
+   if (bcast == preload_broadcast) {
+      msg.header.type = LDCS_MSG_PRELOAD_DIR;
+      force_broadcast = 1;
+   }
+   else {
+      msg.header.type = LDCS_MSG_CACHE_ENTRIES;
+      force_broadcast = 0;
+   }
+
    msg.data = data;
    msg.header.len = data_len;
-
-   result = handle_send_msg_to_keys(procdata, &msg, dir, NULL, 0);
+   
+   result = handle_send_msg_to_keys(procdata, &msg, dir, NULL, 0, force_broadcast);
 
    free(data);
    return result;
@@ -389,7 +412,7 @@ static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *di
    int result = handle_read_directory(procdata, dir);
    if (result == -1)
       return -1;
-   return handle_broadcast_dir(procdata, dir);
+   return handle_broadcast_dir(procdata, dir, request_broadcast);
 }
 
 /**
@@ -491,7 +514,7 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
  * Reads a file contents off disk and put into the file cache.  Distribute file
  * on network if necessary.
  **/
-static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname)
+static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, broadcast_t bcast)
 {
    double starttime;
    char *buffer = NULL, *localname;
@@ -542,7 +565,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    }
 
    /* distribute file data */
-   result = handle_broadcast_file(procdata, pathname, buffer, newsize);
+   result = handle_broadcast_file(procdata, pathname, buffer, newsize, bcast);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -557,13 +580,15 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
 /**
  * Send a file's contents across the network
  **/
-static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size)
+static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size,
+                                 broadcast_t bcast)
 {
    char *packet_buffer = NULL;
    size_t packet_size;
    double starttime;
    int result, global_result = 0;
    ldcs_message_t msg;
+   int force_broadcast;
 
    result = filemngt_encode_packet(pathname, buffer, size, &packet_buffer, &packet_size);
    if (result == -1) {
@@ -571,13 +596,20 @@ static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, 
       goto done;
    }
 
-   msg.header.type = LDCS_MSG_FILE_DATA;
+   if (bcast == preload_broadcast) {
+      msg.header.type = LDCS_MSG_PRELOAD_FILE;
+      force_broadcast = 1;
+   }
+   else {
+      msg.header.type = LDCS_MSG_FILE_DATA;
+      force_broadcast = 0;
+   }
    msg.header.len = packet_size;
    msg.data = packet_buffer;
    
    starttime = ldcs_get_time();
    
-   result = handle_send_msg_to_keys(procdata, &msg, pathname, buffer, size);
+   result = handle_send_msg_to_keys(procdata, &msg, pathname, buffer, size, force_broadcast);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -723,7 +755,7 @@ static int handle_request_directory(ldcs_process_data_t *procdata, node_peer_t f
       case NO_FILE:
       case FOUND_FILE:
          add_requestor(pathname, from);
-         return handle_broadcast_dir(procdata, pathname);
+         return handle_broadcast_dir(procdata, pathname, request_broadcast);
       default:
          err_printf("Unexpected return from handle_how_directory: %d\n", (int) result);
          assert(0);
@@ -756,7 +788,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
             return -1;
          }
          add_requestor(pathname, from);
-         result = handle_broadcast_file(procdata, pathname, buffer, size);
+         result = handle_broadcast_file(procdata, pathname, buffer, size, request_broadcast);
          return result;
       case NO_FILE:
 #warning TODO: Figure out what to do here
@@ -771,7 +803,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
          return handle_request_file(procdata, from, pathname);
       case READ_FILE:
          add_requestor(pathname, from);
-         return handle_read_and_broadcast_file(procdata, pathname);
+         return handle_read_and_broadcast_file(procdata, pathname, request_broadcast);
       case REQ_DIRECTORY:
          dir_result = handle_send_query(procdata, dirname, 1);
          add_requestor(dirname, from);
@@ -846,7 +878,7 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath)
 /**
  * A parent server is sending us a file.  Receive it from the network
  **/
-static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer)
+static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer, broadcast_t bcast)
 {
    char pathname[MAX_PATH_LEN+1], *localname;
    char *buffer = NULL;
@@ -899,7 +931,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    }
 
    /* Notify other servers and clients of file read */
-   result = handle_broadcast_file(procdata, pathname, buffer, size);
+   result = handle_broadcast_file(procdata, pathname, buffer, size, bcast);
    if (result == -1) {
       global_error = -1;
    }
@@ -917,7 +949,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
 /**
  * We've received a packet with directory info.  Process it.
  **/
-static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg)
+static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast)
 {
    dirbuffer_iterator_t pos;
    char *filename, *dirname, *dir = NULL;;
@@ -936,7 +968,7 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
       ldcs_cache_addFileDir(dirname, filename);
    }
 
-   handle_broadcast_dir(procdata, dir);
+   handle_broadcast_dir(procdata, dir, bcast);
    
    procdata->server_stat.distdir.cnt++;
    procdata->server_stat.distdir.bytes += msg->header.len;
@@ -950,11 +982,11 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
  * If in pull mode only send to children who requested the file.
  **/
 int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
-                            void *secondary_data, size_t secondary_size)
+                            void *secondary_data, size_t secondary_size, int force_broadcast)
 {
    int result, global_result = 0;
 
-   if (procdata->dist_model == LDCS_PUSH) {
+   if (procdata->dist_model == LDCS_PUSH || force_broadcast) {
       debug_printf3("Pushing message to all children\n");
       result = ldcs_audit_server_md_broadcast_noncontig(procdata, msg, secondary_data, secondary_size);
       if (result == -1)
@@ -1019,15 +1051,21 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
 {
    switch (msg->header.type) {
       case LDCS_MSG_CACHE_ENTRIES:
-         return handle_directory_recv(procdata, msg);
+         return handle_directory_recv(procdata, msg, request_broadcast);
       case LDCS_MSG_FILE_DATA:
-         return handle_file_recv(procdata, msg, peer);
+         return handle_file_recv(procdata, msg, peer, request_broadcast);
       case LDCS_MSG_FILE_REQUEST:
          return handle_request(procdata, peer, msg);
       case LDCS_MSG_EXIT:
          return handle_exit_broadcast(procdata);
+      case LDCS_MSG_PRELOAD_FILELIST:
+         return handle_preload_filelist(procdata, msg);
+      case LDCS_MSG_PRELOAD_DIR:
+         return handle_directory_recv(procdata, msg, preload_broadcast);
       case LDCS_MSG_PRELOAD_FILE:
-#warning TODO: Handle preload
+         return handle_file_recv(procdata, msg, peer, preload_broadcast);
+      case LDCS_MSG_PRELOAD_DONE:
+         return handle_preload_done(procdata);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -1055,3 +1093,84 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    return 0;
 }
 
+static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg)
+{
+   int cur = 0, global_result = 0, result;
+   int num_dirs, num_files, i;
+   char *data = (char *) msg->data;
+   char *pathname;
+   ldcs_message_t done_msg;
+   
+   debug_printf2("At top of handle_preload_filelist\n");
+
+   memcpy(&num_dirs, data + cur, sizeof(int));
+   cur += sizeof(int);
+   
+   memcpy(&num_files, data + cur, sizeof(int));
+   cur += sizeof(int);
+
+   for (i = 0; i<num_dirs; i++) {
+      assert(cur < msg->header.len);
+      pathname = data + cur;
+      cur += strlen(pathname)+1;
+
+      if (!ldcs_audit_server_md_is_responsible(procdata, pathname)) {
+         debug_printf3("I am not responsible for preloading directory %s\n", pathname);
+         continue;
+      }
+
+      debug_printf2("Preload read of directory %s\n", pathname);
+      result = handle_read_directory(procdata, pathname);
+      if (result == -1) {
+         err_printf("Error reading directory during preload\n");
+         global_result = -1;
+         continue;
+      }
+      
+      result = handle_broadcast_dir(procdata, pathname, preload_broadcast);
+      if (result == -1) {
+         err_printf("Error broadcasting directory during preload\n");
+         global_result = -1;
+         continue;
+      }
+   }
+
+   for (i = 0; i<num_files; i++) {
+      assert(cur < msg->header.len);
+      pathname = data + cur;
+      cur += strlen(pathname)+1;
+
+      if (!ldcs_audit_server_md_is_responsible(procdata, pathname)) {
+         debug_printf3("I am not responsible for preloading file %s\n", pathname);
+         continue;
+      }
+
+      debug_printf2("Preload read of file %s\n", pathname);
+      result = handle_read_and_broadcast_file(procdata, pathname, preload_broadcast);
+      if (result == -1) {
+         err_printf("Error broadcasting file data during preload\n");
+         global_result = -1;
+         continue;
+      }
+   }
+
+   done_msg.header.type = LDCS_MSG_PRELOAD_DONE;
+   done_msg.header.len = 0;
+   done_msg.data = NULL;
+
+   result = ldcs_audit_server_md_broadcast(procdata, &done_msg);
+   if (result == -1) {
+      err_printf("Error broadcasting done message during preload\n");
+      global_result = -1;
+   }
+   handle_preload_done(procdata);
+
+   return global_result;
+}
+
+static int handle_preload_done(ldcs_process_data_t *procdata)
+{
+   debug_printf2("Handle preload done\n");
+   procdata->preload_done = 1;
+   return handle_progress(procdata);
+}

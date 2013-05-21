@@ -48,6 +48,7 @@ extern "C" {
 #include <pthread.h>
 
 #include "ldcs_api_opts.h"
+#include "parse_preload.h"
 
 using namespace std;
 
@@ -249,6 +250,16 @@ int main (int argc, char* argv[])
   }
   bare_printf2("\n");
 
+  ldcs_message_t *preload_msg = NULL;
+  if (opts & OPT_PRELOAD) {
+     string preload_file = string(getPreloadFile());
+     preload_msg = parsePreloadFile(preload_file);
+     if (!preload_msg) {
+        fprintf(stderr, "Failed to parse preload file %s\n", preload_file.c_str());
+        return EXIT_FAILURE;
+     }
+  }
+
   rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
                                      launcher_argv[0], launcher_argv,
                                      daemon_opts[0], const_cast<char **>(daemon_opts+1),
@@ -293,6 +304,12 @@ int main (int argc, char* argv[])
 
   /* SPINDLE FE start */
   ldcs_audit_server_fe_md_open( const_cast<char **>(hosts), hosts_size, &md_data_ptr );
+
+  if (preload_msg) {
+     debug_printf("Sending message with preload information\n");
+     ldcs_audit_server_fe_broadcast(preload_msg, md_data_ptr);
+     cleanPreloadMsg(preload_msg);
+  }
 
   waitfor_done();
 

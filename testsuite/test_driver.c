@@ -62,13 +62,14 @@ int had_error;
 typedef enum 
 {
    om_unset,
-   om_preload,
+   om_ldpreload,
    om_dependency,
    om_dlopen,
    om_dlreopen,
    om_reorder,
    om_partial
 } open_mode_t;
+
 open_mode_t open_mode = om_unset;
 
 typedef struct {
@@ -91,6 +92,8 @@ int fork_mode = 0;
 int fork_child = 0;
 int forkexec_mode = 0;
 int nompi_mode = 0;
+int preload_mode = 0;
+int chdir_mode = 0;
 
 int gargc;
 char **gargv;
@@ -136,9 +139,14 @@ typedef int (*func_t)(void);
 typedef void (*cb_func_t)(func_t, char *);
 extern void setup_func_callback(cb_func_t);
 
+static char oldcwd[4096];
+
 char *libpath(char *s) {
    static char path[4096];
-   snprintf(path, 4096, "%s/%s", STR(LPATH), s);
+   if (chdir_mode)
+      snprintf(path, 4096, "%s/%s", oldcwd, s);
+   else
+      snprintf(path, 4096, "%s/%s", STR(LPATH), s);
    return path;
 }
 
@@ -256,7 +264,7 @@ void open_libraries()
       case om_unset:
          err_printf("Open mode was not set\n");
          break;
-      case om_preload:
+      case om_ldpreload:
          ldpreload_mode();
          break;
       case om_dependency:
@@ -277,6 +285,17 @@ void open_libraries()
    }      
 }
 
+void push_cwd()
+{
+   getcwd(oldcwd, 4096);
+   chdir("..");
+}
+
+void pop_cwd()
+{
+   chdir(oldcwd);
+}
+
 #define TEST_ARG(X) if (strcmp(argv[i], "--" STR(X)) == 0) open_mode = om_ ## X
 #define MODE_ARG(X) if (strcmp(argv[i], "--" STR(X)) == 0) X ## _mode = 1;
 void parse_args(int argc, char *argv[])
@@ -286,7 +305,7 @@ void parse_args(int argc, char *argv[])
    }
    int i;
    for (i = 0; i < argc; i++) {
-      TEST_ARG(preload);
+      TEST_ARG(ldpreload);
       TEST_ARG(dependency);
       TEST_ARG(dlopen);
       TEST_ARG(dlreopen);
@@ -296,6 +315,8 @@ void parse_args(int argc, char *argv[])
       MODE_ARG(fork);
       MODE_ARG(forkexec);
       MODE_ARG(nompi);
+      MODE_ARG(preload);
+      MODE_ARG(chdir);
    }
    gargc = argc;
    gargv = argv;
@@ -355,6 +376,9 @@ int run_test()
      will be called now. */
    setup_func_callback(get_calc_function);
 
+   if (chdir_mode)
+      push_cwd();
+
    open_libraries();
    if (had_error)
       return -1;
@@ -370,6 +394,9 @@ int run_test()
    close_libs();
    if (had_error)
       return -1;
+
+   if (chdir_mode)
+      pop_cwd();
    
    return 0;
 }

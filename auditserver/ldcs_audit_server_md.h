@@ -71,6 +71,7 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data );
    read the file */
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *filename );
 
+/* Read some number of bytes from the peer and throw them away. */
 int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size);
 
 /* Send a message to the parent server */
@@ -93,10 +94,10 @@ int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_d
                                              void *secondary_data, size_t secondary_size);
 
 /* Called in the spindle FE during network initialization.  The opaque 'data' returned
-   by _fe_md_open will also be passed to _fe_md_preload and _fe_md_close */
+   by _fe_md_open will also be passed to _fe_md_broadcast and _fe_md_close */
 int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, void **data  );
-
-int ldcs_audit_server_fe_md_preload ( char *filename, void *data  );
+/* Do a top-level broadcast. Send from the FE to the top level nodes. */
+int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
 
 /* Called from the spindle FE during shutdown */
 int ldcs_audit_server_fe_md_close ( void *data  );

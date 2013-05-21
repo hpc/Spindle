@@ -101,6 +101,7 @@ struct ldcs_process_data_struct
   char *location;
   char *hostname;
   int number;
+  int preload_done;
 
   /* multi daemon support */
   int md_rank;

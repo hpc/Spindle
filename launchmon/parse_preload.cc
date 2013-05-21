@@ -18,30 +18,36 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cstring>
 #include <set>
 #include <string>
+#include <cerrno>
+#include <cstdlib>
+#include <cassert>
+
+#include "parse_preload.h"
 
 extern "C" {
+#include "ldcs_api.h"
 #include "ldcs_cache.h"
 }
 
 using namespace std;
 
 #define STR2(X) #X
-#deifne STR(X) STR2(X)
+#define STR(X) STR2(X)
 
-bool parsePreloadFile(string filename)
+ldcs_message_t *parsePreloadFile(string filename)
 {
-   char pathname[MAX_PATH_LEN+1], cwd[MAX_FILE_LEN+1], dir[MAX_FILE_LEN+1], file[MAX_FILE_LEN+1];
-
+   char pathname[MAX_PATH_LEN+1], cwd[MAX_PATH_LEN+1], dir[MAX_PATH_LEN+1], file[MAX_PATH_LEN+1];
    set<string> all_dirs, all_files;
 
+   debug_printf("Parsing preload file: %s\n", filename.c_str());
    FILE *f = fopen(filename.c_str(), "r");
    if (!f) {
-      fprintf(stderr, "Error opening preload file %s: %s\n", filename.c_str(), strerror(errno));
-      return false;
+      err_printf("Error opening preload file %s: %s\n", filename.c_str(), strerror(errno));
+      return NULL;
    }
 
-   getcwd(cwd, MAX_FILE_LEN+1);
-   cwd[MAX_FILE_LEN] = '\0';
+   getcwd(cwd, MAX_PATH_LEN+1);
+   cwd[MAX_PATH_LEN] = '\0';
 
    for (;;) {
       int result = fscanf(f, "%" STR(MAX_PATH_LEN) "s", pathname);
@@ -56,12 +62,12 @@ bool parsePreloadFile(string filename)
       reducePath(dir);
    
       all_dirs.insert(string(dir));
-      all_files.insert(string(file));      
+      all_files.insert(string(dir) + string("/") + string(file));      
    }
 
    size_t size = 0;
-   size += 4; //Num dirs as int
-   size += 4; //Num files as int
+   size += sizeof(int); //Num dirs as int
+   size += sizeof(int); //Num files as int
    for (set<string>::iterator i = all_dirs.begin(); i != all_dirs.end(); i++)
       size += i->length() + 1; //String + 0-terminated character
    for (set<string>::iterator i = all_files.begin(); i != all_files.end(); i++)
@@ -77,15 +83,29 @@ bool parsePreloadFile(string filename)
    cur += sizeof(int);
 
    for (set<string>::iterator i = all_dirs.begin(); i != all_dirs.end(); i++) {
-      int length = i->length + 1;
+      debug_printf3("Adding directory %s to preload list\n", i->c_str());
+      int length = i->length() + 1;
       memcpy(buffer + cur, i->c_str(), length);
       cur += length;
    }
    for (set<string>::iterator i = all_files.begin(); i != all_files.end(); i++) {
-      int length = i->length + 1;
+      debug_printf3("Adding file %s to preload list\n", i->c_str());
+      int length = i->length() + 1;
       memcpy(buffer + cur, i->c_str(), length);
       cur += length;
    }
+   assert(cur == size);
 
-   return true;
+   ldcs_message_t *msg = (ldcs_message_t *) malloc(sizeof(ldcs_message_t));
+   msg->header.type = LDCS_MSG_PRELOAD_FILELIST;
+   msg->header.len = size;
+   msg->data = buffer;
+
+   return msg;
+}
+
+void cleanPreloadMsg(ldcs_message_t *msg)
+{
+   free(msg->data);
+   free(msg);
 }

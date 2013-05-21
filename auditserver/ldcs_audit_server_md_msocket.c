@@ -99,6 +99,7 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
     ldcs_msocket_data.server_stat.hostname=strdup(buffer);
   }
   ldcs_msocket_data.procdata=ldcs_process_data;
+  ldcs_msocket_data.preload_done=0;
 
   ldcs_msocket_data.hostinfo.rank=-2; /* not yet identified */
   ldcs_msocket_data.hostlist=NULL;

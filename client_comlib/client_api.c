@@ -37,9 +37,9 @@ int send_file_query(int fd, char* path, char** newpath) {
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
    int result;
-   int path_len = strlen(path);
+   int path_len = strlen(path)+1;
     
-   if (path_len+1 > MAX_PATH_LEN) {
+   if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
       return -1;
    }
@@ -48,7 +48,7 @@ int send_file_query(int fd, char* path, char** newpath) {
    message.header.type = LDCS_MSG_FILE_QUERY_EXACT_PATH;
    message.header.len = path_len;
    message.data = buffer;
-   strncpy(message.data, path, message.header.len);
+   strncpy(message.data, path, MAX_PATH_LEN);
 
    COMM_LOCK;
 

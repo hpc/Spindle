@@ -64,7 +64,8 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)"
 PROGRAMS = $(bin_PROGRAMS) $(pkglibexec_PROGRAMS)
 am_spindle_OBJECTS = spindle-spindle_fe.$(OBJEXT) \
 	spindle-spindle_usrdata.$(OBJEXT) \
-	spindle-parse_launcher.$(OBJEXT) spindle-parseargs.$(OBJEXT)
+	spindle-parse_launcher.$(OBJEXT) spindle-parseargs.$(OBJEXT) \
+	spindle-parse_preload.$(OBJEXT)
 spindle_OBJECTS = $(am_spindle_OBJECTS)
 spindle_DEPENDENCIES = $(top_builddir)/logging/libspindlelogc.la \
 	$(am__append_4) $(am__append_6) $(am__append_8) \
@@ -250,7 +251,7 @@ AM_LDFLAGS = $(LAUNCHMON_LIB)
 AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
-spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.cc
+spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.cc parse_preload.cc
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -static $(am__append_1)
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
 spindle_be_SOURCES = spindle_be.cc spindle_usrdata.cc
@@ -399,6 +400,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_preload.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parseargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_fe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_usrdata.Po@am__quote@
@@ -492,6 +494,22 @@ spindle-parseargs.obj: parseargs.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parseargs.cc' object='spindle-parseargs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parseargs.obj `if test -f 'parseargs.cc'; then $(CYGPATH_W) 'parseargs.cc'; else $(CYGPATH_W) '$(srcdir)/parseargs.cc'; fi`
+
+spindle-parse_preload.o: parse_preload.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_preload.o -MD -MP -MF $(DEPDIR)/spindle-parse_preload.Tpo -c -o spindle-parse_preload.o `test -f 'parse_preload.cc' || echo '$(srcdir)/'`parse_preload.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_preload.Tpo $(DEPDIR)/spindle-parse_preload.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_preload.cc' object='spindle-parse_preload.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_preload.o `test -f 'parse_preload.cc' || echo '$(srcdir)/'`parse_preload.cc
+
+spindle-parse_preload.obj: parse_preload.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_preload.obj -MD -MP -MF $(DEPDIR)/spindle-parse_preload.Tpo -c -o spindle-parse_preload.obj `if test -f 'parse_preload.cc'; then $(CYGPATH_W) 'parse_preload.cc'; else $(CYGPATH_W) '$(srcdir)/parse_preload.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_preload.Tpo $(DEPDIR)/spindle-parse_preload.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_preload.cc' object='spindle-parse_preload.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_preload.obj `if test -f 'parse_preload.cc'; then $(CYGPATH_W) 'parse_preload.cc'; else $(CYGPATH_W) '$(srcdir)/parse_preload.cc'; fi`
 
 spindle_be-spindle_be.o: spindle_be.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-spindle_be.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be.Tpo -c -o spindle_be-spindle_be.o `test -f 'spindle_be.cc' || echo '$(srcdir)/'`spindle_be.cc

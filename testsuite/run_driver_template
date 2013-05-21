@@ -8,7 +8,7 @@ export LD_LIBRARY_PATH=`pwd`
 export SPINDLE_TEST=1
 export LIBRARY_LIST="`pwd`/libcxxexceptA.so `pwd`/libtest100.so `pwd`/libtest2000.so `pwd`/libtest500.so `pwd`/libtest1000.so `pwd`/libtest4000.so `pwd`/libtest6000.so `pwd`/libdepA.so `pwd`/libtest10.so `pwd`/libtest10000.so `pwd`/libtest50.so `pwd`/libtest8000.so"
 
-if [ $1 == --preload ] ; then
+if [ $1 == --ldpreload ] ; then
 export LD_PRELOAD="$LIBRARY_LIST"
 fi
 if [ $1 == --dependency ] ; then
@@ -17,6 +17,10 @@ elif [ $1 == --dlreopen ] ; then
 export TEST_EXEC=./test_driver_libs
 else
 export TEST_EXEC=./test_driver
+fi
+
+if [ "$#" -ne 1 ] && [ $2 == --preload ] ; then 
+export SPINDLE_OPTS="--preload=preload_file_list"
 fi
 
 export SPINDLE=SPINDLE_EXEC

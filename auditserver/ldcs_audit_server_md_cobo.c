@@ -87,7 +87,7 @@ static int read_msg(int fd, node_peer_t *peer, ldcs_message_t *msg)
    if (result == -1)
       return -1;
 
-   if (msg->header.type == LDCS_MSG_FILE_DATA) {
+   if (msg->header.type == LDCS_MSG_FILE_DATA || msg->header.type == LDCS_MSG_PRELOAD_FILE) {
       /* Optimization.  Don't read file data into heap, as it could be
          very large.  For these packets we'll postpone the network read
          until we have the file's mmap ready, then read it straight
@@ -343,6 +343,16 @@ int ldcs_audit_server_fe_md_close ( void *data  ) {
    write_msg(root_fd, &out_msg);
          
    return cobo_server_close();
+}
+
+int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data)
+{
+   int root_fd;
+
+   debug_printf("Broadcasting message to daemons\n");
+
+   cobo_server_get_root_socket(&root_fd);
+   return write_msg(root_fd, msg);
 }
 
 int ldcs_audit_server_md_send(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg, node_peer_t peer)

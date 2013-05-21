@@ -6,4 +6,4 @@ else
 PROCS=$SPINDLE_TEST_ARGS
 fi
 
-$SPINDLE srun -n $PROCS $*
+$SPINDLE $SPINDLE_OPTS srun -n $PROCS $*

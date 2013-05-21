@@ -24,6 +24,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
+#include <stdlib.h>
 
 #include "client_heap.h"
 #include "ldcs_api_pipe.h"
@@ -34,11 +36,7 @@ static struct fdlist_entry_t fdlist_pipe[MAX_FD];
 
 static int get_new_fd_pipe()
 {
-   /* Each client should establish one connection */
-   static int called_once = 0;
-   assert(called_once == 0);
-   called_once = 1;
-
+   /* Each client should establish one connection, just return 0 as our fd */
    return 0;
 }
 
@@ -52,6 +50,10 @@ static int ldcs_mkfifo(char *fifo)
    debug_printf3("mkfifo %s\n", fifo);
    result = mkfifo(fifo, 0600);    
    if (result == -1) {
+      if (errno == EEXIST) {
+         debug_printf2("Likely inheriting an existing pipe after exec\n");
+         return -2;
+      }
       err_printf("Error during mkfifo of %s: %s\n", fifo, strerror(errno));
       return -1;
    }
@@ -105,6 +107,61 @@ static int read_pipe(int fd, void *data, int bytes)
    }
    return 0;
 }
+/* If we've just exec'd, we may have lost the fds for our pipe connection
+   with the server.  Parse /proc/self/fd for the open fds and find the ones
+   that point to the pipes.  This only works on Linux based systems with /proc
+   mounted.  But, on the BlueGene alternative we won't be dealing with execs
+   anyways.
+*/
+static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out_fd)
+{
+   struct dirent *dent;
+   DIR *dir;
+   char fdpath[MAX_PATH_LEN+1];
+   char dirpath[MAX_PATH_LEN+1];
+   fdpath[MAX_PATH_LEN] = '\0';
+   dirpath[MAX_PATH_LEN] = '\0';
+   int found_in, found_out;
+
+   dir = opendir("/proc/self/fd");
+   if (!dir) {
+      err_printf("Failed to open dir /proc/self/fd.  Perhaps /proc not mounted: %s\n", 
+                 strerror(errno));
+      return -1;
+   }
+
+   found_in = (in_path == NULL);
+   found_out = (out_path == NULL);
+
+   for (dent = readdir(dir); dent != NULL; dent = readdir(dir)) {
+      int fd = atoi(dent->d_name);
+      snprintf(dirpath, MAX_PATH_LEN, "/proc/self/fd/%d", fd);
+      fdpath[0] = '\0';
+      readlink(dirpath, fdpath, MAX_PATH_LEN);
+
+      if (!found_in && strcmp(fdpath, in_path) == 0) {
+         *in_fd = fd;
+         found_in = 1;
+         continue;
+      }
+      if (!found_out && strcmp(fdpath, out_path) == 0) {
+         *out_fd = fd;
+         found_out = 1;
+         continue;
+      }
+      if (found_in && found_out)
+         break;
+   }
+   closedir(dir);
+
+   if (!found_in || !found_out) {
+      err_printf("Didn't find expected input/output fds: %d %d, %s %s\n",
+                 found_in, found_out, in_path ? in_path : "NULL", out_path ? out_path : "NULL");
+      return -1;
+   }
+
+   return 0;
+}
 
 int client_open_connection_pipe(char* location, int number)
 {
@@ -113,7 +170,9 @@ int client_open_connection_pipe(char* location, int number)
    int stat_cnt;
    char fifo[MAX_PATH_LEN];
    char ready[MAX_PATH_LEN];
+   int find_r_fd = 0, find_w_fd = 0;
 
+   debug_printf("Client creating pipe for connection to server\n");
    fd = get_new_fd_pipe();
    if (fd < 0) 
       return -1;
@@ -132,7 +191,9 @@ int client_open_connection_pipe(char* location, int number)
    /* create incomming fifo */
    sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-0", location, number, getpid());
    result = ldcs_mkfifo(fifo);
-   if (result == -1)
+   if (result == -2)
+      find_r_fd = 1;
+   else if (result == -1)
       return -1;
    fdlist_pipe[fd].in_fn = spindle_strdup(fifo);
    assert(fdlist_pipe[fd].in_fn);
@@ -140,21 +201,36 @@ int client_open_connection_pipe(char* location, int number)
    /* create outgoing fifo */
    sprintf(fifo, "%s/spindle_comm.%d/fifo-%d-1", location, number, getpid());
    result = ldcs_mkfifo(fifo);
-   if (result == -1)
+   if (result == -2)
+      find_w_fd = 1;
+   else if (result == -1)
       return -1;
    fdlist_pipe[fd].out_fn = spindle_strdup(fifo);
 
-   /* open incomming fifo */
-   debug_printf3("Opening input fifo %s\n", fdlist_pipe[fd].in_fn);
-   fdlist_pipe[fd].in_fd = open(fdlist_pipe[fd].in_fn, O_RDONLY);
+   /* open fifos */
+   fdlist_pipe[fd].in_fd = fdlist_pipe[fd].out_fd = 0;
+   if (find_w_fd || find_r_fd) {
+      /* Fifos already exist.  Find existing open fds. */
+      debug_printf3("Finding existing fds for %s and/or %s\n", 
+                   fdlist_pipe[fd].out_fn, fdlist_pipe[fd].in_fn);
+      find_existing_fds(find_r_fd ? fdlist_pipe[fd].in_fn : NULL,
+                        find_w_fd ? fdlist_pipe[fd].out_fn : NULL,
+                        &fdlist_pipe[fd].in_fd, &fdlist_pipe[fd].out_fd);
+   }
+   if (fdlist_pipe[fd].in_fd == 0) {
+      debug_printf3("Opening input fifo %s\n", fdlist_pipe[fd].in_fn);
+      fdlist_pipe[fd].in_fd = open(fdlist_pipe[fd].in_fn, O_RDONLY);
+   }
+   if (fdlist_pipe[fd].out_fd == 0) {
+      debug_printf3("Opening output fifo %s\n", fdlist_pipe[fd].out_fn);
+      fdlist_pipe[fd].out_fd = open(fdlist_pipe[fd].out_fn, O_WRONLY);
+   }
+
+   /* Check opened fifos */
    if (fdlist_pipe[fd].in_fd == -1) {
       err_printf("Error opening input fifo %s: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
       return -1;
    }
-
-   /* open outgoing fifo */
-   debug_printf3("Opening output fifo %s\n", fdlist_pipe[fd].out_fn);
-   fdlist_pipe[fd].out_fd = open(fdlist_pipe[fd].out_fn, O_WRONLY);
    if (fdlist_pipe[fd].out_fd == -1) {
       err_printf("Error opening output fifo %s: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
       return -1;

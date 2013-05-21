@@ -34,10 +34,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
 
- char _ldcs_audit_server_tmpdir[MAX_PATH_LEN];
+char _ldcs_audit_server_tmpdir[MAX_PATH_LEN];
 
- long _ldcs_file_read(FILE *infile, void *data, int bytes );
- long _ldcs_file_write(FILE *outfile, const void *data, int bytes );
+long _ldcs_file_read(FILE *infile, void *data, int bytes);
+long _ldcs_file_write(FILE *outfile, const void *data, int bytes);
 
 int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;

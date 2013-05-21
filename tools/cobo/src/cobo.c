@@ -1144,7 +1144,7 @@ int cobo_barrier()
 {
     struct timeval start, end;
     cobo_gettimeofday(&start);
-    debug_printf3("Starting cobo_barrier()");
+    debug_printf3("Starting cobo_barrier()\n");
 
     /* use allreduce of an int for our barrier */
     int dummy;
