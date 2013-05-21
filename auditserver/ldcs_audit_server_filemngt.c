@@ -301,7 +301,7 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
    /* Linux gets annoying here.  We can't just mprotect the buffer to read-only,
       Linux considers the file still open for writing (and thus throws ETXTBUSY on exec's)
       as long as we still have the buffer mmaped from a fd that was opened with write.
-      That means we've got to close the file, fd the buffer, then re-open the file 
+      That means we've got to close the file, unmap the buffer, then re-open the file 
       read-only, then re-map the buffer to the same place.  Ugh.  
    */
 

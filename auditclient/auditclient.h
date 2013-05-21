@@ -14,30 +14,15 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef LDCS_API_SOCKET_H
-#define LDCS_API_SOCKET_H
+#if !defined(AUDITCLIENT_H_)
+#define AUDITCLIENT_H_
 
-typedef enum {
-   LDCS_SOCKET_FD_TYPE_SERVER,
-   LDCS_SOCKET_FD_TYPE_CONN,
-   LDCS_SOCKET_FD_TYPE_UNKNOWN
-} fd_list_entry_type_t;
+#define _GNU_SOURCE
 
-struct fdlist_entry_t
-{
-  int   inuse;
-  fd_list_entry_type_t type;
+#include <elf.h>
+#include <link.h>
 
-  /* server part */
-  int   server_fd; 
-  int   conn_list_size; 
-  int   conn_list_used; 
-  int  *conn_list; 
-
-  /* connection part */
-  int   fd;
-  int   serverid;
-};
+struct link_map *get_linkmap_from_cookie(uintptr_t *cookie);
+void patch_on_linkactivity(struct link_map *lmap);
 
 #endif
-

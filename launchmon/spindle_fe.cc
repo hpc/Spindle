@@ -20,13 +20,14 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "parse_launcher.h"
 #include "spindle_usrdata.h"
 #include "config.h"
-
+#include "parseargs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "ldcs_audit_server_md.h"
 #include "ldcs_api.h"
+#include "ldcs_api_opts.h"
 
 #ifdef __cplusplus
 }
@@ -46,6 +47,8 @@ extern "C" {
 #include <iterator>
 #include <pthread.h>
 
+#include "ldcs_api_opts.h"
+
 using namespace std;
 
 #if !defined(BINDIR)
@@ -54,8 +57,7 @@ using namespace std;
 
 char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
 char spindle_daemon[] = BINDIR "/spindle_be";
-
-const int MAXPROCOUNT  = 12000;
+unsigned long opts;
 
 #define DEFAULT_LDCS_NAME_PREFIX "/tmp/"
 #define DEFAULT_LDCS_NUMBER 7777
@@ -82,16 +84,6 @@ static char *getUserName()
       return NULL;
    }
    return pwid->pw_name;
-}
-
-int parseCmdLine(int *argc, char **argv[])
-{
-   //TODO. No spindle arguments yet
-   return 0;
-}
-
-void usage() {
-   fprintf(stderr, "Usage: spindle [mpirun|srun] ...\n");
 }
 
 static pthread_mutex_t completion_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -137,7 +129,7 @@ int main (int argc, char* argv[])
   int result;
   const char *bootstrapper = spindle_bootstrap;
   const char *daemon = spindle_daemon;
-  char ldcs_number_s[32];
+  char ldcs_number_s[32], ldcs_opts_s[32];
   lmon_rc_e rc;
   void *md_data_ptr;
 
@@ -149,11 +141,8 @@ int main (int argc, char* argv[])
   }
   bare_printf("\n");
 
-  result = parseCmdLine(&argc, &argv);
-  if (result != 0) {
-     usage();
-     return EXIT_FAILURE;
-  }
+  opts = parseArgs(argc, argv);
+  snprintf(ldcs_opts_s, 32, "%d", opts);
 
   if (strlen(LAUNCHMON_BIN_DIR)) {
      setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
@@ -190,7 +179,7 @@ int main (int argc, char* argv[])
   /* TODO: Add more launchers, then use autoconf to select the correct TEST_* values */
   launchers_to_use |= TEST_SLURM;
   result = createNewCmdLine(argc, argv, &launcher_argc, &launcher_argv, bootstrapper, 
-                            ldcs_location, ldcs_number_s, launchers_to_use);
+                            ldcs_location, ldcs_number_s, opts, launchers_to_use);
   if (result != 0) {
      fprintf(stderr, "Error parsing command line:\n");
      if (result == NO_LAUNCHER) {
@@ -213,6 +202,7 @@ int main (int argc, char* argv[])
   daemon_opts[i++] = daemon;
   daemon_opts[i++] = ldcs_location;
   daemon_opts[i++] = ldcs_number_s;
+  daemon_opts[i++] = ldcs_opts_s;
   daemon_opts[i++] = NULL;
 
   /**

@@ -41,7 +41,6 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
 	 (type == LDCS_MSG_END)               ? "LDCS_MSG_END" :
 	 (type == LDCS_MSG_CWD)               ? "LDCS_MSG_CWD" :
 	 (type == LDCS_MSG_PID)               ? "LDCS_MSG_PID" :
-	 (type == LDCS_MSG_HOSTNAME)          ? "LDCS_MSG_HOSTNAME" :
 	 (type == LDCS_MSG_LOCATION)          ? "LDCS_MSG_LOCATION" :
 	 (type == LDCS_MSG_DESTROY)           ? "LDCS_MSG_DESTROY" :
 	 (type == LDCS_MSG_MD_HOSTINFO)       ? "LDCS_MSG_MD_HOSTINFO" :

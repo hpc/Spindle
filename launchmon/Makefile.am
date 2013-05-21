@@ -7,7 +7,7 @@ AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
 
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
-spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc
+spindle_SOURCES = spindle_fe.cc spindle_usrdata.cc parse_launcher.cc parseargs.cc
 
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver
@@ -38,11 +38,11 @@ spindle_LDADD += $(top_builddir)/auditserver/libaudit_server_msocket.la
 spindle_be_LDADD += $(top_builddir)/auditserver/libaudit_server_msocket.la
 endif
 if SOCKETS
-spindle_LDADD += $(top_builddir)/comlib/libldcs_socket.la
-spindle_be_LDADD += $(top_builddir)/comlib/libldcs_socket.la
+spindle_LDADD += $(top_builddir)/comlib/libserver_socket.la
+spindle_be_LDADD += $(top_builddir)/comlib/libserver_socket.la
 endif
 if PIPES
-spindle_LDADD += $(top_builddir)/comlib/libldcs_pipe.la
-spindle_be_LDADD += $(top_builddir)/comlib/libldcs_pipe.la
+spindle_LDADD += $(top_builddir)/comlib/libserver_pipe.la
+spindle_be_LDADD += $(top_builddir)/comlib/libserver_pipe.la
 endif
 spindle_LDADD += -lmonfeapi $(top_builddir)/cache/libldcs_cache.la 

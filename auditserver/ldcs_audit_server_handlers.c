@@ -23,6 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 
 #include "ldcs_api.h"
+#include "ldcs_api_opts.h"
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
@@ -103,10 +104,6 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       strncpy(client->remote_cwd, msg->data, MAX_PATH_LEN);
       debug_printf2("Server recvd CWD %s from %d\n", msg->data, nc);
    } 
-   if(msg->header.type == LDCS_MSG_HOSTNAME) {
-      strncpy(client->remote_hostname, msg->data, MAX_PATH_LEN);
-      debug_printf2("Server recvd hostname %s from %d\n", msg->data, nc);
-   }
    if(msg->header.type == LDCS_MSG_PID) {
       int mypid;
       sscanf(msg->data,"%d",&mypid);
@@ -131,7 +128,7 @@ static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, l
    char buffer_out[MAX_PATH_LEN];
    ldcs_client_t *client = procdata->client_table + nc;
    
-   tmpdata[0]=client->lrank;
+   tmpdata[0]=nc;
    tmpdata[1]=procdata->client_counter;	/* only the current size, not the overall size */
    tmpdata[2]=procdata->md_rank;
    tmpdata[3]=procdata->md_size;
@@ -524,7 +521,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    /* Actually read the file into the buffer */
    starttime = ldcs_get_time();
 
-   result = filemngt_read_file(pathname, buffer, &newsize, 1);
+   result = filemngt_read_file(pathname, buffer, &newsize, (opts & OPT_STRIP));
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -998,7 +995,6 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
 {
    switch (msg->header.type) {
       case LDCS_MSG_CWD:
-      case LDCS_MSG_HOSTNAME:
       case LDCS_MSG_PID:
       case LDCS_MSG_LOCATION:
          return handle_client_info_msg(procdata, nc, msg);

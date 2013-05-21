@@ -1,10 +1,22 @@
-noinst_LTLIBRARIES = libldcs_socket.la libldcs_socket_wo_wrapper.la libldcs_pipe.la libldcs_pipe_wo_wrapper.la libldcs_shmem.la libldcs_shmem_wo_wrapper.la
+noinst_LTLIBRARIES =
 
 AM_CPPFLAGS = -I$(top_srcdir)/logging
 
-libldcs_socket_la_SOURCES = ldcs_api_socket_wrapper.c ldcs_api_socket.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c
-libldcs_socket_wo_wrapper_la_SOURCES = ldcs_api_socket.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c
-libldcs_pipe_la_SOURCES = ldcs_api_pipe_wrapper.c ldcs_api_pipe.c ldcs_api_pipe_notify.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c
-libldcs_pipe_wo_wrapper_la_SOURCES = ldcs_api_pipe.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c
-libldcs_shmem_la_SOURCES = ldcs_api_shmem_wrapper.c ldcs_api_shmem.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c 
-libldcs_shmem_wo_wrapper_la_SOURCES = ldcs_api_shmem.c ldcs_api_util.c ldcs_api.c ldcs_api_listen.c 
+BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
+
+noinst_LTLIBRARIES += libserver_pipe.la
+libserver_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=pipe
+libserver_pipe_la_SOURCES = ldcs_api_pipe.c ldcs_api_pipe_notify.c $(BASE_SRCS)
+
+noinst_LTLIBRARIES += libserver_socket.la
+libserver_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=socket
+libserver_socket_la_SOURCES = ldcs_api_socket.c $(BASE_SRCS)
+
+if SHMEM
+noinst_LTLIBRARIES += libserver_shmem.la 
+libserver_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=shmem
+libserver_shmem_la_SOURCES = ldcs_api_shmem.c $(BASE_SRCS)
+endif
+
+
+

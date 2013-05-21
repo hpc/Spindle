@@ -255,6 +255,8 @@ void init_spindle_debugging(char *name, int survive_exec)
    char *already_setup, *log_level_str;
    int result, log_level = 0;
 
+   spindle_debug_name = name;
+
    if (spindle_debug_prints || run_tests)
       return;
 
@@ -294,10 +296,7 @@ void init_spindle_debugging(char *name, int survive_exec)
    if (debug_fd != -1)
       spindle_debug_output_f = fdopen(debug_fd, "w");
    if (test_fd != -1)
-      spindle_test_output_f = fdopen(test_fd, "w");
-      
-
-   spindle_debug_name = name;
+      spindle_test_output_f = fdopen(test_fd, "w");      
 }
 
 void spindle_dump_on_error()

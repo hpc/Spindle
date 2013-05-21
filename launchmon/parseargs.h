@@ -14,30 +14,10 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef LDCS_API_SOCKET_H
-#define LDCS_API_SOCKET_H
+#if !defined(PARSEARGS_H_)
+#define PARSEARGS_H_
 
-typedef enum {
-   LDCS_SOCKET_FD_TYPE_SERVER,
-   LDCS_SOCKET_FD_TYPE_CONN,
-   LDCS_SOCKET_FD_TYPE_UNKNOWN
-} fd_list_entry_type_t;
-
-struct fdlist_entry_t
-{
-  int   inuse;
-  fd_list_entry_type_t type;
-
-  /* server part */
-  int   server_fd; 
-  int   conn_list_size; 
-  int   conn_list_used; 
-  int  *conn_list; 
-
-  /* connection part */
-  int   fd;
-  int   serverid;
-};
+unsigned long parseArgs(int argc, char *argv[]);
+char *getPreloadFile();
 
 #endif
-

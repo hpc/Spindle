@@ -14,30 +14,21 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef LDCS_API_SOCKET_H
-#define LDCS_API_SOCKET_H
+#if !defined(LDCS_API_OPTS_H_)
+#define LDCS_API_OPTS_H_
 
-typedef enum {
-   LDCS_SOCKET_FD_TYPE_SERVER,
-   LDCS_SOCKET_FD_TYPE_CONN,
-   LDCS_SOCKET_FD_TYPE_UNKNOWN
-} fd_list_entry_type_t;
+#define OPT_COBO       (1 << 1)
+#define OPT_DEBUG      (1 << 2)
+#define OPT_FOLLOWFORK (1 << 3)
+#define OPT_PRELOAD    (1 << 4)
+#define OPT_PUSH       (1 << 5)
+#define OPT_PULL       (1 << 6)
+#define OPT_RELOCAOUT  (1 << 7)
+#define OPT_RELOCSO    (1 << 8)
+#define OPT_RELOCEXEC  (1 << 9)
+#define OPT_RELOCPY    (1 << 10)
+#define OPT_STRIP      (1 << 11)
 
-struct fdlist_entry_t
-{
-  int   inuse;
-  fd_list_entry_type_t type;
-
-  /* server part */
-  int   server_fd; 
-  int   conn_list_size; 
-  int   conn_list_used; 
-  int  *conn_list; 
-
-  /* connection part */
-  int   fd;
-  int   serverid;
-};
+extern unsigned long opts;
 
 #endif
-

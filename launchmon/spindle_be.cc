@@ -26,6 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "config.h"
 #include "spindle_usrdata.h"
+#include "ldcs_api_opts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,7 @@ extern "C" {
 #endif
 
 static int rank, size;
+unsigned long opts;
 
 int _ready_cb_func (  void * data) {
   int rc=0;
@@ -94,7 +96,7 @@ int main(int argc, char* argv[])
 {
   lmon_rc_e lrc;
   int number;
-  char *location, *numberstr;
+  char *location, *numberstr, *optsstr;
 
   LOGGING_INIT(const_cast<char *>("Server"));
   if (spindle_debug_output_f) {
@@ -123,6 +125,8 @@ int main(int argc, char* argv[])
   location  = argv[1];
   numberstr = argv[2];
   number = numberstr ? atoi(numberstr) : -1;
+  optsstr = argv[3];
+  opts = atoi(optsstr);
 
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);

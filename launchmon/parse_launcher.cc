@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <limits.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "parse_launcher.h"
 
@@ -359,25 +360,29 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
                                     cmdoption_t *options, int options_len,
                                     const char *ldcs_location,
                                     const char *ldcs_number,
+                                    unsigned long ldcs_options,
                                     const char *bootstrapper_name)
 {
    int result;
    int found_launcher_at, found_exec_at;
    int i, j;
+   char ldcs_options_str[32];
 
+   snprintf(ldcs_options_str, 32, "%d", ldcs_options);
    /* Parse the command line */
    result = parseLaunchCmdLine(argc, argv, &found_launcher_at, &found_exec_at, options, options_len);
    if (result < 0)
       return result;
 
    /* Add the bootstrapper to the cmdline before the executable */
-   *new_argc = argc+3;
+   *new_argc = argc+4;
    *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
    for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
       if (i == found_exec_at) {
          (*new_argv)[j++] = strdup(bootstrapper_name);
          (*new_argv)[j++] = strdup(ldcs_location);
          (*new_argv)[j++] = strdup(ldcs_number);
+         (*new_argv)[j++] = strdup(ldcs_options_str);
       }
       (*new_argv)[j] = argv[i];
    }
@@ -391,6 +396,7 @@ int createNewCmdLine(int argc, char *argv[],
                      const char *bootstrapper_name,
                      const char *ldcs_location,
                      const char *ldcs_number,
+                     unsigned long ldcs_options,
                      unsigned int test_launchers)
 {
    int result = 0;
@@ -398,7 +404,7 @@ int createNewCmdLine(int argc, char *argv[],
    int i;
 
    /* Presetup */
-   if (test_launchers && TEST_PRESETUP) {
+   if (test_launchers & TEST_PRESETUP) {
       /* If the bootstrapper is already present, don't do anything. Assume user has it right. */
       const char *bootstrapper_exec = strrchr(bootstrapper_name, '/');
       bootstrapper_exec = bootstrapper_exec ? bootstrapper_exec+1 : bootstrapper_name;
@@ -412,9 +418,9 @@ int createNewCmdLine(int argc, char *argv[],
    }
 
    /* Slurm */
-   if (test_launchers && TEST_SLURM) {
+   if (test_launchers & TEST_SLURM) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
-                                        ldcs_location, ldcs_number, bootstrapper_name);
+                                        ldcs_location, ldcs_number, ldcs_options, bootstrapper_name);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)

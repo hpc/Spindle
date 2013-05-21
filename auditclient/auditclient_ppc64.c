@@ -14,30 +14,20 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef LDCS_API_SOCKET_H
-#define LDCS_API_SOCKET_H
+#include "client.h"
+#include "auditclient.h"
 
-typedef enum {
-   LDCS_SOCKET_FD_TYPE_SERVER,
-   LDCS_SOCKET_FD_TYPE_CONN,
-   LDCS_SOCKET_FD_TYPE_UNKNOWN
-} fd_list_entry_type_t;
-
-struct fdlist_entry_t
+Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym,
+                                 unsigned int ndx,
+                                 uintptr_t *refcook,
+                                 uintptr_t *defcook,
+                                 La_ppc64_regs *regs,
+                                 unsigned int *flags,
+                                 const char *symname,
+                                 long int *framesizep)
 {
-  int   inuse;
-  fd_list_entry_type_t type;
-
-  /* server part */
-  int   server_fd; 
-  int   conn_list_size; 
-  int   conn_list_used; 
-  int  *conn_list; 
-
-  /* connection part */
-  int   fd;
-  int   serverid;
-};
-
-#endif
-
+   struct link_map *map = get_linkmap_from_cookie(refcook);
+   Elf64_Addr target = client_call_binding(symname, sym->st_value);
+   /* return doPermanentBinding();  */
+   return target;
+}

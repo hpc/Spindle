@@ -30,6 +30,7 @@ int createNewCmdLine(int argc, char *argv[],
                      const char *bootstrapper_name,
                      const char *ldcs_location,
                      const char *ldcs_number,
+                     unsigned long ldcs_opts,
                      unsigned int test_launchers);
 
 #endif

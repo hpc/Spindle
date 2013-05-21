@@ -25,13 +25,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 
 #include "spindle_debug.h"
+#include "ldcs_api.h"
+#include "ldcs_api_opts.h"
+#include "client.h"
+#include "client_api.h"
+
 #include "config.h"
 
 #if !defined(LIBDIR)
 #error Expected to be built with libdir defined
 #endif
 
-#include "ldcs_api.h"
 
 static int rankinfo[4]={-1,-1,-1,-1};
 static int ldcs_id;
@@ -40,6 +44,9 @@ static char *location, *number_s;
 static char **cmdline;
 static char *executable;
 static char *client_lib;
+static char *opts_s;
+
+unsigned long opts;
 
 char libstr_socket[] = LIBDIR "/libspindle_client_socket.so";
 char libstr_pipe[] = LIBDIR "/libspindle_client_pipe.so";
@@ -55,15 +62,14 @@ static char *default_libstr = libstr_pipe;
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
-   ldcs_id = ldcs_open_connection(location, number);
+   ldcs_id = client_open_connection(location, number);
    if (ldcs_id == -1) 
       return -1;
 
-   ldcs_send_CWD(ldcs_id);
-   ldcs_send_HOSTNAME(ldcs_id);
-   ldcs_send_PID(ldcs_id);
-   ldcs_send_LOCATION(ldcs_id, location);
-   ldcs_send_MYRANKINFO_QUERY(ldcs_id, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
+   send_cwd(ldcs_id);
+   send_pid(ldcs_id);
+   send_location(ldcs_id, location);
+   send_rankinfo_query(ldcs_id, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
 
    return 0;
 }
@@ -73,7 +79,7 @@ static void setup_environment()
    char rankinfo_str[256];
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcs_id, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
 
-   char *connection_str = ldcs_get_connection_string(ldcs_id);
+   char *connection_str = client_get_connection_string(ldcs_id);
    assert(connection_str);
 
    setenv("LD_AUDIT", client_lib, 1);
@@ -81,24 +87,31 @@ static void setup_environment()
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    setenv("LDCS_CONNECTION", connection_str, 1);
+   setenv("LDCS_OPTIONS", opts_s, 1);
 }
 
 static int parse_cmdline(int argc, char *argv[])
 {
-   if (argc < 3)
+   if (argc < 4)
       return -1;
 
    location = argv[1];
    number_s = argv[2];
    number = atoi(number_s);
-   cmdline = argv + 3;
+   opts_s = argv[3];
+   opts = atoi(opts_s);
+   cmdline = argv + 4;
 
    return 0;
 }
 
 static void get_executable()
 {
-   ldcs_send_FILE_QUERY_EXACT_PATH(ldcs_id, *cmdline, &executable);
+   if (!(opts & OPT_RELOCAOUT)) {
+      executable = *cmdline;
+   }
+
+   send_file_query(ldcs_id, *cmdline, &executable);
    if (executable == NULL) {
       executable = *cmdline;
       err_printf("Failed to relocate executable %s\n", executable);
@@ -111,7 +124,7 @@ static void get_executable()
 
 static void get_clientlib()
 {
-   ldcs_send_FILE_QUERY_EXACT_PATH(ldcs_id, default_libstr, &client_lib);
+   send_file_query(ldcs_id, default_libstr, &client_lib);
    if (client_lib == NULL) {
       client_lib = default_libstr;
       err_printf("Failed to relocate client library %s\n", default_libstr);

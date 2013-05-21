@@ -1,4 +1,4 @@
-<AC_INIT([spindle], [0.6], [legendre1@llnl.gov])
+AC_INIT([spindle], [0.6], [legendre1@llnl.gov])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
@@ -12,6 +12,7 @@ AC_CONFIG_FILES([Makefile
                  logging/Makefile
                  tools/sion_debug/Makefile
                  comlib/Makefile
+                 client_comlib/Makefile
                  auditclient/Makefile
                  cache/Makefile
                  tools/cobo/src/Makefile
@@ -148,6 +149,10 @@ AC_ARG_ENABLE(pipes,
 AC_ARG_ENABLE(socket,
               [AS_HELP_STRING([--with-socket],[Use sockets for server/client communication])],
               [CLIENT_SERVER_COM=sockets;],)
+AC_ARG_ENABLE(shmem,
+              [AS_HELP_STRING([--with-shmem],[Use shared memory for server/client communication])],
+              [CLIENT_SERVER_COM=shmem;],)
+
 AC_ARG_ENABLE(msocket,
               [AS_HELP_STRING([--with-msocket],[Use msocket for inter-server communication])]
               [SERVER_SERVER_COM=msocket;],)
@@ -158,6 +163,7 @@ AC_ARG_ENABLE(cobo,
 AM_CONDITIONAL([LMON_DYNAMIC], [test "x$LAUNCHMON_STATIC_LIBS" == "x"])
 AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
 AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
+AM_CONDITIONAL([SHMEM], [test x$CLIENT_SERVER_COM == xshmem])
 AM_CONDITIONAL([MSOCKET], [test x$SERVER_SERVER_COM == xmsocket])
 AM_CONDITIONAL([COBO], [test x$SERVER_SERVER_COM == xcobo])
 

@@ -31,28 +31,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 /* ************************************************************** */
 /* FD list                                                        */
 /* ************************************************************** */
-typedef enum {
-   LDCS_SOCKET_FD_TYPE_SERVER,
-   LDCS_SOCKET_FD_TYPE_CONN,
-   LDCS_SOCKET_FD_TYPE_UNKNOWN
-} fd_list_entry_type_t;
 
 #define MAX_FD 100
-struct fdlist_entry_t
-{
-  int   inuse;
-  fd_list_entry_type_t type;
-
-  /* server part */
-  int   server_fd; 
-  int   conn_list_size; 
-  int   conn_list_used; 
-  int  *conn_list; 
-
-  /* connection part */
-  int   fd;
-  int   serverid;
-};
 
 struct fdlist_entry_t ldcs_socket_fdlist[MAX_FD];
 int ldcs_fdlist_socket_cnt=-1;
@@ -95,99 +75,6 @@ int ldcs_get_fd_socket (int fd) {
     }
   }
   return(realfd);
-}
-
-/* ************************************************************** */
-/* CLIENT functions                                               */
-/* ************************************************************** */
-
-int ldcs_open_connection_socket(char* hostname, int portno) {
-  int sockfd, fd;
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
-
-  fd=get_new_fd_socket();
-  if(fd<0) return(-1);
-  ldcs_socket_fdlist[fd].type=LDCS_SOCKET_FD_TYPE_CONN;
-
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0) _error("ERROR opening socket");
-
-  debug_printf3("after socket: -> sockfd=%d\n",sockfd);
-
-  server = gethostbyname(hostname);
-  debug_printf3("after gethostbyname: -> server=%p\n",server);
-  if (server == NULL) {
-    fprintf(stderr,"ERROR, no such host\n");
-    exit(0);
-  }
-
-  debug_printf3("after gethostbyname: -> hostname=%s\n",server->h_name);
-
-  bzero((char *) &serv_addr, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  bcopy((char *)server->h_addr, 
-	(char *)&serv_addr.sin_addr.s_addr,
-	server->h_length);
-  serv_addr.sin_port = htons(portno);
-  debug_printf3("after port: -> port=%d\n",portno);
-
-  ldcs_socket_fdlist[fd].fd=sockfd;
-
-
-  if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-    return(-1);
- }
-  
- debug_printf3("after connect: -> port=%d\n",portno);
- 
- return(fd);
-  
-}
-
-char *ldcs_get_connection_string_socket(int fd)
-{
-   int sockfd = ldcs_socket_fdlist[fd].fd;
-
-   int slen = 64;
-   char *str = (char *) malloc(slen);
-   if (!str)
-      return NULL;
-   snprintf(str, slen, "%d", sockfd);
-   return str;
-}
-
-int ldcs_register_connection_socket(char *connection_str)
-{
-   int sockfd, result;
-   
-   result = sscanf(connection_str, "%d", &sockfd);
-   if (result != 1)
-      return -1;
-
-   int fd = get_new_fd_socket();
-   if (fd < 0)
-      return -1;
-
-   ldcs_socket_fdlist[fd].type = LDCS_SOCKET_FD_TYPE_CONN;
-   ldcs_socket_fdlist[fd].fd = sockfd;
-
-   return fd;
-}
-
-int ldcs_close_connection_socket(int fd) {
-  int rc=0;
-  int sockfd;
-
-  if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
-
-  sockfd=ldcs_socket_fdlist[fd].fd;
-
-  if(sockfd<0) return(-1);
-   
-  rc=close(sockfd);
-
-  return(rc);
 }
 
 /* ************************************************************** */
@@ -295,6 +182,63 @@ int ldcs_destroy_server_socket(int fd) {
 /* ************************************************************** */
 /* message transfer functions                                     */
 /* ************************************************************** */
+static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
+
+  int         left,bsumread;
+  size_t      btoread, bread;
+  char       *dataptr;
+  
+  left      = bytes;
+  bsumread  = 0;
+  dataptr   = (char*) data;
+  bread     = 0;
+
+  while (left > 0)  {
+    btoread    = left;
+    bread      = read(fd, dataptr, btoread);
+    if(bread<0) {
+      if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
+	debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
+	if(block==LDCS_READ_NO_BLOCK) return(0);
+	else continue;
+      } else { 
+         debug_printf3("read from socket: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+      }
+    } else {
+      debug_printf3("read from socket: %ld bytes ...\n",bread);
+    }
+
+    if(bread>0) {
+      left      -= bread;
+      dataptr   += bread;
+      bsumread  += bread;
+    } else {
+      if(bread==0) return(bsumread);
+      else         return(bread);
+    }
+  }
+  return (bsumread);
+}
+
+static int _ldcs_write_socket(int fd, const void *data, int bytes ) {
+  int         left,bsumwrote;
+  size_t      bwrite, bwrote;
+  char       *dataptr;
+  
+  left      = bytes;
+  bsumwrote = 0;
+  dataptr   = (char*) data;
+
+  while (left > 0) {
+    bwrite     = left;
+    bwrote     = write(fd, dataptr, bwrite);
+    left      -= bwrote;
+    dataptr   += bwrote;
+    bsumwrote += bwrote;
+  }
+  return (bsumwrote);
+}
+
 int ldcs_send_msg_socket(int fd, ldcs_message_t * msg) {
 
   char help[41];
@@ -393,60 +337,4 @@ int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t 
   return(0);
 }
 
-int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
-
-  int         left,bsumread;
-  size_t      btoread, bread;
-  char       *dataptr;
-  
-  left      = bytes;
-  bsumread  = 0;
-  dataptr   = (char*) data;
-  bread     = 0;
-
-  while (left > 0)  {
-    btoread    = left;
-    bread      = read(fd, dataptr, btoread);
-    if(bread<0) {
-      if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
-	if(block==LDCS_READ_NO_BLOCK) return(0);
-	else continue;
-      } else { 
-         debug_printf3("read from socket: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
-      }
-    } else {
-      debug_printf3("read from socket: %ld bytes ...\n",bread);
-    }
-
-    if(bread>0) {
-      left      -= bread;
-      dataptr   += bread;
-      bsumread  += bread;
-    } else {
-      if(bread==0) return(bsumread);
-      else         return(bread);
-    }
-  }
-  return (bsumread);
-}
-
-int _ldcs_write_socket(int fd, const void *data, int bytes ) {
-  int         left,bsumwrote;
-  size_t      bwrite, bwrote;
-  char       *dataptr;
-  
-  left      = bytes;
-  bsumwrote = 0;
-  dataptr   = (char*) data;
-
-  while (left > 0) {
-    bwrite     = left;
-    bwrote     = write(fd, dataptr, bwrite);
-    left      -= bwrote;
-    dataptr   += bwrote;
-    bsumwrote += bwrote;
-  }
-  return (bsumwrote);
-}
 

@@ -20,6 +20,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 #include <sys/inotify.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "ldcs_api.h"
 #include "ldcs_api_listen.h"
@@ -27,7 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
-
+#include "ldcs_api_opts.h"
 
 ldcs_process_data_t ldcs_process_data;
 
@@ -74,7 +75,15 @@ int ldcs_audit_server_process (char *location, int number,
   ldcs_process_data.client_table[0].state=LDCS_CLIENT_STATUS_ACTIVE_PSEUDO;
   ldcs_process_data.client_table[0].connid=-1;
 
-  ldcs_process_data.dist_model = LDCS_PULL;
+  if (opts & OPT_PULL)
+     ldcs_process_data.dist_model = LDCS_PULL;
+  else if (opts & OPT_PUSH)
+     ldcs_process_data.dist_model = LDCS_PULL;
+  else {
+     err_printf("Neither push nor pull options were set\n");
+     assert(0);
+  }
+
   ldcs_process_data.md_rank=0; 
   ldcs_process_data.md_size=1; 
   ldcs_process_data.md_fan_out=0; 

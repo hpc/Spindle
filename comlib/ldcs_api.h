@@ -27,7 +27,6 @@ typedef enum {
    LDCS_MSG_FILE_REQUEST,
    LDCS_MSG_END,
    LDCS_MSG_CWD,
-   LDCS_MSG_HOSTNAME,
    LDCS_MSG_PID,
    LDCS_MSG_LOCATION,
    LDCS_MSG_MYRANKINFO_QUERY,
@@ -85,22 +84,10 @@ struct ldcs_message_struct
 };
 typedef struct ldcs_message_struct ldcs_message_t;
 
-/* client */
-int ldcs_open_connection(char* location, int number);
-int ldcs_close_connection(int connid);
-int ldcs_register_connection(char *connection_str);
-char *ldcs_get_connection_string(int fd);
-
 int ldcs_send_msg(int connid, ldcs_message_t * msg);
 ldcs_message_t * ldcs_recv_msg(int fd, ldcs_read_block_t block);
 int ldcs_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
 
-int ldcs_msg_init(ldcs_message_t *msg);
-int ldcs_msg_free(ldcs_message_t **msg);
-ldcs_message_t* ldcs_msg_new();
-ldcs_message_t* ldcs_msg_copy(ldcs_message_t *msg);
-
-/* server */
 int ldcs_create_server(char* location, int number);
 int ldcs_open_server_connection(int serverid);
 int ldcs_open_server_connections(int fd, int *more_avail);
@@ -108,15 +95,10 @@ int ldcs_close_server_connection(int connid);
 int ldcs_destroy_server(int cid);
 int ldcs_select(int serverid);
 
-/* shortcut functions */
-int ldcs_send_FILE_QUERY (int fd, char* path, char** newpath);
-int ldcs_send_FILE_QUERY_EXACT_PATH (int fd, char* path, char** newpath);
-int ldcs_send_CWD (int fd);
-int ldcs_send_END (int fd);
-int ldcs_send_HOSTNAME (int fd);
-int ldcs_send_PID (int fd);
-int ldcs_send_LOCATION (int fd, char *location);
-int ldcs_send_MYRANKINFO_QUERY (int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize);
+int ldcs_msg_init(ldcs_message_t *msg);
+int ldcs_msg_free(ldcs_message_t **msg);
+ldcs_message_t* ldcs_msg_new();
+ldcs_message_t* ldcs_msg_copy(ldcs_message_t *msg);
 
 /* get info */
 int ldcs_get_fd (int fd);
@@ -124,7 +106,6 @@ int ldcs_get_fd (int fd);
 /* internal */
 char* _message_type_to_str (ldcs_message_ids_t type);
 void  _error(const char *msg);
-int   _ldcs_mkfifo(char *fifo);
 char* ldcs_substring(const char* str, size_t begin, size_t len);
 char *ldcs_new_char(const char *t);
 

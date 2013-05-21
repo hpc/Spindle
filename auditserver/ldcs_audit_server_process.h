@@ -75,7 +75,6 @@ struct ldcs_client_struct
   int                  lrank;
   int                  null_msg_cnt;
   ldcs_client_status_t state;
-  char                 remote_hostname[MAX_PATH_LEN];
   char                 remote_location[MAX_PATH_LEN];
   int                  remote_pid;
   char                 remote_cwd[MAX_PATH_LEN];

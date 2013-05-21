@@ -17,6 +17,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_API_PIPE_H
 #define LDCS_API_PIPE_H
 
+#include "ldcs_api.h"
+
 int ldcs_open_connection_pipe(char* location, int number);
 int ldcs_close_connection_pipe(int fd);
 int ldcs_create_server_pipe(char* location, int number);
@@ -34,6 +36,32 @@ int ldcs_register_connection_pipe(char *connection_str);
 /* internal */
 int _ldcs_write_pipe(int fd, const void *data, int bytes );
 int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block );
+
+typedef enum {
+   LDCS_PIPE_FD_TYPE_SERVER,
+   LDCS_PIPE_FD_TYPE_CONN,
+   LDCS_CLIENT_STATUS_UNKNOWN
+} fd_list_entry_type_t;
+
+struct fdlist_entry_t
+{
+  int   inuse;
+  fd_list_entry_type_t type;
+
+  /* server part */
+  int   notify_fd; 
+  int   conn_list_size; 
+  int   conn_list_used; 
+  int  *conn_list; 
+  char *path; 
+
+  /* connection part */
+  int   in_fd;
+  char *in_fn;
+  int   out_fd;
+  char *out_fn;
+  int   serverfd;
+};
 
 #endif
 
