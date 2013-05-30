@@ -29,14 +29,14 @@ AC_SUBST([AM_CFLAGS], [-Wall])
 
 #Launchmon processing
 AC_ARG_WITH(launchmon,
-        [AS_HELP_STRING([--with-launchmon],[Launchmon directory (must contain ./lib and ./include)])],
+        [AS_HELP_STRING([--with-launchmon=DIR],[Launchmon directory (must contain ./lib and ./include)])],
         [LAUNCHMON_INC_DIR="${withval}/include";
         LAUNCHMON_LIB_DIR="${withval}/lib";],)
 AC_ARG_WITH(launchmon-incdir,
-            [AS_HELP_STRING([--with-launchmon-incdir],[Launchmon include directory])],
+            [AS_HELP_STRING([--with-launchmon-incdir=DIR],[Launchmon include directory])],
             [LAUNCHMON_INC_DIR="${withval}";],)
 AC_ARG_WITH(launchmon-libdir,
-            [AS_HELP_STRING([--with-launchmon-libdir],[Launchmon library directory])],
+            [AS_HELP_STRING([--with-launchmon-libdir=DIR],[Launchmon library directory])],
             [LAUNCHMON_LIB_DIR="${withval}";],)
 
 CPPFLAGS_HOLD=$CPPFLAGS
@@ -130,7 +130,7 @@ if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
 fi
 
 AC_ARG_WITH(testrm,
-            [AS_HELP_STRING([--with-testrm],[Resource manager to use for tests (valid options are 'slurm')])],
+            [AS_HELP_STRING([--with-testrm=ARG],[Resource manager to use for tests (valid options are 'slurm')])],
             [TESTRM=${withval}],
             [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
 AC_SUBST(TESTRM)
@@ -143,11 +143,11 @@ AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"]
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
 AC_ARG_WITH(default-port,
-            [AS_HELP_STRING([--with-default-port],[TCP Port for Spindle server communication])],
+            [AS_HELP_STRING([--with-default-port=NUM],[TCP Port for Spindle server communication])],
             [SPINDLE_PORT=${withval}],
             [SPINDLE_PORT=$DEFAULT_PORT])
 AC_ARG_WITH(localstorage,
-            [AS_HELP_STRING([--with-localstorage],[Directory on back-ends for storing relocated files])],
+            [AS_HELP_STRING([--with-localstorage=DIR],[Directory on back-ends for storing relocated files])],
             [SPINDLE_LOC=${withval}],
             [SPINDLE_LOC=$DEFAULT_LOC])
 AC_DEFINE_UNQUOTED([SPINDLE_PORT],[$SPINDLE_PORT],[The default port for Spindle])
