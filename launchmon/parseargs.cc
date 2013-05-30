@@ -73,7 +73,7 @@ static unsigned int spindle_port = SPINDLE_PORT;
 std::string spindle_location(SPINDLE_LOC);
 
 struct argp_option options[] = {
-   { "reloc-exec", RELOCAOUT, YESNO, 0, 
+   { "reloc-aout", RELOCAOUT, YESNO, 0, 
      "Relocate the main executable through Spindle. Default: yes", GROUP_RELOC },
    { "reloc-libs", RELOCSO, YESNO, 0,
      "Relocate shared libraries through Spindle. Default: yes", GROUP_RELOC },
