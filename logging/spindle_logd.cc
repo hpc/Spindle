@@ -129,10 +129,10 @@ public:
          return false;
       
       char code[8];
-      unsigned i=0;
+      int i=0;
       for (i=0; i<msg1_size; i++) 
          code[i] = msg1[i];
-      for (unsigned int j=0; j<msg2_size; i++, j++)
+      for (int j=0; j<msg2_size; i++, j++)
          code[i] = msg2[j];
       
       for (i = 0; i<8; i++) {
@@ -247,7 +247,7 @@ public:
 
    bool parseOpenNotice(int proc, char *filename)
    {      
-      bool result = target_libs.insert(make_pair(proc, string(filename))).second;
+      target_libs.insert(make_pair(proc, string(filename))).second;
       return true;
    }
 
@@ -303,7 +303,7 @@ public:
       }
       const char *spindle_open = strstr(s, "dlstart");
       if (spindle_open) {
-         sscanf(spindle_open, "dlstart %s\n", &buffer);
+         sscanf(spindle_open, "dlstart %s\n", buffer);
          if (debug_log)
             debug_log->writeMessage(proc, s, strlen(s), NULL, 0);
          return parseOpenNotice(proc, buffer);
@@ -611,7 +611,7 @@ void parseArgs(int argc, char *argv[])
    }
 
    tmpdir = argv[1];
-   for (unsigned i=0; i<argc; i++) {
+   for (int i=0; i<argc; i++) {
       if (strcmp(argv[i], "-debug") == 0) {
          i++;
          debug_fname = argv[i];
@@ -666,8 +666,6 @@ void registerCrashHandlers()
 static volatile int here = 0;
 int main(int argc, char *argv[])
 {
-   int i;
-
    registerCrashHandlers();
    parseArgs(argc, argv);
 
