@@ -231,7 +231,7 @@ static int parseLaunchCmdLine(int argc, char *argv[],
             *found_launcher_at = j;
             break;
          }
-         unsigned int len = strlen(arg);
+         int len = strlen(arg);
          if ((len >= launcher_name_size+1) &&
              (strcmp(arg + (len-launcher_name_size), launcher_name) == 0) &&
              (arg[len-launcher_name_size-1] == '/'))
@@ -368,7 +368,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
    int i, j;
    char ldcs_options_str[32];
 
-   snprintf(ldcs_options_str, 32, "%d", ldcs_options);
+   snprintf(ldcs_options_str, 32, "%lu", ldcs_options);
    /* Parse the command line */
    result = parseLaunchCmdLine(argc, argv, &found_launcher_at, &found_exec_at, options, options_len);
    if (result < 0)

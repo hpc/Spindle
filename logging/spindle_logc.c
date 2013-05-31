@@ -219,7 +219,7 @@ static int setup_connection(char *connection_name)
             
          if (timeout == SPAWN_TIMEOUT) {
             free(socket_file);
-            return;
+            return -1;
          }
       }
 
@@ -253,7 +253,7 @@ void reset_spindle_debugging()
 void init_spindle_debugging(char *name, int survive_exec)
 {
    char *already_setup, *log_level_str;
-   int result, log_level = 0;
+   int log_level = 0;
 
    spindle_debug_name = name;
 

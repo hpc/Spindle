@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     * Exec error handling
     **/
    error = errno;
-   err_printf("Error execing app: %s\n", strerror(errno));
+   err_printf("Error execing app: %s\n", strerror(error));
 
    return -1;
 }
