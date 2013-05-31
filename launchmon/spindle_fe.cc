@@ -1,7 +1,7 @@
 /*
 This file is part of Spindle.  For copyright information see the COPYRIGHT 
 file in the top level directory, or at 
-<TODO:URL>.
+https://github.com/hpc/Spindle/blob/master/COPYRIGHT
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License (as published by the Free Software
@@ -76,20 +76,6 @@ double __get_time()
   return tp.tv_sec + tp.tv_usec/1000000.0;
 }
 
-static char *getUserName()
-{
-   uid_t uid = geteuid();
-   struct passwd *pwid;
-   do {
-      pwid = getpwuid(uid);
-   } while (!pwid && errno == EINTR);
-   if (!pwid) {
-      perror("Failed to read username");
-      return NULL;
-   }
-   return pwid->pw_name;
-}
-
 static pthread_mutex_t completion_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t completion_condvar = PTHREAD_COND_INITIALIZER;
 static bool spindle_done = false;
@@ -157,7 +143,6 @@ int main (int argc, char* argv[])
   const char *bootstrapper = spindle_bootstrap;
   const char *daemon = spindle_daemon;
   char ldcs_number_s[32], ldcs_opts_s[32], ldcs_port_s[32];
-  char *ldcs_shared_secret;
   lmon_rc_e rc;
   void *md_data_ptr;
 
@@ -170,7 +155,7 @@ int main (int argc, char* argv[])
   bare_printf("\n");
 
   opts = parseArgs(argc, argv);
-  snprintf(ldcs_opts_s, 32, "%d", opts);
+  snprintf(ldcs_opts_s, 32, "%lu", opts);
 
   if (strlen(LAUNCHMON_BIN_DIR)) {
      setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);

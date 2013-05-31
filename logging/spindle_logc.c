@@ -1,7 +1,7 @@
 /*
 This file is part of Spindle.  For copyright information see the COPYRIGHT 
 file in the top level directory, or at 
-<TODO:URL>.
+https://github.com/hpc/Spindle/blob/master/COPYRIGHT
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License (as published by the Free Software
@@ -219,7 +219,7 @@ static int setup_connection(char *connection_name)
             
          if (timeout == SPAWN_TIMEOUT) {
             free(socket_file);
-            return;
+            return -1;
          }
       }
 
@@ -253,7 +253,7 @@ void reset_spindle_debugging()
 void init_spindle_debugging(char *name, int survive_exec)
 {
    char *already_setup, *log_level_str;
-   int result, log_level = 0;
+   int log_level = 0;
 
    spindle_debug_name = name;
 
