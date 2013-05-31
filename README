@@ -7,6 +7,12 @@ Authors:    SPINDLE:              W.Frings <W.Frings at fz-juelich dot de>
 
 Version:    0.7 (May 2013)
 
+Summary:
+===========
+
+Spindle is a tool for improving the performance of dynamic library
+and python loading in HPC enviornments.
+
 Introduction:
 ============
 
@@ -50,21 +56,21 @@ processes.
 Directories:
 ============
 
-./lib              --> low level communication layers (socket, pipe, shmem)
-./cache            --> Internal data structure for file meta data (cache)
 ./auditclient      --> Implementation of Loader Auditing Interface for SPINDLE,
                        Sample client applications
 ./auditserver      --> Implementation of SPINDLE server,
                        High level communication layer (cobo, msocket)
-./simulator        --> MPI-programm starting all components of SPINDLE in one 
-                       MPI context
+./beboot           --> Implementation of bootstrapper, which relocates executables and
+                       assists in Spindle startup
+./cache            --> Internal data structure for file meta data (cache)
+./client_comlib    --> Client-side of client/server communications infrastructure
+./comlib           --> Server-side of client/server communications infrastructure
 ./launchmon        --> LaunchMON start-up command and BE-server
-./client           --> client part of simple program to test low-level communication
-./server           --> server part of simple program to test low-level communication
+./logging          --> Logging deamon that collects debug logs from clients and servers
+./m4               --> Autoconf helper routines
+./scripts          --> Autoconf helper scripts
+./testsuite        --> A testsutie for 
 ./tools/cobo/src   --> cobo src used by one of the high level SPINDLE comm. layers      
-./tools/cobo/test  --> rsh start-up utility
-./tools/slurm      --> utility scripts for LLNL cluster running SLURM,
-                       benchmarking scripts for pynamic
 ./tools/sion_debug --> Implements DPRINTF interface for selective printf-debugging
                        from SIONlib package
 
@@ -72,9 +78,9 @@ Directories:
 Compilation:
 ============
 
-1) Make a build directory, and run spindle/configure from that directory.
+1) Run spindle/configure from a build directory
 
-2) make install from the build directory
+2) 'make install' from that build directory
 
 Usage:
 ======
