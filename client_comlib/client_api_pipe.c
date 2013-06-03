@@ -139,6 +139,7 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
       fdpath[0] = '\0';
       readlink(dirpath, fdpath, MAX_PATH_LEN);
 
+      debug_printf("Comparing %s with in_path = %s, out_path = %s\n", fdpath, in_path, out_path);
       if (!found_in && strcmp(fdpath, in_path) == 0) {
          *in_fd = fd;
          found_in = 1;
@@ -157,6 +158,9 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
    if (!found_in || !found_out) {
       err_printf("Didn't find expected input/output fds: %d %d, %s %s\n",
                  found_in, found_out, in_path ? in_path : "NULL", out_path ? out_path : "NULL");
+#warning DEBUGGING CODE HERE.  Remove.
+      while (1)
+         sleep(1);
       return -1;
    }
 

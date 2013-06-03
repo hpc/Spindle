@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sched.h>
+#include <stdint.h>
 
 #include "ldcs_api.h"
 #include "ldcs_api_opts.h"
@@ -72,6 +73,44 @@ int send_file_query(int fd, char* path, char** newpath) {
 
    return result;
 }
+
+int send_existance_test(int fd, char *path, int *exists)
+{
+   ldcs_message_t message;
+   char buffer[MAX_PATH_LEN+1];
+   buffer[MAX_PATH_LEN] = '\0';
+   int path_len = strlen(path)+1;
+    
+   if (path_len > MAX_PATH_LEN) {
+      err_printf("Path to long for message");
+      return -1;
+   }
+   strncpy(buffer, path, MAX_PATH_LEN);
+
+   message.header.type = LDCS_MSG_EXISTS_QUERY;
+   message.header.len = strlen(path) + 1;
+   message.data = (void *) buffer;
+
+   debug_printf3("Sending message of type: file_exist_query len=%d, data=%s\n",
+                 message.header.len, path);
+   COMM_LOCK;
+
+   client_send_msg(fd, &message);
+
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_EXISTS_ANSWER || message.header.len != sizeof(uint32_t)) {
+      err_printf("Got unexpected message after existance test: %d\n", (int) message.header.type);
+      return -1;
+   }
+
+   *exists = (int) *((uint32_t *) buffer);
+   debug_printf3("Determined that file %s %s\n", path, *exists ? "exists" : "does not exist");
+   return 0;
+}
+
 
 int send_dir_cwd(int fd, char *cwd)
 {

@@ -48,6 +48,7 @@ int ldcsid = -1;
 
 static int intercept_open;
 static int intercept_exec;
+static int intercept_stat;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -88,7 +89,7 @@ static void spindle_test_log_msg(char *buffer)
 static int init_server_connection()
 {
    char *location, *connection, *rankinfo_s, *opts_s;
-   int number;
+   int number, result;
 
    debug_printf("Initializing connection to server\n");
 
@@ -228,6 +229,7 @@ int client_init()
 
   init_server_connection();
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
+  intercept_stat = (opts & OPT_RELOCPY) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
   return 0;
 }
@@ -250,6 +252,8 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
       return redirect_open(symname, symvalue);
    if (intercept_exec && strstr(symname, "exec")) 
       return redirect_exec(symname, symvalue);
+   if (intercept_stat && strstr(symname, "stat"))
+      return redirect_stat(symname, symvalue);
    else if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
       return (Elf64_Addr) spindle_test_log_msg;
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {

@@ -61,6 +61,11 @@ typedef enum {
    suppress_broadcast
 } broadcast_t;
 
+typedef enum {
+   exists,
+   not_exists
+} exist_t;
+
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -105,6 +110,11 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
 static int handle_preload_done(ldcs_process_data_t *procdata);
 static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *filename);
 static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc, exist_t res);
+
+static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc);
+static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
+static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -279,12 +289,14 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
    int read_result, broadcast_result, client_result;
 
    ldcs_client_t *client = procdata->client_table + nc;
-   if (!client->query_open)
-      return 0;
    if ((opts & OPT_PRELOAD) && !procdata->preload_done) {
       /* Postpone client requests until preload is complete */
       return 0;
    }
+   if (!client->query_open)
+      return 0;
+   if (client->existance_query)
+      return handle_fileexist_test(procdata, nc);
 
    result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
                               client->query_dirname, &client->query_localpath);
@@ -1053,6 +1065,8 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
       case LDCS_MSG_FILE_QUERY:
       case LDCS_MSG_FILE_QUERY_EXACT_PATH:
          return handle_client_file_request(procdata, nc, msg);
+      case LDCS_MSG_EXISTS_QUERY:
+         return handle_client_fileexist_msg(procdata, nc, msg);
       case LDCS_MSG_END:
          return handle_client_end(procdata, nc);
       default:
@@ -1254,4 +1268,101 @@ static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message
    }
 
    return global_result;
+}
+
+static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc, exist_t res)
+{
+   ldcs_message_t out_msg;
+   uint32_t query_result;
+   int result;
+   ldcs_client_t *client = procdata->client_table + nc;
+   int connid = client->connid;
+
+   if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
+      return 0;
+
+   query_result = (res == exists ? 1 : 0);
+
+   out_msg.header.type = LDCS_MSG_EXISTS_ANSWER;
+   out_msg.header.len = sizeof(query_result);
+   out_msg.data = (void *) &query_result;
+
+   result = ldcs_send_msg(connid, &out_msg);
+   client->query_open = 0;
+   client->existance_query = 0;
+
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   return result;
+}
+
+static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc)
+{
+   int result;
+   handle_file_result_t howto_result;
+   ldcs_client_t *client;
+
+   client = procdata->client_table + nc;
+   debug_printf2("Request to test for existance of %s\n", client->query_globalpath);
+
+   howto_result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
+                                    client->query_dirname, &client->query_localpath);
+   switch (howto_result) {
+      case READ_FILE:
+      case REQ_FILE:
+      case FOUND_FILE:
+         return handle_report_fileexist_result(procdata, nc, exists);
+      case NO_FILE:
+         return handle_report_fileexist_result(procdata, nc, not_exists);
+      case READ_DIRECTORY:
+         /* We should read the directory.  After that is done, restart this operation */
+         result = handle_read_and_broadcast_dir(procdata, client->query_dirname);
+         if (result == -1) {
+            err_printf("Error reading and broadcasting directory %s\n", client->query_dirname);
+            return -1;
+         }
+         return handle_fileexist_test(procdata, nc);
+      case REQ_DIRECTORY:
+         /* We should request the directory from another node */
+         result = handle_send_query(procdata, client->query_dirname, 1);
+         if (result == -1) {
+            err_printf("Failure sending query for directory %s\n", client->query_dirname);
+            return -1;
+         }
+         return 0;
+      default:
+         err_printf("Unexpected return %d from handle_howto_file\n", (int) howto_result);
+         assert(0);
+         return -1;
+   }
+}
+
+static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg)
+{
+   ldcs_client_t *client;
+   char *pathname;
+   char file[MAX_PATH_LEN];
+   char dir[MAX_PATH_LEN];
+
+   file[0] = '\0'; dir[0] = '\0';
+   pathname = msg->data;
+   parseFilenameNoAlloc(pathname, file, dir, MAX_PATH_LEN);
+
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   addCWDToDir(client->remote_cwd, dir, MAX_PATH_LEN);
+   reducePath(dir);
+
+   strncpy(client->query_filename, file, MAX_PATH_LEN);
+   strncpy(client->query_dirname, dir, MAX_PATH_LEN);
+   snprintf(client->query_globalpath, MAX_PATH_LEN, "%s/%s", client->query_dirname, client->query_filename);
+   client->query_localpath = NULL;
+
+   client->query_open = 1;
+   client->existance_query = 1;
+   
+   debug_printf2("Server recvd existance query for %s.  Dir = %s, File = %s\n", 
+                 client->query_globalpath, client->query_dirname, client->query_filename);
+   return handle_client_progress(procdata, nc);
 }

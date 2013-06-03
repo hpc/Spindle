@@ -81,6 +81,7 @@ struct ldcs_client_struct
   int                  remote_pid;
   char                 remote_cwd[MAX_PATH_LEN];
   int                  query_open;
+  int                  existance_query;
   char                 query_filename[MAX_PATH_LEN];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN];  /* path to file in global fs (dirname+filename) */

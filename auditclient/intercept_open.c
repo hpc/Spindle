@@ -50,7 +50,8 @@ static int open_filter(const char *fname)
       last_dot = strrchr(fname, '.');
       if (!last_dot)
          return 0;
-      if (strcmp(last_dot, ".py") == 0 || strcmp(last_dot, ".pyc") == 0 || strcmp(last_dot, ".so") == 0)
+         if (strcmp(last_dot, ".py") == 0 || strcmp(last_dot, ".pyc") == 0 || 
+             strcmp(last_dot, ".pyo") == 0 || strcmp(last_dot, ".so") == 0)
          return 1;
    }
 
