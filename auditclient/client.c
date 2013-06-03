@@ -89,7 +89,7 @@ static void spindle_test_log_msg(char *buffer)
 static int init_server_connection()
 {
    char *location, *connection, *rankinfo_s, *opts_s;
-   int number, result;
+   int number;
 
    debug_printf("Initializing connection to server\n");
 

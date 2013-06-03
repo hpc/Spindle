@@ -158,9 +158,6 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
    if (!found_in || !found_out) {
       err_printf("Didn't find expected input/output fds: %d %d, %s %s\n",
                  found_in, found_out, in_path ? in_path : "NULL", out_path ? out_path : "NULL");
-#warning DEBUGGING CODE HERE.  Remove.
-      while (1)
-         sleep(1);
       return -1;
    }
 
