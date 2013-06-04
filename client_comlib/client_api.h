@@ -18,6 +18,9 @@
 #define CLIENT_API_H_
 
 #include "ldcs_api.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /**
  * Communication functions for sending messages to the server
@@ -30,6 +33,7 @@ int send_location(int fd, char *location);
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize);
 int send_end(int fd);
 int send_existance_test(int fd, char *path, int *exists);
+int send_stat_request(int fd, char *path, int islstat, int *exists, struct stat *buf);
 
 /* client */
 int client_open_connection(char* location, int number);

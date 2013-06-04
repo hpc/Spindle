@@ -17,6 +17,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_FILEMNGT_H
 #define LDCS_AUDIT_SERVER_FILEMNGT_H
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "ldcs_audit_server_md.h"
 
 int ldcs_audit_server_filemngt_init (char* location);
@@ -32,4 +36,9 @@ int ldcs_audit_server_filemngt_clean();
 int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, int *fd_out);
 void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size, size_t newsize);
 size_t filemngt_get_file_size(char *pathname);
+
+int filemngt_stat(char *pathname, struct stat *buf);
+int filemngt_write_stat(char *localname, struct stat *buf);
+int filemngt_read_stat(char *localname, struct stat *buf);
+
 #endif

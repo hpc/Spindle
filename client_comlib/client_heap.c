@@ -79,6 +79,7 @@ char *spindle_strdup(const char *str)
    HEAP_UNLOCK;
    return result;
 }
+
 void *spindle_realloc(void *orig, size_t size)
 {
    void *result;

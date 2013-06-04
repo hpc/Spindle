@@ -214,7 +214,7 @@ void sync_cwd()
 void set_errno(int newerrno)
 {
    if (!app_errno_location) {
-      err_printf("Warning: Unable to set errno because app_errno_location not set\n");
+      debug_printf("Warning: Unable to set errno because app_errno_location not set\n");
       return;
    }
    *app_errno_location() = newerrno;

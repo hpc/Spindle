@@ -95,6 +95,9 @@ int ldcs_audit_server_process (char *location, unsigned int port, int number,
   ldcs_process_data.preload_done=0;
   ldcs_process_data.pending_requests = new_requestor_list();
   ldcs_process_data.completed_requests = new_requestor_list();
+  ldcs_process_data.pending_stat_requests = new_requestor_list();
+  ldcs_process_data.completed_stat_requests = new_requestor_list();
+
   {
     char buffer[MAX_PATH_LEN];
     

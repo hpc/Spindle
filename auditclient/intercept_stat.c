@@ -25,6 +25,7 @@
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "should_intercept.h"
 
 static int (*orig_stat)(const char *path, struct stat *buf);
 static int (*orig_lstat)(const char *path, struct stat *buf);
@@ -33,86 +34,98 @@ static int (*orig_lxstat)(int vers, const char *path, struct stat *buf);
 static int (*orig_xstat64)(int vers, const char *path, struct stat *buf);
 static int (*orig_lxstat64)(int vers, const char *path, struct stat *buf);
 
-static int should_do_existance_test(const char *path)
-{
-   /* Some hints to do existance tests.  We really want to just get python modules
-      and libraries.  If the filename ends in a python or  */
-   char *last_slash;
-   char *last_dot;
-
-   last_dot = strrchr(path, '.');
-   if (last_dot &&
-       (strcmp(last_dot, ".py") == 0 || 
-        strcmp(last_dot, ".pyc") == 0 ||
-        strcmp(last_dot, ".pyo") == 0 ||
-        strcmp(last_dot, ".so") == 0)) {
-      return 1;
-   }
-
-   last_slash = strrchr(path, '/');
-   if (last_slash && strncmp(last_slash, "/lib", 4) == 0) {
-      return 1;
-   }
-
-   return 0;
-}
-
 #define IS_64    (1 << 0)
 #define IS_LSTAT (1 << 1)
 #define IS_XSTAT (1 << 2)
-static const char *handle_stat(const char *path, struct stat *buf, int flags)
+
+#define ORIG_STAT -2
+
+static int handle_stat(const char *path, struct stat *buf, int flags)
 {
+   int result, exists;
+
    check_for_fork();
-
-   if (should_do_existance_test(path)) {
-      int exists, result;
-      result = send_existance_test(ldcsid, (char *) path, &exists);
-      if (result != -1 && !exists) {
-         debug_printf3("Creating artifical ENOENT return for %s%sstat%s(%s)\n", 
-                       flags & IS_LSTAT ? "l" : "", 
-                       flags & IS_XSTAT ? "x" : "",
-                       flags & IS_64 ? "64" : "", 
-                       path);
-         return NOT_FOUND_PREFIX;
-      }
+   if (ldcsid < 0 || !use_ldcs) {
+      debug_printf3("no ldcs: stat query %s\n", path);
+      return ORIG_STAT;
    }
+   sync_cwd();
 
-   debug_printf3("Allowing call to %s%sstat%s(%s)\n", 
+   debug_printf3("Spindle considering stat call %s%sstat%s(%s)\n", 
                  flags & IS_LSTAT ? "l" : "", 
                  flags & IS_XSTAT ? "x" : "",
                  flags & IS_64 ? "64" : "", 
                  path);
-   return path;
+
+   if (stat_filter(path) == ORIG_CALL) {
+      /* Not used by stat, means run the original */
+      debug_printf3("Allowing original stat on %s\n", path);
+      return ORIG_STAT;
+   }
+
+   result = send_stat_request(ldcsid, (char *) path, flags & IS_LSTAT, &exists, buf);
+   if (result == -1) {
+      /* Spindle level error */
+      debug_printf3("Allowing original stat on %s\n", path);
+      return ORIG_STAT;
+   }
+
+   if (!exists) {
+      debug_printf3("File %s does not exist as per stat call\n", path);
+      set_errno(ENOENT);
+      return -1;
+   }
+   
+   debug_printf3("Ran file %s through spindle for stat\n", path);
+   return 0;
 }
 
 static int spindle_stat(const char *path, struct stat *buf)
 {
-   return orig_stat(handle_stat(path, buf, 0), buf);
+   int result = handle_stat(path, buf, 0);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_stat(path, buf);
 }
 
 static int spindle_lstat(const char *path, struct stat *buf)
 {
-   return orig_lstat(handle_stat(path, buf, IS_LSTAT), buf);
+   int result = handle_stat(path, buf, IS_LSTAT);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_lstat(path, buf);
 }
 
 static int spindle_xstat(int vers, const char *path, struct stat *buf)
 {
-   return orig_xstat(vers, handle_stat(path, buf, IS_XSTAT), buf);
+   int result = handle_stat(path, buf, IS_XSTAT);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_xstat(vers, path, buf);
 }
 
 static int spindle_xstat64(int vers, const char *path, struct stat *buf)
 {
-   return orig_xstat64(vers, handle_stat(path, buf, IS_XSTAT | IS_64), buf);
+   int result = handle_stat(path, buf, IS_XSTAT | IS_64);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_xstat64(vers, path, buf);
 }
 
 static int spindle_lxstat(int vers, const char *path, struct stat *buf)
 {
-   return orig_lxstat(vers, handle_stat(path, buf, IS_LSTAT | IS_XSTAT), buf);
+   int result = handle_stat(path, buf, IS_LSTAT | IS_XSTAT);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_lxstat(vers, path, buf);
 }
 
 static int spindle_lxstat64(int vers, const char *path, struct stat *buf)
 {
-   return orig_lxstat64(vers, handle_stat(path, buf, IS_LSTAT | IS_XSTAT | IS_64), buf);
+   int result = handle_stat(path, buf, IS_LSTAT | IS_XSTAT | IS_64);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_lxstat64(vers, path, buf);
 }
 
 ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value)

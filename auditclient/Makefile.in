@@ -78,7 +78,8 @@ libspindle_client_pipe_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_pipe.la \
 	$(top_builddir)/logging/libspindlelogc.la
 am__objects_1 = client.lo auditclient.lo intercept_open.lo \
-	intercept_exec.lo intercept_stat.lo patch_linkmap.lo
+	intercept_exec.lo intercept_stat.lo patch_linkmap.lo \
+	should_intercept.lo
 am__objects_2 = auditclient_x86_64.lo
 am_libspindle_client_pipe_la_OBJECTS = $(am__objects_1) \
 	$(am__objects_2)
@@ -264,7 +265,7 @@ top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = $(am__append_1) $(am__append_2)
 noinst_LTLIBRARIES = $(am__append_3)
 AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/comlib
-BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercept_stat.c patch_linkmap.c
+BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercept_stat.c patch_linkmap.c should_intercept.c
 ARCH_SOURCES = auditclient_x86_64.c
 
 #libspindle_client_socket_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
@@ -366,6 +367,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept_stat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_client_socket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/patch_linkmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/should_intercept.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
