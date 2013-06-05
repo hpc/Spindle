@@ -105,10 +105,8 @@ static int onLaunchmonStatusChange(int *pstatus) {
    return 0;
 }
 
-static char *get_shared_secret()
+static unsigned int get_shared_secret()
 {
-   static char shared_secret_s[32];
-
    int fd = open("/dev/urandom", O_RDONLY);
    if (fd == -1)
       fd = open("/dev/random", O_RDONLY);
@@ -123,9 +121,8 @@ static char *get_shared_secret()
       fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
       exit(-1);
    }
-   
-   snprintf(shared_secret_s, 32, "%u", shared_secret);
-   return shared_secret_s;
+
+   return shared_secret;
 }
 
 string pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
@@ -142,9 +139,10 @@ int main (int argc, char* argv[])
   int result;
   const char *bootstrapper = spindle_bootstrap;
   const char *daemon = spindle_daemon;
-  char ldcs_number_s[32], ldcs_opts_s[32], ldcs_port_s[32];
+  char ldcs_number_s[32];
   lmon_rc_e rc;
   void *md_data_ptr;
+  spindle_daemon_args daemon_args;
 
   LOGGING_INIT(const_cast<char *>("FE"));
 
@@ -155,7 +153,6 @@ int main (int argc, char* argv[])
   bare_printf("\n");
 
   opts = parseArgs(argc, argv);
-  snprintf(ldcs_opts_s, 32, "%lu", opts);
 
   if (strlen(LAUNCHMON_BIN_DIR)) {
      setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
@@ -172,7 +169,6 @@ int main (int argc, char* argv[])
   ldcs_location_str = getLocation(ldcs_number);
   ldcs_location = ldcs_location_str.c_str();
 
-  snprintf(ldcs_port_s, 32, "%d", ldcs_port);
   snprintf(ldcs_number_s, 32, "%d", ldcs_number);
 
   debug_printf("Location = %s, Number = %u, Port = %u\n", ldcs_location, ldcs_number, ldcs_port);
@@ -205,12 +201,13 @@ int main (int argc, char* argv[])
   //daemon_opts[i++] = "--tool=memcheck";
   //daemon_opts[i++] = "--leak-check=full";
   daemon_opts[i++] = daemon;
-  daemon_opts[i++] = ldcs_location;
-  daemon_opts[i++] = ldcs_number_s;
-  daemon_opts[i++] = ldcs_port_s;
-  daemon_opts[i++] = ldcs_opts_s;
-  daemon_opts[i++] = get_shared_secret();
   daemon_opts[i++] = NULL;
+
+  daemon_args.number = ldcs_number;
+  daemon_args.port = ldcs_port;
+  daemon_args.opts = opts;
+  daemon_args.shared_secret = get_shared_secret();
+  daemon_args.location = (char *) ldcs_location;
 
   /**
    * Setup LaunchMON
@@ -239,12 +236,6 @@ int main (int argc, char* argv[])
     return EXIT_FAILURE;
   } 
   
-  rc = LMON_fe_regUnpackForBeToFe(aSession, unpackfebe_cb);
-  if (rc != LMON_OK) {
-     err_printf("[LMON FE] LMON_fe_regUnpackForBeToFe FAILED\n");
-    return EXIT_FAILURE;
-  }
-
   debug_printf2("launcher: ");
   for (i = 0; launcher_argv[i]; i++) {
      bare_printf2("%s ", launcher_argv[i]);
@@ -275,17 +266,12 @@ int main (int argc, char* argv[])
      return EXIT_FAILURE;
   }
 
-  /* set SION debug file name */
-  if(0){
-    char hostname[HOSTNAME_LEN];
-    bzero(hostname,HOSTNAME_LEN);
-    gethostname(hostname,HOSTNAME_LEN);
-
-    char helpstr[MAX_PATH_LEN];
-    sprintf(helpstr,"_debug_spindle_%s_l_%02d_of_%02d_%s","FE",1,1,hostname);
-    setenv("SION_DEBUG",helpstr,1);
+  rc = LMON_fe_sendUsrDataBe(aSession, (void *) &daemon_args);
+  if (rc != LMON_OK) {
+     err_printf("LMON_fe_sendUsrDataBe failure\n");
+     return EXIT_FAILURE;
   }
-  
+
   /* Get the process table */
   unsigned int ptable_size, actual_size;
   rc = LMON_fe_getProctableSize(aSession, &ptable_size);

@@ -102,7 +102,8 @@ int main(int argc, char* argv[])
   lmon_rc_e lrc;
   int number;
   unsigned int port;
-  char *location, *numberstr, *optsstr, *portstr;
+  char *location;
+  spindle_daemon_args dargs;
 
   LOGGING_INIT(const_cast<char *>("Server"));
   if (spindle_debug_output_f) {
@@ -128,15 +129,15 @@ int main(int argc, char* argv[])
      return EXIT_FAILURE;
   }
 
-  location  = argv[1];
-  numberstr = argv[2];
-  number = numberstr ? atoi(numberstr) : -1;
-  portstr = argv[3];
-  optsstr = argv[4];
-  opts = atoi(optsstr);
-  shared_secret = atoi(argv[5]);
-  port = atoi(portstr);
-
+  /* Register pack/unpack functions to LMON  */
+  if ( LMON_be_amIMaster() == LMON_YES ) {
+    
+    if ( ( lrc = LMON_be_regUnpackForFeToBe ( unpackfebe_cb )) != LMON_OK ) {
+       err_printf("Failed LMON_be_regUnpackForBeToFe\n");
+       return EXIT_FAILURE;
+    } 
+  }
+  
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);
   debug_printf("Launchmon rank %d/%d\n", rank, size);
@@ -150,31 +151,48 @@ int main(int argc, char* argv[])
   }
 
   lrc = LMON_be_ready(NULL);
-  if (lrc != LMON_OK )
+  if (lrc != LMON_OK)
   {     
      err_printf("Failed LMON_be_ready\n");
      LMON_be_finalize();
      return EXIT_FAILURE;
   } 
 
+  /* Recieve user data on master */
+  lrc = LMON_be_recvUsrData(&dargs);
+  if (lrc != LMON_OK) {
+     err_printf("Failed to receive usr data from FE\n");
+     return EXIT_FAILURE;
+  }
+
+  /* Broadcast data from master */
+  int actual_size = 0;
+  void *buffer;
+  if (LMON_be_amIMaster() == LMON_YES) {
+     int estimate_size = sizeof(dargs) + strlen(dargs.location) + 1;
+     buffer = (void *) malloc(estimate_size);
+     packfebe_cb(&dargs, buffer, estimate_size, &actual_size);
+     LMON_be_broadcast(&actual_size, sizeof(actual_size));
+     LMON_be_broadcast(buffer, actual_size);
+  }
+  else {
+     LMON_be_broadcast(&actual_size, sizeof(actual_size));
+     buffer = (void *) malloc(actual_size);
+     LMON_be_broadcast(buffer, actual_size);
+     unpackfebe_cb(buffer, actual_size, &dargs);
+  }
+  free(buffer);
+
+  number = dargs.number;
+  port = dargs.port;
+  opts = dargs.opts;
+  shared_secret = dargs.shared_secret;
+  location = dargs.location;
+
   location = parse_location(location);
   if (!location) {
      LMON_be_finalize();
      return -1;
-  }
-
-  /* Register pack/unpack functions to LMON  */
-  if ( LMON_be_amIMaster() == LMON_YES ) {
-    
-    if ( ( lrc = LMON_be_regPackForBeToFe (packbefe_cb )) != LMON_OK ) {
-       err_printf("Failed LMON_be_regPackForBeToFe\n");
-       return EXIT_FAILURE;
-    } 
-    
-    if ( ( lrc = LMON_be_regUnpackForFeToBe ( unpackfebe_cb )) != LMON_OK ) {
-       err_printf("Failed LMON_be_regUnpackForBeToFe\n");
-       return EXIT_FAILURE;
-    } 
   }
 
   /* start SPINDLE server */

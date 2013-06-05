@@ -21,120 +21,85 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <cassert>
 
 #include "spindle_usrdata.h"
+#include "spindle_debug.h"
 
-int packbefe_cb ( void* udata, 
-		  void* msgbuf, 
-		  int msgbufmax, 
-		  int* msgbuflen ) {
-  ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav= (char *) msgbuf;
-
-  if ( ( msgbuf == NULL ) || ( msgbufmax < 0) ) return -1; 
-
-  int accum_len = host_port_list->size*(HOSTNAME_LEN+sizeof(int)) + sizeof(int);
-  
-  if ( accum_len > msgbufmax ) return -1; 
-  
-  memcpy ( (void*) trav, &host_port_list->size, sizeof(int));
-  trav += sizeof(int); 
-
-  memcpy ( (void*) trav, host_port_list->hostlist, host_port_list->size*HOSTNAME_LEN); 
-  trav += host_port_list->size*HOSTNAME_LEN; 
-
-  memcpy ( (void*) trav, host_port_list->portlist, host_port_list->size*sizeof(int)); 
-  trav += host_port_list->size*sizeof(int); 
- 
-  (*msgbuflen) = accum_len;
-
-   return (0);
+extern "C" {
+#include "ldcs_api_opts.h"
 }
 
+template<typename T>
+void pack_param(T value, char *buffer, int &pos)
+{
+   memcpy(buffer + pos, &value, sizeof(T));
+   pos += sizeof(T);
+}
+
+template<>
+void pack_param<char*>(char *value, char *buffer, int &pos)
+{
+   unsigned int strsize = strlen(value) + 1;
+   memcpy(buffer + pos, value, strsize);
+   pos += strsize;
+}
+
+template<typename T>
+void unpack_param(T &value, char *buffer, int &pos)
+{
+   memcpy(&value, buffer + pos, sizeof(T));
+   pos += sizeof(T);
+}
+
+template<>
+void unpack_param<char*>(char* &value, char *buffer, int &pos)
+{
+   unsigned int strsize = strlen(buffer + pos) + 1;
+   value = (char *) malloc(strsize);
+   strncpy(value, buffer + pos, strsize);
+   pos += strsize;
+}
 
 int unpackfebe_cb  ( void* udatabuf, 
-		     int udatabuflen, 
-		     void* udata ) {
-  
-  ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav= (char *) udatabuf;
-  int size;
+                     int udatabuflen, 
+                     void* udata ) 
+{
+   spindle_daemon_args *args = (spindle_daemon_args *) udata;
+   
+   char *buffer = (char *) udatabuf;
+   int pos = 0;
 
-  if ( ( udatabuf == NULL ) || (udatabuflen < 0) ) return -1; 
+   unpack_param(args->number, buffer, pos);
+   unpack_param(args->port, buffer, pos);
+   unpack_param(args->opts, buffer, pos);
+   unpack_param(args->shared_secret, buffer, pos);
+   unpack_param(args->location, buffer, pos);
+   assert(pos == udatabuflen);
 
-  size= * (int *) trav;
-  trav += sizeof(int);
-
-  if ( size  < 0 ) return -1; 
-  
-  host_port_list->size=size;
-  host_port_list->hostlist=(char *) malloc(size*HOSTNAME_LEN);
-  host_port_list->portlist=(int *) malloc(size*sizeof(int));
-
-  memcpy ( host_port_list->hostlist, (void*) trav, host_port_list->size*HOSTNAME_LEN); 
-  trav += host_port_list->size*HOSTNAME_LEN; 
-
-  memcpy ( host_port_list->portlist, (void*) trav, host_port_list->size*sizeof(int)); 
-  trav += host_port_list->size*sizeof(int); 
- 
-  return 0;    
+   return 0;    
 }
 
+int packfebe_cb(void *udata, 
+                void *msgbuf, 
+                int msgbufmax, 
+                int *msgbuflen)
+{  
+   spindle_daemon_args *args = (spindle_daemon_args *) udata;
 
-int packfebe_cb ( void *udata, 
-		  void *msgbuf, 
-		  int msgbufmax, 
-		  int *msgbuflen ) {
-  
-  ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav= (char *) msgbuf;
+   *msgbuflen = sizeof(unsigned int) * 4;
+   *msgbuflen += strlen(args->location) + 1;
+   assert(*msgbuflen < msgbufmax);
+   
+   char *buffer = (char *) msgbuf;
+   int pos = 0;
+   pack_param(args->number, buffer, pos);
+   pack_param(args->port, buffer, pos);
+   pack_param(args->opts, buffer, pos);
+   pack_param(args->shared_secret, buffer, pos);
+   pack_param(args->location, buffer, pos);
+   assert(pos == *msgbuflen);
 
-  if ( ( msgbuf == NULL ) || ( msgbufmax < 0) ) return -1; 
-
-  int accum_len = host_port_list->size*(HOSTNAME_LEN+sizeof(int)) + sizeof(int);
-  
-  if ( accum_len > msgbufmax ) return -1; 
-  
-  memcpy ( (void*) trav, &host_port_list->size, sizeof(int));
-  trav += sizeof(int); 
-
-  memcpy ( (void*) trav, host_port_list->hostlist, host_port_list->size*HOSTNAME_LEN); 
-  trav += host_port_list->size*HOSTNAME_LEN; 
-
-  memcpy ( (void*) trav, host_port_list->portlist, host_port_list->size*sizeof(int)); 
-  trav += host_port_list->size*sizeof(int); 
- 
-  (*msgbuflen) = accum_len;
-
-   return (0);
-
+   return 0;
 }
 
-int unpackbefe_cb  ( void* udatabuf, 
-		     int udatabuflen, 
-		     void* udata ) {
-
-  ldcs_host_port_list_t *host_port_list = (ldcs_host_port_list_t *) udata;
-  char *trav= (char *) udatabuf;
-  int size;
-
-  if ( ( udatabuf == NULL ) || (udatabuflen < 0) ) return -1; 
-
-  size= * (int *) trav;
-  trav += sizeof(int);
-
-  if ( size  < 0 ) return -1; 
-  
-  host_port_list->size=size;
-  host_port_list->hostlist=(char *) malloc(size*HOSTNAME_LEN);
-  host_port_list->portlist=(int *) malloc(size*sizeof(int));
-
-  memcpy ( host_port_list->hostlist, (void*) trav, host_port_list->size*HOSTNAME_LEN); 
-  trav += host_port_list->size*HOSTNAME_LEN; 
-
-  memcpy ( host_port_list->portlist, (void*) trav, host_port_list->size*sizeof(int)); 
-  trav += host_port_list->size*sizeof(int); 
- 
-  return 0;    
-  
-}
