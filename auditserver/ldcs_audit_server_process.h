@@ -104,6 +104,7 @@ struct ldcs_process_data_struct
   ldcs_client_t* client_table;
   char *location;
   char *hostname;
+  char *pythonprefix;
   int number;
   int preload_done;
   requestor_list_t pending_requests;
@@ -124,8 +125,9 @@ struct ldcs_process_data_struct
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
 int ldcs_audit_server_process (char *location, unsigned int port, int number,
-			       int ready_cb_func ( void *data ), 
-			       void * ready_cb_data );
+                               char *pythonprefix,
+                               int ready_cb_func ( void *data ), 
+                               void * ready_cb_data );
 
 int _ldcs_client_CB ( int fd, int nc, void *data );
 int _ldcs_server_CB ( int infd, int serverid, void *data );

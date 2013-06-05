@@ -133,7 +133,6 @@ int main (int argc, char* argv[])
   int aSession    = 0;
   int launcher_argc, i;
   char **launcher_argv        = NULL;
-  //char **daemon_opts          = NULL;
   const char **daemon_opts = NULL;
   int launchers_to_use;
   int result;
@@ -143,6 +142,7 @@ int main (int argc, char* argv[])
   lmon_rc_e rc;
   void *md_data_ptr;
   spindle_daemon_args daemon_args;
+  string python_prefixes;
 
   LOGGING_INIT(const_cast<char *>("FE"));
 
@@ -168,6 +168,7 @@ int main (int argc, char* argv[])
                           // pid should suffice
   ldcs_location_str = getLocation(ldcs_number);
   ldcs_location = ldcs_location_str.c_str();
+  python_prefixes = getPythonPrefixes();
 
   snprintf(ldcs_number_s, 32, "%d", ldcs_number);
 
@@ -207,7 +208,8 @@ int main (int argc, char* argv[])
   daemon_args.port = ldcs_port;
   daemon_args.opts = opts;
   daemon_args.shared_secret = get_shared_secret();
-  daemon_args.location = (char *) ldcs_location;
+  daemon_args.location = const_cast<char*>(ldcs_location);
+  daemon_args.pythonprefix = const_cast<char*>(python_prefixes.c_str());
 
   /**
    * Setup LaunchMON

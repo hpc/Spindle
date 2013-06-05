@@ -40,6 +40,7 @@ extern "C" {
 static int rank, size;
 unsigned long opts;
 unsigned int shared_secret;
+static char *pythonprefix;
 
 int _ready_cb_func (  void * data) {
   int rc=0;
@@ -169,7 +170,9 @@ int main(int argc, char* argv[])
   int actual_size = 0;
   void *buffer;
   if (LMON_be_amIMaster() == LMON_YES) {
-     int estimate_size = sizeof(dargs) + strlen(dargs.location) + 1;
+     int estimate_size = sizeof(dargs) + 
+        strlen(dargs.location) + 1 +
+        strlen(dargs.pythonprefix) + 1;
      buffer = (void *) malloc(estimate_size);
      packfebe_cb(&dargs, buffer, estimate_size, &actual_size);
      LMON_be_broadcast(&actual_size, sizeof(actual_size));
@@ -188,6 +191,7 @@ int main(int argc, char* argv[])
   opts = dargs.opts;
   shared_secret = dargs.shared_secret;
   location = dargs.location;
+  pythonprefix = dargs.pythonprefix;
 
   location = parse_location(location);
   if (!location) {
@@ -196,7 +200,7 @@ int main(int argc, char* argv[])
   }
 
   /* start SPINDLE server */
-  ldcs_audit_server_process(location, port, number, &_ready_cb_func, NULL);
+  ldcs_audit_server_process(location, port, number, pythonprefix, &_ready_cb_func, NULL);
 
   LMON_be_finalize();
 

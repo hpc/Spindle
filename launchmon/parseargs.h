@@ -23,5 +23,6 @@ unsigned long parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
 unsigned int getPort();
 std::string getLocation(int number);
+std::string getPythonPrefixes();
 
 #endif

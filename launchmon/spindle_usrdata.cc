@@ -40,6 +40,9 @@ void pack_param(T value, char *buffer, int &pos)
 template<>
 void pack_param<char*>(char *value, char *buffer, int &pos)
 {
+   if (value == NULL) {
+      value = const_cast<char*>("");
+   }
    unsigned int strsize = strlen(value) + 1;
    memcpy(buffer + pos, value, strsize);
    pos += strsize;
@@ -61,9 +64,9 @@ void unpack_param<char*>(char* &value, char *buffer, int &pos)
    pos += strsize;
 }
 
-int unpackfebe_cb  ( void* udatabuf, 
-                     int udatabuflen, 
-                     void* udata ) 
+int unpackfebe_cb( void* udatabuf, 
+                   int udatabuflen, 
+                   void* udata ) 
 {
    spindle_daemon_args *args = (spindle_daemon_args *) udata;
    
@@ -75,6 +78,7 @@ int unpackfebe_cb  ( void* udatabuf,
    unpack_param(args->opts, buffer, pos);
    unpack_param(args->shared_secret, buffer, pos);
    unpack_param(args->location, buffer, pos);
+   unpack_param(args->pythonprefix, buffer, pos);
    assert(pos == udatabuflen);
 
    return 0;    
@@ -89,6 +93,7 @@ int packfebe_cb(void *udata,
 
    *msgbuflen = sizeof(unsigned int) * 4;
    *msgbuflen += strlen(args->location) + 1;
+   *msgbuflen += strlen(args->pythonprefix) + 1;
    assert(*msgbuflen < msgbufmax);
    
    char *buffer = (char *) msgbuf;
@@ -98,6 +103,7 @@ int packfebe_cb(void *udata,
    pack_param(args->opts, buffer, pos);
    pack_param(args->shared_secret, buffer, pos);
    pack_param(args->location, buffer, pos);
+   pack_param(args->pythonprefix, buffer, pos);
    assert(pos == *msgbuflen);
 
    return 0;

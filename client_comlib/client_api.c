@@ -277,6 +277,21 @@ int send_location(int fd, char *location) {
    return 0;
 }
 
+int get_python_prefix(int fd, char **prefix)
+{
+   ldcs_message_t message;
+   message.header.type = LDCS_MSG_PYTHONPREFIX_REQ;
+   message.header.len = 0;
+   message.data = NULL;
+      
+   COMM_LOCK;
+   client_send_msg(fd, &message);
+   client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
+   COMM_UNLOCK;
+   *prefix = (char *) message.data;
+   return 0;
+}
+
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize) {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN];

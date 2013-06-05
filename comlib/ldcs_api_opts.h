@@ -38,5 +38,6 @@ typedef struct {
    unsigned int opts;
    unsigned int shared_secret;
    char *location;
+   char *pythonprefix;
 } spindle_daemon_args;
 #endif

@@ -20,17 +20,19 @@
 #include <string.h>
 
 #include "ldcs_api_opts.h"
+#include "client.h"
 #include "should_intercept.h"
 
 static int is_python_path(const char *pathname)
 {
-#if defined(PYTHON_PATH)
-   static int python_path_len = 0;
-   if (!python_path_len)
-      python_path_len = strlen(PYTHON_PATH);
-   if (strncmp(PYTHON_PATH, pathname, python_path_len) == 0)
-      return 1;
-#endif
+   unsigned int i;
+
+   assert(pythonprefixes);
+   for (i = 0; pythonprefixes[i].path != NULL; i++) {
+      if (strncmp(pythonprefixes[i].path, pathname, pythonprefixes[i].pathsize) == 0)
+         return 1;
+   }
+
    return 0;
 }
 

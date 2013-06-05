@@ -143,6 +143,9 @@ static int init_server_connection()
    LOGGING_INIT(debugging_name);
 
    sync_cwd();
+
+   if (opts & OPT_RELOCPY)
+      parse_python_prefixes(ldcsid);
    return 0;
 }
 
@@ -303,3 +306,37 @@ char *client_library_load(const char *name)
    return newname;
 }
 
+python_path_t *pythonprefixes = NULL;
+void parse_python_prefixes(int fd)
+{
+   char *path;
+   int i, j;
+   int num_pythonprefixes;
+
+   if (pythonprefixes)
+      return;
+   get_python_prefix(fd, &path);
+
+   num_pythonprefixes = (path[i] == '\0') ? 0 : 1;
+   for (i = 0; path[i] != '\0'; i++) {
+      if (path[i] == ':')
+         num_pythonprefixes++;
+   }   
+
+   debug_printf3("num_pythonprefixes = %d in %s\n", num_pythonprefixes, path);
+   pythonprefixes = (python_path_t *) spindle_malloc(sizeof(python_path_t) * (num_pythonprefixes+1));
+   for (i = 0, j = 0; j < num_pythonprefixes; j++) {
+      char *cur = path+i;
+      char *next = strchr(cur, ':');
+      if (next != NULL)
+         *next = '\0';
+      pythonprefixes[j].path = cur;
+      pythonprefixes[j].pathsize = strlen(cur);
+      i += pythonprefixes[j].pathsize+1;
+   }
+   pythonprefixes[num_pythonprefixes].path = NULL;
+   pythonprefixes[num_pythonprefixes].pathsize = 0;
+
+   for (i = 0; pythonprefixes[i].path != NULL; i++)
+      debug_printf3("Python path # %d = %s\n", i, pythonprefixes[i].path);
+}

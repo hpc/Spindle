@@ -304,7 +304,8 @@ int client_send_msg_pipe(int fd, ldcs_message_t *msg) {
    return 0;
 }
 
-int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
+static int client_recv_msg_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block, int is_dynamic)
+{
    int result;
    msg->header.type=LDCS_MSG_UNKNOWN;
    msg->header.len=0;
@@ -318,15 +319,28 @@ int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t b
       return -1;
    }
    
-   if (msg->header.len == 0)
+   if (msg->header.len == 0) {
+      msg->data = NULL;
       return 0;
+   }
+
+   if (is_dynamic) {
+      msg->data = (char *) spindle_malloc(msg->header.len);
+   }
 
    debug_printf3("Reading %d bytes for payload from pipe\n", msg->header.len);
-   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data,msg->header.len);
-   if (result == -1)
-      return -1;
+   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data, msg->header.len);
+   return result;
+}
 
-   return 0;
+int client_recv_msg_dynamic_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 1);
+}
+
+int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 0);
 }
 
 int client_close_connection_pipe(int fd)

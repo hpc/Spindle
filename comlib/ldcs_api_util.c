@@ -44,6 +44,8 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
 	 (type == LDCS_MSG_ACK)               ? "LDCS_MSG_ACK" :
 	 (type == LDCS_MSG_FILE_DATA)         ? "LDCS_MSG_FILE_DATA" :
 	 (type == LDCS_MSG_FILE_DATA_PART)    ? "LDCS_MSG_FILE_DATA_PART" :
+    (type == LDCS_MSG_PYTHONPREFIX_REQ)  ? "LDCS_MSG_PYTHONPREFIX_REQ" :
+    (type == LDCS_MSG_PYTHONPREFIX_RESP) ? "LDCS_MSG_PYTHONPREFIX_RESP" :
 	 (type == LDCS_MSG_END)               ? "LDCS_MSG_END" :
 	 (type == LDCS_MSG_CWD)               ? "LDCS_MSG_CWD" :
 	 (type == LDCS_MSG_PID)               ? "LDCS_MSG_PID" :

@@ -76,6 +76,7 @@ typedef enum {
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
+static int handle_pythonprefix_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static handle_file_result_t handle_howto_directory(ldcs_process_data_t *procdata, char *dir);
 static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, char *pathname,
@@ -146,16 +147,38 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       strncpy(client->remote_cwd, msg->data, MAX_PATH_LEN);
       debug_printf2("Server recvd CWD %s from %d\n", msg->data, nc);
    } 
-   if(msg->header.type == LDCS_MSG_PID) {
+   else if(msg->header.type == LDCS_MSG_PID) {
       int mypid;
       sscanf(msg->data,"%d",&mypid);
       client->remote_pid=mypid;
       debug_printf2("Server recvd pid %d from %d\n", mypid, nc);
    } 
-   if(msg->header.type == LDCS_MSG_LOCATION) {
+   else if(msg->header.type == LDCS_MSG_LOCATION) {
       strncpy(client->remote_location, msg->data, MAX_PATH_LEN);
       debug_printf2("Server recvd location %s from %d\n", msg->data, nc);
    }
+   return 0;
+}
+
+static int handle_pythonprefix_query(ldcs_process_data_t *procdata, int nc)
+{
+   ldcs_message_t msg;
+   int connid;
+   ldcs_client_t *client;
+
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   connid = client->connid;
+   if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
+      return 0;
+
+   msg.header.type = LDCS_MSG_PYTHONPREFIX_RESP;
+   msg.header.len = strlen(procdata->pythonprefix) + 1;
+   msg.data = procdata->pythonprefix;
+   
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
    return 0;
 }
 
@@ -184,10 +207,10 @@ static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, l
    memcpy(out_msg.data, &tmpdata, out_msg.header.len);
 
    /* statistic */
+   ldcs_send_msg(connid, &out_msg);
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time+=(ldcs_get_time()-
                                                    client->query_arrival_time);
-   ldcs_send_msg(connid, &out_msg);
    return 0;
 }
 
@@ -1150,6 +1173,8 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
       case LDCS_MSG_PID:
       case LDCS_MSG_LOCATION:
          return handle_client_info_msg(procdata, nc, msg);
+      case LDCS_MSG_PYTHONPREFIX_REQ:
+         return handle_pythonprefix_query(procdata, nc);
       case LDCS_MSG_MYRANKINFO_QUERY:
          return handle_client_myrankinfo_msg(procdata, nc, msg);
       case LDCS_MSG_FILE_QUERY:

@@ -56,4 +56,11 @@ void patch_on_load_success(const char *rewritten_name, const char *orig_name);
 void sync_cwd();
 void check_for_fork();
 
+typedef struct {
+   char *path;
+   int pathsize;
+} python_path_t;
+extern python_path_t *pythonprefixes;
+void parse_python_prefixes(int fd);
+
 #endif
