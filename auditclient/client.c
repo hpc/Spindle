@@ -317,7 +317,7 @@ void parse_python_prefixes(int fd)
       return;
    get_python_prefix(fd, &path);
 
-   num_pythonprefixes = (path[i] == '\0') ? 0 : 1;
+   num_pythonprefixes = (path[0] == '\0') ? 0 : 1;
    for (i = 0; path[i] != '\0'; i++) {
       if (path[i] == ':')
          num_pythonprefixes++;

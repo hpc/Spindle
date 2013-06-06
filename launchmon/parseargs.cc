@@ -25,6 +25,7 @@ using namespace std;
 
 #include "config.h"
 #include "ldcs_api_opts.h"
+#include "spindle_debug.h"
 
 #if !defined(STR)
 #define STR2(X) #X
@@ -260,6 +261,7 @@ unsigned long parseArgs(int argc, char *argv[])
  
    result = argp_parse(&arg_parser, argc, argv, ARGP_IN_ORDER, NULL, NULL);
    assert(result == 0);
+
    return opts;
 }
 

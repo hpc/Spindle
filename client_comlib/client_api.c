@@ -204,7 +204,7 @@ int send_existance_test(int fd, char *path, int *exists)
       assert(0);
    }
 
-   *exists = (int) *((uint32_t *) buffer);
+   memcpy(exists, buffer, sizeof(*exists));
    debug_printf3("Determined that file %s %s\n", path, *exists ? "exists" : "does not exist");
    return 0;
 }

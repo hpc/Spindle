@@ -67,7 +67,7 @@ static void find_exec(const char *filepath, char *newpath, int newpath_size)
 
 static void find_exec_pathsearch(const char *filepath, char *newpath, int newpath_size)
 {
-   char *newname = NULL, *path, *cur, *saveptr;
+   char *newname = NULL, *path, *cur, *saveptr = NULL;
    char path_to_try[MAX_PATH_LEN+1];
 
    if (!filepath) {
