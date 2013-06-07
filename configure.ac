@@ -139,6 +139,13 @@ AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
 
+#Python prefix
+AC_ARG_WITH(python-prefix,
+            [AS_HELP_STRING([--with-python-prefix=STR],[List of directories containing python installs])],
+            [PYTHON_INST_PREFIX=${withval}],
+            [PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python])
+AC_DEFINE_UNQUOTED([PYTHON_INST_PREFIX],"[$PYTHON_INST_PREFIX]",[Python installation prefixes])
+
 #Network port and local storage location
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'

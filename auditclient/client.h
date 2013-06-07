@@ -33,6 +33,11 @@ typedef unsigned long ElfX_Addr;
  **/
 ElfX_Addr redirect_open(const char *symname, ElfX_Addr value);
 ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value);
+
+/**
+ * Performs file existance tests
+ **/
 
 /**
  * These functions are called by the audit hooks to do the major
@@ -50,5 +55,12 @@ void set_errno(int newerrno);
 void patch_on_load_success(const char *rewritten_name, const char *orig_name);
 void sync_cwd();
 void check_for_fork();
+
+typedef struct {
+   char *path;
+   int pathsize;
+} python_path_t;
+extern python_path_t *pythonprefixes;
+void parse_python_prefixes(int fd);
 
 #endif

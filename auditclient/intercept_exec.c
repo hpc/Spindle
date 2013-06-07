@@ -29,6 +29,7 @@
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "should_intercept.h"
 
 static int (*orig_execv)(const char *path, char *const argv[]);
 static int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
@@ -36,14 +37,15 @@ static int (*orig_execvp)(const char *file, char *const argv[]);
 
 static void find_exec(const char *filepath, char *newpath, int newpath_size)
 {
-   char *newname;
+   char *newname = NULL;
 
    if (!filepath) {
       newpath[0] = '\0';
       return;
    }
+
    check_for_fork();
-   if (ldcsid < 0 || !use_ldcs) {
+   if (ldcsid < 0 || !use_ldcs || exec_filter(filepath) != REDIRECT) {
       strncpy(newpath, filepath, newpath_size);
       newpath[newpath_size-1] = '\0';
       return;
@@ -65,7 +67,7 @@ static void find_exec(const char *filepath, char *newpath, int newpath_size)
 
 static void find_exec_pathsearch(const char *filepath, char *newpath, int newpath_size)
 {
-   char *newname = NULL, *path, *cur, *saveptr;
+   char *newname = NULL, *path, *cur, *saveptr = NULL;
    char path_to_try[MAX_PATH_LEN+1];
 
    if (!filepath) {

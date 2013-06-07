@@ -57,8 +57,10 @@ int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
 }
     
 int ldcs_audit_server_process (char *location, unsigned int port, int number,
-			       int ready_cb_func ( void *data ), 
-			       void * ready_cb_data ) {
+                               char *pythonprefix,
+                               int ready_cb_func ( void *data ), 
+                               void * ready_cb_data )
+{
   int rc=0;
   int serverid, fd;
 
@@ -79,7 +81,7 @@ int ldcs_audit_server_process (char *location, unsigned int port, int number,
   if (opts & OPT_PULL)
      ldcs_process_data.dist_model = LDCS_PULL;
   else if (opts & OPT_PUSH)
-     ldcs_process_data.dist_model = LDCS_PULL;
+     ldcs_process_data.dist_model = LDCS_PUSH;
   else {
      err_printf("Neither push nor pull options were set\n");
      assert(0);
@@ -91,10 +93,13 @@ int ldcs_audit_server_process (char *location, unsigned int port, int number,
   ldcs_process_data.md_fan_out=0; 
   ldcs_process_data.client_counter=0; /* number of clients ever connected */
   ldcs_process_data.clients_connected=0; /* will set to one once a client was connected */
-
   ldcs_process_data.preload_done=0;
   ldcs_process_data.pending_requests = new_requestor_list();
   ldcs_process_data.completed_requests = new_requestor_list();
+  ldcs_process_data.pending_stat_requests = new_requestor_list();
+  ldcs_process_data.completed_stat_requests = new_requestor_list();
+  ldcs_process_data.pythonprefix = pythonprefix;
+
   {
     char buffer[MAX_PATH_LEN];
     

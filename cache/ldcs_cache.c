@@ -302,7 +302,7 @@ void cacheLibraries(char *dirname, size_t *bytesread) {
       if (dent == NULL)
          break;
       if (bytesread) *bytesread += sizeof(dent);
-      if (dent->d_type != DT_LNK && dent->d_type != DT_REG && dent->d_type != DT_UNKNOWN) {
+      if (dent->d_type != DT_LNK && dent->d_type != DT_REG && dent->d_type != DT_UNKNOWN && dent->d_type != DT_DIR) {
          continue;
       }
       

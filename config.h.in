@@ -70,6 +70,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Python installation prefixes */
+#undef PYTHON_INST_PREFIX
+
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
 

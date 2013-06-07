@@ -14,15 +14,13 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSEARGS_H_)
-#define PARSEARGS_H_
+#if !defined(STAT_CACHE_H_)
+#define STAT_CACHE_H_
 
-#include <string>
+int init_stat_cache();
 
-unsigned long parseArgs(int argc, char *argv[]);
-char *getPreloadFile();
-unsigned int getPort();
-std::string getLocation(int number);
-std::string getPythonPrefixes();
+/* localname can be NULL if file doesn't exist */
+void add_stat_cache(char *pathname, char *localname);
+int lookup_stat_cache(char *pathname, char **localname);
 
 #endif

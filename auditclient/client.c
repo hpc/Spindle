@@ -48,6 +48,7 @@ int ldcsid = -1;
 
 static int intercept_open;
 static int intercept_exec;
+static int intercept_stat;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -142,6 +143,9 @@ static int init_server_connection()
    LOGGING_INIT(debugging_name);
 
    sync_cwd();
+
+   if (opts & OPT_RELOCPY)
+      parse_python_prefixes(ldcsid);
    return 0;
 }
 
@@ -213,7 +217,7 @@ void sync_cwd()
 void set_errno(int newerrno)
 {
    if (!app_errno_location) {
-      err_printf("Warning: Unable to set errno because app_errno_location not set\n");
+      debug_printf("Warning: Unable to set errno because app_errno_location not set\n");
       return;
    }
    *app_errno_location() = newerrno;
@@ -228,6 +232,7 @@ int client_init()
 
   init_server_connection();
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
+  intercept_stat = (opts & OPT_RELOCPY) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
   return 0;
 }
@@ -250,6 +255,8 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
       return redirect_open(symname, symvalue);
    if (intercept_exec && strstr(symname, "exec")) 
       return redirect_exec(symname, symvalue);
+   if (intercept_stat && strstr(symname, "stat"))
+      return redirect_stat(symname, symvalue);
    else if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
       return (Elf64_Addr) spindle_test_log_msg;
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
@@ -299,3 +306,37 @@ char *client_library_load(const char *name)
    return newname;
 }
 
+python_path_t *pythonprefixes = NULL;
+void parse_python_prefixes(int fd)
+{
+   char *path;
+   int i, j;
+   int num_pythonprefixes;
+
+   if (pythonprefixes)
+      return;
+   get_python_prefix(fd, &path);
+
+   num_pythonprefixes = (path[0] == '\0') ? 0 : 1;
+   for (i = 0; path[i] != '\0'; i++) {
+      if (path[i] == ':')
+         num_pythonprefixes++;
+   }   
+
+   debug_printf3("num_pythonprefixes = %d in %s\n", num_pythonprefixes, path);
+   pythonprefixes = (python_path_t *) spindle_malloc(sizeof(python_path_t) * (num_pythonprefixes+1));
+   for (i = 0, j = 0; j < num_pythonprefixes; j++) {
+      char *cur = path+i;
+      char *next = strchr(cur, ':');
+      if (next != NULL)
+         *next = '\0';
+      pythonprefixes[j].path = cur;
+      pythonprefixes[j].pathsize = strlen(cur);
+      i += pythonprefixes[j].pathsize+1;
+   }
+   pythonprefixes[num_pythonprefixes].path = NULL;
+   pythonprefixes[num_pythonprefixes].pathsize = 0;
+
+   for (i = 0; pythonprefixes[i].path != NULL; i++)
+      debug_printf3("Python path # %d = %s\n", i, pythonprefixes[i].path);
+}

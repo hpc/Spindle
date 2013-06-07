@@ -139,6 +139,7 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
       fdpath[0] = '\0';
       readlink(dirpath, fdpath, MAX_PATH_LEN);
 
+      debug_printf("Comparing %s with in_path = %s, out_path = %s\n", fdpath, in_path, out_path);
       if (!found_in && strcmp(fdpath, in_path) == 0) {
          *in_fd = fd;
          found_in = 1;
@@ -303,7 +304,8 @@ int client_send_msg_pipe(int fd, ldcs_message_t *msg) {
    return 0;
 }
 
-int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
+static int client_recv_msg_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block, int is_dynamic)
+{
    int result;
    msg->header.type=LDCS_MSG_UNKNOWN;
    msg->header.len=0;
@@ -317,15 +319,28 @@ int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t b
       return -1;
    }
    
-   if (msg->header.len == 0)
+   if (msg->header.len == 0) {
+      msg->data = NULL;
       return 0;
+   }
+
+   if (is_dynamic) {
+      msg->data = (char *) spindle_malloc(msg->header.len);
+   }
 
    debug_printf3("Reading %d bytes for payload from pipe\n", msg->header.len);
-   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data,msg->header.len);
-   if (result == -1)
-      return -1;
+   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data, msg->header.len);
+   return result;
+}
 
-   return 0;
+int client_recv_msg_dynamic_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 1);
+}
+
+int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 0);
 }
 
 int client_close_connection_pipe(int fd)

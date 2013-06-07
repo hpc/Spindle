@@ -19,8 +19,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cassert>
 #include <stdlib.h>
 #include <string>
+#include <set>
+
+using namespace std;
+
 #include "config.h"
 #include "ldcs_api_opts.h"
+#include "spindle_debug.h"
 
 #if !defined(STR)
 #define STR2(X) #X
@@ -37,6 +42,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define LOCATION 'o'
 #define PUSH 'p'
 #define PULL 'q'
+#define PYTHONPREFIX 'r'
 #define STRIP 's'
 #define PORT 't'
 #define RELOCEXEC 'x'
@@ -69,8 +75,12 @@ static char **mpi_argv;
 static int mpi_argc;
 static bool done = false;
 
+static set<string> python_prefixes;
+static const char *default_python_prefixes = PYTHON_INST_PREFIX;
+static char *user_python_prefixes = NULL;
+
 static unsigned int spindle_port = SPINDLE_PORT;
-std::string spindle_location(SPINDLE_LOC);
+string spindle_location(SPINDLE_LOC);
 
 struct argp_option options[] = {
    { "reloc-aout", RELOCAOUT, YESNO, 0, 
@@ -93,6 +103,8 @@ struct argp_option options[] = {
      "TCP Port for Spindle servers.  Default: " STR(SPINDLE_PORT), GROUP_NETWORK },
    { "location", LOCATION, "directory", 0,
      "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_NETWORK },
+   { "python-prefix", PYTHONPREFIX, "=path", 0,
+     "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
      "Hide spindle from debuggers so they think libraries come from the original locations. " 
      "Enabling this disables reloc-exec.  Default: no", GROUP_MISC },
@@ -182,6 +194,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       return ARGP_ERR_UNKNOWN;
    }
+   else if (key == PYTHONPREFIX) {
+      user_python_prefixes = arg;
+      return 0;
+   }
    else if (key == ARGP_KEY_ARGS) {
       mpi_argv = state->argv + state->next;
       mpi_argc = state->argc - state->next;
@@ -245,6 +261,7 @@ unsigned long parseArgs(int argc, char *argv[])
  
    result = argp_parse(&arg_parser, argc, argv, ARGP_IN_ORDER, NULL, NULL);
    assert(result == 0);
+
    return opts;
 }
 
@@ -258,9 +275,45 @@ unsigned int getPort()
    return spindle_port;
 }
 
-const std::string getLocation(int number)
+const string getLocation(int number)
 {
    char num_s[32];
    snprintf(num_s, 32, "%d", number);
-   return spindle_location + std::string("/spindle.") + std::string(num_s);
+   return spindle_location + string("/spindle.") + string(num_s);
+}
+
+static void parse_python_prefix(const char *prefix)
+{
+   if (!prefix)
+      return;
+
+   const char *cur = prefix;
+   for (;;) {
+      const char *colon;
+      for (colon = cur; *colon != '\0' && *colon != ':'; colon++);
+      string s(cur, colon - cur);
+      if (!s.empty())
+         python_prefixes.insert(s);
+
+      if (*colon == '\0')
+         break;
+      cur = colon + 1;
+   }
+}
+
+string getPythonPrefixes()
+{
+   parse_python_prefix(default_python_prefixes);
+   parse_python_prefix(user_python_prefixes);
+
+   string result;
+   set<string>::iterator i = python_prefixes.begin();
+   for (;;) {
+      result += *i;
+      i++;
+      if (i == python_prefixes.end())
+         break;
+      result += ":";
+   }
+   return result;
 }

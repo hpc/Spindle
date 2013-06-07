@@ -81,6 +81,8 @@ struct ldcs_client_struct
   int                  remote_pid;
   char                 remote_cwd[MAX_PATH_LEN];
   int                  query_open;
+  int                  existance_query;
+  int                  is_stat;
   char                 query_filename[MAX_PATH_LEN];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN];  /* path to file in global fs (dirname+filename) */
@@ -102,10 +104,13 @@ struct ldcs_process_data_struct
   ldcs_client_t* client_table;
   char *location;
   char *hostname;
+  char *pythonprefix;
   int number;
   int preload_done;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
+  requestor_list_t pending_stat_requests;
+  requestor_list_t completed_stat_requests;
 
   /* multi daemon support */
   int md_rank;
@@ -120,8 +125,9 @@ struct ldcs_process_data_struct
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
 int ldcs_audit_server_process (char *location, unsigned int port, int number,
-			       int ready_cb_func ( void *data ), 
-			       void * ready_cb_data );
+                               char *pythonprefix,
+                               int ready_cb_func ( void *data ), 
+                               void * ready_cb_data );
 
 int _ldcs_client_CB ( int fd, int nc, void *data );
 int _ldcs_server_CB ( int infd, int serverid, void *data );

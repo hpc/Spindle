@@ -139,6 +139,19 @@ static void get_clientlib()
    }
 }
 
+static char *realize(char *path)
+{
+   char *result;
+   char newpath[MAX_PATH_LEN+1];
+   newpath[MAX_PATH_LEN] = '\0';
+   
+   result = realpath(path, newpath);
+   if (!result)
+      return path;
+   assert(strlen(newpath) < MAX_PATH_LEN);
+   return strdup(newpath);
+}
+
 int main(int argc, char *argv[])
 {
    int error, i, result;
@@ -155,8 +168,8 @@ int main(int argc, char *argv[])
    if (!location) {
       return -1;
    }
+   location = realize(location);
    
-
    result = establish_connection();
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");

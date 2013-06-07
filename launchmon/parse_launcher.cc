@@ -375,7 +375,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
       return result;
 
    /* Add the bootstrapper to the cmdline before the executable */
-   *new_argc = argc+4;
+   *new_argc = argc + 4;
    *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
    for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
       if (i == found_exec_at) {
@@ -386,8 +386,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
       }
       (*new_argv)[j] = argv[i];
    }
-   (*new_argv)[*new_argc] = NULL;
-
+   (*new_argv)[j] = NULL;
    return 0;
 }
 
