@@ -5,13 +5,17 @@ Authors:    SPINDLE:              W.Frings <W.Frings at fz-juelich dot de>
                                   Matthew LeGendre (legendre1 at llnl dot gov)
             COBO:                 Adam Moody <moody20 at llnl dot gov>
 
-Version:    0.7.1 (May 2013)
+Version:    0.7.2 (May 2013)
 
 Summary:
 ===========
 
 Spindle is a tool for improving the performance of dynamic library
 and python loading in HPC enviornments.
+
+Documentation:
+============
+https://scalability.llnl.gov/spindle/
 
 Introduction:
 ============
