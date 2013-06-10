@@ -79,7 +79,7 @@ int ldcs_audit_server_process (char *location, unsigned int port, int number,
   if (opts & OPT_PULL)
      ldcs_process_data.dist_model = LDCS_PULL;
   else if (opts & OPT_PUSH)
-     ldcs_process_data.dist_model = LDCS_PULL;
+     ldcs_process_data.dist_model = LDCS_PUSH;
   else {
      err_printf("Neither push nor pull options were set\n");
      assert(0);
