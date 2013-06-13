@@ -23,6 +23,8 @@
 #include "client.h"
 #include "should_intercept.h"
 
+extern int relocate_spindleapi();
+
 static int is_python_path(const char *pathname)
 {
    unsigned int i;
@@ -84,6 +86,14 @@ int open_filter(const char *fname, int flags)
 {
    char *last_slash, *last_dot;
 
+   if (relocate_spindleapi()) {
+      if (open_for_excl(flags))
+         return EXCL_OPEN;
+      if (!open_for_write(flags))
+         return REDIRECT;
+      return ORIG_CALL;
+   }
+
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
@@ -113,6 +123,14 @@ int fopen_filter(const char *fname, const char *flags)
 {
    char *last_slash, *last_dot;
 
+   if (relocate_spindleapi()) {
+      if (open_for_excl(flags))
+         return EXCL_OPEN;
+      if (!open_for_write(flags))
+         return REDIRECT;
+      return ORIG_CALL;
+   }
+
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
@@ -136,6 +154,9 @@ int fopen_filter(const char *fname, const char *flags)
 
 int exec_filter(const char *fname)
 {
+   if (relocate_spindleapi())
+      return REDIRECT;
+
    if (opts & OPT_RELOCEXEC)
       return REDIRECT;
    else
@@ -145,6 +166,10 @@ int exec_filter(const char *fname)
 int stat_filter(const char *fname)
 {
    char *last_dot, *last_slash;
+
+   if (relocate_spindleapi())
+      return REDIRECT;
+
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 

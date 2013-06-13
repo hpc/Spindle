@@ -180,7 +180,7 @@ void check_for_fork()
    reset_server_connection();
 }
 
-static void test_log(const char *name)
+void test_log(const char *name)
 {
    int result;
    if (!run_tests)
@@ -251,14 +251,16 @@ int client_done()
 
 ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
 {
-   if (intercept_open && strstr(symname, "open"))
-      return redirect_open(symname, symvalue);
-   if (intercept_exec && strstr(symname, "exec")) 
-      return redirect_exec(symname, symvalue);
-   if (intercept_stat && strstr(symname, "stat"))
-      return redirect_stat(symname, symvalue);
-   else if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
+   if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
       return (Elf64_Addr) spindle_test_log_msg;
+   else if (strncmp("spindle_", symname, 8) == 0)
+      return redirect_spindleapi(symname, symvalue);
+   else if (intercept_open && strstr(symname, "open"))
+      return redirect_open(symname, symvalue);
+   else if (intercept_exec && strstr(symname, "exec")) 
+      return redirect_exec(symname, symvalue);
+   else if (intercept_stat && strstr(symname, "stat"))
+      return redirect_stat(symname, symvalue);
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
       app_errno_location = (errno_location_t) symvalue;
       return symvalue;
