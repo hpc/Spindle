@@ -41,6 +41,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define PORT 't'
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
+#define DISABLE_LOGGING 'z'
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -68,6 +69,15 @@ static char *preload_file;
 static char **mpi_argv;
 static int mpi_argc;
 static bool done = false;
+
+#if defined(USAGE_LOGGING_FILE)
+#define DEFAULT_LOGGING_ENABLED true
+static const int DISABLE_LOGGING_FLAGS = 0;
+#else
+#define DEFAULT_LOGGING_ENABLED false
+static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
+#endif
+static bool logging_enabled = DEFAULT_LOGGING_ENABLED;
 
 static unsigned int spindle_port = SPINDLE_PORT;
 std::string spindle_location(SPINDLE_LOC);
@@ -103,6 +113,8 @@ struct argp_option options[] = {
      "Strip debug and symbol information from binaries before distributing them. Default: yes", GROUP_MISC },
    { "noclean", NOCLEAN, YESNO, 0,
      "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
+   { "disable-logging", DISABLE_LOGGING, NULL, DISABLE_LOGGING_FLAGS,
+     "Disable usage logging for this invocation of Spindle", GROUP_MISC },
    {0}
 };
 
@@ -156,7 +168,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       return 0;
    }
-   else if (entry->key && entry->arg == NULL) {
+   else if (entry->key && entry->arg == NULL && opt) {
       enabled_opts |= opt;
       return 0;
    }
@@ -174,6 +186,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    }
    else if (entry->key == LOCATION) {
       spindle_location = arg;
+      return 0;
+   }
+   else if (key == DISABLE_LOGGING) {
+      logging_enabled = false;
       return 0;
    }
    else if (key == ARGP_KEY_ARG) {
@@ -263,4 +279,9 @@ const std::string getLocation(int number)
    char num_s[32];
    snprintf(num_s, 32, "%d", number);
    return spindle_location + std::string("/spindle.") + std::string(num_s);
+}
+
+bool isLoggingEnabled()
+{
+   return logging_enabled;
 }

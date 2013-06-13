@@ -139,6 +139,14 @@ AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
 
+#Usage logging
+AC_ARG_WITH(usage-logging,
+            [AS_HELP_STRING([--with-usage-logging=FILE],[File for writing usage logs])],
+            [USAGE_LOGS=${withval}])
+if test "x$USAGE_LOGS" != "x"; then
+  AC_DEFINE_UNQUOTED([USAGE_LOGGING_FILE],"[$USAGE_LOGS]",[The file for storing usage logs])
+fi
+
 #Network port and local storage location
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
