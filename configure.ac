@@ -1,4 +1,4 @@
-AC_INIT([spindle], [0.7.2], [legendre1@llnl.gov])
+AC_INIT([spindle], [0.7.3], [legendre1@llnl.gov])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
