@@ -139,16 +139,48 @@ static void get_clientlib()
    }
 }
 
+/**
+ * Realize takes the 'realpath' of a non-existant location.
+ * If later directories in the path don't exist, it'll cut them
+ * off, take the realpath of the ones that do, then append them
+ * back to the resulting realpath.
+ **/
 static char *realize(char *path)
 {
    char *result;
+   char *origpath, *cur_slash = NULL, *trailing;
+   struct stat buf;
    char newpath[MAX_PATH_LEN+1];
    newpath[MAX_PATH_LEN] = '\0';
-   
-   result = realpath(path, newpath);
-   if (!result)
+
+   origpath = strdup(path);
+   for (;;) {
+      if (stat(origpath, &buf) != -1)
+         break;
+      if (cur_slash)
+         *cur_slash = '/';
+      cur_slash = strrchr(origpath, '/');
+      if (!cur_slash)
+         break;
+      *cur_slash = '\0';
+   }
+   if (cur_slash)
+      trailing = cur_slash + 1;
+   else
+      trailing = "";
+
+   result = realpath(origpath, newpath);
+   if (!result) {
+      free(origpath);
       return path;
-   assert(strlen(newpath) < MAX_PATH_LEN);
+   }
+
+   strncat(newpath, "/", MAX_PATH_LEN);
+   strncat(newpath, trailing, MAX_PATH_LEN);
+   newpath[MAX_PATH_LEN] = '\0';
+   free(origpath);
+
+   debug_printf2("Realized %s to %s\n", path, newpath);
    return strdup(newpath);
 }
 
