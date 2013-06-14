@@ -47,6 +47,7 @@ using namespace std;
 #define PORT 't'
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
+#define DISABLE_LOGGING 'z'
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -78,6 +79,15 @@ static bool done = false;
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
 static char *user_python_prefixes = NULL;
+
+#if defined(USAGE_LOGGING_FILE)
+#define DEFAULT_LOGGING_ENABLED true
+static const int DISABLE_LOGGING_FLAGS = 0;
+#else
+#define DEFAULT_LOGGING_ENABLED false
+static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
+#endif
+static bool logging_enabled = DEFAULT_LOGGING_ENABLED;
 
 static unsigned int spindle_port = SPINDLE_PORT;
 string spindle_location(SPINDLE_LOC);
@@ -115,6 +125,8 @@ struct argp_option options[] = {
      "Strip debug and symbol information from binaries before distributing them. Default: yes", GROUP_MISC },
    { "noclean", NOCLEAN, YESNO, 0,
      "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
+   { "disable-logging", DISABLE_LOGGING, NULL, DISABLE_LOGGING_FLAGS,
+     "Disable usage logging for this invocation of Spindle", GROUP_MISC },
    {0}
 };
 
@@ -168,7 +180,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       return 0;
    }
-   else if (entry->key && entry->arg == NULL) {
+   else if (entry->key && entry->arg == NULL && opt) {
       enabled_opts |= opt;
       return 0;
    }
@@ -186,6 +198,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    }
    else if (entry->key == LOCATION) {
       spindle_location = arg;
+      return 0;
+   }
+   else if (key == DISABLE_LOGGING) {
+      logging_enabled = false;
       return 0;
    }
    else if (key == ARGP_KEY_ARG) {
@@ -316,4 +332,9 @@ string getPythonPrefixes()
       result += ":";
    }
    return result;
+}
+
+bool isLoggingEnabled()
+{
+   return logging_enabled;
 }

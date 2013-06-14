@@ -24,5 +24,7 @@ char *getPreloadFile();
 unsigned int getPort();
 std::string getLocation(int number);
 std::string getPythonPrefixes();
+bool isLoggingEnabled();
+
 
 #endif

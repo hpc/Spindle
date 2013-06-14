@@ -1,4 +1,4 @@
-AC_INIT([spindle], [0.7.1], [legendre1@llnl.gov])
+AC_INIT([spindle], [0.7.3], [legendre1@llnl.gov])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
@@ -145,6 +145,14 @@ AC_ARG_WITH(python-prefix,
             [PYTHON_INST_PREFIX=${withval}],
             [PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python])
 AC_DEFINE_UNQUOTED([PYTHON_INST_PREFIX],"[$PYTHON_INST_PREFIX]",[Python installation prefixes])
+
+#Usage logging
+AC_ARG_WITH(usage-logging,
+            [AS_HELP_STRING([--with-usage-logging=FILE],[File for writing usage logs])],
+            [USAGE_LOGS=${withval}])
+if test "x$USAGE_LOGS" != "x"; then
+  AC_DEFINE_UNQUOTED([USAGE_LOGGING_FILE],"[$USAGE_LOGS]",[The file for storing usage logs])
+fi
 
 #Network port and local storage location
 DEFAULT_PORT=21940

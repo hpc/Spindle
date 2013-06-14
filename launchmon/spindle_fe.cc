@@ -63,11 +63,18 @@ char spindle_daemon[] = BINDIR "/spindle_be";
 unsigned long opts;
 unsigned int shared_secret;
 
+#if defined(USAGE_LOGGING_FILE)
+static const char *logging_file = USAGE_LOGGING_FILE;
+#else
+static const char *logging_file = NULL;
+#endif
+
 #define DEFAULT_LDCS_NAME_PREFIX "/tmp/"
 std::string ldcs_location_str;
 static const char *ldcs_location;
 static unsigned int ldcs_number;
 static unsigned int ldcs_port;
+static void logUser();
 
 double __get_time()
 {
@@ -220,6 +227,10 @@ int main (int argc, char* argv[])
       return EXIT_FAILURE;
   }
 
+  if (isLoggingEnabled()) {
+     logUser();
+  }
+
   rc = LMON_fe_createSession(&aSession);
   if (rc != LMON_OK)  {
      err_printf(  "[LMON FE] LMON_fe_createFEBESession FAILED\n");
@@ -314,3 +325,53 @@ int main (int argc, char* argv[])
   return EXIT_SUCCESS;
 }
 
+static void logUser()
+{
+   /* Collect username */
+   char *username = NULL;
+   if (getenv("USER")) {
+      username = getenv("USER");
+   }
+   if (!username) {
+      struct passwd *pw = getpwuid(getuid());
+      if (pw) {
+         username = pw->pw_name;
+      }
+   }
+   if (!username) {
+      username = getlogin();
+   }
+   if (!username) {
+      err_printf("Could not get username for logging\n");
+   }
+      
+   /* Collect time */
+   struct timeval tv;
+   gettimeofday(&tv, NULL);
+   struct tm *lt = localtime(& tv.tv_sec);
+   char time_str[256];
+   time_str[0] = '\0';
+   strftime(time_str, sizeof(time_str), "%c", lt);
+   time_str[255] = '\0';
+   
+   /* Collect version */
+   const char *version = VERSION;
+
+   /* Collect hostname */
+   char hostname[256];
+   hostname[0] = '\0';
+   gethostname(hostname, sizeof(hostname));
+   hostname[255] = '\0';
+
+   string log_message = string(username) + " ran Spindle v" + version + 
+                        " at " + time_str + " on " + hostname;
+   debug_printf("Logging usage: %s\n", log_message.c_str());
+
+   FILE *f = fopen(logging_file, "a");
+   if (!f) {
+      err_printf("Could not open logging file %s\n");
+      return;
+   }
+   fprintf(f, "%s\n", log_message.c_str());
+   fclose(f);
+}
