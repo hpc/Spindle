@@ -34,13 +34,7 @@ static int (*orig_lxstat)(int vers, const char *path, struct stat *buf);
 static int (*orig_xstat64)(int vers, const char *path, struct stat *buf);
 static int (*orig_lxstat64)(int vers, const char *path, struct stat *buf);
 
-#define IS_64    (1 << 0)
-#define IS_LSTAT (1 << 1)
-#define IS_XSTAT (1 << 2)
-
-#define ORIG_STAT -2
-
-static int handle_stat(const char *path, struct stat *buf, int flags)
+int handle_stat(const char *path, struct stat *buf, int flags)
 {
    int result, exists;
 

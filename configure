@@ -4451,7 +4451,7 @@ $as_echo "$ac_cv_path_SED" >&6; }
 
 ac_config_headers="$ac_config_headers config.h"
 
-ac_config_files="$ac_config_files Makefile logging/Makefile tools/sion_debug/Makefile comlib/Makefile client_comlib/Makefile auditclient/Makefile cache/Makefile tools/cobo/src/Makefile auditserver/Makefile launchmon/Makefile beboot/Makefile testsuite/Makefile"
+ac_config_files="$ac_config_files Makefile logging/Makefile tools/sion_debug/Makefile comlib/Makefile client_comlib/Makefile auditclient/Makefile cache/Makefile tools/cobo/src/Makefile auditserver/Makefile launchmon/Makefile beboot/Makefile spindle_api/Makefile testsuite/Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -15535,6 +15535,138 @@ $as_echo "no, using $LN_S" >&6; }
 fi
 
 
+# ===========================================================================
+#          http://www.gnu.org/software/autoconf-archive/ax_tls.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_TLS([action-if-found], [action-if-not-found])
+#
+# DESCRIPTION
+#
+#   Provides a test for the compiler support of thread local storage (TLS)
+#   extensions. Defines TLS if it is found. Currently knows about GCC/ICC
+#   and MSVC. I think SunPro uses the same as GCC, and Borland apparently
+#   supports either.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Alan Woodland <ajw05@aber.ac.uk>
+#   Copyright (c) 2010 Diego Elio Petteno` <flameeyes@gmail.com>
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation, either version 3 of the License, or (at your
+#   option) any later version.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+#   Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   As a special exception, the respective Autoconf Macro's copyright owner
+#   gives unlimited permission to copy, distribute and modify the configure
+#   scripts that are the output of Autoconf when processing the Macro. You
+#   need not follow the terms of the GNU General Public License when using
+#   or distributing such scripts, even though portions of the text of the
+#   Macro appear in them. The GNU General Public License (GPL) does govern
+#   all other use of the material that constitutes the Autoconf Macro.
+#
+#   This special exception to the GPL applies to versions of the Autoconf
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
+
+#serial 10
+
+
+
+
+  { $as_echo "$as_me:$LINENO: checking for thread local storage (TLS) class" >&5
+$as_echo_n "checking for thread local storage (TLS) class... " >&6; }
+  if test "${ac_cv_tls+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+    ax_tls_keywords="__thread __declspec(thread) none"
+    for ax_tls_keyword in $ax_tls_keywords; do
+       case $ax_tls_keyword in
+  none) ac_cv_tls=none ; break ;;
+  *) cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+               static void
+               foo(void) {
+               static  $ax_tls_keyword  int bar;
+               exit(1);
+               }
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_tls=$ax_tls_keyword ; break
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_tls=none
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext ;;
+esac
+
+    done
+
+fi
+
+  { $as_echo "$as_me:$LINENO: result: $ac_cv_tls" >&5
+$as_echo "$ac_cv_tls" >&6; }
+
+  if test "$ac_cv_tls" != "none"; then
+
+cat >>confdefs.h <<_ACEOF
+#define TLS $ac_cv_tls
+_ACEOF
+
+      true
+else
+  true
+
+fi
+
+
+
 #Default flags
 AM_CFLAGS=-Wall
 
@@ -18037,6 +18169,7 @@ do
     "auditserver/Makefile") CONFIG_FILES="$CONFIG_FILES auditserver/Makefile" ;;
     "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
     "beboot/Makefile") CONFIG_FILES="$CONFIG_FILES beboot/Makefile" ;;
+    "spindle_api/Makefile") CONFIG_FILES="$CONFIG_FILES spindle_api/Makefile" ;;
     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
 

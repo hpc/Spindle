@@ -19,10 +19,14 @@ AC_CONFIG_FILES([Makefile
                  auditserver/Makefile
                  launchmon/Makefile
                  beboot/Makefile
+                 spindle_api/Makefile
                  testsuite/Makefile])
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 AC_PROG_LN_S
+
+m4_include([m4/ax_tls.m4])
+AX_TLS
 
 #Default flags
 AC_SUBST([AM_CFLAGS], [-Wall])

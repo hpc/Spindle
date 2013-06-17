@@ -70,7 +70,26 @@ static int do_check_file(const char *path, char **newpath) {
    }
 }
 
-static int open_worker(const char *path, int oflag, mode_t mode, int is_64)
+static int call_orig_open(const char *path, int oflag, mode_t mode, int is_64)
+{
+   test_log(path);
+   if (is_64) {
+      if (orig_open64)
+         return orig_open64(path, oflag, mode);
+      else 
+         return open64(path, oflag, mode);
+   }
+   else {
+      if (orig_open) {
+         return orig_open(path, oflag, mode);
+      }
+      else {
+         return open(path, oflag, mode);
+      }
+   }
+}
+
+int open_worker(const char *path, int oflag, mode_t mode, int is_64)
 {
    int rc;
    char *newpath;
@@ -79,10 +98,7 @@ static int open_worker(const char *path, int oflag, mode_t mode, int is_64)
    result = open_filter(path, oflag);
    if (ldcsid < 0 || result == ORIG_CALL) {
       /* Use the original open */
-      if (is_64)
-         return orig_open64(path, oflag, mode);
-      else
-         return orig_open(path, oflag, mode);
+      return call_orig_open(path, oflag, mode, is_64);
    }
    else if (result == REDIRECT) {
       /* Lookup and do open through local path */
@@ -94,18 +110,12 @@ static int open_worker(const char *path, int oflag, mode_t mode, int is_64)
       }
       else if (result < 0) {
          /* Spindle error, fallback to orig open */
-         if (is_64)
-            return orig_open64(path, oflag, mode);
-         else
-            return orig_open(path, oflag, mode);
+         return call_orig_open(path, oflag, mode, is_64);
       }
       else {
          /* Successfully redirect open */
          debug_printf("Redirecting 'open' call, %s to %s\n", path, newpath);
-         if (is_64)
-            rc = orig_open64(newpath, oflag, mode);
-         else
-            rc = orig_open(newpath, oflag, mode);
+         rc = call_orig_open(newpath, oflag, mode, is_64);
          spindle_free(newpath);
          return rc;
       }
@@ -117,10 +127,7 @@ static int open_worker(const char *path, int oflag, mode_t mode, int is_64)
       result = send_existance_test(ldcsid, (char *) path, &exists);
       if (result == -1 || !exists) {
          debug_printf3("File %s does not exist, allowing exclusive open\n", path);
-         if (is_64)
-            return orig_open64(path, oflag, mode);
-         else
-            return orig_open(path, oflag, mode);
+         return call_orig_open(path, oflag, mode, is_64);
       }
       else {
          debug_printf3("File %s exists, faking EEXIST error return\n", path);
@@ -132,7 +139,23 @@ static int open_worker(const char *path, int oflag, mode_t mode, int is_64)
    return -1;
 }
 
-static FILE *fopen_worker(const char *path, const char *mode, int is_64)
+static FILE *call_orig_fopen(const char *path, const char *mode, int is_64)
+{
+   if (is_64) {
+      if (orig_fopen64)
+         return orig_fopen64(path, mode);
+      else 
+         return fopen(path, mode);
+   }
+   else {
+      if (orig_fopen)
+         return orig_fopen(path, mode);
+      else 
+         return fopen(path, mode);
+   }
+}
+
+FILE *fopen_worker(const char *path, const char *mode, int is_64)
 {
    FILE *rc;
    char *newpath;
@@ -141,10 +164,7 @@ static FILE *fopen_worker(const char *path, const char *mode, int is_64)
    result = fopen_filter(path, mode);
    if (ldcsid < 0 || result == ORIG_CALL) {
       /* Use the original open */
-      if (is_64)
-         return orig_fopen64(path, mode);
-      else
-         return orig_fopen(path, mode);
+      return call_orig_fopen(path, mode, is_64);
    }
    else if (result == REDIRECT) {
       /* Lookup and do open through local path */
@@ -156,18 +176,12 @@ static FILE *fopen_worker(const char *path, const char *mode, int is_64)
       }
       else if (rc < 0) {
          /* Spindle error, fallback to orig open */
-         if (is_64)
-            return orig_fopen64(path, mode);
-         else
-            return orig_fopen(path, mode);
+         return call_orig_fopen(path, mode, is_64);
       }
       else {
          /* Successfully redirect open */
          debug_printf("Redirecting 'open' call, %s to %s\n", path, newpath);
-         if (is_64)
-            rc = orig_fopen64(newpath, mode);
-         else
-            rc = orig_fopen(newpath, mode);
+         rc = call_orig_fopen(newpath, mode, is_64);
          spindle_free(newpath);
          return rc;
       }
@@ -179,10 +193,7 @@ static FILE *fopen_worker(const char *path, const char *mode, int is_64)
       result = send_existance_test(ldcsid, (char *) path, &exists);
       if (result == -1 || !exists) {
          debug_printf3("File %s does not exist, allowing exclusive open\n", path);
-         if (is_64)
-            return orig_fopen64(path, mode);
-         else
-            return orig_fopen(path, mode);
+         return call_orig_fopen(path, mode, is_64);
       } 
       else {
          debug_printf3("File %s exists, faking EEXIST error return\n", path);

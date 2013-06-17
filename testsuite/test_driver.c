@@ -23,9 +23,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+#include "spindle.h"
 
 #if !defined(LPATH)
 #error LPATH must be defined
@@ -67,7 +71,8 @@ typedef enum
    om_dlopen,
    om_dlreopen,
    om_reorder,
-   om_partial
+   om_partial,
+   om_spindleapi
 } open_mode_t;
 
 open_mode_t open_mode = om_unset;
@@ -86,7 +91,8 @@ typedef struct {
 
 #define FLAGS_MUSTOPEN (1 << 0)
 #define FLAGS_NOEXIST  (1 << 1)
-
+#define FLAGS_SYMLINK  (1 << 2)
+#define FLAGS_SKIP     (1 << 3)
 int abort_mode = 0;
 int fork_mode = 0;
 int fork_child = 0;
@@ -117,6 +123,7 @@ open_libraries_t libraries[] = {
    { "libdepA.so", NULL, NULL, UNLOADED, 0 },
    { "libcxxexceptA.so", NULL, NULL, UNLOADED, 0 },
    { "libnoexist.so", NULL, NULL, UNLOADED, FLAGS_NOEXIST },
+   { "libsymlink.so", NULL, NULL, UNLOADED, FLAGS_SYMLINK | FLAGS_SKIP },
    { NULL, NULL, NULL, 0, 0 }
 };
 int num_libraries;
@@ -161,6 +168,9 @@ static void open_library(int i)
          err_printf("Failure, opened a library that doesn't exist\n");
       return;
    }
+   if (libraries[i].flags & FLAGS_SKIP) {
+      return;
+   }
    libraries[i].opened = DLOPENED;
    if (!result) {
       err_printf("Failed to dlopen library %s: %s\n", fullpath, dlerror());
@@ -185,7 +195,7 @@ void dependency_mode()
    /* Should be auto loaded */
    int i;
    for (i = 0; i<num_libraries; i++) {
-      if (libraries[i].flags & FLAGS_NOEXIST)
+      if (libraries[i].flags & FLAGS_NOEXIST || libraries[i].flags & FLAGS_SKIP)
          continue;
       libraries[i].opened = STARTUP_LOAD;
       test_printf("dlstart %s\n", libraries[i].libname);
@@ -203,7 +213,7 @@ void ldpreload_mode()
 
    dependency_mode();
    for (i = 0; i < num_libraries; i++) {
-      if (libraries[i].flags & FLAGS_NOEXIST)
+      if (libraries[i].flags & FLAGS_NOEXIST || libraries[i].flags & FLAGS_SKIP)
          continue;
       if (strstr(env, libraries[i].libname) == NULL) {
          err_printf("Could not find library %s in LD_PRELOAD (%s)\n", libraries[i].libname, env);
@@ -240,7 +250,8 @@ void reorder_mode()
    } while (i != initial);
 }
 
-void partial_mode() {
+void partial_mode()
+{
    /* Load some libraries in random (based on hostname) order,
       randomly skip approximately half the libraries. */
    int i, initial;
@@ -256,6 +267,111 @@ void partial_mode() {
          i = 0;
       }
    } while (i != initial);   
+}
+
+void api_mode()
+{
+   int i;
+   errno = 0;
+   for (i = 0; libraries[i].libname; i++) {
+      int result;
+      struct stat buf1, buf2;
+      char *path = libpath(libraries[i].libname);
+      
+      result = spindle_stat(path, &buf1);
+      if (libraries[i].flags & FLAGS_NOEXIST) {
+         if (result != -1 || errno != ENOENT) {
+            err_printf("Bad error return from spindle_stat\n");
+         }
+         memset(&buf1, 0, sizeof(buf1));
+         result = 0;
+      }
+      if (result == -1) {
+         err_printf("Failed to spindle_stat file %s\n", path);
+      }
+
+      result = stat(path, &buf2);
+      if (libraries[i].flags & FLAGS_NOEXIST) {
+         if (result != -1 || errno != ENOENT) {
+            err_printf("Bad error return from stat\n");
+         }
+         memset(&buf2, 0, sizeof(buf2));
+         result = 0;
+      }
+      if (result == -1) {
+         err_printf("Failed to stat file %s\n", path);
+      }
+
+      if (buf1.st_size != buf2.st_size) {
+         err_printf("Failed, stats gave different sizes on %s\n", path);
+      }
+
+      if (libraries[i].flags & FLAGS_SYMLINK) {
+         struct stat lbuf1, lbuf2;
+         result = spindle_lstat(path, &lbuf1);
+         if (result == -1) {
+            err_printf("Failed to spindle_lstat file %s\n", path);
+         }
+         result = lstat(path, &lbuf2);
+         if (result == -1) {
+            err_printf("Failed to lstat file %s\n", path);
+         }
+         if (lbuf1.st_size != lbuf2.st_size) {
+            err_printf("Failed, lstats gave different sizes on %s\n", path);
+         }
+         if (!S_ISLNK(lbuf1.st_mode)) {
+            err_printf("Failed, spindle_lstat wasn't to symbolic link\n");
+         }
+         if (!S_ISLNK(lbuf2.st_mode)) {
+            err_printf("Failed, lstat wasn't to symbolic link\n");
+         }
+      }
+
+      uint32_t sig;
+
+      if (i % 2 == 0) {
+         int fd = spindle_open(path, O_RDONLY);
+         if (libraries[i].flags & FLAGS_NOEXIST) {
+            if (fd != -1 || errno != ENOENT) {
+               err_printf("Bad error return from spindle_stat\n");
+            }
+            continue;
+         }
+         if (fd == -1) {
+            err_printf("Failed to open %s\n", path);
+         }
+         else {
+            int result = read(fd, &sig, sizeof(sig));
+            if (result == -1) {
+               err_printf("Failed to read header from %s\n", path);
+            }
+            close(fd);
+         }
+      }
+      else {
+         FILE *fd = spindle_fopen(path, "r");
+         if (libraries[i].flags & FLAGS_NOEXIST) {
+            if (fd != NULL || errno != ENOENT) {
+               err_printf("Bad error return from spindle_stat\n");
+            }
+            continue;
+         }
+         if (fd == NULL) {
+            err_printf("Failed to fopen %s\n", path);
+         }
+         else {
+            int result = fread(&sig, sizeof(sig), 1, fd);
+            if (result != 1) {
+               err_printf("Failed to fread from %s\n", path);
+            }
+            fclose(fd);
+         }
+      }
+
+      if (sig != 0x7F454C46 && sig != 0x464c457f) {
+         err_printf("Read file header %x, which wasn't elf header from %s\n", sig, path);
+      }
+   }
 }
 
 void open_libraries()
@@ -281,6 +397,9 @@ void open_libraries()
          break;
       case om_partial:
          partial_mode();
+         break;
+      case om_spindleapi:
+         api_mode();
          break;
    }      
 }
@@ -311,6 +430,7 @@ void parse_args(int argc, char *argv[])
       TEST_ARG(dlreopen);
       TEST_ARG(reorder);
       TEST_ARG(partial);
+      TEST_ARG(spindleapi);
       MODE_ARG(abort);
       MODE_ARG(fork);
       MODE_ARG(forkexec);
@@ -341,9 +461,13 @@ void call_funcs()
 void check_libraries()
 {
    int i;
+   if (open_mode == om_spindleapi)
+      return;
+
    for (i=0; i<num_libraries; i++) {
       if ((open_mode != om_partial || (libraries[i].flags & FLAGS_MUSTOPEN)) && 
           (!(libraries[i].flags & FLAGS_NOEXIST)) && 
+          (!(libraries[i].flags & FLAGS_SKIP)) &&
           (!libraries[i].calc_func)) {
          err_printf("Didn't open expected library %s\n", libraries[i].libname); 
       }
@@ -511,7 +635,7 @@ static int collect_forkmode(int passed) {
             return 0;
          }
          else {
-            err_printf("Forked chidl exited with status %d\n", WEXITSTATUS(status));
+            err_printf("Forked child exited with status %d\n", WEXITSTATUS(status));
             return -1;
          }
       }

@@ -310,10 +310,16 @@ size_t filemngt_get_file_size(char *pathname)
 
 int filemngt_stat(char *pathname, struct stat *buf)
 {
-   if (*pathname == '*')
-      return stat(pathname+1, buf);
-   else 
-      return lstat(pathname, buf);
+   int result;
+   if (*pathname == '*') {
+      result = stat(pathname+1, buf);
+      debug_printf3("stat(%s) = %d\n", pathname, result);
+   }
+   else {
+      result = lstat(pathname, buf);
+      debug_printf3("lstat(%s) = %d\n", pathname, result);
+   }
+   return result;
 }
 
 int filemngt_write_stat(char *localname, struct stat *buf)

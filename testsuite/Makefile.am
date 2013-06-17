@@ -1,19 +1,19 @@
 noinst_PROGRAMS = libgenerator test_driver test_driver_libs
 
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list
 
 libgenerator_SOURCES = libgenerator.c
 
 test_driver_SOURCES = test_driver.c
-test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS) -Wall
-test_driver_LDADD = -ldl -ltestoutput -lfuncdict
-test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
+test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/spindle_api $(MPI_CFLAGS) -Wall
+test_driver_LDADD = -ldl -ltestoutput -lfuncdict -lspindle
+test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/spindle_api $(MPI_CLDFLAGS) -no-install 
 
 test_driver_libs_SOURCES = test_driver.c
-test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite $(MPI_CFLAGS) -Wall
-test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB
-test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS)
+test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/spindle_api $(MPI_CFLAGS) -Wall
+test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
+test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/spindle_api -no-install
 
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
@@ -81,6 +81,9 @@ libtest10000.so: libtest10000.c $(REGLIB_SRC) libfuncdict.so
 libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
 	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
 
+libsymlink.so: libtest10.so
+	$(AM_V_GEN) ln -s $< $@
+
 libdepB.so: libdepB.c libdepC.so
 	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared -L. -ldepC
 
@@ -116,5 +119,5 @@ preload_file_list: $(srcdir)/preload_file_list_template $(top_builddir)/Makefile
 	@rm -f ./preload_file_list
 	$(AM_V_GEN)$(SED) -e s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/preload_file_list_template > $(top_builddir)/testsuite/preload_file_list
 
-CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
+CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
 
