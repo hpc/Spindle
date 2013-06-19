@@ -222,10 +222,12 @@ int client_open_connection_pipe(char* location, int number)
       debug_printf3("Opening input fifo %s\n", fdlist_pipe[fd].in_fn);
       fdlist_pipe[fd].in_fd = open(fdlist_pipe[fd].in_fn, O_RDONLY);
    }
+   debug_printf3("Opened input fifo %s = %d\n", fdlist_pipe[fd].in_fn, fdlist_pipe[fd].in_fd);
    if (fdlist_pipe[fd].out_fd == 0) {
       debug_printf3("Opening output fifo %s\n", fdlist_pipe[fd].out_fn);
       fdlist_pipe[fd].out_fd = open(fdlist_pipe[fd].out_fn, O_WRONLY);
    }
+   debug_printf3("Opened output fifo %s = %d\n", fdlist_pipe[fd].out_fn, fdlist_pipe[fd].out_fd);
 
    /* Check opened fifos */
    if (fdlist_pipe[fd].in_fd == -1) {

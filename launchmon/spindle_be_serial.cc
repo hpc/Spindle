@@ -14,17 +14,27 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSELOC_H_)
-#define PARSELOC_H_
- 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+#include "spindle_launch.h"
+#include "spindle_debug.h"
+#include <cstdlib>
 
-char *parse_location(char *loc);
+int startSerialBE(int /*argc*/, char * /*argv*/[])
+{
+   char *port_s, *shared_secret_s;
+   unsigned int port, shared_secret;
 
-#if defined(__cplusplus)
+   port_s = getenv("SPINDLE_SERIAL_PORT");
+   if (!port_s) {
+      err_printf("SPINDLE_SERIAL_PORT wasn't set\n");
+      return -1;
+   }
+   shared_secret_s = getenv("SPINDLE_SERIAL_SHARED");
+   if (!shared_secret_s) {
+      err_printf("SPINDLE_SERIAL_SHARED wasn't set\n");
+      return -1;
+   }
+   port = atoi(port_s);
+   shared_secret = atoi(shared_secret_s);
+
+   return spindleRunBE(port, shared_secret, NULL);
 }
-#endif
-
-#endif

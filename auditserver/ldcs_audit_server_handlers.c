@@ -23,7 +23,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"

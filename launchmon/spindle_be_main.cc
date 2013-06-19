@@ -15,15 +15,18 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <unistd.h>
+#include <stdlib.h>
 #include "spindle_debug.h"
 
 static void setupLogging();
 static void parseCommandLine(int argc, char *argv[]);
-
-enum {
+extern int startLaunchmonBE(int argc, char *argv[]);
+extern int startSerialBE(int argc, char *argv[]);
+enum startup_type_t {
    lmon,
    serial
-} startup_type;
+};
+startup_type_t startup_type;
 
 int main(int argc, char *argv[])
 {
@@ -40,16 +43,19 @@ int main(int argc, char *argv[])
    
    switch (startup_type) {
       case lmon:
-         result = startLaunchmonBE();
+         result = startLaunchmonBE(argc, argv);
+         break;
       case serial:
-         result = startSerialBE();
+         result = startSerialBE(argc, argv);
+         break;
       default:
          err_printf("Unknown startup mode\n");
          result = -1;
+         break;
    }
 
    LOGGING_FINI;
-   return 0;
+   return result;
 }
 
 static void setupLogging()

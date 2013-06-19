@@ -44,6 +44,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_MD_H
 #define LDCS_AUDIT_SERVER_MD_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "ldcs_api.h"
 #include "ldcs_audit_server_process.h"
 
@@ -105,5 +109,9 @@ int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
 
 /* Called from the spindle FE during shutdown */
 int ldcs_audit_server_fe_md_close ( void *data  );
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

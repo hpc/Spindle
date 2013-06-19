@@ -23,7 +23,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 
 #include "client.h"
-#include "ldcs_api_opts.h"
 #include "auditclient.h"
 #include "client_heap.h"
 #include "client_api.h"

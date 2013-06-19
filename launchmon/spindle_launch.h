@@ -67,7 +67,7 @@ int spindleInitFE(const char **hosts, spindle_args_t *params);
 int spindleCloseFE();
 
 /* Runs the server process on a BE, returns when server is done */
-int spindleRunBE(unsigned int port, unsigned int shared_secret);
+int spindleRunBE(unsigned int port, unsigned int shared_secret, int (*post_setup)(spindle_args_t *));
 
 /* Function for adding the bootstrapper executable to an application command line */
 int createNewCmdLine(int argc, char *argv[],

@@ -48,9 +48,8 @@ static void initLMONEnvironment()
 }
 
 static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
-struct rank_lt {
-   bool operator()(const MPIR_PROCDESC_EXT *a, const MPIR_PROCDESC_EXT *b) { return a->mpirank < b->mpirank; }
-};
+bool rank_lt(const MPIR_PROCDESC_EXT &a, const MPIR_PROCDESC_EXT &b) { return a.mpirank < b.mpirank; }
+
 struct str_lt {
    bool operator()(const char *a, const char *b) { return strcmp(a, b) == -1; }
 };
@@ -79,9 +78,10 @@ static const char **getProcessTable(int aSession)
    size_t hosts_size = host_set.size();
    const char **hosts = static_cast<const char **>(malloc((hosts_size+1) * sizeof(char *)));
    copy(host_set.begin(), host_set.end(), hosts);
+   hosts[hosts_size] = NULL;
 
    /* Swap the hostname containing rank 0 to the front of the list so it'll be the leader */
-   MPIR_PROCDESC_EXT *smallest_rank = std::min(proctab, proctab+ptable_size, rank_lt);
+   MPIR_PROCDESC_EXT *smallest_rank = std::min_element(proctab, proctab+ptable_size, rank_lt);
    const char **smallest_host = find(hosts, hosts + hosts_size, smallest_rank->pd.host_name);
    std::swap(*hosts, *smallest_host);
    

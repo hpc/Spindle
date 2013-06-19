@@ -17,6 +17,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(SPINDLE_DEBUG_H_)
 #define SPINDLE_DEBUG_H_
 
+#include <stdio.h>
+#include <unistd.h>
+
 #define LOGD_DEBUG
 
 #if defined(LOGD_DEBUG)

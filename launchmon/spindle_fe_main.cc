@@ -27,7 +27,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "config.h"
 #include "spindle_debug.h"
-#include "parse_launcher.h"
 #include "parseargs.h"
 #include "spindle_launch.h"
 

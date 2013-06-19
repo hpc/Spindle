@@ -14,7 +14,16 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "lmon_api/lmon_be.h"
+
 #include "spindle_launch.h"
+#include "spindle_debug.h"
+#include "config.h"
+
+#include <csignal>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 
 static int unpackfebe_cb(void* udatabuf, 
                          int udatabuflen, 
@@ -34,6 +43,59 @@ static int unpackfebe_cb(void* udatabuf,
    assert(pos == udatabuflen);
 
    return 0;    
+}
+
+int releaseApplication(spindle_args_t *) {
+  int rc=0;
+  MPIR_PROCDESC_EXT *proctab;
+  int proctab_size;
+  lmon_rc_e lrc;
+  int signum, i;
+
+#if defined(os_bg)
+  signum = 0;
+#elif defined(os_linux)
+  signum = SIGCONT;
+#else
+#error Unknown OS
+#endif
+
+  debug_printf("Sending SIGCONTs to each process to release debugger stops\n");
+  lrc = LMON_be_getMyProctabSize(&proctab_size);
+  if (lrc != LMON_OK)
+  {
+     err_printf("LMON_be_getMyProctabSize\n");
+     LMON_be_finalize();
+     return EXIT_FAILURE;
+  }
+  
+  proctab = (MPIR_PROCDESC_EXT *) malloc (proctab_size*sizeof(MPIR_PROCDESC_EXT));
+  if ( proctab == NULL )  {
+     err_printf("Proctable malloc return null\n");
+     LMON_be_finalize();
+     return EXIT_FAILURE;
+  }
+
+  lrc = LMON_be_getMyProctab(proctab, &proctab_size, proctab_size);
+  if (lrc != LMON_OK)   {    
+     err_printf("LMON_be_getMyProctab\n");
+     LMON_be_finalize();
+     return EXIT_FAILURE;
+  }
+
+  /* Continue application tasks */
+  for(i=0; i < proctab_size; i++)  {
+    debug_printf3("[LMON BE] kill %d, %d\n", proctab[i].pd.pid, signum );
+    kill(proctab[i].pd.pid, signum);
+  }
+  
+  for (i=0; i < proctab_size; i++) {
+    if (proctab[i].pd.executable_name) free(proctab[i].pd.executable_name);
+    if (proctab[i].pd.host_name)       free(proctab[i].pd.host_name);
+  }
+  free (proctab);
+
+  return(rc);
 }
 
 int startLaunchmonBE(int argc, char *argv[])
@@ -60,7 +122,8 @@ int startLaunchmonBE(int argc, char *argv[])
          return -1;
       } 
    }
-   
+
+   int rank, size;
    LMON_be_getMyRank(&rank);
    LMON_be_getSize(&size);
    debug_printf("Launchmon rank %d/%d\n", rank, size);
@@ -95,13 +158,13 @@ int startLaunchmonBE(int argc, char *argv[])
    }
 
    /* Broadcast port/secret from master to all servers */
-   rc = LMON_be_broadcast(conn_info, sizeof(conn_info));
+   rc = LMON_be_broadcast(&conn_info, sizeof(conn_info));
    if (rc != LMON_OK) {
       err_printf("Failed to broadcast connection info\n");
       return -1;
    }
    
-   result = spindleRunBE(conn_info.port, conn_info.shared_secret);
+   result = spindleRunBE(conn_info.port, conn_info.shared_secret, releaseApplication);
    if (result == -1) {
       err_printf("Failed in call to spindleInitBE\n");
       return -1;

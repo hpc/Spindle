@@ -26,7 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_debug.h"
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "client.h"
 #include "client_api.h"
 

@@ -21,7 +21,6 @@
 #include <errno.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
