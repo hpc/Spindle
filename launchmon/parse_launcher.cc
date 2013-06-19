@@ -23,7 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <stdio.h>
 
-#include "parse_launcher.h"
+#include "spindle_launch.h"
 
 #define FL_LAUNCHER       1<<0
 #define FL_GNU_PARAM      1<<2
@@ -36,6 +36,13 @@ typedef struct {
    const char *long_opt;
    int flags;
 } cmdoption_t;
+
+static const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
+
+#define serial_size 1
+static cmdoption_t serial_options[] = {
+   { "", NULL, FL_LAUNCHER }
+};
 
 #define srun_size (sizeof(srun_options) / sizeof(cmdoption_t))
 static cmdoption_t srun_options[] = {
@@ -217,11 +224,15 @@ static int parseLaunchCmdLine(int argc, char *argv[],
     * Find the location of the launcher (ie, srun or mpirun) in argv.  We're looking for
     * an exact match of 'launcher' or '/launcher' at the end of an argument
     **/
-   //assert(options[0].flags == FL_LAUNCHER);
+   assert(options[0].flags & FL_LAUNCHER);
    for (i = 0; i < options_len; i++) {
       if (!(options[i].flags & FL_LAUNCHER))
          continue;
       const char *launcher_name = options[i].opt;
+      if (launcher_name[0] == '\0') {
+         found_launcher_at = 0;
+         return 0;
+      }
       assert(launcher_name);
       int launcher_name_size = strlen(launcher_name);
       assert(launcher_name_size);
@@ -341,7 +352,7 @@ static int parseLaunchCmdLine(int argc, char *argv[],
          continue;
       }
       if (isExecutableFile(arg, chdir_s)) {
-         /* We found the executable.  Yeah */
+         /* We found the executable.  Yeah. */
          *found_exec_at = i;
          break;
       }
@@ -360,8 +371,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
                                     cmdoption_t *options, int options_len,
                                     const char *ldcs_location,
                                     const char *ldcs_number,
-                                    unsigned long ldcs_options,
-                                    const char *bootstrapper_name)
+                                    unsigned long ldcs_options)
 {
    int result;
    int found_launcher_at, found_exec_at;
@@ -369,17 +379,24 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
    char ldcs_options_str[32];
 
    snprintf(ldcs_options_str, 32, "%lu", ldcs_options);
-   /* Parse the command line */
-   result = parseLaunchCmdLine(argc, argv, &found_launcher_at, &found_exec_at, options, options_len);
-   if (result < 0)
-      return result;
+
+   if (options != serial_options) {
+      /* Parse the command line */
+      result = parseLaunchCmdLine(argc, argv, &found_launcher_at, &found_exec_at, options, options_len);
+      if (result < 0)
+         return result;
+   }
+   else {
+      found_launcher_at = 0;
+      found_exec_at = 0;
+   }
 
    /* Add the bootstrapper to the cmdline before the executable */
    *new_argc = argc + 4;
    *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
    for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
       if (i == found_exec_at) {
-         (*new_argv)[j++] = strdup(bootstrapper_name);
+         (*new_argv)[j++] = strdup(spindle_bootstrap);
          (*new_argv)[j++] = strdup(ldcs_location);
          (*new_argv)[j++] = strdup(ldcs_number);
          (*new_argv)[j++] = strdup(ldcs_options_str);
@@ -392,10 +409,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
 
 int createNewCmdLine(int argc, char *argv[],
                      int *new_argc, char **new_argv[],
-                     const char *bootstrapper_name,
-                     const char *ldcs_location,
-                     const char *ldcs_number,
-                     unsigned long ldcs_options,
+                     spindle_args_t *params,
                      unsigned int test_launchers)
 {
    int result = 0;
@@ -405,8 +419,8 @@ int createNewCmdLine(int argc, char *argv[],
    /* Presetup */
    if (test_launchers & TEST_PRESETUP) {
       /* If the bootstrapper is already present, don't do anything. Assume user has it right. */
-      const char *bootstrapper_exec = strrchr(bootstrapper_name, '/');
-      bootstrapper_exec = bootstrapper_exec ? bootstrapper_exec+1 : bootstrapper_name;
+      const char *bootstrapper_exec = strrchr(spindle_bootstrap, '/');
+      bootstrapper_exec = bootstrapper_exec ? bootstrapper_exec+1 : spindle_bootstrap;
       for (i = 0; i < argc; i++) {
          if (strstr(argv[i], bootstrapper_exec)) {
             *new_argc = argc;
@@ -416,10 +430,23 @@ int createNewCmdLine(int argc, char *argv[],
       }
    }
 
+   char number_s[32];
+   snprintf(number_s, 32, "%d", params->number);
+
+   /* Serial */
+   if (test_launchers & TEST_SERIAL) {
+      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, serial_options, serial_size,
+                                        params->location, number_s, params->opts);
+      if (result == 0)
+         return 0;
+      else if (result == NO_EXEC)
+         had_noexec = 1;
+   }
+
    /* Slurm */
    if (test_launchers & TEST_SLURM) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
-                                        ldcs_location, ldcs_number, ldcs_options, bootstrapper_name);
+                                        params->location, number_s, params->opts);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)

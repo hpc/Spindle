@@ -27,6 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "auditclient.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "spindle_launch.h"
 
 static char *last_rewritten_name = NULL;
 static char *last_orig_name = NULL;

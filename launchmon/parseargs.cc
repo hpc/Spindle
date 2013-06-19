@@ -24,7 +24,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 using namespace std;
 
 #include "config.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "spindle_debug.h"
 
 #if !defined(STR)
@@ -38,6 +38,7 @@ using namespace std;
 #define PRELOAD 'e'
 #define FOLLOWFORK 'f'
 #define RELOCSO 'l'
+#define NOMPI 'm'
 #define NOCLEAN 'n'
 #define LOCATION 'o'
 #define PUSH 'p'
@@ -75,6 +76,7 @@ static char *preload_file;
 static char **mpi_argv;
 static int mpi_argc;
 static bool done = false;
+static bool use_mpi = true;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -91,6 +93,8 @@ static bool logging_enabled = DEFAULT_LOGGING_ENABLED;
 
 static unsigned int spindle_port = SPINDLE_PORT;
 string spindle_location(SPINDLE_LOC);
+
+unsigned long opts = 0;
 
 struct argp_option options[] = {
    { "reloc-aout", RELOCAOUT, YESNO, 0, 
@@ -127,6 +131,8 @@ struct argp_option options[] = {
      "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
    { "disable-logging", DISABLE_LOGGING, NULL, DISABLE_LOGGING_FLAGS,
      "Disable usage logging for this invocation of Spindle", GROUP_MISC },
+   { "no-mpi", NOMPI, NULL, 0,
+     "Run serial jobs instead of MPI job" },
    {0}
 };
 
@@ -202,6 +208,11 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    }
    else if (key == DISABLE_LOGGING) {
       logging_enabled = false;
+      return 0;
+   }
+   else if (key == NOMPI) {
+      use_mpi = false;
+      opts |= OPT_NOMPI;
       return 0;
    }
    else if (key == ARGP_KEY_ARG) {
@@ -338,3 +349,15 @@ bool isLoggingEnabled()
 {
    return logging_enabled;
 }
+
+bool isMPIJob()
+{
+   return use_mpi;
+}
+
+int getAppArgs(int *argc, char ***argv)
+{
+   *argc = mpi_argc;
+   *argv = mpi_argv;
+}
+

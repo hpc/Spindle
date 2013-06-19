@@ -17,7 +17,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_PROCESS_H
 #define LDCS_AUDIT_SERVER_PROCESS_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "ldcs_api.h"
+#include "spindle_launch.h"
 
 typedef void* requestor_list_t;
 
@@ -93,7 +98,6 @@ typedef struct ldcs_client_struct ldcs_client_t;
 
 struct ldcs_process_data_struct
 {
-  int state;
   int client_table_size;
   int client_table_used;
   int clients_connected;
@@ -107,6 +111,7 @@ struct ldcs_process_data_struct
   char *pythonprefix;
   int number;
   int preload_done;
+  unsigned int opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
   requestor_list_t pending_stat_requests;
@@ -124,10 +129,10 @@ struct ldcs_process_data_struct
 };
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
-int ldcs_audit_server_process (char *location, unsigned int port, int number,
-                               char *pythonprefix,
-                               int ready_cb_func ( void *data ), 
-                               void * ready_cb_data );
+int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secret,
+                                    void **packed_setup_data, int *data_size);
+int ldcs_audit_server_process (spindle_args_t *args);
+int ldcs_audit_server_run();
 
 int _ldcs_client_CB ( int fd, int nc, void *data );
 int _ldcs_server_CB ( int infd, int serverid, void *data );
@@ -137,5 +142,9 @@ int _ldcs_client_process_fe_preload_requests ( ldcs_process_data_t *ldcs_process
 
 int _ldcs_server_stat_init ( ldcs_server_stat_t *server_stat );
 int _ldcs_server_stat_print ( ldcs_server_stat_t *server_stat );
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

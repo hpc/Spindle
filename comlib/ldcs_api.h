@@ -55,6 +55,7 @@ typedef enum {
    LDCS_MSG_PRELOAD_FILE,
    LDCS_MSG_PRELOAD_DONE,
    LDCS_MSG_SELFLOAD_FILE,
+   LDCS_MSG_SETTINGS,
    LDCS_MSG_EXIT,
    LDCS_MSG_UNKNOWN
 } ldcs_message_ids_t;
@@ -83,8 +84,9 @@ typedef  enum {
 struct ldcs_message_header_struct
 {
   ldcs_message_ids_t type;
-  int   len;
+  int len;
 };
+
 typedef struct ldcs_message_header_struct ldcs_message_header_t;
 
 struct ldcs_message_struct

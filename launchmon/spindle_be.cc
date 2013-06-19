@@ -14,35 +14,15 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <lmon_api/common.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-#include <lmon_api/common.h>
-#include <lmon_api/lmon_proctab.h>
-#include <lmon_api/lmon_be.h>
-
 #include "config.h"
-#include "spindle_usrdata.h"
-#include "ldcs_api_opts.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "ldcs_audit_server_process.h"
+#include "parseloc.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_api.h"
-#ifdef __cplusplus
-}
+
 #endif
 
-static int rank, size;
-unsigned long opts;
-unsigned int shared_secret;
-static char *pythonprefix;
-
-int _ready_cb_func (  void * data) {
+static int releaseApplication() {
   int rc=0;
   MPIR_PROCDESC_EXT *proctab;
   int proctab_size;
@@ -57,6 +37,7 @@ int _ready_cb_func (  void * data) {
 #error Unknown OS
 #endif
 
+  debug_printf("Sending SIGCONTs to each process to release debugger stops\n");
   lrc = LMON_be_getMyProctabSize(&proctab_size);
   if (lrc != LMON_OK)
   {
@@ -94,9 +75,99 @@ int _ready_cb_func (  void * data) {
   return(rc);
 }
 
-extern "C" {
-   char *parse_location(char *loc);
+template<typename T>
+static void unpack_param(T &value, char *buffer, int &pos)
+{
+   memcpy(&value, buffer + pos, sizeof(T));
+   pos += sizeof(T);
 }
+
+template<>
+static void unpack_param<char*>(char* &value, char *buffer, int &pos)
+{
+   unsigned int strsize = strlen(buffer + pos) + 1;
+   value = (char *) malloc(strsize);
+   strncpy(value, buffer + pos, strsize);
+   pos += strsize;
+}
+
+static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
+{
+   int pos = 0;
+   unpack_param(args->number, buffer, pos);
+   unpack_param(args->port, buffer, pos);
+   unpack_param(args->opts, buffer, pos);
+   unpack_param(args->shared_secret, buffer, pos);
+   unpack_param(args->location, buffer, pos);
+   unpack_param(args->pythonprefix, buffer, pos);
+   unpack_param(args->preloadfile, buffer, pos);
+   assert(pos == buffer_size);
+
+   return 0;    
+}
+
+int spindleRunBE(unsigned int port, unsigned int shared_secret)
+{
+   int result;
+   spindle_args_t args;
+
+   /* Setup network and share setup data */
+   debug_printf3("spindleRunBE setting up network and receiving setup data\n");
+   void *setup_data;
+   int setup_data_size;
+   result = ldcs_audit_server_network_setup(port, shared_secret, &setup_data, &setup_data_size);
+   if (result == -1) {
+      err_printf("Error setting up network in spindleRunBE\n");
+      return -1;
+   }
+   unpack_data(&args, setup_data, setup_data_size);
+   free(setup_data);
+   assert(args.shared_secret == shared_secret);
+   assert(args.port == port);
+   
+   
+   /* Expand environment variables in location. */
+   char *new_location = parse_location(args.location);
+   if (!new_location) {
+      err_printf("Failed to convert location %s\n", args.location);
+      return -1;
+   }
+   debug_printf("Translated location from %s to %s\n", location, new_location);
+   free(args.location);
+   args.location = new_location;
+
+   result = ldcs_audit_server_process(args);
+
+   releaseApplication();
+
+   ldcs_audit_server_run();
+
+   LMON_be_finalize();
+   return 0;
+}
+
+
+
+
+
+#include <lmon_api/common.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include <lmon_api/common.h>
+#include <lmon_api/lmon_proctab.h>
+#include <lmon_api/lmon_be.h>
+
+
+#include "spindle_usrdata.h"
+#include "ldcs_api_opts.h"
+
+static int rank, size;
+unsigned long opts;
+unsigned int shared_secret;
+static char *pythonprefix;
 
 int main(int argc, char* argv[])
 {
@@ -105,23 +176,6 @@ int main(int argc, char* argv[])
   unsigned int port;
   char *location;
   spindle_daemon_args dargs;
-
-  LOGGING_INIT(const_cast<char *>("Server"));
-  if (spindle_debug_output_f) {
-     int fd = fileno(spindle_debug_output_f);
-     close(1);
-     close(2);
-     dup2(fd, 1);
-     dup2(fd, 2);
-     fprintf(stdout, "Test-stdout\n");
-     fprintf(stderr, "Test-stderr\n");
-  }
-
-  debug_printf("Spindle Server Cmdline: ");
-  for (int i=0; i<argc; i++) {
-     bare_printf("%s ", argv[i]);
-  }
-  bare_printf("\n");
 
   /* Initialization of LMON  */
   lrc = LMON_be_init(LMON_VERSION, &argc, &argv);
@@ -193,16 +247,10 @@ int main(int argc, char* argv[])
   location = dargs.location;
   pythonprefix = dargs.pythonprefix;
 
-  location = parse_location(location);
-  if (!location) {
-     LMON_be_finalize();
-     return -1;
-  }
-
   /* start SPINDLE server */
   ldcs_audit_server_process(location, port, number, pythonprefix, &_ready_cb_func, NULL);
 
-  LMON_be_finalize();
+  LMON_be_finalize()
 
   debug_printf("Finished server process.  Exiting with success\n");
   

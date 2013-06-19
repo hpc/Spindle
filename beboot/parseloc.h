@@ -14,18 +14,15 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSEARGS_H_)
-#define PARSEARGS_H_
+#if !defined(PARSELOC_H_)
+#define PARSELOC_H_
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-#include <string>
+char *parse_location(char *loc);
 
-unsigned long parseArgs(int argc, char *argv[]);
-char *getPreloadFile();
-unsigned int getPort();
-std::string getLocation(int number);
-std::string getPythonPrefixes();
-bool isLoggingEnabled();
-bool isMPIJob();
-int getAppArgs(int *argc, char ***argv);
-
+#if defined(__cplusplus)
+}
 #endif

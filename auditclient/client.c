@@ -32,11 +32,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 
 #include "ldcs_api.h" 
-#include "ldcs_api_opts.h"
 #include "config.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "spindle_launch.h"
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"

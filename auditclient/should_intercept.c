@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "client.h"
 #include "should_intercept.h"
 

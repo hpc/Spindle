@@ -78,4 +78,6 @@ void parse_python_prefixes(int fd);
 
 void test_log(const char *name);
 
+extern unsigned long opts;
+
 #endif
