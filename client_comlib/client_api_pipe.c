@@ -384,7 +384,6 @@ int is_client_fd(int connfd, int fd)
 int client_close_connection_pipe(int fd)
 {
    int result;
-   struct stat st;
 
    assert(fd >= 0 && fd < MAX_FD);
 
@@ -398,29 +397,6 @@ int client_close_connection_pipe(int fd)
    result = close(fdlist_pipe[fd].out_fd);
    if(result != 0) {
       err_printf("Error while closing fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, errno, strerror(errno));
-   }
-
-
-   result = stat(fdlist_pipe[fd].in_fn, &st);
-   if (result == -1) 
-      err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
-   if (S_ISFIFO(st.st_mode)) {
-      result = unlink(fdlist_pipe[fd].in_fn); 
-      if(result != 0) {
-         debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].in_fn, 
-                       errno, strerror(errno));
-      }
-   }
-
-   result = stat(fdlist_pipe[fd].out_fn, &st);
-   if (result == -1)
-      err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
-   if (S_ISFIFO(st.st_mode)) {
-      result = unlink(fdlist_pipe[fd].out_fn); 
-      if(result != 0) {
-         debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, 
-                       errno, strerror(errno));
-      }
    }
 
    free_fd_pipe(fd);

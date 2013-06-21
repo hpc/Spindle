@@ -152,6 +152,8 @@ static int init_server_connection()
 
 static void reset_server_connection()
 {
+   client_close_connection(ldcsid);
+
    ldcsid = -1;
    old_cwd[0] = '\0';
 

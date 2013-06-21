@@ -210,6 +210,8 @@ int ldcs_open_server_connections_pipe(int fd, int *more_avail) {
 
 int ldcs_close_server_connection_pipe(int fd) {
   int rc=0, serverfd, c;
+  int result;
+  struct stat st;
 
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
   
@@ -218,6 +220,29 @@ int ldcs_close_server_connection_pipe(int fd) {
   debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist_pipe[fd].out_fd,fd);
   close(fdlist_pipe[fd].out_fd);
 
+
+  result = stat(fdlist_pipe[fd].in_fn, &st);
+  if (result == -1) 
+     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
+  if (S_ISFIFO(st.st_mode)) {
+     result = unlink(fdlist_pipe[fd].in_fn); 
+     if(result != 0) {
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].in_fn, 
+                      errno, strerror(errno));
+     }
+  }
+  
+  result = stat(fdlist_pipe[fd].out_fn, &st);
+  if (result == -1)
+     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
+  if (S_ISFIFO(st.st_mode)) {
+     result = unlink(fdlist_pipe[fd].out_fn); 
+     if(result != 0) {
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, 
+                      errno, strerror(errno));
+     }
+  }
+  
   /* remove connection from server list */
   serverfd=fdlist_pipe[fd].serverfd;
   for(c=0;c<fdlist_pipe[serverfd].conn_list_used;c++) {
