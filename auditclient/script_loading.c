@@ -68,7 +68,7 @@ static int read_script_interp(int fd, const char *path, char *interp, int interp
          return -1;
       }
       for (i = pos; i < result + pos; i++) {
-         if (interp[i] == '\n' || interp[i] == '\t' || interp[i] == '\n') {
+         if (interp[i] == '\n') {
             interp[i] = '\0';
             return 0;
          }
@@ -80,11 +80,59 @@ static int read_script_interp(int fd, const char *path, char *interp, int interp
    return -1;
 }
 
+static int parse_interp_args(char *interp_line, char **interp_exec, char ***interp_args)
+{
+   char *eol, *c;
+   unsigned int num_entries = 0, cur;
+   for (eol = interp_line; *eol; eol++);
+
+   for (c = interp_line; c != eol; c++) {
+      if (*c == '\t' || *c == ' ') *c = '\0';
+   }
+   
+   c = interp_line;
+   for (;;) {
+      while (*c == '\0' && c != eol) c++;
+      if (c == eol) break;
+
+      num_entries++;
+
+      while (*c != '\0') c++;
+      if (c == eol) break;
+   }
+
+   if (!num_entries) {
+      err_printf("No interpreter name found\n");
+      return -1;
+   }
+
+   *interp_args = (char **) spindle_malloc(sizeof(char *) * (num_entries + 1));
+   
+   c = interp_line;
+   cur = 0;
+   for (;;) {
+      while (*c == '\0' && c != eol) c++;
+      if (c == eol) break;
+
+      (*interp_args)[cur] = c;
+      cur++;
+
+      while (*c != '\0') c++;
+      if (c == eol) break;
+   }
+   (*interp_args)[cur] = NULL;
+      
+   *interp_exec = (*interp_args)[0];
+   return 0;
+}
+
+
 int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char **interp_path, char ***new_argv)
 {
-   int result, fd, argc, i;
-   char interpreter[MAX_PATH_LEN+1];
-   char *new_interpreter;
+   int result, fd, argc, interp_argc, i, j;
+   char interpreter_line[MAX_PATH_LEN+1];
+   char *interpreter, *new_interpreter;
+   char **interpreter_args;
    *new_argv = NULL;
 
    fd = open(reloc_path, O_RDONLY);
@@ -103,12 +151,18 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
       return SCRIPT_NOTSCRIPT;
    }
    
-   result = read_script_interp(fd, reloc_path, interpreter, sizeof(interpreter));
+   result = read_script_interp(fd, reloc_path, interpreter_line, sizeof(interpreter_line));
    if (result == -1) {
       close(fd);
       return SCRIPT_ENOENT;
    }
    close(fd);
+   debug_printf3("Interpreter line for script %s is %s\n", orig_path, interpreter_line);
+
+   result = parse_interp_args(interpreter_line, &interpreter, &interpreter_args);
+   if (result == -1) {
+      return SCRIPT_ENOENT;
+   }
    
    debug_printf2("Exec operation requesting interpreter %s for script %s\n", interpreter, orig_path);
    send_file_query(ldcsid, interpreter, &new_interpreter);
@@ -116,16 +170,24 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
                  interpreter, new_interpreter ? new_interpreter : "NULL", orig_path);
    if (!new_interpreter) {
       err_printf("Script interpreter %s does not exist in script %s\n", interpreter, orig_path);
+      spindle_free(interpreter_args);
       return SCRIPT_ENOENT;
    }
 
+   /* Count args on command line and interpreter line */
    for (argc = 0; argv[argc] != NULL; argc++);
-   *new_argv = (char **) spindle_malloc(sizeof(char*) * (argc + 2));
-   (*new_argv)[0] = new_interpreter;
+   for (interp_argc = 0; interpreter_args[interp_argc] != NULL; interp_argc++);
+
+   *new_argv = (char **) spindle_malloc(sizeof(char*) * (argc + interp_argc + 2));
+   j = 0;
+
+   (*new_argv)[j++] = new_interpreter;
+   for (i = 1; i < interp_argc; i++)
+      (*new_argv)[j++] = spindle_strdup(interpreter_args[i]);
    for (i = 0; i < argc; i++) {
-      (*new_argv)[i+1] = argv[i];
+      (*new_argv)[j++] = argv[i];
    }
-   (*new_argv)[argc+1] = NULL;
+   (*new_argv)[j++] = NULL;
 
    *interp_path = new_interpreter;
    debug_printf3("Rewritten interpreter cmdline is: ");
@@ -133,6 +195,8 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
       bare_printf3("%s ", (*new_argv)[i]);
    }
    bare_printf3("\n");
+
+   spindle_free(interpreter_args);
 
    return 0;
 }
