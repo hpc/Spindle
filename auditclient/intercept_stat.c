@@ -79,9 +79,11 @@ int handle_stat(const char *path, struct stat *buf, int flags)
 int handle_fstat(int fd)
 {
    if (fd_filter(fd) == ERR_CALL) {
+      debug_printf("fstat hiding fd %d from application\n", fd);
       set_errno(EBADF);
       return -1;
    }
+   debug_printf2("Allowing original fstat(%d)\n", fd);
    return ORIG_STAT;
 }
 

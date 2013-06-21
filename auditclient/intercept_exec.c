@@ -62,7 +62,7 @@ static int prep_exec(const char *filepath, char **argv,
       return -1;
    }
    else if (result == 0) {
-#warning TODO: Mark filepath->newpath as future redirection for open
+      // TODO: Mark filepath->newpath as future redirection for open
       strncpy(newpath, interp_name, newpath_size);
       newpath[newpath_size - 1] = '\0';
       return 0;
