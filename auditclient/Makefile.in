@@ -35,10 +35,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@SOCKETS_TRUE@am__append_1 = libspindle_client_socket.la
-#noinst_LTLIBRARIES += libspindle_client_socket.la
+
+#pkglibexec_LTLIBRARIES += libspindle_client_socket.la
+@SOCKETS_FALSE@am__append_1 = libspindle_client_pipe.la
 @PIPES_TRUE@am__append_2 = libspindle_client_pipe.la
-@PIPES_FALSE@am__append_3 = libspindle_client_pipe.la
 subdir = auditclient
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -73,8 +73,8 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(libdir)"
-LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
+am__installdirs = "$(DESTDIR)$(pkglibexecdir)"
+LTLIBRARIES = $(noinst_LTLIBRARIES) $(pkglibexec_LTLIBRARIES)
 libspindle_client_pipe_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_pipe.la \
 	$(top_builddir)/logging/libspindlelogc.la
@@ -93,12 +93,9 @@ libspindle_client_pipe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspindle_client_pipe_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
-@PIPES_FALSE@am_libspindle_client_pipe_la_rpath =
-@PIPES_TRUE@am_libspindle_client_pipe_la_rpath = -rpath $(libdir)
-libspindle_client_socket_la_LIBADD =
-libspindle_client_socket_la_SOURCES = libspindle_client_socket.c
-libspindle_client_socket_la_OBJECTS = libspindle_client_socket.lo
-@SOCKETS_TRUE@am_libspindle_client_socket_la_rpath = -rpath $(libdir)
+@PIPES_TRUE@am_libspindle_client_pipe_la_rpath = -rpath \
+@PIPES_TRUE@	$(pkglibexecdir)
+@SOCKETS_FALSE@am_libspindle_client_pipe_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -125,10 +122,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libspindle_client_pipe_la_SOURCES) \
-	libspindle_client_socket.c
-DIST_SOURCES = $(libspindle_client_pipe_la_SOURCES) \
-	libspindle_client_socket.c
+SOURCES = $(libspindle_client_pipe_la_SOURCES)
+DIST_SOURCES = $(libspindle_client_pipe_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -263,8 +258,9 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LTLIBRARIES = $(am__append_1) $(am__append_2)
-noinst_LTLIBRARIES = $(am__append_3)
+pkglibexec_LTLIBRARIES = $(am__append_2)
+noinst_LTLIBRARIES = $(am__append_1)
+#noinst_LTLIBRARIES += libspindle_client_socket.la
 AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon
 BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c patch_linkmap.c should_intercept.c script_loading.c
 ARCH_SOURCES = auditclient_x86_64.c
@@ -309,37 +305,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
-	}
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" != "$$p" || dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
-	done
 
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
@@ -349,10 +314,39 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+install-pkglibexecLTLIBRARIES: $(pkglibexec_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(pkglibexecdir)" || $(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)"
+	@list='$(pkglibexec_LTLIBRARIES)'; test -n "$(pkglibexecdir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(pkglibexecdir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(pkglibexecdir)"; \
+	}
+
+uninstall-pkglibexecLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkglibexec_LTLIBRARIES)'; test -n "$(pkglibexecdir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(pkglibexecdir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(pkglibexecdir)/$$f"; \
+	done
+
+clean-pkglibexecLTLIBRARIES:
+	-test -z "$(pkglibexec_LTLIBRARIES)" || rm -f $(pkglibexec_LTLIBRARIES)
+	@list='$(pkglibexec_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
 libspindle_client_pipe.la: $(libspindle_client_pipe_la_OBJECTS) $(libspindle_client_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libspindle_client_pipe_la_LINK) $(am_libspindle_client_pipe_la_rpath) $(libspindle_client_pipe_la_OBJECTS) $(libspindle_client_pipe_la_LIBADD) $(LIBS)
-libspindle_client_socket.la: $(libspindle_client_socket_la_OBJECTS) $(libspindle_client_socket_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) $(am_libspindle_client_socket_la_rpath) $(libspindle_client_socket_la_OBJECTS) $(libspindle_client_socket_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -367,7 +361,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept_open.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept_spindleapi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept_stat.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_client_socket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/patch_linkmap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/script_loading.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/should_intercept.Plo@am__quote@
@@ -488,7 +481,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -518,8 +511,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	clean-noinstLTLIBRARIES mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	clean-pkglibexecLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -545,7 +538,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-pkglibexecLTLIBRARIES
 
 install-html: install-html-am
 
@@ -585,23 +578,24 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am: uninstall-pkglibexecLTLIBRARIES
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool clean-noinstLTLIBRARIES \
-	ctags distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-libLTLIBRARIES install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-libLTLIBRARIES
+	clean-libtool clean-noinstLTLIBRARIES \
+	clean-pkglibexecLTLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-pkglibexecLTLIBRARIES install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-pkglibexecLTLIBRARIES
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

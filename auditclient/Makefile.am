@@ -1,15 +1,15 @@
-lib_LTLIBRARIES = 
+pkglibexec_LTLIBRARIES = 
 noinst_LTLIBRARIES = 
 
 if SOCKETS
-lib_LTLIBRARIES += libspindle_client_socket.la
-else
-#noinst_LTLIBRARIES += libspindle_client_socket.la
-endif
-if PIPES
-lib_LTLIBRARIES += libspindle_client_pipe.la
+#pkglibexec_LTLIBRARIES += libspindle_client_socket.la
 else
 noinst_LTLIBRARIES += libspindle_client_pipe.la
+endif
+if PIPES
+pkglibexec_LTLIBRARIES += libspindle_client_pipe.la
+else
+#noinst_LTLIBRARIES += libspindle_client_socket.la
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon

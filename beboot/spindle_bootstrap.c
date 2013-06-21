@@ -33,7 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "config.h"
 
-#if !defined(LIBDIR)
+#if !defined(LIBEXECDIR)
 #error Expected to be built with libdir defined
 #endif
 
@@ -49,8 +49,8 @@ static char *opts_s;
 
 unsigned long opts;
 
-char libstr_socket[] = LIBDIR "/libspindle_client_socket.so";
-char libstr_pipe[] = LIBDIR "/libspindle_client_pipe.so";
+char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
+char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
 
 #if defined(COMM_SOCKET)
 static char *default_libstr = libstr_socket;
