@@ -14,6 +14,9 @@
   Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#if !defined(SHOULD_INTERCEPT_H_)
+#define SHOULD_INTERCEPT_H_
+
 /**
  * These functions are the control our policy on whether we relocate operations
  * through spindle, or let them happen normally
@@ -22,8 +25,12 @@
 #define ORIG_CALL 0
 #define REDIRECT 1
 #define EXCL_OPEN 2
+#define ERR_CALL 3
 
 int open_filter(const char *fname, int flags);
 int fopen_filter(const char *fname, const char *flags);
 int exec_filter(const char *fname);
 int stat_filter(const char *fname);
+int fd_filter(int fd);
+
+#endif

@@ -37,6 +37,7 @@ using namespace std;
 #define DEBUG 'd'
 #define PRELOAD 'e'
 #define FOLLOWFORK 'f'
+#define HIDE 'h'
 #define RELOCSO 'l'
 #define NOMPI 'm'
 #define NOCLEAN 'n'
@@ -77,6 +78,7 @@ static char **mpi_argv;
 static int mpi_argc;
 static bool done = false;
 static bool use_mpi = true;
+static bool hide_fd = true;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -133,6 +135,8 @@ struct argp_option options[] = {
      "Disable usage logging for this invocation of Spindle", GROUP_MISC },
    { "no-mpi", NOMPI, NULL, 0,
      "Run serial jobs instead of MPI job" },
+   { "no-hide", HIDE, NULL, 0,
+     "Don't hide spindle file descriptors from application\n", GROUP_MISC },
    {0}
 };
 
@@ -213,6 +217,11 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (key == NOMPI) {
       use_mpi = false;
       opts |= OPT_NOMPI;
+      return 0;
+   }
+   else if (key == HIDE) {
+      hide_fd = false;
+      opts |= OPT_NOHIDE;
       return 0;
    }
    else if (key == ARGP_KEY_ARG) {
@@ -355,9 +364,15 @@ bool isMPIJob()
    return use_mpi;
 }
 
+bool hideFDs()
+{
+   return hide_fd;
+}
+
 int getAppArgs(int *argc, char ***argv)
 {
    *argc = mpi_argc;
    *argv = mpi_argv;
 }
+
 

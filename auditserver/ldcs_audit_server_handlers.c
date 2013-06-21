@@ -1242,6 +1242,7 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    ldcs_listen_unregister_fd(ldcs_get_fd(connid)); 
    ldcs_close_server_connection(connid);
    client->state = LDCS_CLIENT_STATUS_FREE;
+   debug_printf("Closed client %d\n", nc);
 
    return 0;
 }

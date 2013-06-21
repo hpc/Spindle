@@ -32,6 +32,9 @@ static int (*orig_xstat)(int vers, const char *path, struct stat *buf);
 static int (*orig_lxstat)(int vers, const char *path, struct stat *buf);
 static int (*orig_xstat64)(int vers, const char *path, struct stat *buf);
 static int (*orig_lxstat64)(int vers, const char *path, struct stat *buf);
+static int (*orig_fstat)(int fd, struct stat *buf);
+static int (*orig_fxstat)(int vers, int fd, struct stat *buf);
+static int (*orig_fxstat64)(int vers, int fd, struct stat *buf);
 
 int handle_stat(const char *path, struct stat *buf, int flags)
 {
@@ -71,6 +74,15 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    
    debug_printf3("Ran file %s through spindle for stat\n", path);
    return 0;
+}
+
+int handle_fstat(int fd)
+{
+   if (fd_filter(fd) == ERR_CALL) {
+      set_errno(EBADF);
+      return -1;
+   }
+   return ORIG_STAT;
 }
 
 static int spindle_stat(const char *path, struct stat *buf)
@@ -121,6 +133,30 @@ static int spindle_lxstat64(int vers, const char *path, struct stat *buf)
    return orig_lxstat64(vers, path, buf);
 }
 
+static int spindle_fstat(int fd, struct stat *buf)
+{
+   int result = handle_fstat(fd);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_fstat(fd, buf);
+}
+
+static int spindle_fxstat(int vers, int fd, struct stat *buf)
+{
+   int result = handle_fstat(fd);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_fxstat(vers, fd, buf);
+}
+
+static int spindle_fxstat64(int vers, int fd, struct stat *buf)
+{
+   int result = handle_fstat(fd);
+   if (result != ORIG_STAT)
+      return result;
+   return orig_fxstat64(vers, fd, buf);
+}
+
 ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value)
 {
    if (strcmp(symname, "stat") == 0) {
@@ -153,6 +189,21 @@ ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value)
       if (!orig_lxstat64)
          orig_lxstat64 = (void *) value;
       return (ElfX_Addr) spindle_lxstat64;
+   }
+   else if (strcmp(symname, "fstat") == 0) {
+      if (!orig_fstat)
+         orig_fstat = (void *) value;
+      return (ElfX_Addr) spindle_fstat;
+   }
+   else if (strcmp(symname, "__fxstat") == 0) {
+      if (!orig_fxstat)
+         orig_fxstat = (void *) value;
+      return (ElfX_Addr) spindle_fxstat;
+   }
+   else if (strcmp(symname, "__fxstat64") == 0) {
+      if (!orig_fxstat64)
+         orig_fxstat64 = (void *) value;
+      return (ElfX_Addr) spindle_fxstat64;
    }
    else {
       debug_printf3("Skipped relocation of stat call %s\n", symname);

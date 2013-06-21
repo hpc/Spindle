@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
    for (int i = 0; i < app_argc; i++) {
       bare_printf2("%s ", app_argv[i]);
    }
-   debug_printf2("\n");
+   bare_printf2("\n");
 
    int daemon_argc;
    char **daemon_argv;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
    for (int i = 0; i < daemon_argc; i++) {
       bare_printf2("%s ", daemon_argv[i]);
    }
-   debug_printf2("\n");
+   bare_printf2("\n");
 
    if (params.opts & OPT_NOMPI)
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
