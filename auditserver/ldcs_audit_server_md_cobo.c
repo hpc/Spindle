@@ -346,11 +346,11 @@ int ldcs_audit_server_fe_md_close ( void *data  ) {
 
    debug_printf("Sending exit message to daemons\n");
    out_msg.header.type = LDCS_MSG_EXIT;
+   out_msg.header.len = 0;
    out_msg.data = NULL;
 
    cobo_server_get_root_socket(&root_fd);
    write_msg(root_fd, &out_msg);
-         
    return cobo_server_close();
 }
 
