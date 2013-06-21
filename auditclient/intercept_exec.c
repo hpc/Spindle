@@ -330,3 +330,21 @@ ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value)
    else
       return (ElfX_Addr) value;
 }
+
+pid_t vfork_wrapper()
+{
+   /* Spindle can't handle vforks */
+   debug_printf("Translating vfork into fork\n");
+   return fork();
+}
+
+ElfX_Addr redirect_fork(const char *symname, ElfX_Addr value)
+{
+   if (strcmp(symname, "vfork") == 0) {
+      return (ElfX_Addr) vfork_wrapper;
+   }
+   else {
+      debug_printf3("Not translating fork call %s\n", symname);
+      return (ElfX_Addr) value;
+   }
+}

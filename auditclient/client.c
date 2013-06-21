@@ -50,6 +50,7 @@ static int intercept_open;
 static int intercept_exec;
 static int intercept_stat;
 static int intercept_close;
+static int intercept_fork;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -237,6 +238,7 @@ int client_init()
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
   intercept_stat = (opts & OPT_RELOCPY || !(opts & OPT_NOHIDE)) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
+  intercept_fork = 1;
   intercept_close = 1;
   return 0;
 }
@@ -267,6 +269,9 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
       return redirect_stat(symname, symvalue);
    else if (intercept_close && strcmp(symname, "close") == 0)
       return redirect_close(symname, symvalue);
+   else if (intercept_fork && strstr(symname, "fork"))
+      return redirect_fork(symname, symvalue);
+
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
       app_errno_location = (errno_location_t) symvalue;
       return symvalue;
