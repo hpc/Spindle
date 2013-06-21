@@ -44,6 +44,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef LDCS_AUDIT_SERVER_MD_H
 #define LDCS_AUDIT_SERVER_MD_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "ldcs_api.h"
 #include "ldcs_audit_server_process.h"
 
@@ -53,7 +57,7 @@ typedef void* node_peer_t;
 #define NODE_PEER_NULL NULL
 
 /* Any initialization can be done here. */
-int ldcs_audit_server_md_init ( ldcs_process_data_t *data );
+int ldcs_audit_server_md_init(unsigned int port, unsigned int shared_secret, ldcs_process_data_t *data);
 
 /* register_fd should, for every fd we want Spindle to recv messages on, call
    ldcs_listen_register_fd with the fd and a callback function to be triggered
@@ -82,6 +86,9 @@ int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, l
    file mechanism. */
 int ldcs_audit_server_md_complete_msg_read(node_peer_t peer, ldcs_message_t *msg, void *mem, size_t size);
 
+/* Recv a message from the parent.  Used during initialization */
+int ldcs_audit_server_md_recv_from_parent(ldcs_message_t *msg);
+
 /* Used to send messages down to child servers.  Send to either all children, or send to a select child.*/
 int ldcs_audit_server_md_send(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg, node_peer_t peer);
 int ldcs_audit_server_md_broadcast(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg);
@@ -96,11 +103,15 @@ int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_d
 
 /* Called in the spindle FE during network initialization.  The opaque 'data' returned
    by _fe_md_open will also be passed to _fe_md_broadcast and _fe_md_close */
-int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, unsigned int port, void **data  );
+int ldcs_audit_server_fe_md_open ( char **hostlist, int hostlistsize, unsigned int port, unsigned int shared_secret, void **data  );
 /* Do a top-level broadcast. Send from the FE to the top level nodes. */
 int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
 
 /* Called from the spindle FE during shutdown */
 int ldcs_audit_server_fe_md_close ( void *data  );
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

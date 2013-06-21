@@ -108,5 +108,6 @@ extern void spindle_dump_on_error();
 void init_spindle_debugging(char *name, int survive_exec);
 void fini_spindle_debugging();
 void reset_spindle_debugging();
+int is_debug_fd(int fd);
 
 #endif

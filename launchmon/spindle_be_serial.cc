@@ -14,30 +14,27 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(LDCS_API_OPTS_H_)
-#define LDCS_API_OPTS_H_
+#include "spindle_launch.h"
+#include "spindle_debug.h"
+#include <cstdlib>
 
-#define OPT_COBO       (1 << 1)
-#define OPT_DEBUG      (1 << 2)
-#define OPT_FOLLOWFORK (1 << 3)
-#define OPT_PRELOAD    (1 << 4)
-#define OPT_PUSH       (1 << 5)
-#define OPT_PULL       (1 << 6)
-#define OPT_RELOCAOUT  (1 << 7)
-#define OPT_RELOCSO    (1 << 8)
-#define OPT_RELOCEXEC  (1 << 9)
-#define OPT_RELOCPY    (1 << 10)
-#define OPT_STRIP      (1 << 11)
-#define OPT_NOCLEAN    (1 << 12)
+int startSerialBE(int /*argc*/, char * /*argv*/[])
+{
+   char *port_s, *shared_secret_s;
+   unsigned int port, shared_secret;
 
-extern unsigned long opts;
+   port_s = getenv("SPINDLE_SERIAL_PORT");
+   if (!port_s) {
+      err_printf("SPINDLE_SERIAL_PORT wasn't set\n");
+      return -1;
+   }
+   shared_secret_s = getenv("SPINDLE_SERIAL_SHARED");
+   if (!shared_secret_s) {
+      err_printf("SPINDLE_SERIAL_SHARED wasn't set\n");
+      return -1;
+   }
+   port = atoi(port_s);
+   shared_secret = atoi(shared_secret_s);
 
-typedef struct {
-   unsigned int number;
-   unsigned int port;
-   unsigned int opts;
-   unsigned int shared_secret;
-   char *location;
-   char *pythonprefix;
-} spindle_daemon_args;
-#endif
+   return spindleRunBE(port, shared_secret, NULL);
+}

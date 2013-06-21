@@ -230,7 +230,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libclient_pipe.la libclient_socket.la
-AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib
+AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon
 BASE_SRCS = client_api.c client_heap.c client_wrappers.c
 libclient_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=pipe
 libclient_pipe_la_SOURCES = client_api_pipe.c $(BASE_SRCS)

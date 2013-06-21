@@ -29,7 +29,6 @@
 #include <assert.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "client_api.h"
 #include "client_heap.h"
 

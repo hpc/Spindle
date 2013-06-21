@@ -32,11 +32,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 
 #include "ldcs_api.h" 
-#include "ldcs_api_opts.h"
 #include "config.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "spindle_launch.h"
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"
@@ -49,6 +49,7 @@ int ldcsid = -1;
 static int intercept_open;
 static int intercept_exec;
 static int intercept_stat;
+static int intercept_close;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -232,8 +233,9 @@ int client_init()
 
   init_server_connection();
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
-  intercept_stat = (opts & OPT_RELOCPY) ? 1 : 0;
+  intercept_stat = (opts & OPT_RELOCPY || !(opts & OPT_NOHIDE)) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
+  intercept_close = 1;
   return 0;
 }
 
@@ -261,6 +263,8 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
       return redirect_exec(symname, symvalue);
    else if (intercept_stat && strstr(symname, "stat"))
       return redirect_stat(symname, symvalue);
+   else if (intercept_close && strcmp(symname, "close") == 0)
+      return redirect_close(symname, symvalue);
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
       app_errno_location = (errno_location_t) symvalue;
       return symvalue;

@@ -27,6 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 typedef enum {
    LDCS_LISTEN_STATUS_ACTIVE,
    LDCS_LISTEN_STATUS_FREE,
+   LDCS_LISTEN_STATUS_ERROR
 } ldcs_listen_data_item_status_t;
 
 
@@ -174,9 +175,13 @@ int ldcs_listen() {
                fd     = ldcs_listen_data.item_table[c].fd;
                if(FD_ISSET(fd, &rd)) {
                   debug_printf3("calling callback for fd %d id=%d\n",fd, ldcs_listen_data.item_table[c].id);
-                  ldcs_listen_data.item_table[c].cb_func(ldcs_listen_data.item_table[c].fd,
-                                                         ldcs_listen_data.item_table[c].id,
-                                                         ldcs_listen_data.item_table[c].data);
+                  int result = ldcs_listen_data.item_table[c].cb_func(ldcs_listen_data.item_table[c].fd,
+                                                                      ldcs_listen_data.item_table[c].id,
+                                                                      ldcs_listen_data.item_table[c].data);
+                  if (result == -1) {
+                     debug_printf("Marking fd %d in error\n", ldcs_listen_data.item_table[c].fd);
+                     ldcs_listen_data.item_table[c].state = LDCS_LISTEN_STATUS_ERROR;
+                  }
                }
             }
          }

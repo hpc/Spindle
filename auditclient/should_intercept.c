@@ -19,9 +19,11 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "client.h"
+#include "client_api.h"
 #include "should_intercept.h"
+#include "spindle_debug.h"
 
 extern int relocate_spindleapi();
 
@@ -185,4 +187,19 @@ int stat_filter(const char *fname)
       return REDIRECT;
    else
       return ORIG_CALL;
+}
+
+int fd_filter(int fd)
+{
+   if (opts & OPT_NOHIDE)
+      return ORIG_CALL;
+   if (fd == -1)
+      return ORIG_CALL;
+
+   if (is_client_fd(ldcsid, fd))
+      return ERR_CALL;
+   if (is_debug_fd(fd))
+      return ERR_CALL;
+
+   return ORIG_CALL;
 }

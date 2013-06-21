@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES =
 
-AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib
+AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon
 
 BASE_SRCS = client_api.c client_heap.c client_wrappers.c
 

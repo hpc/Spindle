@@ -14,23 +14,17 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(parse_launcher_h_)
-#define parse_launcher_h_
+#if !defined(PARSELOC_H_)
+#define PARSELOC_H_
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-/* Error returns for createNewCmdLine */
-#define NO_LAUNCHER -1
-#define NO_EXEC -2
+char *parse_location(char *loc);
 
-/* Bitmask of values for the test_launchers parameter */
-#define TEST_PRESETUP 1<<0
-#define TEST_SLURM    1<<1
-
-int createNewCmdLine(int argc, char *argv[],
-                     int *new_argc, char **new_argv[],
-                     const char *bootstrapper_name,
-                     const char *ldcs_location,
-                     const char *ldcs_number,
-                     unsigned long ldcs_opts,
-                     unsigned int test_launchers);
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

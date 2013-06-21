@@ -27,7 +27,6 @@
 #include <stdarg.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
@@ -247,6 +246,18 @@ static FILE *rtcache_fopen64(const char *path, const char *mode)
    return fopen_worker(path, mode, 1);
 }
 
+static int rtcache_close(int fd)
+{
+   /* Don't let applications (looking at you, tcsh) close our FDs */
+   check_for_fork();
+   int result = fd_filter(fd);
+   if (result == ERR_CALL) {
+      set_errno(EBADF);
+      return -1;
+   }
+   return close(fd);
+}
+
 ElfX_Addr redirect_open(const char *symname, ElfX_Addr value)
 {
    if (strcmp(symname, "open") == 0) {
@@ -271,4 +282,12 @@ ElfX_Addr redirect_open(const char *symname, ElfX_Addr value)
    }
    else
       return (ElfX_Addr) value;
+}
+
+ElfX_Addr redirect_close(const char *symname, ElfX_Addr value)
+{
+   if (strcmp(symname, "close") == 0) {
+      return (ElfX_Addr) rtcache_close;
+   }
+   return value;
 }

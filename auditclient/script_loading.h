@@ -14,23 +14,13 @@
   Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(SHOULD_INTERCEPT_H_)
-#define SHOULD_INTERCEPT_H_
+#if !defined(SCRIPT_LOADING_H_)
+#define SCRIPT_LOADING_H_
 
-/**
- * These functions are the control our policy on whether we relocate operations
- * through spindle, or let them happen normally
- **/
+#define SCRIPT_ERR -1
+#define SCRIPT_ENOENT -2
+#define SCRIPT_NOTSCRIPT -3
 
-#define ORIG_CALL 0
-#define REDIRECT 1
-#define EXCL_OPEN 2
-#define ERR_CALL 3
-
-int open_filter(const char *fname, int flags);
-int fopen_filter(const char *fname, const char *flags);
-int exec_filter(const char *fname);
-int stat_filter(const char *fname);
-int fd_filter(int fd);
+int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char **interp_path, char ***new_argv);
 
 #endif

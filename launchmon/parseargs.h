@@ -25,6 +25,8 @@ unsigned int getPort();
 std::string getLocation(int number);
 std::string getPythonPrefixes();
 bool isLoggingEnabled();
-
+bool isMPIJob();
+bool hideFDs();
+int getAppArgs(int *argc, char ***argv);
 
 #endif

@@ -26,9 +26,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_debug.h"
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "client.h"
 #include "client_api.h"
+#include "script_loading.h"
 
 #include "config.h"
 
@@ -37,8 +38,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 
+int ldcsid;
 static int rankinfo[4]={-1,-1,-1,-1};
-static int ldcs_id;
 static int number;
 static char *location, *number_s;
 static char **cmdline;
@@ -64,14 +65,14 @@ extern char *parse_location(char *loc);
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
-   ldcs_id = client_open_connection(location, number);
-   if (ldcs_id == -1) 
+   ldcsid = client_open_connection(location, number);
+   if (ldcsid == -1) 
       return -1;
 
-   send_cwd(ldcs_id);
-   send_pid(ldcs_id);
-   send_location(ldcs_id, location);
-   send_rankinfo_query(ldcs_id, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
+   send_cwd(ldcsid);
+   send_pid(ldcsid);
+   send_location(ldcsid, location);
+   send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
 
    return 0;
 }
@@ -79,9 +80,9 @@ static int establish_connection()
 static void setup_environment()
 {
    char rankinfo_str[256];
-   snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcs_id, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
+   snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
 
-   char *connection_str = client_get_connection_string(ldcs_id);
+   char *connection_str = client_get_connection_string(ldcsid);
    assert(connection_str);
 
    setenv("LD_AUDIT", client_lib, 1);
@@ -115,7 +116,7 @@ static void get_executable()
    }
 
    debug_printf2("Sending request for executable %s\n", *cmdline);
-   send_file_query(ldcs_id, *cmdline, &executable);
+   send_file_query(ldcsid, *cmdline, &executable);
    if (executable == NULL) {
       executable = *cmdline;
       err_printf("Failed to relocate executable %s\n", executable);
@@ -126,9 +127,26 @@ static void get_executable()
    }
 }
 
+static void adjust_script()
+{
+   int result;
+   char **new_cmdline;
+   char *new_executable;
+
+   if (!executable)
+      return;
+
+   result = adjust_if_script(*cmdline, executable, cmdline, &new_executable, &new_cmdline);
+   if (result != 0)
+      return;
+
+   cmdline = new_cmdline;
+   executable = new_executable;
+}
+
 static void get_clientlib()
 {
-   send_file_query(ldcs_id, default_libstr, &client_lib);
+   send_file_query(ldcsid, default_libstr, &client_lib);
    if (client_lib == NULL) {
       client_lib = default_libstr;
       err_printf("Failed to relocate client library %s\n", default_libstr);
@@ -186,7 +204,8 @@ static char *realize(char *path)
 
 int main(int argc, char *argv[])
 {
-   int error, i, result;
+   int error, result;
+   char **j;
 
    LOGGING_INIT_PREEXEC("Client");
    debug_printf("Launched Spindle Bootstrapper\n");
@@ -210,18 +229,19 @@ int main(int argc, char *argv[])
 
    get_executable();
    get_clientlib();
-
+   adjust_script();
+   
    /**
     * Exec setup
     **/
    debug_printf("Spindle bootstrap launching: ");
-   if (argc == 3) {
+   if (!executable) {
       bare_printf("<no executable given>");
    }
    else {
-      bare_printf("%s ", executable);
-      for (i=4; i<argc; i++) {
-         bare_printf("%s ", argv[i]);
+      bare_printf("%s.  Args:  ", executable);
+      for (j = cmdline; *j; j++) {
+         bare_printf("%s ", *j);
       }
    }
    bare_printf("\n");

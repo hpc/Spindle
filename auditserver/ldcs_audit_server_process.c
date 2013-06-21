@@ -28,10 +28,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 #include "ldcs_audit_server_requestors.h"
 
 ldcs_process_data_t ldcs_process_data;
+unsigned int opts;
 
 int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
   int rc=0;
@@ -55,139 +56,129 @@ int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
   }
   return(rc);
 }
-    
-int ldcs_audit_server_process (char *location, unsigned int port, int number,
-                               char *pythonprefix,
-                               int ready_cb_func ( void *data ), 
-                               void * ready_cb_data )
+
+int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secret, 
+                                    void **packed_setup_data, int *data_size)
 {
-  int rc=0;
-  int serverid, fd;
+   int result;
+   debug_printf2("Setting up server data structure\n");
 
+   memset(&ldcs_process_data, 0, sizeof(ldcs_process_data));
 
-  /* init internal data */
-  ldcs_process_data.state=0; 	/* TDB */
-  ldcs_process_data.location=strdup(location);
-  ldcs_process_data.number=number;
-  /* allocate inital client space */
-  ldcs_process_data.client_table = (ldcs_client_t *) malloc(1 * sizeof(ldcs_client_t) );
-  ldcs_process_data.client_table_size=1;
+   /* Initialize server->server network */
+   ldcs_audit_server_md_init(port, shared_secret, &ldcs_process_data);
 
-  /* initialize one pseudo client, which will handle on root node connection to fe */
-  ldcs_process_data.client_table_used=1;
-  ldcs_process_data.client_table[0].state=LDCS_CLIENT_STATUS_ACTIVE_PSEUDO;
-  ldcs_process_data.client_table[0].connid=-1;
-
-  if (opts & OPT_PULL)
-     ldcs_process_data.dist_model = LDCS_PULL;
-  else if (opts & OPT_PUSH)
-     ldcs_process_data.dist_model = LDCS_PUSH;
-  else {
-     err_printf("Neither push nor pull options were set\n");
-     assert(0);
-  }
-
-  ldcs_process_data.md_rank=0; 
-  ldcs_process_data.md_size=1;
-  ldcs_process_data.md_port = port;
-  ldcs_process_data.md_fan_out=0; 
-  ldcs_process_data.client_counter=0; /* number of clients ever connected */
-  ldcs_process_data.clients_connected=0; /* will set to one once a client was connected */
-  ldcs_process_data.preload_done=0;
-  ldcs_process_data.pending_requests = new_requestor_list();
-  ldcs_process_data.completed_requests = new_requestor_list();
-  ldcs_process_data.pending_stat_requests = new_requestor_list();
-  ldcs_process_data.completed_stat_requests = new_requestor_list();
-  ldcs_process_data.pythonprefix = pythonprefix;
-
-  {
-    char buffer[MAX_PATH_LEN];
-    
-    rc=gethostname(buffer, MAX_PATH_LEN);
-    ldcs_process_data.hostname=strdup(buffer);
-  }
-
-  _ldcs_server_stat_init(&ldcs_process_data.server_stat);
-
-  /* init md support (multi-daemon) */
-  debug_printf3("start md_init\n");
-  ldcs_audit_server_md_init(&ldcs_process_data);
-  debug_printf3("finished md_init\n");
-
-  ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
-
-  {
-    char buffer[MAX_PATH_LEN];
-    
-    rc=gethostname(buffer, MAX_PATH_LEN);
-    ldcs_process_data.server_stat.hostname=strdup(buffer);
-  }
-
-   /* create or check local temporary directory */
-   ldcs_audit_server_filemngt_init(ldcs_process_data.location);
-
-   /* start server */
-   debug_printf3("create server (%s,%d)\n",ldcs_process_data.location,ldcs_process_data.number);
-   serverid = ldcs_create_server(ldcs_process_data.location,ldcs_process_data.number);
-   if(serverid<0)  _error("in starting server");
-   ldcs_process_data.serverid=serverid;
-   fd=ldcs_get_fd(serverid);
-   ldcs_process_data.serverfd=fd;
-
-   /* register md support (multi-daemon) */
-   ldcs_audit_server_md_register_fd(&ldcs_process_data);
-
-   /* register server listen fd to listener */
-   ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
-
-   /* register exit loop callback */
-   if (getenv("LDCS_EXIT_AFTER_SESSION")) {
-     if(atoi(getenv("LDCS_EXIT_AFTER_SESSION"))==1) {
-       ldcs_listen_register_exit_loop_cb(&_listen_exit_loop_cb_func, (void *) &ldcs_process_data);
-     }
+   /* Use network to broadcast configuration parameters */
+   ldcs_message_t msg;
+   msg.header.type = 0;
+   msg.header.len = 0;
+   msg.data = NULL;
+   debug_printf2("Reading setup message from parent\n");
+   result = ldcs_audit_server_md_recv_from_parent(&msg);
+   if (result == -1) {
+      err_printf("Error reading setup message from parent\n");
+      return -1;
+   }
+   assert(msg.header.type == LDCS_MSG_SETTINGS);
+   result = ldcs_audit_server_md_broadcast(&ldcs_process_data, &msg);
+   if (result == -1) {
+      err_printf("Error broadcast setup message to children\n");
+      return -1;
    }
 
-   debug_printf3("init now cache\n");
+   *packed_setup_data = msg.data;
+   *data_size = msg.header.len;
+
+   return 0;
+}
+
+int ldcs_audit_server_process(spindle_args_t *args)
+{
+   int rc=0;
+   int serverid, fd;
+
+   debug_printf3("Initializing server data structures\n");
+   ldcs_process_data.location = args->location;
+   ldcs_process_data.number = args->number;
+   ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.md_port = args->port;
+   ldcs_process_data.opts = args->opts;
+   ldcs_process_data.pending_requests = new_requestor_list();
+   ldcs_process_data.completed_requests = new_requestor_list();
+   ldcs_process_data.pending_stat_requests = new_requestor_list();
+   ldcs_process_data.completed_stat_requests = new_requestor_list();
+
+   if (ldcs_process_data.opts & OPT_PULL)
+      ldcs_process_data.dist_model = LDCS_PULL;
+   else if (ldcs_process_data.opts & OPT_PUSH)
+      ldcs_process_data.dist_model = LDCS_PUSH;
+   else {
+      err_printf("Neither push nor pull options were set\n");
+      assert(0);
+   }
+
+   _ldcs_server_stat_init(&ldcs_process_data.server_stat);
+
+   {
+      char buffer[65];
+      rc=gethostname(buffer, 65);
+      ldcs_process_data.hostname = strdup(buffer);
+   }
+   ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
+
+   debug_printf3("Initializing file cache location %s\n", ldcs_process_data.location);
+   ldcs_audit_server_filemngt_init(ldcs_process_data.location);
+
+   debug_printf3("Initializing connections for clients at %s and %u\n",
+                 ldcs_process_data.location, ldcs_process_data.number);
+   serverid = ldcs_create_server(ldcs_process_data.location, ldcs_process_data.number);
+   if (serverid == -1) {
+      err_printf("Unable to setup area for client connections\n");
+      return -1;
+   }
+   ldcs_process_data.serverid = serverid;
+   fd = ldcs_get_fd(serverid);
+   ldcs_process_data.serverfd = fd;
+  
+   ldcs_audit_server_md_register_fd(&ldcs_process_data);
+  
+   /* register server listen fd to listener */
+   ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
+  
+   debug_printf3("Initializing cache\n");
    ldcs_cache_init();
 
-   debug_printf3("calling ready function\n");
-   ready_cb_func(ready_cb_data);
+   return 0;
+}  
 
-
+int ldcs_audit_server_run()
+{
    /* start loop */
-   debug_printf3("start listening\n");
+   debug_printf2("Entering server loop\n");
    ldcs_listen();
-   debug_printf3("ending listening\n");
-
-   ldcs_process_data.server_stat.listen_time=(ldcs_get_time()-ldcs_process_data.server_stat.starttime);
+  
+   ldcs_process_data.server_stat.listen_time= ldcs_get_time() - ldcs_process_data.server_stat.starttime;
    ldcs_process_data.server_stat.select_time=
-     ldcs_process_data.server_stat.listen_time
-     - ldcs_process_data.server_stat.client_cb.time
-     - ldcs_process_data.server_stat.server_cb.time
-     - ldcs_process_data.server_stat.md_cb.time;
+      ldcs_process_data.server_stat.listen_time
+      - ldcs_process_data.server_stat.client_cb.time
+      - ldcs_process_data.server_stat.server_cb.time
+      - ldcs_process_data.server_stat.md_cb.time;
 
 
    _ldcs_server_stat_print(&ldcs_process_data.server_stat);
-
-   /* debug hash */
-   if(0){
-     char buffer[MAX_PATH_LEN];
-     sprintf(buffer,"hash_dump_%02d.dat",ldcs_process_data.md_rank);
-     ldcs_cache_dump(buffer);
-   }
-
-   debug_printf3("destroy server (%s,%d)\n",location,number);
-   ldcs_destroy_server(serverid);
-
+  
+   debug_printf3("destroy server (%s,%d)\n", ldcs_process_data.location, ldcs_process_data.number);
+   ldcs_destroy_server(ldcs_process_data.serverid);
+  
    /* destroy md support (multi-daemon) */
    ldcs_audit_server_md_destroy(&ldcs_process_data);
-
+  
    /* destroy file cache */
-   if (!(opts & OPT_NOCLEAN))
+   if (!(ldcs_process_data.opts & OPT_NOCLEAN))
       ldcs_audit_server_filemngt_clean();
-
-   return(rc);
- }
+  
+   return 0;
+}
 
  /* Statistic functions */
  void _ldcs_server_stat_init_entry ( ldcs_server_stat_entry_t *entry ) {

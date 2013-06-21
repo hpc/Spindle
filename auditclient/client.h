@@ -36,6 +36,7 @@ typedef unsigned long ElfX_Addr;
 ElfX_Addr redirect_open(const char *symname, ElfX_Addr value);
 ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value);
 ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_close(const char *symname, ElfX_Addr value);
 ElfX_Addr redirect_spindleapi(const char *symname, ElfX_Addr value);
 
 /**
@@ -77,5 +78,7 @@ extern python_path_t *pythonprefixes;
 void parse_python_prefixes(int fd);
 
 void test_log(const char *name);
+
+extern unsigned long opts;
 
 #endif

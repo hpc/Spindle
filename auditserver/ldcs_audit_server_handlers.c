@@ -23,7 +23,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
@@ -32,7 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "stat_cache.h"
 #include "ldcs_audit_server_handlers.h"
 #include "ldcs_audit_server_requestors.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
 
 /** 
  * This function contains the "brains" of Spindle.  It's public interface,
@@ -343,7 +342,7 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
    int read_result, broadcast_result, client_result;
 
    ldcs_client_t *client = procdata->client_table + nc;
-   if ((opts & OPT_PRELOAD) && !procdata->preload_done) {
+   if ((procdata->opts & OPT_PRELOAD) && !procdata->preload_done) {
       /* Postpone client requests until preload is complete */
       return 0;
    }
@@ -616,7 +615,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    /* Actually read the file into the buffer */
    starttime = ldcs_get_time();
 
-   result = filemngt_read_file(pathname, buffer, &newsize, (opts & OPT_STRIP));
+   result = filemngt_read_file(pathname, buffer, &newsize, (procdata->opts & OPT_STRIP));
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -1243,6 +1242,7 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    ldcs_listen_unregister_fd(ldcs_get_fd(connid)); 
    ldcs_close_server_connection(connid);
    client->state = LDCS_CLIENT_STATUS_FREE;
+   debug_printf("Closed client %d\n", nc);
 
    return 0;
 }

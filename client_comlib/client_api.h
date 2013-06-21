@@ -44,5 +44,6 @@ char *client_get_connection_string(int fd);
 int client_send_msg(int connid, ldcs_message_t * msg);
 int client_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
 int client_recv_msg_dynamic(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+int is_client_fd(int connfd, int fd);
 
 #endif

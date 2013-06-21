@@ -329,9 +329,20 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
 
   if(msg->header.len>0) {
     n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n == 0) return(rc);
-    if (n < 0) _error("ERROR reading message data from socket");
-    if (n != msg->header.len) _error("received different number of bytes for message data");
+    if (n == 0) 
+       return(rc);
+    if (n < 0) {
+       int error = errno;
+       err_printf("Error during read of pipe: %s (%d)\n", strerror(error), error);
+       return -1;
+    }
+    if (n != msg->header.len) {
+       int error = errno;
+       err_printf("Partial read on pipe.  Got %u / %u: %s (%d)\n",
+                  (unsigned) n, (unsigned) msg->header.len,
+                  strerror(error), error);
+       return -1;
+    }
 
   } else {
     *msg->data = '\0';

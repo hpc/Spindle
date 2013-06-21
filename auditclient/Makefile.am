@@ -12,9 +12,9 @@ else
 noinst_LTLIBRARIES += libspindle_client_pipe.la
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/comlib
+AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon
 
-BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c patch_linkmap.c should_intercept.c
+BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c patch_linkmap.c should_intercept.c script_loading.c
 ARCH_SOURCES = auditclient_x86_64.c
 
 #libspindle_client_socket_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
