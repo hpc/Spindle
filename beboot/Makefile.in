@@ -54,7 +54,7 @@ PROGRAMS = $(pkglibexec_PROGRAMS)
 am_spindle_bootstrap_OBJECTS =  \
 	spindle_bootstrap-spindle_bootstrap.$(OBJEXT) \
 	spindle_bootstrap-parseloc.$(OBJEXT) \
-	spindle_bootstrap-script_loading.$(OBJEXT)
+	spindle_bootstrap-exec_util.$(OBJEXT)
 spindle_bootstrap_OBJECTS = $(am_spindle_bootstrap_OBJECTS)
 spindle_bootstrap_DEPENDENCIES =  \
 	$(top_builddir)/logging/libspindlelogc.la \
@@ -231,7 +231,7 @@ top_srcdir = @top_srcdir@
 spindle_bootstrap_LDFLAGS = -all-static $(AM_LDFLAGS)
 spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -I$(top_srcdir)/comlib -I$(top_srcdir)/logging -I$(top_srcdir)/auditclient -I$(top_srcdir)/client_comlib -I$(top_srcdir)/launchmon
 spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la $(top_builddir)/client_comlib/libclient_pipe.la
-spindle_bootstrap_SOURCES = spindle_bootstrap.c parseloc.c $(top_srcdir)/auditclient/script_loading.c
+spindle_bootstrap_SOURCES = spindle_bootstrap.c parseloc.c $(top_srcdir)/auditclient/exec_util.c
 all: all-am
 
 .SUFFIXES:
@@ -319,8 +319,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_bootstrap-exec_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_bootstrap-parseloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_bootstrap-script_loading.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_bootstrap-spindle_bootstrap.Po@am__quote@
 
 .c.o:
@@ -379,21 +379,21 @@ spindle_bootstrap-parseloc.obj: parseloc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-parseloc.obj `if test -f 'parseloc.c'; then $(CYGPATH_W) 'parseloc.c'; else $(CYGPATH_W) '$(srcdir)/parseloc.c'; fi`
 
-spindle_bootstrap-script_loading.o: $(top_srcdir)/auditclient/script_loading.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-script_loading.o -MD -MP -MF $(DEPDIR)/spindle_bootstrap-script_loading.Tpo -c -o spindle_bootstrap-script_loading.o `test -f '$(top_srcdir)/auditclient/script_loading.c' || echo '$(srcdir)/'`$(top_srcdir)/auditclient/script_loading.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-script_loading.Tpo $(DEPDIR)/spindle_bootstrap-script_loading.Po
+spindle_bootstrap-exec_util.o: $(top_srcdir)/auditclient/exec_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-exec_util.o -MD -MP -MF $(DEPDIR)/spindle_bootstrap-exec_util.Tpo -c -o spindle_bootstrap-exec_util.o `test -f '$(top_srcdir)/auditclient/exec_util.c' || echo '$(srcdir)/'`$(top_srcdir)/auditclient/exec_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-exec_util.Tpo $(DEPDIR)/spindle_bootstrap-exec_util.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/auditclient/script_loading.c' object='spindle_bootstrap-script_loading.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/auditclient/exec_util.c' object='spindle_bootstrap-exec_util.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-script_loading.o `test -f '$(top_srcdir)/auditclient/script_loading.c' || echo '$(srcdir)/'`$(top_srcdir)/auditclient/script_loading.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-exec_util.o `test -f '$(top_srcdir)/auditclient/exec_util.c' || echo '$(srcdir)/'`$(top_srcdir)/auditclient/exec_util.c
 
-spindle_bootstrap-script_loading.obj: $(top_srcdir)/auditclient/script_loading.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-script_loading.obj -MD -MP -MF $(DEPDIR)/spindle_bootstrap-script_loading.Tpo -c -o spindle_bootstrap-script_loading.obj `if test -f '$(top_srcdir)/auditclient/script_loading.c'; then $(CYGPATH_W) '$(top_srcdir)/auditclient/script_loading.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/auditclient/script_loading.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-script_loading.Tpo $(DEPDIR)/spindle_bootstrap-script_loading.Po
+spindle_bootstrap-exec_util.obj: $(top_srcdir)/auditclient/exec_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-exec_util.obj -MD -MP -MF $(DEPDIR)/spindle_bootstrap-exec_util.Tpo -c -o spindle_bootstrap-exec_util.obj `if test -f '$(top_srcdir)/auditclient/exec_util.c'; then $(CYGPATH_W) '$(top_srcdir)/auditclient/exec_util.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/auditclient/exec_util.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-exec_util.Tpo $(DEPDIR)/spindle_bootstrap-exec_util.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/auditclient/script_loading.c' object='spindle_bootstrap-script_loading.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/auditclient/exec_util.c' object='spindle_bootstrap-exec_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-script_loading.obj `if test -f '$(top_srcdir)/auditclient/script_loading.c'; then $(CYGPATH_W) '$(top_srcdir)/auditclient/script_loading.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/auditclient/script_loading.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-exec_util.obj `if test -f '$(top_srcdir)/auditclient/exec_util.c'; then $(CYGPATH_W) '$(top_srcdir)/auditclient/exec_util.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/auditclient/exec_util.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -14,13 +14,14 @@
   Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(SCRIPT_LOADING_H_)
-#define SCRIPT_LOADING_H_
+#if !defined(EXEC_UTIL_H_)
+#define EXEC_UTIL_H_
 
 #define SCRIPT_ERR -1
 #define SCRIPT_ENOENT -2
 #define SCRIPT_NOTSCRIPT -3
 
 int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char **interp_path, char ***new_argv);
+int exec_pathsearch(int ldcsid, const char *orig_exec, char **new_exec);
 
 #endif

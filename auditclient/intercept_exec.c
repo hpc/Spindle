@@ -29,7 +29,7 @@
 #include "client_heap.h"
 #include "client_api.h"
 #include "should_intercept.h"
-#include "script_loading.h"
+#include "exec_util.h"
 
 static int (*orig_execv)(const char *path, char *const argv[]);
 static int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
@@ -99,15 +99,14 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
 
 static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
-   char *newname = NULL, *path, *cur, *saveptr = NULL;
-   char path_to_try[MAX_PATH_LEN+1];
+   char *newname = NULL;
    int result;
 
    if (!filepath) {
       newpath[0] = '\0';
       return 0;
    }
-   if (filepath[0] == '/') {
+   if (filepath[0] == '/' || filepath[0] == '.') {
       find_exec(filepath, argv, newpath, newpath_size, new_argv);
       return 0;
    }
@@ -119,25 +118,11 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    }
    sync_cwd();
 
-   path = getenv("PATH");
-   if (!path) {
-      strncpy(newpath, filepath, newpath_size);
-      newpath[newpath_size-1] = '\0';
-      return 0;
-   }
-   path = spindle_strdup(path);
+   result = exec_pathsearch(ldcsid, filepath, &newname);
+   if (result == -1)
+      return -1;
 
-   debug_printf("find_exec_pathsearch using path %s on file %s\n", path, filepath);
-   for (cur = strtok_r(path, ":", &saveptr); cur; cur = strtok_r(NULL, ":", &saveptr)) {
-      snprintf(path_to_try, MAX_PATH_LEN+1, "%s/%s", cur, filepath);
-      debug_printf2("Exec search operation requesting file: %s\n", filepath);
-      send_file_query(ldcsid, path_to_try, &newname);
-      debug_printf("Exec search request returned %s -> %s\n", filepath, newname ? newname : "NULL");
-      if (newname)
-         break;
-   }
    result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
-   spindle_free(path);
    return result;
 }
 

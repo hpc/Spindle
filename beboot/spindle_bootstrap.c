@@ -29,7 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "client.h"
 #include "client_api.h"
-#include "script_loading.h"
+#include "exec_util.h"
 
 #include "config.h"
 
@@ -116,7 +116,8 @@ static void get_executable()
    }
 
    debug_printf2("Sending request for executable %s\n", *cmdline);
-   send_file_query(ldcsid, *cmdline, &executable);
+   exec_pathsearch(ldcsid, *cmdline, &executable);
+
    if (executable == NULL) {
       executable = *cmdline;
       err_printf("Failed to relocate executable %s\n", executable);
@@ -125,6 +126,8 @@ static void get_executable()
       debug_printf("Relocated executable %s to %s\n", *cmdline, executable);
       chmod(executable, 0700);
    }
+
+   
 }
 
 static void adjust_script()

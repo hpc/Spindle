@@ -20,12 +20,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
-#include "script_loading.h"
+#include "exec_util.h"
 #include "spindle_debug.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "config.h"
 
 static int is_script(int fd, char *path)
 {
@@ -198,5 +200,49 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
 
    spindle_free(interpreter_args);
 
+   return 0;
+}
+
+int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec)
+{
+   char *saveptr, *path, *cur;
+   char newexec[MAX_PATH_LEN+1];
+
+   if (!orig_exec) {
+      err_printf("Null exec passed to exec_pathsearch\n");
+      *reloc_exec = NULL;
+      return -1;
+   }
+   
+   if (orig_exec[0] == '/' || orig_exec[0] == '.') {
+      send_file_query(ldcsid, (char *) orig_exec, reloc_exec);
+      debug_printf3("exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
+      return 0;
+   }
+
+   path = getenv("PATH");
+   if (!path) {
+      send_file_query(ldcsid, (char *) orig_exec, reloc_exec);
+      debug_printf3("No path.  exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
+      return 0;
+   }
+   path = spindle_strdup(path);
+
+   debug_printf3("exec_pathsearch using path %s on file %s\n", path, orig_exec);
+   for (cur = strtok_r(path, ":", &saveptr); cur; cur = strtok_r(NULL, ":", &saveptr)) {
+      snprintf(newexec, MAX_PATH_LEN, "%s/%s", cur, orig_exec);
+      newexec[MAX_PATH_LEN] = '\0';
+
+      debug_printf2("Exec search operation requesting file: %s\n", newexec);
+      send_file_query(ldcsid, newexec, reloc_exec);
+      debug_printf("Exec search request returned %s -> %s\n", newexec, *reloc_exec ? *reloc_exec : "NULL");
+      if (*reloc_exec)
+         break;
+   }
+   spindle_free(path);
+   if (*reloc_exec)
+      return 0;
+
+   *reloc_exec = spindle_strdup(orig_exec);
    return 0;
 }
