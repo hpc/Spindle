@@ -373,6 +373,7 @@ int getAppArgs(int *argc, char ***argv)
 {
    *argc = mpi_argc;
    *argv = mpi_argv;
+   return 0;
 }
 
 

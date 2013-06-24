@@ -94,7 +94,6 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secre
 
 int ldcs_audit_server_process(spindle_args_t *args)
 {
-   int rc=0;
    int serverid, fd;
 
    debug_printf3("Initializing server data structures\n");
@@ -121,7 +120,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
 
    {
       char buffer[65];
-      rc=gethostname(buffer, 65);
+      gethostname(buffer, 65);
       ldcs_process_data.hostname = strdup(buffer);
    }
    ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;

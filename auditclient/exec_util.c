@@ -205,7 +205,7 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
 
 int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec)
 {
-   char *saveptr, *path, *cur;
+   char *saveptr = NULL, *path, *cur;
    char newexec[MAX_PATH_LEN+1];
 
    if (!orig_exec) {

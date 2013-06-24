@@ -33,7 +33,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 using namespace std;
 
 static void setupLogging(int argc, char **argv);
-static unsigned int getSharedSecret();
 static void getAppCommandLine(int argc, char *argv[], spindle_args_t *args, int *mod_argc, char ***mod_argv);
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args);
 static void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
@@ -233,7 +232,7 @@ static void logUser()
 
    FILE *f = fopen(logging_file, "a");
    if (!f) {
-      err_printf("Could not open logging file %s\n");
+      err_printf("Could not open logging file %s\n", logging_file);
       return;
    }
    fprintf(f, "%s\n", log_message.c_str());

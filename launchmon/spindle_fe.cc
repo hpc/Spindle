@@ -28,14 +28,14 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 using namespace std;
 
 template<typename T>
-void pack_param(T value, char *buffer, int &pos)
+void pack_param(T value, char *buffer, unsigned int &pos)
 {
    memcpy(buffer + pos, &value, sizeof(T));
    pos += sizeof(T);
 }
 
 template<>
-void pack_param<char*>(char *value, char *buffer, int &pos)
+void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 {
    if (value == NULL) {
       value = const_cast<char*>("");
@@ -52,7 +52,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
 
-   int pos = 0;
+   unsigned int pos = 0;
    char *buf = (char *) malloc(buffer_size);
    pack_param(args->number, buf, pos);
    pack_param(args->port, buf, pos);
@@ -119,4 +119,5 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
 int spindleCloseFE()
 {
    ldcs_audit_server_fe_md_close(md_data_ptr);
+   return 0;
 }
