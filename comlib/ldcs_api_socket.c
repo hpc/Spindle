@@ -191,7 +191,6 @@ static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t bl
   left      = bytes;
   bsumread  = 0;
   dataptr   = (char*) data;
-  bread     = 0;
 
   while (left > 0)  {
     btoread    = left;

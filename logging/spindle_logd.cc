@@ -129,6 +129,7 @@ public:
          return false;
       
       char code[8];
+      memset(code, 0, sizeof(code));
       int i=0;
       for (i=0; i<msg1_size; i++) 
          code[i] = msg1[i];

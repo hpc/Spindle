@@ -173,7 +173,7 @@ FILE *fopen_worker(const char *path, const char *mode, int is_64)
          set_errno(ENOENT);
          return NULL;
       }
-      else if (rc < 0) {
+      else if (result < 0) {
          /* Spindle error, fallback to orig open */
          return call_orig_fopen(path, mode, is_64);
       }

@@ -116,7 +116,7 @@ int ldcs_cache_getNewEntriesForDir(char *dir, char **data, int *len)
    for (i = ldcs_hash_getFirstEntryForDir(dir); i != NULL; i = ldcs_hash_getNextEntryForDir(i)) {
       int length_fn = i->filename ? strlen(i->filename)+1 : 0;
       int length_dir = first_pass ? strlen(dir)+1 : 0;
-      int space_needed = length_fn + length_dir + sizeof(int)*2;
+      unsigned int space_needed = length_fn + length_dir + sizeof(int)*2;
       if (cur_pos + space_needed >= buffer_size) {
          while (cur_pos + space_needed >= buffer_size)
             buffer_size = !buffer_size ? INITIAL_BUFFER_SIZE : (buffer_size*2);

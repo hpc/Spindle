@@ -316,7 +316,7 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
 
   if(msg->header.len>0) {
 
-    msg->data = (char *) malloc(sizeof(msg->header.len));
+    msg->data = (char *) malloc(msg->header.len);
     if (!msg)  _error("could not allocate memory for message data");
 
     n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
@@ -390,7 +390,6 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
   left      = bytes;
   bsumread  = 0;
   dataptr   = (char*) data;
-  bread     = 0;
 
   while (left > 0)  {
     btoread    = left;

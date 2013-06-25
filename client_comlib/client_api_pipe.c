@@ -94,7 +94,6 @@ static int read_pipe(int fd, void *data, int bytes)
   
    left      = bytes;
    dataptr   = (char*) data;
-   bread     = 0;
 
    while (left > 0)  {
       btoread    = left;

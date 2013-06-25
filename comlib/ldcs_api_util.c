@@ -103,7 +103,7 @@ ldcs_message_t* ldcs_msg_copy(ldcs_message_t *msg) {
   new_msg->header.type   = msg->header.type;
   new_msg->header.len    = msg->header.len;
   if(new_msg->header.len>0) {
-    new_msg->data = (char *) malloc(sizeof(new_msg->header.len));
+    new_msg->data = (char *) malloc(new_msg->header.len);
     if (!new_msg->data)  _error("could not allocate memory for message data");
     memcpy(new_msg->data,msg->data,msg->header.len);
   } else {
