@@ -14,23 +14,13 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(parse_launcher_h_)
-#define parse_launcher_h_
+#if !defined(STAT_CACHE_H_)
+#define STAT_CACHE_H_
 
-/* Error returns for createNewCmdLine */
-#define NO_LAUNCHER -1
-#define NO_EXEC -2
+int init_stat_cache();
 
-/* Bitmask of values for the test_launchers parameter */
-#define TEST_PRESETUP 1<<0
-#define TEST_SLURM    1<<1
-
-int createNewCmdLine(int argc, char *argv[],
-                     int *new_argc, char **new_argv[],
-                     const char *bootstrapper_name,
-                     const char *ldcs_location,
-                     const char *ldcs_number,
-                     unsigned long ldcs_opts,
-                     unsigned int test_launchers);
+/* localname can be NULL if file doesn't exist */
+void add_stat_cache(char *pathname, char *localname);
+int lookup_stat_cache(char *pathname, char **localname);
 
 #endif

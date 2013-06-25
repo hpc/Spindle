@@ -330,3 +330,8 @@ void fini_spindle_debugging()
    if (test_fd != -1)
       write(test_fd, &exitcode, sizeof(exitcode));
 }
+
+int is_debug_fd(int fd)
+{
+   return (fd == debug_fd || fd == test_fd);
+}

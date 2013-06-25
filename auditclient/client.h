@@ -18,8 +18,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define _CLIENT_H_
 
 #define _GNU_SOURCE
-
+#include <sys/stat.h>
 #include <assert.h>
+#include <stdio.h>
+
 #define NOT_FOUND_PREFIX "/__not_exists"
 
 extern int use_ldcs;
@@ -33,6 +35,10 @@ typedef unsigned long ElfX_Addr;
  **/
 ElfX_Addr redirect_open(const char *symname, ElfX_Addr value);
 ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_close(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_fork(const char *symname, ElfX_Addr value);
+ElfX_Addr redirect_spindleapi(const char *symname, ElfX_Addr value);
 
 /**
  * These functions are called by the audit hooks to do the major
@@ -50,5 +56,30 @@ void set_errno(int newerrno);
 void patch_on_load_success(const char *rewritten_name, const char *orig_name);
 void sync_cwd();
 void check_for_fork();
+
+/**
+ * Worker functions for intercepting open and stat calls
+ **/
+#define IS_64    (1 << 0)
+#define IS_LSTAT (1 << 1)
+#define IS_XSTAT (1 << 2)
+#define ORIG_STAT -2
+int handle_stat(const char *path, struct stat *buf, int flags);
+int open_worker(const char *path, int oflag, mode_t mode, int is_64);
+FILE *fopen_worker(const char *path, const char *mode, int is_64);
+
+/**
+ * Tracking python prefixes
+ **/
+typedef struct {
+   char *path;
+   int pathsize;
+} python_path_t;
+extern python_path_t *pythonprefixes;
+void parse_python_prefixes(int fd);
+
+void test_log(const char *name);
+
+extern unsigned long opts;
 
 #endif

@@ -210,6 +210,8 @@ int ldcs_open_server_connections_pipe(int fd, int *more_avail) {
 
 int ldcs_close_server_connection_pipe(int fd) {
   int rc=0, serverfd, c;
+  int result;
+  struct stat st;
 
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
   
@@ -218,6 +220,29 @@ int ldcs_close_server_connection_pipe(int fd) {
   debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist_pipe[fd].out_fd,fd);
   close(fdlist_pipe[fd].out_fd);
 
+
+  result = stat(fdlist_pipe[fd].in_fn, &st);
+  if (result == -1) 
+     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
+  if (S_ISFIFO(st.st_mode)) {
+     result = unlink(fdlist_pipe[fd].in_fn); 
+     if(result != 0) {
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].in_fn, 
+                      errno, strerror(errno));
+     }
+  }
+  
+  result = stat(fdlist_pipe[fd].out_fn, &st);
+  if (result == -1)
+     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
+  if (S_ISFIFO(st.st_mode)) {
+     result = unlink(fdlist_pipe[fd].out_fn); 
+     if(result != 0) {
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, 
+                      errno, strerror(errno));
+     }
+  }
+  
   /* remove connection from server list */
   serverfd=fdlist_pipe[fd].serverfd;
   for(c=0;c<fdlist_pipe[serverfd].conn_list_used;c++) {
@@ -291,7 +316,7 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
 
   if(msg->header.len>0) {
 
-    msg->data = (char *) malloc(sizeof(msg->header.len));
+    msg->data = (char *) malloc(msg->header.len);
     if (!msg)  _error("could not allocate memory for message data");
 
     n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
@@ -329,9 +354,20 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
 
   if(msg->header.len>0) {
     n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n == 0) return(rc);
-    if (n < 0) _error("ERROR reading message data from socket");
-    if (n != msg->header.len) _error("received different number of bytes for message data");
+    if (n == 0) 
+       return(rc);
+    if (n < 0) {
+       int error = errno;
+       err_printf("Error during read of pipe: %s (%d)\n", strerror(error), error);
+       return -1;
+    }
+    if (n != msg->header.len) {
+       int error = errno;
+       err_printf("Partial read on pipe.  Got %u / %u: %s (%d)\n",
+                  (unsigned) n, (unsigned) msg->header.len,
+                  strerror(error), error);
+       return -1;
+    }
 
   } else {
     *msg->data = '\0';
@@ -354,7 +390,6 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
   left      = bytes;
   bsumread  = 0;
   dataptr   = (char*) data;
-  bread     = 0;
 
   while (left > 0)  {
     btoread    = left;

@@ -38,7 +38,8 @@ target_triplet = @target@
 subdir = client_comlib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/lx_find_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
+	$(top_srcdir)/m4/lx_find_mpi.m4 \
 	$(top_srcdir)/m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -229,7 +230,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libclient_pipe.la libclient_socket.la
-AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib
+AM_CPPFLAGS = -I$(top_srcdir)/logging -I$(top_srcdir)/comlib -I$(top_srcdir)/launchmon
 BASE_SRCS = client_api.c client_heap.c client_wrappers.c
 libclient_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=pipe
 libclient_pipe_la_SOURCES = client_api_pipe.c $(BASE_SRCS)

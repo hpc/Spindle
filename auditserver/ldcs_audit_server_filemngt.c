@@ -36,9 +36,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 char *_ldcs_audit_server_tmpdir;
 
-long _ldcs_file_read(FILE *infile, void *data, int bytes);
-long _ldcs_file_write(FILE *outfile, const void *data, int bytes);
-
 int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;
    struct stat st;
@@ -87,6 +84,8 @@ char *filemngt_calc_localname(char *global_name)
    }
    for (s = target; *s; s++) {
       if (*s == '/')
+         *s = '_';
+      if (*s == '*') 
          *s = '_';
    }
 
@@ -179,58 +178,6 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
       return -1;
 
    return 0;
-}
-
-long _ldcs_file_read(FILE *infile, void *data, int bytes ) {
-
-  long       left,bsumread;
-  long       btoread, bread;
-  char      *dataptr;
-  
-  left      = bytes;
-  bsumread  = 0;
-  dataptr   = (char*) data;
-  bread     = 0;
-
-  while (left > 0)  {
-    btoread    = left;
-    debug_printf3("before read from file \n");
-    bread      = fread(dataptr, 1, btoread, infile);
-    if(bread<0) {
-      debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
-    } else {
-      debug_printf3("read from fifo: %ld bytes ...\n",bread);
-    }
-    if(bread>0) {
-      left      -= bread;
-      dataptr   += bread;
-      bsumread  += bread;
-    } else {
-      if(bread==0) return(bsumread);
-      else         return(bread);
-    }
-  }
-  return (bsumread);
-}
-
-
-long _ldcs_file_write(FILE *outfile, const void *data, int bytes ) {
-  long         left,bsumwrote;
-  long         bwrite, bwrote;
-  char        *dataptr;
-  
-  left      = bytes;
-  bsumwrote = 0;
-  dataptr   = (char*) data;
-
-  while (left > 0) {
-    bwrite     = left;
-    bwrote     = fwrite(dataptr, 1, bwrite, outfile);
-    left      -= bwrote;
-    dataptr   += bwrote;
-    bsumwrote += bwrote;
-  }
-  return (bsumwrote);
 }
 
 /**
@@ -359,4 +306,80 @@ size_t filemngt_get_file_size(char *pathname)
       return (size_t) -1;
    }
    return (size_t) st.st_size;
+}
+
+int filemngt_stat(char *pathname, struct stat *buf)
+{
+   int result;
+   if (*pathname == '*') {
+      result = stat(pathname+1, buf);
+      debug_printf3("stat(%s) = %d\n", pathname, result);
+   }
+   else {
+      result = lstat(pathname, buf);
+      debug_printf3("lstat(%s) = %d\n", pathname, result);
+   }
+   return result;
+}
+
+int filemngt_write_stat(char *localname, struct stat *buf)
+{
+   int result, bytes_written, fd;
+   int size;
+   char *buffer;
+
+   fd = creat(localname, 0600);
+   if (fd == -1) {
+      err_printf("Failed to create file %s for writing: %s\n", localname, strerror(errno));
+      return -1;
+   }
+
+   bytes_written = 0;
+   buffer = (char *) buf;
+   size = sizeof(struct stat);
+
+   while (bytes_written != size) {
+      result = write(fd, buffer + bytes_written, size - bytes_written);
+      if (result <= 0) {
+         if (errno == EAGAIN || errno == EINTR)
+            continue;
+         err_printf("Failed to write to file %s: %s\n", localname, strerror(errno));
+         close(fd);
+         return -1;
+      }
+      bytes_written += result;
+   }
+   close(fd);
+   return 0;
+}
+
+int filemngt_read_stat(char *localname, struct stat *buf)
+{
+   int result, bytes_read, fd;
+   int size;
+   char *buffer;
+
+   fd = open(localname, O_RDONLY);
+   if (fd == -1) {
+      err_printf("Failed to open %s for reading: %s\n", localname, strerror(errno));
+      return -1;
+   }
+
+   bytes_read = 0;
+   buffer = (char *) buf;
+   size = sizeof(struct stat);
+
+   while (bytes_read != size) {
+      result = read(fd, buffer + bytes_read, size - bytes_read);
+      if (result <= 0) {
+         if (errno == EAGAIN || errno == EINTR)
+            continue;
+         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
+         close(fd);
+         return -1;
+      }
+      bytes_read += result;
+   }
+   close(fd);
+   return 0;
 }

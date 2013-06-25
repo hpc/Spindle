@@ -129,6 +129,7 @@ public:
          return false;
       
       char code[8];
+      memset(code, 0, sizeof(code));
       int i=0;
       for (i=0; i<msg1_size; i++) 
          code[i] = msg1[i];
@@ -468,6 +469,7 @@ private:
       int result = recv(con->fd, recv_buffer, MAX_MESSAGE, 0);
       if (result == -1) {
          fprintf(stderr, "[%s:%u] - Error calling recv: %s\n", __FILE__, __LINE__, strerror(errno));
+         close(con->fd);
          return false;
       }
 
@@ -478,6 +480,7 @@ private:
          i->second->shutdown = true;
          if (con->unfinished_msg[0] != '\0')
             processMessage(con, "\n", 1);
+         close(con->fd);
          return true;
       }
 

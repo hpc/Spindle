@@ -30,6 +30,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_heap.h"
 #include "ldcs_api_pipe.h"
 #include "ldcs_api.h"
+#include "spindle_launch.h"
 
 #define MAX_FD 1
 static struct fdlist_entry_t fdlist_pipe[MAX_FD];
@@ -93,7 +94,6 @@ static int read_pipe(int fd, void *data, int bytes)
   
    left      = bytes;
    dataptr   = (char*) data;
-   bread     = 0;
 
    while (left > 0)  {
       btoread    = left;
@@ -136,9 +136,10 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
    for (dent = readdir(dir); dent != NULL; dent = readdir(dir)) {
       int fd = atoi(dent->d_name);
       snprintf(dirpath, MAX_PATH_LEN, "/proc/self/fd/%d", fd);
-      fdpath[0] = '\0';
+      memset(fdpath, 0, sizeof(fdpath));
       readlink(dirpath, fdpath, MAX_PATH_LEN);
 
+      debug_printf("Comparing %s with in_path = %s, out_path = %s\n", fdpath, in_path, out_path);
       if (!found_in && strcmp(fdpath, in_path) == 0) {
          *in_fd = fd;
          found_in = 1;
@@ -161,6 +162,34 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
    }
 
    return 0;
+}
+
+#define MIN_REMAP_FD 315
+#define MAX_REMAP_FD 315+1024
+extern unsigned long opts;
+static int remap_to_high_fd(int fd)
+{  
+#if !defined(MIN_REMAP_FD) || !defined(MAX_REMAP_FD)
+   return fd;
+#else
+   int i;
+   if (opts & OPT_NOHIDE)
+      return fd;
+
+   /* Find an unused fd */
+   for (i = MIN_REMAP_FD; i < MAX_REMAP_FD; i++) {
+      errno = 0;
+      fcntl(i, F_GETFD);
+      if (errno != EBADF)
+         continue;
+      dup2(fd, i);
+      close(fd);
+      debug_printf("Remapped fd %d to high fd %d\n", fd, i);
+      return i;
+   }
+   err_printf("Failed to map fd %d to higher limit\n", fd);
+   return fd;
+#endif
 }
 
 int client_open_connection_pipe(char* location, int number)
@@ -220,11 +249,15 @@ int client_open_connection_pipe(char* location, int number)
    if (fdlist_pipe[fd].in_fd == 0) {
       debug_printf3("Opening input fifo %s\n", fdlist_pipe[fd].in_fn);
       fdlist_pipe[fd].in_fd = open(fdlist_pipe[fd].in_fn, O_RDONLY);
+      fdlist_pipe[fd].in_fd = remap_to_high_fd(fdlist_pipe[fd].in_fd);
    }
+   debug_printf3("Opened input fifo %s = %d\n", fdlist_pipe[fd].in_fn, fdlist_pipe[fd].in_fd);
    if (fdlist_pipe[fd].out_fd == 0) {
       debug_printf3("Opening output fifo %s\n", fdlist_pipe[fd].out_fn);
       fdlist_pipe[fd].out_fd = open(fdlist_pipe[fd].out_fn, O_WRONLY);
+      fdlist_pipe[fd].out_fd = remap_to_high_fd(fdlist_pipe[fd].out_fd);
    }
+   debug_printf3("Opened output fifo %s = %d\n", fdlist_pipe[fd].out_fn, fdlist_pipe[fd].out_fd);
 
    /* Check opened fifos */
    if (fdlist_pipe[fd].in_fd == -1) {
@@ -303,7 +336,8 @@ int client_send_msg_pipe(int fd, ldcs_message_t *msg) {
    return 0;
 }
 
-int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
+static int client_recv_msg_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block, int is_dynamic)
+{
    int result;
    msg->header.type=LDCS_MSG_UNKNOWN;
    msg->header.len=0;
@@ -317,21 +351,38 @@ int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t b
       return -1;
    }
    
-   if (msg->header.len == 0)
+   if (msg->header.len == 0) {
+      msg->data = NULL;
       return 0;
+   }
+
+   if (is_dynamic) {
+      msg->data = (char *) spindle_malloc(msg->header.len);
+   }
 
    debug_printf3("Reading %d bytes for payload from pipe\n", msg->header.len);
-   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data,msg->header.len);
-   if (result == -1)
-      return -1;
+   result = read_pipe(fdlist_pipe[fd].in_fd, msg->data, msg->header.len);
+   return result;
+}
 
-   return 0;
+int client_recv_msg_dynamic_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 1);
+}
+
+int client_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
+{
+   return client_recv_msg_pipe(fd, msg, block, 0);
+}
+
+int is_client_fd(int connfd, int fd)
+{
+   return (fdlist_pipe[connfd].in_fd == fd || fdlist_pipe[connfd].out_fd == fd);
 }
 
 int client_close_connection_pipe(int fd)
 {
    int result;
-   struct stat st;
 
    assert(fd >= 0 && fd < MAX_FD);
 
@@ -345,29 +396,6 @@ int client_close_connection_pipe(int fd)
    result = close(fdlist_pipe[fd].out_fd);
    if(result != 0) {
       err_printf("Error while closing fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, errno, strerror(errno));
-   }
-
-
-   result = stat(fdlist_pipe[fd].in_fn, &st);
-   if (result == -1) 
-      err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
-   if (S_ISFIFO(st.st_mode)) {
-      result = unlink(fdlist_pipe[fd].in_fn); 
-      if(result != 0) {
-         debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].in_fn, 
-                       errno, strerror(errno));
-      }
-   }
-
-   result = stat(fdlist_pipe[fd].out_fn, &st);
-   if (result == -1)
-      err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
-   if (S_ISFIFO(st.st_mode)) {
-      result = unlink(fdlist_pipe[fd].out_fn); 
-      if(result != 0) {
-         debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, 
-                       errno, strerror(errno));
-      }
    }
 
    free_fd_pipe(fd);

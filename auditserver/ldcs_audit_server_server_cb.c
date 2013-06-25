@@ -54,13 +54,13 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       ldcs_process_data->client_table[nc].state        = LDCS_CLIENT_STATUS_ACTIVE;
       ldcs_process_data->client_table[nc].null_msg_cnt = 0;    
       ldcs_process_data->client_table[nc].query_open   = 0;
+      ldcs_process_data->client_table[nc].existance_query = 0;
+      ldcs_process_data->client_table[nc].is_stat      = 0;
       ldcs_process_data->client_table[nc].lrank        = ldcs_process_data->client_counter;
       ldcs_process_data->client_table[nc].query_localpath = NULL;
       ldcs_process_data->client_table_used++;
       ldcs_process_data->client_counter++;
-      debug_printf3("SERVER[%02d]: open  client connection on host %s #c=%02d at %12.4f\n", ldcs_process_data->md_rank, 
-                    ldcs_process_data->hostname, 
-                    ldcs_process_data->client_counter,ldcs_get_time());
+      debug_printf("Adding new client %d\n", nc);
     
       /* register client fd to listener */
       fd=ldcs_get_fd(ldcs_process_data->client_table[nc].connid);

@@ -25,93 +25,112 @@
 #include <stdarg.h>
 
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "should_intercept.h"
+#include "exec_util.h"
 
 static int (*orig_execv)(const char *path, char *const argv[]);
 static int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
 static int (*orig_execvp)(const char *file, char *const argv[]);
 
-static void find_exec(const char *filepath, char *newpath, int newpath_size)
+static int prep_exec(const char *filepath, char **argv,
+                     char *newname, char *newpath, int newpath_size,
+                     char ***new_argv)
 {
-   char *newname;
+   int result;
+   char *interp_name;
+
+   if (!newname) {
+      snprintf(newpath, newpath_size, "%s/%s", NOT_FOUND_PREFIX, filepath);
+      newpath[newpath_size-1] = '\0';
+      return 0;
+   }
+
+   result = adjust_if_script(filepath, newname, argv, &interp_name, new_argv);
+   if (result == SCRIPT_NOTSCRIPT) {
+      strncpy(newpath, newname, newpath_size);
+      newpath[newpath_size - 1] = '\0';
+      spindle_free(newname);
+      return 0;
+   }
+   else if (result == SCRIPT_ERR || result == SCRIPT_ENOENT) {
+      strncpy(newpath, newname, newpath_size);
+      newpath[newpath_size - 1] = '\0';
+      spindle_free(newname);
+      return -1;
+   }
+   else if (result == 0) {
+      // TODO: Mark filepath->newpath as future redirection for open
+      strncpy(newpath, interp_name, newpath_size);
+      newpath[newpath_size - 1] = '\0';
+      return 0;
+   }
+   else {
+      err_printf("Unknown return from adjust_if_script\n");
+      return -1;
+   }
+}
+
+static int find_exec(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
+{
+   char *newname = NULL;
 
    if (!filepath) {
       newpath[0] = '\0';
-      return;
+      return 0;
    }
+
    check_for_fork();
-   if (ldcsid < 0 || !use_ldcs) {
+   if (ldcsid < 0 || !use_ldcs || exec_filter(filepath) != REDIRECT) {
       strncpy(newpath, filepath, newpath_size);
       newpath[newpath_size-1] = '\0';
-      return;
+      return 0;
    }
 
    sync_cwd();
    debug_printf2("Exec operation requesting file: %s\n", filepath);
    send_file_query(ldcsid, (char *) filepath, &newname);
    debug_printf("Exec file request returned %s -> %s\n", filepath, newname ? newname : "NULL");
-   if (newname) {
-      strncpy(newpath, newname, newpath_size);
-      spindle_free(newname);
-   }
-   else {
-      snprintf(newpath, newpath_size, "%s/%s", NOT_FOUND_PREFIX, filepath);
-   }
-   newpath[newpath_size-1] = '\0';      
+
+   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
 }
 
-static void find_exec_pathsearch(const char *filepath, char *newpath, int newpath_size)
+static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
-   char *newname = NULL, *path, *cur, *saveptr = NULL;
-   char path_to_try[MAX_PATH_LEN+1];
+   char *newname = NULL;
+   int result;
 
    if (!filepath) {
       newpath[0] = '\0';
-      return;
+      return 0;
    }
-   if (filepath[0] == '/') {
-      find_exec(filepath, newpath, newpath_size);
-      return;
+   if (filepath[0] == '/' || filepath[0] == '.') {
+      find_exec(filepath, argv, newpath, newpath_size, new_argv);
+      return 0;
    }
    check_for_fork();
    if (ldcsid < 0 || !use_ldcs) {
       strncpy(newpath, filepath, newpath_size);
       newpath[newpath_size-1] = '\0';
-      return;
+      return 0;
    }
    sync_cwd();
 
-   path = getenv("PATH");
-   if (!path) {
-      strncpy(newpath, filepath, newpath_size);
-      newpath[newpath_size-1] = '\0';
-      return;
-   }
-   path = spindle_strdup(path);
+   result = exec_pathsearch(ldcsid, filepath, &newname);
+   if (result == -1)
+      return -1;
 
-   for (cur = strtok_r(path, ":", &saveptr); !cur && !newname; cur = strtok_r(NULL, ":", &saveptr)) {
-      snprintf(path_to_try, MAX_PATH_LEN+1, "%s/%s", cur, filepath);
-      debug_printf2("Exec search operation requesting file: %s\n", filepath);
-      send_file_query(ldcsid, path_to_try, &newname);
-      debug_printf("Exec search request returned %s -> %s\n", filepath, newname ? newname : "NULL");
-   }
-   if (newname) {
-      strncpy(newpath, newname, newpath_size);
-      spindle_free(newname);
-   }
-   else {
-      snprintf(newpath, newpath_size, "%s/%s", NOT_FOUND_PREFIX, filepath);
-   }
-   spindle_free(path);
+   result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
+   return result;
 }
 
 #define ARGV_MAX 1024
 #define VARARG_TO_ARGV                                                  \
    char *initial_argv[ARGV_MAX];                                        \
    char **argv = initial_argv, **newp;                                  \
+   char **new_argv = NULL;                                              \
    va_list arglist;                                                     \
    int cur = 0;                                                         \
    int size = ARGV_MAX;                                                 \
@@ -143,11 +162,16 @@ static void find_exec_pathsearch(const char *filepath, char *newpath, int newpat
       argv[cur] = va_arg(arglist, char *);                              \
    }                                                                    \
     
-#define VARARG_TO_ARGV_CLEANUP                  \
-   va_end(arglist);                             \
-   if (argv != initial_argv) {                  \
-      spindle_free(argv);                       \
+#define VARARG_TO_ARGV_CLEANUP                                       \
+   va_end(arglist);                                                  \
+   if (argv != initial_argv) {                                       \
+      spindle_free(argv);                                            \
+   }                                                                 \
+   if (new_argv) {                                                   \
+      spindle_free(new_argv);                                        \
    }
+
+
 
 static int execl_wrapper(const char *path, const char *arg0, ...)
 {
@@ -158,9 +182,9 @@ static int execl_wrapper(const char *path, const char *arg0, ...)
 
    debug_printf2("Intercepted execl on %s\n", path);
 
-   find_exec(path, newpath, MAX_PATH_LEN+1);
+   find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execl redirection of %s to %s\n", path, newpath);
-   result = execv(newpath, argv);
+   result = execv(newpath, new_argv ? new_argv : argv);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -172,11 +196,21 @@ static int execl_wrapper(const char *path, const char *arg0, ...)
 static int execv_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
+   char **new_argv = NULL;
+   int result, error;
 
    debug_printf2("Intercepted execv on %s\n", path);
-   find_exec(path, newpath, MAX_PATH_LEN+1);
+   find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execv redirection of %s to %s\n", path, newpath);
-   return orig_execv(newpath, argv);
+   result = orig_execv(newpath, new_argv ? new_argv : argv);
+   error = errno;
+
+   if (new_argv)
+      spindle_free(new_argv);
+   
+   set_errno(error);
+   return result;
+
 }
 
 static int execle_wrapper(const char *path, const char *arg0, ...)
@@ -189,9 +223,9 @@ static int execle_wrapper(const char *path, const char *arg0, ...)
 
    envp = va_arg(arglist, char **);
    debug_printf2("Intercepted execle on %s\n", path);
-   find_exec(path, newpath, MAX_PATH_LEN+1);
+   find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execle redirection of %s to %s\n", path, newpath);
-   result = execve(newpath, argv, envp);
+   result = execve(newpath, new_argv ? new_argv : argv, envp);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -203,10 +237,18 @@ static int execle_wrapper(const char *path, const char *arg0, ...)
 static int execve_wrapper(const char *path, char *const argv[], char *const envp[])
 {
    char newpath[MAX_PATH_LEN+1];
+   char **new_argv = NULL;
+   int result, error;
+
    debug_printf2("Intercepted execve on %s\n", path);
-   find_exec(path, newpath, MAX_PATH_LEN+1);
+   find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execve redirection of %s to %s\n", path, newpath);
-   return orig_execve(newpath, argv, envp);
+   result = orig_execve(newpath, new_argv ? new_argv : argv, (char **) envp);
+   error = errno;
+   if (new_argv)
+      spindle_free(new_argv);
+   set_errno(error);
+   return result;
 }
 
 static int execlp_wrapper(const char *path, const char *arg0, ...)
@@ -216,9 +258,9 @@ static int execlp_wrapper(const char *path, const char *arg0, ...)
 
    VARARG_TO_ARGV;
    debug_printf2("Intercepted execlp on %s\n", path);
-   find_exec_pathsearch(path, newpath, MAX_PATH_LEN+1);
+   find_exec_pathsearch(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execlp redirection of %s to %s\n", path, newpath);
-   result = execv(newpath, argv);
+   result = execv(newpath, new_argv ? new_argv : argv);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -230,11 +272,18 @@ static int execlp_wrapper(const char *path, const char *arg0, ...)
 static int execvp_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
+   char **new_argv = NULL;
+   int result, error;
 
    debug_printf2("Intercepted execvp on %s\n", path);
-   find_exec_pathsearch(path, newpath, MAX_PATH_LEN+1);
-   debug_printf("execve redirection of %s to %s\n", path, newpath);
-   return orig_execvp(newpath, argv);
+   find_exec_pathsearch(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   debug_printf("execvp redirection of %s to %s\n", path, newpath);
+   result = orig_execvp(newpath, new_argv ? new_argv : argv);
+   error = errno;
+   if (new_argv)
+      spindle_free(new_argv);
+   set_errno(error);
+   return result;
 }
 
 ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value)
@@ -265,4 +314,22 @@ ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value)
    }
    else
       return (ElfX_Addr) value;
+}
+
+pid_t vfork_wrapper()
+{
+   /* Spindle can't handle vforks */
+   debug_printf("Translating vfork into fork\n");
+   return fork();
+}
+
+ElfX_Addr redirect_fork(const char *symname, ElfX_Addr value)
+{
+   if (strcmp(symname, "vfork") == 0) {
+      return (ElfX_Addr) vfork_wrapper;
+   }
+   else {
+      debug_printf3("Not translating fork call %s\n", symname);
+      return (ElfX_Addr) value;
+   }
 }

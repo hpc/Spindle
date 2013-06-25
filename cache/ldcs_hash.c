@@ -27,7 +27,7 @@ struct ldcs_hash_entry_t  ldcs_hash_table[HASH_SIZE];
 int                       ldcs_hash_last_new_entry_index=-1;
 struct ldcs_hash_entry_t *ldcs_hash_last_new_entry_ptr=NULL;
 
- ldcs_hash_key_t ldcs_hash_Val(const char *str) {
+ldcs_hash_key_t ldcs_hash_Val(const char *str) {
    ldcs_hash_key_t hash = 5381;
    int c;
    while ((c = *str++))

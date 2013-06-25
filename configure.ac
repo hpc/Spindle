@@ -1,4 +1,4 @@
-AC_INIT([spindle], [0.7.3], [legendre1@llnl.gov])
+AC_INIT([spindle], [0.8], [legendre1@llnl.gov])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
@@ -19,10 +19,14 @@ AC_CONFIG_FILES([Makefile
                  auditserver/Makefile
                  launchmon/Makefile
                  beboot/Makefile
+                 spindle_api/Makefile
                  testsuite/Makefile])
 AC_PROG_LIBTOOL
-AC_PROG_RANLIB
 AC_PROG_LN_S
+LT_INIT
+
+m4_include([m4/ax_tls.m4])
+AX_TLS
 
 #Default flags
 AC_SUBST([AM_CFLAGS], [-Wall])
@@ -138,6 +142,13 @@ AC_SUBST(TESTRM)
 AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
+
+#Python prefix
+AC_ARG_WITH(python-prefix,
+            [AS_HELP_STRING([--with-python-prefix=STR],[List of directories containing python installs])],
+            [PYTHON_INST_PREFIX=${withval}],
+            [PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python])
+AC_DEFINE_UNQUOTED([PYTHON_INST_PREFIX],"[$PYTHON_INST_PREFIX]",[Python installation prefixes])
 
 #Usage logging
 AC_ARG_WITH(usage-logging,

@@ -25,6 +25,12 @@ typedef enum {
    LDCS_MSG_FILE_QUERY_ANSWER,
    LDCS_MSG_FILE_QUERY_EXACT_PATH,
    LDCS_MSG_FILE_REQUEST,
+   LDCS_MSG_STAT_QUERY,
+   LDCS_MSG_STAT_ANSWER,
+   LDCS_MSG_STAT_NET_REQUEST,
+   LDCS_MSG_STAT_NET_RESULT,
+   LDCS_MSG_EXISTS_QUERY,
+   LDCS_MSG_EXISTS_ANSWER,
    LDCS_MSG_END,
    LDCS_MSG_CWD,
    LDCS_MSG_PID,
@@ -36,6 +42,8 @@ typedef enum {
    LDCS_MSG_DESTROY,
    LDCS_MSG_FILE_DATA,
    LDCS_MSG_FILE_DATA_PART,
+   LDCS_MSG_PYTHONPREFIX_REQ,
+   LDCS_MSG_PYTHONPREFIX_RESP,
    LDCS_MSG_MD_HOSTINFO,
    LDCS_MSG_MD_HOSTLIST,
    LDCS_MSG_MD_BOOTSTRAP,
@@ -47,6 +55,7 @@ typedef enum {
    LDCS_MSG_PRELOAD_FILE,
    LDCS_MSG_PRELOAD_DONE,
    LDCS_MSG_SELFLOAD_FILE,
+   LDCS_MSG_SETTINGS,
    LDCS_MSG_EXIT,
    LDCS_MSG_UNKNOWN
 } ldcs_message_ids_t;
@@ -75,8 +84,9 @@ typedef  enum {
 struct ldcs_message_header_struct
 {
   ldcs_message_ids_t type;
-  int   len;
+  int len;
 };
+
 typedef struct ldcs_message_header_struct ldcs_message_header_t;
 
 struct ldcs_message_struct

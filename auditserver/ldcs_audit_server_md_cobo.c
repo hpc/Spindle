@@ -134,35 +134,36 @@ static int write_msg(int fd, ldcs_message_t *msg)
    return 0;
 }
 
-int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
+int ldcs_audit_server_md_init(unsigned int port, unsigned int shared_secret, ldcs_process_data_t *data)
+{
    int rc=0;
    int portlist[NUM_PORTS];
    int my_rank, ranks, fanout;
    int i;
 
    for (i = 0; i < NUM_PORTS; i++) {
-      portlist[i] = ldcs_process_data->md_port + i;
+      portlist[i] = port + i;
    }
 
    /* initialize the client (read environment variables) */
-   debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[NUM_PORTS-1]);
+   debug_printf2("Opening cobo with port %d - %d\n", portlist[0], portlist[NUM_PORTS-1]);
    if (cobo_open(shared_secret, portlist, NUM_PORTS, &my_rank, &ranks) != COBO_SUCCESS) {
       printf("Failed to init\n");
       exit(1);
    }
    debug_printf2("cobo_open complete. Cobo rank %d/%d\n", my_rank, ranks);
 
-   ldcs_process_data->server_stat.md_rank=ldcs_process_data->md_rank=my_rank;
-   ldcs_process_data->server_stat.md_size=ldcs_process_data->md_size=ranks;
-   ldcs_process_data->md_listen_to_parent=0;
+   data->server_stat.md_rank = data->md_rank = my_rank;
+   data->server_stat.md_size = data->md_size = ranks;
+   data->md_listen_to_parent = 0;
 
    cobo_get_num_childs(&fanout);
-   ldcs_process_data->server_stat.md_fan_out=ldcs_process_data->md_fan_out = fanout;
+   data->server_stat.md_fan_out = data->md_fan_out = fanout;
 
    cobo_barrier();
 
    /* send ack about being ready */
-   if (ldcs_process_data->md_rank == 0) { 
+   if (data->md_rank == 0) { 
       int root_fd, ack=13;
 
       /* send fe client signal to stop (ack)  */
@@ -284,6 +285,15 @@ int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size)
    return 0;
 }
 
+int ldcs_audit_server_md_recv_from_parent(ldcs_message_t *msg)
+{
+   int fd;
+   node_peer_t peer;
+
+   cobo_get_parent_socket(&fd);
+   return read_msg(fd, &peer, msg);
+}
+
 int ldcs_audit_server_md_cobo_CB(int fd, int nc, void *data)
 {
    int rc=0;
@@ -308,7 +318,8 @@ int ldcs_audit_server_md_cobo_CB(int fd, int nc, void *data)
    return(rc);
 }
 
-int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, void **data  ) {
+int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, unsigned int shared_secret, 
+                                   void **data  ) {
    int rc=0;
    int portlist[NUM_PORTS];
    int root_fd, ack;
@@ -335,11 +346,11 @@ int ldcs_audit_server_fe_md_close ( void *data  ) {
 
    debug_printf("Sending exit message to daemons\n");
    out_msg.header.type = LDCS_MSG_EXIT;
+   out_msg.header.len = 0;
    out_msg.data = NULL;
 
    cobo_server_get_root_socket(&root_fd);
    write_msg(root_fd, &out_msg);
-         
    return cobo_server_close();
 }
 

@@ -32,11 +32,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 
 #include "ldcs_api.h" 
-#include "ldcs_api_opts.h"
 #include "config.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "spindle_launch.h"
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"
@@ -48,6 +48,9 @@ int ldcsid = -1;
 
 static int intercept_open;
 static int intercept_exec;
+static int intercept_stat;
+static int intercept_close;
+static int intercept_fork;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -142,11 +145,16 @@ static int init_server_connection()
    LOGGING_INIT(debugging_name);
 
    sync_cwd();
+
+   if (opts & OPT_RELOCPY)
+      parse_python_prefixes(ldcsid);
    return 0;
 }
 
 static void reset_server_connection()
 {
+   client_close_connection(ldcsid);
+
    ldcsid = -1;
    old_cwd[0] = '\0';
 
@@ -176,7 +184,7 @@ void check_for_fork()
    reset_server_connection();
 }
 
-static void test_log(const char *name)
+void test_log(const char *name)
 {
    int result;
    if (!run_tests)
@@ -213,7 +221,7 @@ void sync_cwd()
 void set_errno(int newerrno)
 {
    if (!app_errno_location) {
-      err_printf("Warning: Unable to set errno because app_errno_location not set\n");
+      debug_printf("Warning: Unable to set errno because app_errno_location not set\n");
       return;
    }
    *app_errno_location() = newerrno;
@@ -228,7 +236,10 @@ int client_init()
 
   init_server_connection();
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
+  intercept_stat = (opts & OPT_RELOCPY || !(opts & OPT_NOHIDE)) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
+  intercept_fork = 1;
+  intercept_close = 1;
   return 0;
 }
 
@@ -246,12 +257,21 @@ int client_done()
 
 ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
 {
-   if (intercept_open && strstr(symname, "open"))
-      return redirect_open(symname, symvalue);
-   if (intercept_exec && strstr(symname, "exec")) 
-      return redirect_exec(symname, symvalue);
-   else if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
+   if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
       return (Elf64_Addr) spindle_test_log_msg;
+   else if (strncmp("spindle_", symname, 8) == 0)
+      return redirect_spindleapi(symname, symvalue);
+   else if (intercept_open && strstr(symname, "open"))
+      return redirect_open(symname, symvalue);
+   else if (intercept_exec && strstr(symname, "exec")) 
+      return redirect_exec(symname, symvalue);
+   else if (intercept_stat && strstr(symname, "stat"))
+      return redirect_stat(symname, symvalue);
+   else if (intercept_close && strcmp(symname, "close") == 0)
+      return redirect_close(symname, symvalue);
+   else if (intercept_fork && strstr(symname, "fork"))
+      return redirect_fork(symname, symvalue);
+
    else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
       app_errno_location = (errno_location_t) symvalue;
       return symvalue;
@@ -299,3 +319,37 @@ char *client_library_load(const char *name)
    return newname;
 }
 
+python_path_t *pythonprefixes = NULL;
+void parse_python_prefixes(int fd)
+{
+   char *path;
+   int i, j;
+   int num_pythonprefixes;
+
+   if (pythonprefixes)
+      return;
+   get_python_prefix(fd, &path);
+
+   num_pythonprefixes = (path[0] == '\0') ? 0 : 1;
+   for (i = 0; path[i] != '\0'; i++) {
+      if (path[i] == ':')
+         num_pythonprefixes++;
+   }   
+
+   debug_printf3("num_pythonprefixes = %d in %s\n", num_pythonprefixes, path);
+   pythonprefixes = (python_path_t *) spindle_malloc(sizeof(python_path_t) * (num_pythonprefixes+1));
+   for (i = 0, j = 0; j < num_pythonprefixes; j++) {
+      char *cur = path+i;
+      char *next = strchr(cur, ':');
+      if (next != NULL)
+         *next = '\0';
+      pythonprefixes[j].path = cur;
+      pythonprefixes[j].pathsize = strlen(cur);
+      i += pythonprefixes[j].pathsize+1;
+   }
+   pythonprefixes[num_pythonprefixes].path = NULL;
+   pythonprefixes[num_pythonprefixes].pathsize = 0;
+
+   for (i = 0; pythonprefixes[i].path != NULL; i++)
+      debug_printf3("Python path # %d = %s\n", i, pythonprefixes[i].path);
+}

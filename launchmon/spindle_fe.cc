@@ -14,376 +14,110 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "lmon_api/common.h"
-#include "lmon_api/lmon_proctab.h"
-#include "lmon_api/lmon_fe.h"
-#include "parse_launcher.h"
-#include "spindle_usrdata.h"
-#include "config.h"
-#include "parseargs.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "ldcs_audit_server_md.h"
+#include "parse_preload.h"
 #include "ldcs_api.h"
-#include "ldcs_api_opts.h"
+#include "spindle_launch.h"
+#include "ldcs_audit_server_md.h"
 
-#ifdef __cplusplus
-}
-#endif
+#include <string>
+#include <cassert>
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <limits.h>
-#include <pwd.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <set>
-#include <algorithm>
-#include <string>
-#include <iterator>
-#include <pthread.h>
-
-#include "ldcs_api_opts.h"
-#include "parse_preload.h"
+#include <stdint.h>
 
 using namespace std;
 
-#if !defined(BINDIR)
-#error Expected BINDIR to be defined
-#endif
-
-char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
-char spindle_daemon[] = BINDIR "/spindle_be";
-unsigned long opts;
-unsigned int shared_secret;
-
-#if defined(USAGE_LOGGING_FILE)
-static const char *logging_file = USAGE_LOGGING_FILE;
-#else
-static const char *logging_file = NULL;
-#endif
-
-#define DEFAULT_LDCS_NAME_PREFIX "/tmp/"
-std::string ldcs_location_str;
-static const char *ldcs_location;
-static unsigned int ldcs_number;
-static unsigned int ldcs_port;
-static void logUser();
-
-double __get_time()
+template<typename T>
+void pack_param(T value, char *buffer, unsigned int &pos)
 {
-  struct timeval tp;
-  gettimeofday (&tp, (struct timezone *)NULL);
-  return tp.tv_sec + tp.tv_usec/1000000.0;
+   memcpy(buffer + pos, &value, sizeof(T));
+   pos += sizeof(T);
 }
 
-static pthread_mutex_t completion_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t completion_condvar = PTHREAD_COND_INITIALIZER;
-static bool spindle_done = false;
-
-static void signal_done()
+template<>
+void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 {
-   pthread_mutex_lock(&completion_lock);
-   spindle_done = true;
-   pthread_cond_signal(&completion_condvar);
-   pthread_mutex_unlock(&completion_lock);
-}
-
-static void waitfor_done()
-{
-  pthread_mutex_lock(&completion_lock);
-  while (!spindle_done) {
-     pthread_cond_wait(&completion_condvar, &completion_lock);
-  }
-  pthread_mutex_unlock(&completion_lock);
-}
-
-static int onLaunchmonStatusChange(int *pstatus) {
-   int status = *pstatus;
-   if (WIFKILLED(status) || WIFDETACHED(status)) {
-      signal_done();
+   if (value == NULL) {
+      value = const_cast<char*>("");
    }
+   unsigned int strsize = strlen(value) + 1;
+   memcpy(buffer + pos, value, strsize);
+   pos += strsize;
+}
+
+static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
+{  
+   buffer_size = sizeof(unsigned int) * 4;
+   buffer_size += args->location ? strlen(args->location) + 1 : 1;
+   buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
+   buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
+
+   unsigned int pos = 0;
+   char *buf = (char *) malloc(buffer_size);
+   pack_param(args->number, buf, pos);
+   pack_param(args->port, buf, pos);
+   pack_param(args->opts, buf, pos);
+   pack_param(args->shared_secret, buf, pos);
+   pack_param(args->location, buf, pos);
+   pack_param(args->pythonprefix, buf, pos);
+   pack_param(args->preloadfile, buf, pos);
+   assert(pos == buffer_size);
+
+   buffer = (void *) buf;
    return 0;
 }
 
-static char *get_shared_secret()
+static void *md_data_ptr;
+
+int spindleInitFE(const char **hosts, spindle_args_t *params)
 {
-   static char shared_secret_s[32];
+   debug_printf("Called spindleInitFE\n");
 
-   int fd = open("/dev/urandom", O_RDONLY);
-   if (fd == -1)
-      fd = open("/dev/random", O_RDONLY);
-   if (fd == -1) {
-      fprintf(stderr, "Error: Could not open /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
-      exit(-1);
-   }
-      
-   int result = read(fd, &shared_secret, sizeof(shared_secret));
-   close(fd);
-   if (result == -1) {
-      fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
-      exit(-1);
-   }
-   
-   snprintf(shared_secret_s, 32, "%u", shared_secret);
-   return shared_secret_s;
-}
-
-string pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
-const char *string_to_cstr(const std::string &str) { return str.c_str(); }
-
-int main (int argc, char* argv[])
-{  
-  int aSession    = 0;
-  int launcher_argc, i;
-  char **launcher_argv        = NULL;
-  //char **daemon_opts          = NULL;
-  const char **daemon_opts = NULL;
-  int launchers_to_use;
-  int result;
-  const char *bootstrapper = spindle_bootstrap;
-  const char *daemon = spindle_daemon;
-  char ldcs_number_s[32], ldcs_opts_s[32], ldcs_port_s[32];
-  lmon_rc_e rc;
-  void *md_data_ptr;
-
-  LOGGING_INIT(const_cast<char *>("FE"));
-
-  debug_printf("Spindle Command Line: ");
-  for (int i = 0; i < argc; i++) {
-     bare_printf("%s ", argv[i]);
-  }
-  bare_printf("\n");
-
-  opts = parseArgs(argc, argv);
-  snprintf(ldcs_opts_s, 32, "%lu", opts);
-
-  if (strlen(LAUNCHMON_BIN_DIR)) {
-     setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
-     setenv("LMON_PREFIX", LAUNCHMON_BIN_DIR "/..", 0);
-  }
-
-  /**
-   * If number and location weren't set, then set them.
-   **/
-  ldcs_port = getPort();
-  ldcs_number = getpid(); //Just needs to be unique across spindle jobs shared
-                          // by the same user with overlapping nodes.  Launcher
-                          // pid should suffice
-  ldcs_location_str = getLocation(ldcs_number);
-  ldcs_location = ldcs_location_str.c_str();
-
-  snprintf(ldcs_port_s, 32, "%d", ldcs_port);
-  snprintf(ldcs_number_s, 32, "%d", ldcs_number);
-
-  debug_printf("Location = %s, Number = %u, Port = %u\n", ldcs_location, ldcs_number, ldcs_port);
-
-  /**
-   * Setup the launcher command line
-   **/
-  launchers_to_use = TEST_PRESETUP;
-  /* TODO: Add more launchers, then use autoconf to select the correct TEST_* values */
-  launchers_to_use |= TEST_SLURM;
-  result = createNewCmdLine(argc, argv, &launcher_argc, &launcher_argv, bootstrapper, 
-                            ldcs_location, ldcs_number_s, opts, launchers_to_use);
-  if (result != 0) {
-     fprintf(stderr, "Error parsing command line:\n");
-     if (result == NO_LAUNCHER) {
-        fprintf(stderr, "Could not find a job launcher (mpirun, srun, ...) in the command line\n");
-     }
-     if (result == NO_EXEC) {
-        fprintf(stderr, "Could not find an executable in the given command line\n");
-     }
-     return EXIT_FAILURE;
-  }
-
-  /**
-   * Setup the daemon command line
-   **/
-  daemon_opts = (const char **) malloc(10 * sizeof(char *));
-  i = 0;
-  //daemon_opts[i++] = "/usr/local/bin/valgrind";
-  //daemon_opts[i++] = "--tool=memcheck";
-  //daemon_opts[i++] = "--leak-check=full";
-  daemon_opts[i++] = daemon;
-  daemon_opts[i++] = ldcs_location;
-  daemon_opts[i++] = ldcs_number_s;
-  daemon_opts[i++] = ldcs_port_s;
-  daemon_opts[i++] = ldcs_opts_s;
-  daemon_opts[i++] = get_shared_secret();
-  daemon_opts[i++] = NULL;
-
-  /**
-   * Setup LaunchMON
-   **/
-  rc = LMON_fe_init(LMON_VERSION);
-  if (rc != LMON_OK )  {
-      err_printf("[LMON FE] LMON_fe_init FAILED\n" );
-      return EXIT_FAILURE;
-  }
-
-  if (isLoggingEnabled()) {
-     logUser();
-  }
-
-  rc = LMON_fe_createSession(&aSession);
-  if (rc != LMON_OK)  {
-     err_printf(  "[LMON FE] LMON_fe_createFEBESession FAILED\n");
-    return EXIT_FAILURE;
-  }
-
-  rc = LMON_fe_regStatusCB(aSession, onLaunchmonStatusChange);
-  if (rc != LMON_OK) {
-    err_printf(  "[LMON FE] LMON_fe_regStatusCB FAILED\n");     
-    return EXIT_FAILURE;
-  }
-  
-  rc = LMON_fe_regPackForFeToBe(aSession, packfebe_cb);
-  if (rc != LMON_OK) {
-    err_printf("[LMON FE] LMON_fe_regPackForFeToBe FAILED\n");
-    return EXIT_FAILURE;
-  } 
-  
-  rc = LMON_fe_regUnpackForBeToFe(aSession, unpackfebe_cb);
-  if (rc != LMON_OK) {
-     err_printf("[LMON FE] LMON_fe_regUnpackForBeToFe FAILED\n");
-    return EXIT_FAILURE;
-  }
-
-  debug_printf2("launcher: ");
-  for (i = 0; launcher_argv[i]; i++) {
-     bare_printf2("%s ", launcher_argv[i]);
-  }
-  bare_printf2("\n");
-  debug_printf2("daemon: ");
-  for (i = 0; daemon_opts[i]; i++) {
-     bare_printf2("%s ", daemon_opts[i]);
-  }
-  bare_printf2("\n");
-
-  ldcs_message_t *preload_msg = NULL;
-  if (opts & OPT_PRELOAD) {
-     string preload_file = string(getPreloadFile());
-     preload_msg = parsePreloadFile(preload_file);
-     if (!preload_msg) {
-        fprintf(stderr, "Failed to parse preload file %s\n", preload_file.c_str());
-        return EXIT_FAILURE;
-     }
-  }
-
-  rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
-                                     launcher_argv[0], launcher_argv,
-                                     daemon_opts[0], const_cast<char **>(daemon_opts+1),
-                                     NULL, NULL);
-  if (rc != LMON_OK) {
-     err_printf("[LMON FE] LMON_fe_launchAndSpawnDaemons FAILED\n");
-     return EXIT_FAILURE;
-  }
-
-  /* set SION debug file name */
-  if(0){
-    char hostname[HOSTNAME_LEN];
-    bzero(hostname,HOSTNAME_LEN);
-    gethostname(hostname,HOSTNAME_LEN);
-
-    char helpstr[MAX_PATH_LEN];
-    sprintf(helpstr,"_debug_spindle_%s_l_%02d_of_%02d_%s","FE",1,1,hostname);
-    setenv("SION_DEBUG",helpstr,1);
-  }
-  
-  /* Get the process table */
-  unsigned int ptable_size, actual_size;
-  rc = LMON_fe_getProctableSize(aSession, &ptable_size);
-  if (rc != LMON_OK) {
-     err_printf("LMON_fe_getProctableSize failed\n");
-     return EXIT_FAILURE;
-  }
-  MPIR_PROCDESC_EXT *proctab = (MPIR_PROCDESC_EXT *) malloc(sizeof(MPIR_PROCDESC_EXT) * ptable_size);
-  rc = LMON_fe_getProctable(aSession, proctab, &actual_size, ptable_size);
-  if (rc != LMON_OK) {
-     err_printf("LMON_fe_getProctable failed\n");
-     return EXIT_FAILURE;
-  }
-
-  /* Transform the process table to a list of hosts.  Pass through std::set to make hostnames unique */
-  set<string> allHostnames;
-  transform(proctab, proctab+ptable_size, inserter(allHostnames, allHostnames.begin()), pt_to_string);
-  size_t hosts_size = allHostnames.size();
-  const char **hosts = (const char **) malloc(hosts_size * sizeof(char *));
-  transform(allHostnames.begin(), allHostnames.end(), hosts, string_to_cstr);
-  free(proctab);
-
-  /* SPINDLE FE start */
-  ldcs_audit_server_fe_md_open( const_cast<char **>(hosts), hosts_size, ldcs_port, &md_data_ptr );
-
-  if (preload_msg) {
-     debug_printf("Sending message with preload information\n");
-     ldcs_audit_server_fe_broadcast(preload_msg, md_data_ptr);
-     cleanPreloadMsg(preload_msg);
-  }
-
-  waitfor_done();
-
-  /* Close the server */
-  ldcs_audit_server_fe_md_close(md_data_ptr);
-
-  debug_printf("Exiting with success\n");
-  return EXIT_SUCCESS;
-}
-
-static void logUser()
-{
-   /* Collect username */
-   char *username = NULL;
-   if (getenv("USER")) {
-      username = getenv("USER");
-   }
-   if (!username) {
-      struct passwd *pw = getpwuid(getuid());
-      if (pw) {
-         username = pw->pw_name;
+   /* Create preload message before initializing network to detect errors */
+   ldcs_message_t *preload_msg = NULL;
+   if (params->opts & OPT_PRELOAD) {
+      string preload_file = string(params->preloadfile);
+      preload_msg = parsePreloadFile(preload_file);
+      if (!preload_msg) {
+         fprintf(stderr, "Failed to parse preload file %s\n", preload_file.c_str());
+         return -1;
       }
    }
-   if (!username) {
-      username = getlogin();
-   }
-   if (!username) {
-      err_printf("Could not get username for logging\n");
-   }
-      
-   /* Collect time */
-   struct timeval tv;
-   gettimeofday(&tv, NULL);
-   struct tm *lt = localtime(& tv.tv_sec);
-   char time_str[256];
-   time_str[0] = '\0';
-   strftime(time_str, sizeof(time_str), "%c", lt);
-   time_str[255] = '\0';
-   
-   /* Collect version */
-   const char *version = VERSION;
 
-   /* Collect hostname */
-   char hostname[256];
-   hostname[0] = '\0';
-   gethostname(hostname, sizeof(hostname));
-   hostname[255] = '\0';
+   /* Compute hosts size */
+   unsigned int hosts_size = 0;
+   for (const char **h = hosts; *h != NULL; h++, hosts_size++);
 
-   string log_message = string(username) + " ran Spindle v" + version + 
-                        " at " + time_str + " on " + hostname;
-   debug_printf("Logging usage: %s\n", log_message.c_str());
+   /* Start FE server */
+   debug_printf("Starting FE servers with hostlist of size %u on port %u\n", hosts_size, params->port);
+   ldcs_audit_server_fe_md_open(const_cast<char **>(hosts), hosts_size, 
+                                params->port, params->shared_secret,
+                                &md_data_ptr);
 
-   FILE *f = fopen(logging_file, "a");
-   if (!f) {
-      err_printf("Could not open logging file %s\n");
-      return;
+   /* Broadcast parameters */
+   debug_printf("Sending parameters to servers\n");
+   void *param_buffer;
+   unsigned int param_buffer_size;
+   pack_data(params, param_buffer, param_buffer_size);
+   ldcs_message_t msg;
+   msg.header.type = LDCS_MSG_SETTINGS;
+   msg.header.len = param_buffer_size;
+   msg.data = static_cast<char *>(param_buffer);
+   ldcs_audit_server_fe_broadcast(&msg, md_data_ptr);
+   free(param_buffer);
+
+   /* Broadcast preload contents */
+   if (preload_msg) {
+      debug_printf("Sending message with preload information\n");
+      ldcs_audit_server_fe_broadcast(preload_msg, md_data_ptr);
+      cleanPreloadMsg(preload_msg);
    }
-   fprintf(f, "%s\n", log_message.c_str());
-   fclose(f);
+
+   return 0;   
+}
+
+int spindleCloseFE()
+{
+   ldcs_audit_server_fe_md_close(md_data_ptr);
+   return 0;
 }

@@ -38,7 +38,8 @@ target_triplet = @target@
 subdir = cache
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/lx_find_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
+	$(top_srcdir)/m4/lx_find_mpi.m4 \
 	$(top_srcdir)/m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -50,7 +51,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libldcs_cache_la_LIBADD =
 am_libldcs_cache_la_OBJECTS = ldcs_cache.lo ldcs_cache_util.lo \
-	ldcs_cache_file_op.lo ldcs_hash.lo
+	ldcs_cache_file_op.lo ldcs_hash.lo stat_cache.lo
 libldcs_cache_la_OBJECTS = $(am_libldcs_cache_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -218,7 +219,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libldcs_cache.la
-libldcs_cache_la_SOURCES = ldcs_cache.c ldcs_cache_util.c ldcs_cache_file_op.c ldcs_hash.c
+libldcs_cache_la_SOURCES = ldcs_cache.c ldcs_cache_util.c ldcs_cache_file_op.c ldcs_hash.c stat_cache.c
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/logging
 all: all-am
 
@@ -276,6 +277,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_cache_file_op.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_cache_util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_hash.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stat_cache.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

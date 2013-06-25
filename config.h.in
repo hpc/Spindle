@@ -70,6 +70,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Python installation prefixes */
+#undef PYTHON_INST_PREFIX
+
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
 
@@ -78,6 +81,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* If the compiler supports a TLS storage class define it to that here */
+#undef TLS
 
 /* The file for storing usage logs */
 #undef USAGE_LOGGING_FILE
