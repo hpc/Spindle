@@ -35,13 +35,17 @@ AC_SUBST([AM_CFLAGS], [-Wall])
 AC_ARG_WITH(launchmon,
         [AS_HELP_STRING([--with-launchmon=DIR],[Launchmon directory (must contain ./lib and ./include)])],
         [LAUNCHMON_INC_DIR="${withval}/include";
-        LAUNCHMON_LIB_DIR="${withval}/lib";],)
+        LAUNCHMON_LIB_DIR="${withval}/lib";
+        LAUNCHMON_RMCOMM_DIR="${withval}/lib"],)
 AC_ARG_WITH(launchmon-incdir,
             [AS_HELP_STRING([--with-launchmon-incdir=DIR],[Launchmon include directory])],
             [LAUNCHMON_INC_DIR="${withval}";],)
 AC_ARG_WITH(launchmon-libdir,
             [AS_HELP_STRING([--with-launchmon-libdir=DIR],[Launchmon library directory])],
             [LAUNCHMON_LIB_DIR="${withval}";],)
+AC_ARG_WITH(launchmon-rmcommdir,
+            [AS_HELP_STRING([--with-launchmon-rmcommdir=DIR],[RM communication library LaunchMON uses])],
+            [LAUNCHMON_RMCOMM_DIR="${withval}";],)
 
 CPPFLAGS_HOLD=$CPPFLAGS
 if test "x$LAUNCHMON_INC_DIR" != "x"; then
@@ -60,6 +64,11 @@ if test "x$LAUNCHMON_LIB_DIR" != "x"; then
   LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
 fi
 LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
+
+if test "x$LAUNCHMON_RMCOMM_DIR" != "x"; then
+  LAUNCHMON_RMCOMM="-Wl,-rpath=$LAUNCHMON_RMCOMM_DIR"
+fi 
+
 AC_CHECK_LIB(monfeapi, LMON_fe_init, 
              [AC_MSG_NOTICE([Found launchmon libraries])],
              [AC_ERROR(Couldn't find LaunchMON libraries)])
@@ -134,7 +143,7 @@ if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
 fi
 
 AC_ARG_WITH(testrm,
-            [AS_HELP_STRING([--with-testrm=ARG],[Resource manager to use for tests (valid options are 'slurm')])],
+            [AS_HELP_STRING([--with-testrm=ARG],[Resource manager to use for tests (valid options are 'slurm' and 'flux')])],
             [TESTRM=${withval}],
             [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
 AC_SUBST(TESTRM)
@@ -216,6 +225,7 @@ AC_MSG_NOTICE([Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM])
 
 AC_SUBST(LAUNCHMON_INC)
 AC_SUBST(LAUNCHMON_LIB)
+AC_SUBST(LAUNCHMON_RMCOMM)
 AC_DEFINE_UNQUOTED([LAUNCHMON_BIN_DIR],"[$LAUNCHMON_BIN]",[The bin directory for launchmon])
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then

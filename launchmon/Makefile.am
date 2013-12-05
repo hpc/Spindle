@@ -1,7 +1,7 @@
 bin_PROGRAMS = spindle
 pkglibexec_PROGRAMS = spindle_be
 
-AM_LDFLAGS = $(LAUNCHMON_LIB)
+AM_LDFLAGS = $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM)
 AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 
 COD = $(top_builddir)/tools/cobo/src
@@ -23,12 +23,12 @@ BUILT_SOURCES=./libstdc++.a
 endif
 
 if LMON_DYNAMIC
-spindle_be_LDADD += -lmonbeapi -lcobo -lgcrypt
+spindle_be_LDADD += -lmonbeapi -lgcrypt
 else
 spindle_be_LDADD += $(LAUNCHMON_STATIC_LIBS)
 endif
 
-spindle_LDADD = -lmonfeapi $(top_builddir)/logging/libspindlelogc.la
+spindle_LDADD = $(AM_LDFLAGS) -lmonfeapi $(top_builddir)/logging/libspindlelogc.la
 if COBO
 spindle_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la
 spindle_be_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la

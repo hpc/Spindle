@@ -38,7 +38,7 @@ target_triplet = @target@
 bin_PROGRAMS = spindle$(EXEEXT)
 pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
 @LINK_LIBSTDCXX_STATIC_TRUE@am__append_1 = $(STATIC_LIBGCC_OPT) -L.
-@LMON_DYNAMIC_TRUE@am__append_2 = -lmonbeapi -lcobo -lgcrypt
+@LMON_DYNAMIC_TRUE@am__append_2 = -lmonbeapi -lgcrypt
 @LMON_DYNAMIC_FALSE@am__append_3 = $(LAUNCHMON_STATIC_LIBS)
 @COBO_TRUE@am__append_4 = $(top_builddir)/auditserver/libaudit_server_cobo.la
 @COBO_TRUE@am__append_5 = $(top_builddir)/auditserver/libaudit_server_cobo.la
@@ -69,9 +69,12 @@ am_spindle_OBJECTS = spindle-spindle_fe_main.$(OBJEXT) \
 	spindle-spindle_fe.$(OBJEXT) spindle-parse_launcher.$(OBJEXT) \
 	spindle-parseargs.$(OBJEXT) spindle-parse_preload.$(OBJEXT)
 spindle_OBJECTS = $(am_spindle_OBJECTS)
-spindle_DEPENDENCIES = $(top_builddir)/logging/libspindlelogc.la \
-	$(am__append_4) $(am__append_6) $(am__append_8) \
-	$(am__append_10) $(top_builddir)/cache/libldcs_cache.la
+am__DEPENDENCIES_1 =
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+	$(top_builddir)/logging/libspindlelogc.la $(am__append_4) \
+	$(am__append_6) $(am__append_8) $(am__append_10) \
+	$(top_builddir)/cache/libldcs_cache.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -80,11 +83,10 @@ am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
 	spindle_be-spindle_be_serial.$(OBJEXT) \
 	spindle_be-spindle_be.$(OBJEXT) spindle_be-parseloc.$(OBJEXT)
 spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
-am__DEPENDENCIES_1 =
-@LMON_DYNAMIC_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@LMON_DYNAMIC_FALSE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 spindle_be_DEPENDENCIES = $(top_builddir)/cache/libldcs_cache.la \
 	$(top_builddir)/logging/libspindlelogc.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) $(am__append_5) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3) $(am__append_5) \
 	$(am__append_7) $(am__append_9) $(am__append_11)
 spindle_be_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -173,6 +175,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAUNCHMON_INC = @LAUNCHMON_INC@
 LAUNCHMON_LIB = @LAUNCHMON_LIB@
+LAUNCHMON_RMCOMM = @LAUNCHMON_RMCOMM@
 LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
 LDD = @LDD@
@@ -267,7 +270,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_LDFLAGS = $(LAUNCHMON_LIB)
+AM_LDFLAGS = $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM)
 AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/logging
 COD = $(top_builddir)/tools/cobo/src
 spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -DBINDIR=\"$(pkglibexecdir)\"
@@ -281,9 +284,9 @@ spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la \
 	$(am__append_9) $(am__append_11)
 @LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
 @LINK_LIBSTDCXX_STATIC_TRUE@BUILT_SOURCES = ./libstdc++.a
-spindle_LDADD = -lmonfeapi $(top_builddir)/logging/libspindlelogc.la \
-	$(am__append_4) $(am__append_6) $(am__append_8) \
-	$(am__append_10) -lmonfeapi \
+spindle_LDADD = $(AM_LDFLAGS) -lmonfeapi \
+	$(top_builddir)/logging/libspindlelogc.la $(am__append_4) \
+	$(am__append_6) $(am__append_8) $(am__append_10) -lmonfeapi \
 	$(top_builddir)/cache/libldcs_cache.la
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
