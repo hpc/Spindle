@@ -145,7 +145,13 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
       launchers_to_use |= TEST_SERIAL;
    }
    else {
-      launchers_to_use |= TEST_SLURM;
+      /* Dong: 12/4/2013 TODO: this needs to be further 
+         extended to support multiple RMs 
+         on a given platform. I'm replacing
+         SLURM with FLUX for now.
+      */
+      /* launchers_to_use |= TEST_SLURM; */
+      launchers_to_use |= TEST_FLUX; 
    }
 
    getAppArgs(&app_argc, &app_argv);
@@ -155,7 +161,7 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
    if (result != 0) {
       fprintf(stderr, "Error parsing command line:\n");
       if (result == NO_LAUNCHER) {
-         fprintf(stderr, "Could not find a job launcher (mpirun, srun, ...) in the command line\n");
+         fprintf(stderr, "Could not find a job launcher (mpirun, srun, wreckrun...) in the command line\n");
       }
       if (result == NO_EXEC) {
          fprintf(stderr, "Could not find an executable in the given command line\n");

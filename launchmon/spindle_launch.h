@@ -83,6 +83,7 @@ int createNewCmdLine(int argc, char *argv[],
 #define TEST_PRESETUP 1<<0
 #define TEST_SERIAL   1<<1
 #define TEST_SLURM    1<<2
+#define TEST_FLUX     1<<3
 
 #if defined(__cplusplus)
 }

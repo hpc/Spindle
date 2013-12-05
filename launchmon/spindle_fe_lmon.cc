@@ -45,6 +45,7 @@ static void initLMONEnvironment()
 
    setenv("LMON_PREFIX", LAUNCHMON_BIN_DIR "/..", 0);
    setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
+   setenv("LMON_NEWLAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/newlaunchmon", 0);
 }
 
 static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }

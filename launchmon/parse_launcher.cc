@@ -134,6 +134,13 @@ static cmdoption_t srun_options[] = {
    { "-V",   "--version",            0 },
 };
 
+#define wreckrun_size (sizeof(wreckrun_options) / sizeof(cmdoption_t))
+static cmdoption_t wreckrun_options[] = {
+   { "wreckrun", NULL,               FL_LAUNCHER },
+   { "-h",   "--help",               0},
+   { "-n",   "--procs-per-node",     FL_GNU_PARAM },
+};
+
 static int isIntegerString(char *s)
 {
    if (*s >= '0' && *s <= '9')
@@ -237,7 +244,8 @@ static int parseLaunchCmdLine(int argc, char *argv[],
       int launcher_name_size = strlen(launcher_name);
       assert(launcher_name_size);
       for (j = 0; j < argc; j++) {
-         char *arg = argv[j];
+         char *tmparg = strdup (argv[j]);
+         char *arg = basename (tmparg);
          if (strcmp(arg, launcher_name) == 0) {
             *found_launcher_at = j;
             break;
@@ -446,6 +454,16 @@ int createNewCmdLine(int argc, char *argv[],
    /* Slurm */
    if (test_launchers & TEST_SLURM) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
+                                        params->location, number_s, params->opts);
+      if (result == 0)
+         return 0;
+      else if (result == NO_EXEC)
+         had_noexec = 1;
+   }
+
+   /* FLUX */
+   if (test_launchers & TEST_FLUX) {
+      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, wreckrun_options, wreckrun_size,
                                         params->location, number_s, params->opts);
       if (result == 0)
          return 0;
