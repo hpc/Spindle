@@ -248,6 +248,7 @@ static int parseLaunchCmdLine(int argc, char *argv[],
          char *arg = basename (tmparg);
          if (strcmp(arg, launcher_name) == 0) {
             *found_launcher_at = j;
+            free(tmparg);
             break;
          }
          int len = strlen(arg);
@@ -256,8 +257,10 @@ static int parseLaunchCmdLine(int argc, char *argv[],
              (arg[len-launcher_name_size-1] == '/'))
          {
             *found_launcher_at = j;
+            free(tmparg);
             break;
          }
+         free(tmparg);
       }
       if (*found_launcher_at != -1)
          break;
