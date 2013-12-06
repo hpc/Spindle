@@ -52,7 +52,7 @@ static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host
 bool rank_lt(const MPIR_PROCDESC_EXT &a, const MPIR_PROCDESC_EXT &b) { return a.mpirank < b.mpirank; }
 
 struct str_lt {
-   bool operator()(const char *a, const char *b) { return strcmp(a, b) == -1; }
+   bool operator()(const char *a, const char *b) { return strcmp(a, b) < 0; }
 };
 
 static const char **getProcessTable(int aSession)
@@ -75,7 +75,7 @@ static const char **getProcessTable(int aSession)
 
    /* Transform the process table to a list of hosts.  Pass through std::set to make hostnames unique */
    set<const char *, str_lt > host_set;
-   transform(proctab, proctab+ptable_size, inserter(host_set, host_set.begin()), pt_to_string);  
+   transform(proctab, proctab+ptable_size, inserter(host_set, host_set.begin()), pt_to_string);
    size_t hosts_size = host_set.size();
    const char **hosts = static_cast<const char **>(malloc((hosts_size+1) * sizeof(char *)));
    copy(host_set.begin(), host_set.end(), hosts);
@@ -85,7 +85,7 @@ static const char **getProcessTable(int aSession)
    MPIR_PROCDESC_EXT *smallest_rank = std::min_element(proctab, proctab+ptable_size, rank_lt);
    const char **smallest_host = find(hosts, hosts + hosts_size, smallest_rank->pd.host_name);
    std::swap(*hosts, *smallest_host);
-   
+
    free(proctab);
    return hosts;
 }
