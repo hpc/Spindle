@@ -145,12 +145,7 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
       launchers_to_use |= TEST_SERIAL;
    }
    else {
-      /* Dong: 12/4/2013 TODO: this needs to be further 
-         extended to support multiple RMs 
-         on a given platform. I'm replacing
-         SLURM with FLUX for now.
-      */
-      /* launchers_to_use |= TEST_SLURM; */
+      launchers_to_use |= TEST_SLURM;
       launchers_to_use |= TEST_FLUX; 
    }
 
