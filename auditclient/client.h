@@ -67,6 +67,7 @@ void check_for_fork();
 int handle_stat(const char *path, struct stat *buf, int flags);
 int open_worker(const char *path, int oflag, mode_t mode, int is_64);
 FILE *fopen_worker(const char *path, const char *mode, int is_64);
+void remap_executable();
 
 /**
  * Tracking python prefixes

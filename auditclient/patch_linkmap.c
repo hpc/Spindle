@@ -42,6 +42,7 @@ void patch_on_load_success(const char *rewritten_name, const char *orig_name)
 
    last_rewritten_name = (char *) rewritten_name;
    last_orig_name = spindle_strdup(orig_name);
+   debug_printf2("Patching link map %s -> %s\n", rewritten_name, orig_name);
 }
 
 void patch_on_linkactivity(struct link_map *lmap)

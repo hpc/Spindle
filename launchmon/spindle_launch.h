@@ -36,6 +36,7 @@ extern "C" {
 #define OPT_NOCLEAN    (1 << 12)
 #define OPT_NOMPI      (1 << 13)
 #define OPT_NOHIDE     (1 << 14)
+#define OPT_REMAPEXEC  (1 << 15)
 
 /* Parameters for configuring Spindle */
 typedef struct {

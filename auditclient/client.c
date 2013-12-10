@@ -240,6 +240,10 @@ int client_init()
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
   intercept_fork = 1;
   intercept_close = 1;
+
+  if (opts & OPT_REMAPEXEC)
+     remap_executable(ldcsid);
+
   return 0;
 }
 

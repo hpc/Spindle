@@ -298,6 +298,13 @@ unsigned long parseArgs(int argc, char *argv[])
    result = argp_parse(&arg_parser, argc, argv, ARGP_IN_ORDER, NULL, NULL);
    assert(result == 0);
 
+   if (opts & OPT_DEBUG) {
+      //Debug mode overrides other settings
+      opts &= ~OPT_RELOCAOUT;
+      opts &= ~OPT_RELOCEXEC;
+      opts |= OPT_REMAPEXEC;
+   }
+
    return opts;
 }
 

@@ -101,6 +101,8 @@ static void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->location = strdup(getLocation(args->number).c_str());
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
+
+   debug_printf("Spindle options bitmask: %u\n", opts);
 }
 
 static void setupLogging(int argc, char **argv)
