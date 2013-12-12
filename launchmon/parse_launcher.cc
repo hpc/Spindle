@@ -37,7 +37,9 @@ typedef struct {
    int flags;
 } cmdoption_t;
 
-static const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
+/* DHA 12/09/2013: hoist this to global */
+/* static const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap"; */
+const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap"; 
 
 #define serial_size 1
 static cmdoption_t serial_options[] = {
@@ -463,12 +465,20 @@ int createNewCmdLine(int argc, char *argv[],
 
    /* FLUX */
    if (test_launchers & TEST_FLUX) {
+
+#if 1 /* somehow config.h doesn't get here: #ifdef HAVE_LMON_fe_regAppBootstrapper */ 
+      /* we don't need to modify the cmdline in this case */
+      *new_argc = argc;
+      *new_argv = argv;  
+      return 0;
+#else
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, wreckrun_options, wreckrun_size,
                                         params->location, number_s, params->opts);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)
          had_noexec = 1;
+#endif
    }
 
    /* Add other launchers here */

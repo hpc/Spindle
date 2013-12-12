@@ -174,10 +174,44 @@ int startLaunchmonFE(int app_argc, char *app_argv[],
       return EXIT_FAILURE;
    }
 
+#ifdef HAVE_LMON_fe_regAppBootstrapper 
+   
+   /* DHA 12/09/2013: this should be abstracted but for now I am doing it here
+    */
+   const char *newargv[5];
+   char number_s[32];
+   char ldcs_options_str[32];
+
+   snprintf(number_s, 32, "%d", params->number);
+   snprintf(ldcs_options_str, 32, "%lu", params->opts);
+
+   newargv[0] = spindle_bootstrap;
+   newargv[1] = (const char *) params->location;
+   newargv[2] = (const char *) number_s;
+   newargv[3] = (const char *) ldcs_options_str;
+   newargv[4] = NULL;
+
+   rc = LMON_fe_regAppBootstrapper (aSession, newargv[0], newargv);
+   if (rc == LMON_OK) {
+       rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
+                                          app_argv[0], app_argv,
+                                          daemon_argv[0], daemon_argv+1,
+                                          NULL, NULL);
+   }
+   else {
+      debug_printf("[LMON FE] LMON_fe_regAppBootstrapper unsupported.\n");
+      rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
+                                         app_argv[0], app_argv,
+                                         daemon_argv[0], daemon_argv+1,
+                                         NULL, NULL);
+   }
+#else
    rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
                                       app_argv[0], app_argv,
                                       daemon_argv[0], daemon_argv+1,
                                       NULL, NULL);
+#endif
+
    if (rc != LMON_OK) {
       err_printf("[LMON FE] LMON_fe_launchAndSpawnDaemons FAILED\n");
       return EXIT_FAILURE;

@@ -62,6 +62,8 @@ typedef struct {
    char *preloadfile;
 } spindle_args_t;
 
+extern const char spindle_bootstrap[];
+
 /* Functions used to startup Spindle on the front-end. Init returns after finishing start-up,
    and it is the caller's responsibility to call spindleCloseFE when the servers terminate*/
 int spindleInitFE(const char **hosts, spindle_args_t *params);

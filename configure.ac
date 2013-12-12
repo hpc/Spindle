@@ -72,6 +72,9 @@ fi
 AC_CHECK_LIB(monfeapi, LMON_fe_init, 
              [AC_MSG_NOTICE([Found launchmon libraries])],
              [AC_ERROR(Couldn't find LaunchMON libraries)])
+AC_CHECK_LIB(monfeapi, LMON_fe_regAppBootstrapper, 
+             [AC_DEFINE([HAVE_LMON_fe_regAppBootstrapper],[1],[Define if LMON_fe_regAppBootstrapper is available])],
+             [AC_MSG_NOTICE([Couldn't find LMON_fe_regAppBootstrapper])])
 AC_LANG_PUSH(C++)
 AC_MSG_CHECKING([whether we can statically link launchmon])
 LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"

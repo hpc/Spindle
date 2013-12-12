@@ -263,6 +263,10 @@ void init_spindle_debugging(char *name, int survive_exec)
    run_tests = (getenv("SPINDLE_TEST") != NULL);
 
    log_level_str = getenv("SPINDLE_DEBUG");
+#if 0
+   log_level_str = "-1";
+#endif
+
    if (log_level_str)
       log_level = atoi(log_level_str);
    spindle_debug_prints = log_level;

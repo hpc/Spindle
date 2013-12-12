@@ -33,7 +33,7 @@ extern void spindle_dump_on_error();
 
 #define debug_printf(format, ...)                                       \
    do {                                                                 \
-      if (spindle_debug_prints) {                                       \
+      if (spindle_debug_prints > 0) {                                   \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
                  spindle_debug_name, getpid(),                          \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
@@ -54,6 +54,16 @@ extern void spindle_dump_on_error();
 #define debug_printf3(format, ...)                                      \
    do {                                                                 \
       if (spindle_debug_prints > 2) {                                   \
+         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
+                 spindle_debug_name, getpid(),                          \
+                 BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
+         fflush(spindle_debug_output_f);                                \
+      }                                                                 \
+   } while (0)
+
+#define timing_printf(format, ...)                                      \
+   do {                                                                 \
+      if (spindle_debug_prints != 0) {                                  \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
                  spindle_debug_name, getpid(),                          \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
