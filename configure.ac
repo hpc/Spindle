@@ -11,6 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
                  logging/Makefile
                  tools/sion_debug/Makefile
+                 tools/biter/Makefile
                  comlib/Makefile
                  client_comlib/Makefile
                  auditclient/Makefile
@@ -261,6 +262,10 @@ fi
 if (( "x$target_os" == "xlinux" || "x$target_os" == "xlinux-gnu" )); then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])
 fi
+
+AM_CONDITIONAL([BGQ_BLD], [test "x$target_os" == "xcnl"])
+AM_CONDITIONAL([LINUX_BLD], [test "x$target_os" == "xlinux-gnu" || "x$target_os" == "xlinux"])
+
 AC_MSG_NOTICE([os is $target_os])
 
 AC_OUTPUT

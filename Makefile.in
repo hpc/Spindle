@@ -244,7 +244,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = logging tools/sion_debug comlib client_comlib auditclient cache tools/cobo/src auditserver launchmon beboot spindle_api testsuite
+SUBDIRS = logging tools/sion_debug tools/biter comlib client_comlib auditclient cache tools/cobo/src auditserver launchmon beboot spindle_api testsuite
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
