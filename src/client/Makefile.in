@@ -35,16 +35,21 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__configure_deps) \
+	$(srcdir)/../../scripts/config.guess \
+	$(srcdir)/../../scripts/config.sub \
+	$(srcdir)/../../scripts/install-sh \
+	$(srcdir)/../../scripts/ltmain.sh \
+	$(srcdir)/../../scripts/missing $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure scripts/config.guess \
-	scripts/config.sub scripts/depcomp scripts/install-sh \
-	scripts/ltmain.sh scripts/missing
+	$(top_srcdir)/configure ../../scripts/config.guess \
+	../../scripts/config.sub ../../scripts/depcomp \
+	../../scripts/install-sh ../../scripts/ltmain.sh \
+	../../scripts/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
-	$(top_srcdir)/m4/lx_detect_bluegene.m4 \
-	$(top_srcdir)/configure.common.ac \
-	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
+	$(top_srcdir)/../../configure.common.ac \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -114,7 +119,6 @@ distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
-AM_CFLAGS = @AM_CFLAGS@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
@@ -126,10 +130,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CXX = @CXX@
-CXXCPP = @CXXCPP@
-CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -157,9 +157,6 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
-MPICC = @MPICC@
-MPI_CFLAGS = @MPI_CFLAGS@
-MPI_CLDFLAGS = @MPI_CLDFLAGS@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -178,14 +175,12 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
-ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -228,7 +223,6 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target = @target@
 target_alias = @target_alias@
@@ -238,7 +232,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = src/client src/server src/fe testsuite
+SUBDIRS = logging biter client_comlib auditclient beboot spindle_api
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

@@ -6,14 +6,14 @@ BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest100
 libgenerator_SOURCES = libgenerator.c
 
 test_driver_SOURCES = test_driver.c
-test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/spindle_api $(MPI_CFLAGS) -Wall
+test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api $(MPI_CFLAGS) -Wall
 test_driver_LDADD = -ldl -ltestoutput -lfuncdict -lspindle
-test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/spindle_api $(MPI_CLDFLAGS) -no-install 
+test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) -no-install 
 
 test_driver_libs_SOURCES = test_driver.c
-test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/spindle_api $(MPI_CFLAGS) -Wall
+test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api $(MPI_CFLAGS) -Wall
 test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
-test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/spindle_api -no-install
+test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -no-install
 
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict

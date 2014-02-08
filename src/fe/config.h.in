@@ -21,9 +21,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define to 1 if you have MPI libs and headers. */
-#undef HAVE_MPI
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -44,6 +41,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* The bin directory for launchmon */
+#undef LAUNCHMON_BIN_DIR
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -81,9 +81,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* If the compiler supports a TLS storage class define it to that here */
-#undef TLS
 
 /* The file for storing usage logs */
 #undef USAGE_LOGGING_FILE

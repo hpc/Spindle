@@ -1,5 +1,0 @@
-*.o
-*.so
-linux_test
-ctest
-dtest

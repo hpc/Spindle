@@ -35,43 +35,36 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = libgenerator$(EXEEXT) test_driver$(EXEEXT) \
-	test_driver_libs$(EXEEXT)
-subdir = testsuite
+subdir = auditserver
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
-	$(top_srcdir)/m4/lx_detect_bluegene.m4 \
-	$(top_srcdir)/configure.common.ac \
-	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
+	$(top_srcdir)/../../configure.common.ac \
+	$(top_srcdir)/../../configure.lmon.ac \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_libgenerator_OBJECTS = libgenerator.$(OBJEXT)
-libgenerator_OBJECTS = $(am_libgenerator_OBJECTS)
-libgenerator_LDADD = $(LDADD)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+libaudit_server_cobo_la_DEPENDENCIES = $(LDADD) libserverbase.la \
+	$(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
+am_libaudit_server_cobo_la_OBJECTS = ldcs_audit_server_md_cobo.lo
+libaudit_server_cobo_la_OBJECTS =  \
+	$(am_libaudit_server_cobo_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-am_test_driver_OBJECTS = test_driver-test_driver.$(OBJEXT)
-test_driver_OBJECTS = $(am_test_driver_OBJECTS)
-test_driver_DEPENDENCIES =
-test_driver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_driver_CFLAGS) \
-	$(CFLAGS) $(test_driver_LDFLAGS) $(LDFLAGS) -o $@
-am_test_driver_libs_OBJECTS = test_driver_libs-test_driver.$(OBJEXT)
-test_driver_libs_OBJECTS = $(am_test_driver_libs_OBJECTS)
-test_driver_libs_DEPENDENCIES =
-test_driver_libs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(test_driver_libs_CFLAGS) $(CFLAGS) \
-	$(test_driver_libs_LDFLAGS) $(LDFLAGS) -o $@
+libserverbase_la_LIBADD =
+am_libserverbase_la_OBJECTS = ldcs_audit_server_client_cb.lo \
+	ldcs_audit_server_server_cb.lo ldcs_audit_server_process.lo \
+	ldcs_audit_server_filemngt.lo ldcs_audit_server_handlers.lo \
+	ldcs_elf_read.lo ldcs_audit_server_requestors.lo
+libserverbase_la_OBJECTS = $(am_libserverbase_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
-depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
+depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -96,16 +89,15 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libgenerator_SOURCES) $(test_driver_SOURCES) \
-	$(test_driver_libs_SOURCES)
-DIST_SOURCES = $(libgenerator_SOURCES) $(test_driver_SOURCES) \
-	$(test_driver_libs_SOURCES)
+SOURCES = $(libaudit_server_cobo_la_SOURCES) \
+	$(libserverbase_la_SOURCES)
+DIST_SOURCES = $(libaudit_server_cobo_la_SOURCES) \
+	$(libserverbase_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
-AM_CFLAGS = @AM_CFLAGS@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
@@ -138,7 +130,12 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAUNCHMON_INC = @LAUNCHMON_INC@
+LAUNCHMON_LIB = @LAUNCHMON_LIB@
+LAUNCHMON_RMCOMM = @LAUNCHMON_RMCOMM@
+LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
+LDD = @LDD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -148,9 +145,6 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
-MPICC = @MPICC@
-MPI_CFLAGS = @MPI_CFLAGS@
-MPI_CLDFLAGS = @MPI_CLDFLAGS@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -168,8 +162,9 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+STATIC_LIBGCC_OPT = @STATIC_LIBGCC_OPT@
+STATIC_LIBSTDCXX = @STATIC_LIBSTDCXX@
 STRIP = @STRIP@
-TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -219,7 +214,6 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target = @target@
 target_alias = @target_alias@
@@ -229,22 +223,21 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list
-libgenerator_SOURCES = libgenerator.c
-test_driver_SOURCES = test_driver.c
-test_driver_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api $(MPI_CFLAGS) -Wall
-test_driver_LDADD = -ldl -ltestoutput -lfuncdict -lspindle
-test_driver_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) -no-install 
-test_driver_libs_SOURCES = test_driver.c
-test_driver_libs_CFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api $(MPI_CFLAGS) -Wall
-test_driver_libs_LDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
-test_driver_libs_LDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -no-install
-REGLIB_SRC = $(srcdir)/registerlib.c
-LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
-CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+
+#noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
+noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
+AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils
+LDADD = $(top_builddir)/cache/libldcs_cache.la
+AM_LDFLAGS = -all-static
+libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c
+
+#libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
+libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
+LCD = $(top_builddir)/comlib
+COD = $(top_builddir)/cobo/
+#libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
+libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -257,9 +250,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign testsuite/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign auditserver/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign testsuite/Makefile
+	  $(AUTOMAKE) --foreign auditserver/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -279,23 +272,18 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
-libgenerator$(EXEEXT): $(libgenerator_OBJECTS) $(libgenerator_DEPENDENCIES) 
-	@rm -f libgenerator$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(libgenerator_OBJECTS) $(libgenerator_LDADD) $(LIBS)
-test_driver$(EXEEXT): $(test_driver_OBJECTS) $(test_driver_DEPENDENCIES) 
-	@rm -f test_driver$(EXEEXT)
-	$(AM_V_CCLD)$(test_driver_LINK) $(test_driver_OBJECTS) $(test_driver_LDADD) $(LIBS)
-test_driver_libs$(EXEEXT): $(test_driver_libs_OBJECTS) $(test_driver_libs_DEPENDENCIES) 
-	@rm -f test_driver_libs$(EXEEXT)
-	$(AM_V_CCLD)$(test_driver_libs_LINK) $(test_driver_libs_OBJECTS) $(test_driver_libs_LDADD) $(LIBS)
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+libaudit_server_cobo.la: $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_LIBADD) $(LIBS)
+libserverbase.la: $(libserverbase_la_OBJECTS) $(libserverbase_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libserverbase_la_OBJECTS) $(libserverbase_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -303,9 +291,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgenerator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_driver-test_driver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_driver_libs-test_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_client_cb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_filemngt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_handlers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_process.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_requestors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_server_cb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_elf_read.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -330,38 +323,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-test_driver-test_driver.o: test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -MT test_driver-test_driver.o -MD -MP -MF $(DEPDIR)/test_driver-test_driver.Tpo -c -o test_driver-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver-test_driver.Tpo $(DEPDIR)/test_driver-test_driver.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver-test_driver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -c -o test_driver-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
-
-test_driver-test_driver.obj: test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -MT test_driver-test_driver.obj -MD -MP -MF $(DEPDIR)/test_driver-test_driver.Tpo -c -o test_driver-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver-test_driver.Tpo $(DEPDIR)/test_driver-test_driver.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver-test_driver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_CFLAGS) $(CFLAGS) -c -o test_driver-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
-
-test_driver_libs-test_driver.o: test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -MT test_driver_libs-test_driver.o -MD -MP -MF $(DEPDIR)/test_driver_libs-test_driver.Tpo -c -o test_driver_libs-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver_libs-test_driver.Tpo $(DEPDIR)/test_driver_libs-test_driver.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver_libs-test_driver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -c -o test_driver_libs-test_driver.o `test -f 'test_driver.c' || echo '$(srcdir)/'`test_driver.c
-
-test_driver_libs-test_driver.obj: test_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -MT test_driver_libs-test_driver.obj -MD -MP -MF $(DEPDIR)/test_driver_libs-test_driver.Tpo -c -o test_driver_libs-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_driver_libs-test_driver.Tpo $(DEPDIR)/test_driver_libs-test_driver.Po
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_driver.c' object='test_driver_libs-test_driver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_driver_libs_CFLAGS) $(CFLAGS) -c -o test_driver_libs-test_driver.obj `if test -f 'test_driver.c'; then $(CYGPATH_W) 'test_driver.c'; else $(CYGPATH_W) '$(srcdir)/test_driver.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -452,12 +413,10 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(PROGRAMS)
+check: check-am
+all-am: Makefile $(LTLIBRARIES)
 installdirs:
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
+install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -474,7 +433,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -483,10 +441,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -555,10 +512,10 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: all check install install-am install-strip
+.MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
+	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
@@ -570,107 +527,6 @@ uninstall-am:
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am
 
-
-libtest10.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest10.c 10 t10
-
-libtest50.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest50.c 50 t50
-
-libtest100.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest100.c 100 t100
-
-libtest500.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest500.c 500 t500
-
-libtest1000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest1000.c 1000 t1000
-
-libtest2000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest2000.c 2000 t2000
-
-libtest4000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest4000.c 4000 t4000
-
-libtest6000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest6000.c 6000 t6000
-
-libtest8000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest8000.c 8000 t8000
-
-libtest10000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest10000.c 10000 t10000
-
-libtest10.so: libtest10.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t10_calc $(LD_FUNCDICT)
-
-libtest50.so: libtest50.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t50_calc $(LD_FUNCDICT)
-
-libtest100.so: libtest100.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t100_calc $(LD_FUNCDICT)
-
-libtest500.so: libtest500.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t500_calc $(LD_FUNCDICT)
-
-libtest1000.so: libtest1000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t1000_calc $(LD_FUNCDICT)
-
-libtest2000.so: libtest2000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t2000_calc $(LD_FUNCDICT)
-
-libtest4000.so: libtest4000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t4000_calc $(LD_FUNCDICT)
-
-libtest6000.so: libtest6000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t6000_calc $(LD_FUNCDICT)
-
-libtest8000.so: libtest8000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t8000_calc $(LD_FUNCDICT)
-
-libtest10000.so: libtest10000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $^ -shared -DSO_NAME=$@ -DFUNC_NAME=t10000_calc $(LD_FUNCDICT)
-
-libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
-
-libsymlink.so: libtest10.so
-	$(AM_V_GEN) ln -s $< $@
-
-libdepB.so: libdepB.c libdepC.so
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared -L. -ldepC
-
-libdepC.so: libdepC.c
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared
-
-libcxxexceptA.so: libcxxexceptA.cc $(REGLIB_SRC) libcxxexceptB.so libfuncdict.so
-	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -lcxxexceptB -DSO_NAME=$@ -DFUNC_NAME=cxxexceptA_calc $(LD_FUNCDICT)
-
-libcxxexceptB.so: libcxxexceptB.cc
-	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< -shared
-
-libtestoutput.so: testoutput.c
-	$(AM_V_CCLD)$(CXX) -o $@ -fPIC -Wall $< -shared
-
-libfuncdict.so: funcdict.c
-	$(AM_V_CCLD)$(CC) -o $@ -fPIC -Wall $< -shared
-
-runTests: $(srcdir)/runTests_template
-	$(AM_V_GEN) cp $(srcdir)/runTests_template $(top_builddir)/testsuite/runTests
-	@chmod 700 $(top_builddir)/testsuite/runTests
-
-run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile
-	@rm -f ./run_driver
-	$(AM_V_GEN)$(SED) -e s,SPINDLE_EXEC,$(bindir)/spindle,g\;s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/run_driver_template > $(top_builddir)/testsuite/run_driver
-	@chmod 700 $(top_builddir)/testsuite/run_driver
-
-run_driver_rm: $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/Makefile
-	$(AM_V_GEN)cp $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/testsuite/run_driver_rm
-	@chmod 700 $(top_builddir)/testsuite/run_driver_rm
-
-preload_file_list: $(srcdir)/preload_file_list_template $(top_builddir)/Makefile
-	@rm -f ./preload_file_list
-	$(AM_V_GEN)$(SED) -e s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/preload_file_list_template > $(top_builddir)/testsuite/preload_file_list
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
