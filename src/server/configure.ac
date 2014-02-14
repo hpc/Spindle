@@ -1,4 +1,4 @@
-AC_INIT([spindle-server], m4_esyscmd([tr -d '\n' < ../../VERSION]), m4_esyscmd([tr -d '\n' < ../../BUG_EMAIL]))
+AC_INIT([spindle], m4_esyscmd([tr -d '\n' < ../../VERSION]), m4_esyscmd([tr -d '\n' < ../../BUG_EMAIL]))
 AC_CONFIG_MACRO_DIR([../../m4])
 AC_CONFIG_AUX_DIR([../../scripts])
 AC_CANONICAL_SYSTEM

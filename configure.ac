@@ -8,7 +8,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_SED
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([src/client/Makefile src/server/Makefile src/fe/Makefile testsuite/Makefile Makefile])
+AC_CONFIG_FILES([testsuite/Makefile Makefile])
 AC_PROG_LIBTOOL
 AC_PROG_LN_S
 LT_INIT
@@ -16,10 +16,6 @@ LT_INIT
 m4_include([m4/ax_tls.m4])
 m4_include([m4/lmon.m4])
 AX_TLS
-
-#AC_CONFIG_SUBDIRS(src/client)
-#AC_CONFIG_SUBDIRS(src/server)
-#AC_CONFIG_SUBDIRS(src/fe)
 
 #Default flags
 AC_SUBST([AM_CFLAGS], [-Wall])

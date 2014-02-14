@@ -94,6 +94,7 @@ AC_DEFUN([RUN_CONFIG_W_COMPILER], [
    # different subdirs can have different --enable and --with options.
    ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
 
+   AS_MKDIR_P([$1])
    orig_dir=`pwd`
    cd $srcdir
    abs_srcdir=`pwd -P`
