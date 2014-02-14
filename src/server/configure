@@ -949,6 +949,7 @@ enable_socket
 enable_shmem
 enable_msocket
 enable_cobo
+enable_bluegene
 with_python_prefix
 with_usage_logging
 with_launchmon
@@ -1614,6 +1615,7 @@ Optional Features:
   --enable-shmem          Use shared memory for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
+  --enable-bluegene       Build Spindle for BlueGene/Q
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5001,13 +5003,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5004: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5006: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5007: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5009: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5010: output\"" >&5)
+  (eval echo "\"\$as_me:5012: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6213,7 +6215,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6216 "configure"' > conftest.$ac_ext
+  echo '#line 6218 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8804,11 +8806,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8807: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8809: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8811: \$? = $ac_status" >&5
+   echo "$as_me:8813: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9143,11 +9145,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9146: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9148: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9150: \$? = $ac_status" >&5
+   echo "$as_me:9152: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9248,11 +9250,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9251: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9253: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9255: \$? = $ac_status" >&5
+   echo "$as_me:9257: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9303,11 +9305,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9306: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9308: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9310: \$? = $ac_status" >&5
+   echo "$as_me:9312: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12106,7 +12108,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12109 "configure"
+#line 12111 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12202,7 +12204,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12205 "configure"
+#line 12207 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14222,11 +14224,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14225: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14227: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14229: \$? = $ac_status" >&5
+   echo "$as_me:14231: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14321,11 +14323,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14324: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14326: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14328: \$? = $ac_status" >&5
+   echo "$as_me:14330: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14373,11 +14375,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14376: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14378: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14380: \$? = $ac_status" >&5
+   echo "$as_me:14382: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15467,6 +15469,15 @@ if test "${enable_cobo+set}" = set; then
 fi
 
 
+# Check whether --enable-bluegene was given.
+if test "${enable_bluegene+set}" = set; then
+  enableval=$enable_bluegene; OS_BUILD=bluegene
+fi
+
+if test "x$OS_BUILD" == "x"; then
+  OS_BUILD=linux
+fi
+
  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
   LMON_DYNAMIC_TRUE=
   LMON_DYNAMIC_FALSE='#'
@@ -15590,7 +15601,8 @@ _ACEOF
 
 fi
 
- if test "x$target_os" == "xcnk"; then
+#OS defines
+ if test "x$OS_BUILD" == "xbluegene"; then
   BGQ_BLD_TRUE=
   BGQ_BLD_FALSE='#'
 else
@@ -15598,7 +15610,7 @@ else
   BGQ_BLD_FALSE=
 fi
 
- if test "x$target_os" == "xlinux-gnu"; then
+ if test "x$OS_BUILD" == "xlinux"; then
   LINUX_BLD_TRUE=
   LINUX_BLD_FALSE='#'
 else
@@ -15606,6 +15618,21 @@ else
   LINUX_BLD_FALSE=
 fi
 
+
+if test "x$OS_BUILD" == "xlinux"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define os_linux 1
+_ACEOF
+
+fi
+if test "x$OS_BUILD" == "xbluegene"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define os_bluegene 1
+_ACEOF
+
+fi
 
 #Python prefix
 
@@ -15637,197 +15664,6 @@ _ACEOF
 
 fi
 
-#BlueGene detection
-if test "x$target_os" == "xcnk"; then
-CC_HOLD=$CC
-CC=$MPICC
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#ifndef __blrts__
-#error "not BlueGene/L"
-#endif /* __blrts__ */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgl 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#ifdef __linux__
-#include <linux/config.h>
-#endif /* __linux__ */
-#if !(defined(__bgp__) || defined(CONFIG_BGP))
-#error "not BlueGene/P"
-#endif /* !(defined(__bgp__) || defined(CONFIG_BGP)) */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgp 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#if !defined(__bgq__)
-#error "not BlueGene/Q"
-#endif
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgq 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-
-CC=$CC_HOLD
-fi
-
-#Linux detection
-if (( "x$target_os" == "xlinux" || "x$target_os" == "xlinux-gnu" )); then
-
-cat >>confdefs.h <<\_ACEOF
-#define os_linux 1
-_ACEOF
-
-fi
 
 
 #Include LaunchMON

@@ -38,9 +38,7 @@ subdir = src/server
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
-	$(top_srcdir)/configure.lmon.ac \
-	$(top_srcdir)/m4/lx_detect_bluegene.m4 \
-	$(top_srcdir)/configure.common.ac \
+	$(top_srcdir)/m4/lmon.m4 $(top_srcdir)/configure.common.ac \
 	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/m4/runconf.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -107,6 +105,16 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BE_CC = @BE_CC@
+BE_CFLAGS = @BE_CFLAGS@
+BE_CPP = @BE_CPP@
+BE_CPPFLAGS = @BE_CPPFLAGS@
+BE_CXX = @BE_CXX@
+BE_CXXCPP = @BE_CXXCPP@
+BE_CXXFLAGS = @BE_CXXFLAGS@
+BE_LDFLAGS = @BE_LDFLAGS@
+BE_LIBS = @BE_LIBS@
+BE_host = @BE_host@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@

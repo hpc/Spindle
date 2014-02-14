@@ -1,3 +1,9 @@
+AC_DEFUN([APPEND_TO_ARGS], [
+  if test "x$2" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args '$1=$2'"
+  fi
+])
+
 AC_DEFUN([RUN_CONFIG_W_COMPILER], [
    #
    # The following argument parsing code, except for where we remove/add
@@ -55,14 +61,10 @@ AC_DEFUN([RUN_CONFIG_W_COMPILER], [
        ;;
      CXXCPP=*)
        ;;
-     -build | --build | --buil | --bui | --bu)
-      ac_prev=build ;;
-     --build=* | --buil=* | --bui=* | --bu=*)
-      ;;
-     -target | --target | --targe | --targ | --tar | --ta | --t)
-      ac_prev=target ;;
-     --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-      ;;
+     STRIP=*)
+       ;;
+     AR=*)
+       ;;
      -host | --host | --hos | --ho)
       ac_prev=host ;;
      --host=* | --hos=* | --ho=*)
@@ -101,7 +103,20 @@ AC_DEFUN([RUN_CONFIG_W_COMPILER], [
 
    echo "=== configuring in $1"
 
-   ac_sub_configure_args="$ac_sub_configure_args 'CC=$2' 'CFLAGS=$3' 'LDFLAGS=$4' 'LIBS=$5' 'CPPFLAGS=$6' 'CXX=$7' 'CXXFLAGS=$8' 'CPP=$9' 'CXXCPP=$10' '--build=$11' '--host=$12' '--target=$13'"
+   APPEND_TO_ARGS([CC], [$2])
+   APPEND_TO_ARGS([CFLAGS], [$3])
+   APPEND_TO_ARGS([LDFLAGS], [$4])
+   APPEND_TO_ARGS([LIBS], [$5])
+   APPEND_TO_ARGS([CPPFLAGS], [$6])
+   APPEND_TO_ARGS([CXX], [$7])
+   APPEND_TO_ARGS([CXXFLAGS], [$8])
+   APPEND_TO_ARGS([CPP], [$9])
+   APPEND_TO_ARGS([CXXCPP], [$10])
+   APPEND_TO_ARGS([STRIP], [$11])
+   APPEND_TO_ARGS([AR], [$12])
+   if test "x$13" != "x$build"; then
+     ac_sub_configure_args="$ac_sub_configure_args --build=$build --host=$13"
+   fi
 
-   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args"
+   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args" || AC_MSG_ERROR([configure failed in $srcdir])
    cd $orig_dir])

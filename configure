@@ -789,6 +789,16 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+BE_host
+BE_CXXCPP
+BE_CPP
+BE_CXXFLAGS
+BE_CXX
+BE_CPPFLAGS
+BE_LIBS
+BE_LDFLAGS
+BE_CFLAGS
+BE_CC
 MPI_CLDFLAGS
 MPI_CFLAGS
 MPICC
@@ -954,6 +964,7 @@ enable_socket
 enable_shmem
 enable_msocket
 enable_cobo
+enable_bluegene
 with_python_prefix
 with_usage_logging
 '
@@ -969,7 +980,17 @@ CXX
 CXXFLAGS
 CCC
 CPP
-CXXCPP'
+CXXCPP
+BE_CC
+BE_CFLAGS
+BE_LDFLAGS
+BE_LIBS
+BE_CPPFLAGS
+BE_CXX
+BE_CXXFLAGS
+BE_CPP
+BE_CXXCPP
+BE_host'
 
 
 # Initialize some variables set by options.
@@ -1615,6 +1636,7 @@ Optional Features:
   --enable-shmem          Use shared memory for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
+  --enable-bluegene       Build Spindle for BlueGene/Q
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1651,6 +1673,16 @@ Some influential environment variables:
   CXXFLAGS    C++ compiler flags
   CPP         C preprocessor
   CXXCPP      C++ preprocessor
+  BE_CC       CC for back end
+  BE_CFLAGS   CFLAGS back end
+  BE_LDFLAGS  LDFLAGS for back end
+  BE_LIBS     LIBS for back end
+  BE_CPPFLAGS CPPFLAGS for back end
+  BE_CXX      CXX for back end
+  BE_CXXFLAGS CXXFLAGS for back end
+  BE_CPP      CPP for back end
+  BE_CXXCPP   CXXCPP for back end
+  BE_host     host to use for back end
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5075,13 +5107,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5078: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5110: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5081: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5113: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5084: output\"" >&5)
+  (eval echo "\"\$as_me:5116: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6287,7 +6319,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6290 "configure"' > conftest.$ac_ext
+  echo '#line 6322 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8878,11 +8910,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8881: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8913: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8885: \$? = $ac_status" >&5
+   echo "$as_me:8917: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9217,11 +9249,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9220: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9252: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9224: \$? = $ac_status" >&5
+   echo "$as_me:9256: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9322,11 +9354,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9325: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9357: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9329: \$? = $ac_status" >&5
+   echo "$as_me:9361: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9377,11 +9409,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9380: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9412: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9384: \$? = $ac_status" >&5
+   echo "$as_me:9416: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12180,7 +12212,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12183 "configure"
+#line 12215 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12276,7 +12308,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12279 "configure"
+#line 12311 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14296,11 +14328,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14299: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14331: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14303: \$? = $ac_status" >&5
+   echo "$as_me:14335: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14395,11 +14427,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14398: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14430: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14402: \$? = $ac_status" >&5
+   echo "$as_me:14434: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14447,11 +14479,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14450: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14482: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14454: \$? = $ac_status" >&5
+   echo "$as_me:14486: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15941,50 +15973,7 @@ fi
 
 
 #Include common ops
-#################################################################################################
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC.
-# Produced at the Lawrence Livermore National Laboratory
-# Written by Todd Gamblin, tgamblin@llnl.gov.
-# LLNL-CODE-417602
-# All rights reserved.
-#
-# This file is part of Libra. For details, see http://github.com/tgamblin/libra.
-# Please also read the LICENSE file for further information.
-#
-# Redistribution and use in source and binary forms, with or without modification, are
-# permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this list of
-# conditions and the disclaimer below.
-# * Redistributions in binary form must reproduce the above copyright notice, this list of
-# conditions and the disclaimer (as noted below) in the documentation and/or other materials
-# provided with the distribution.
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may be used to endorse
-# or promote products derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-# LAWRENCE LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#################################################################################################
-
-#
-# LX_DETECT_BLUEGENE
-#
-# Defines some compile-time tests to detect BlueGene architectures.
-# This will AC_DEFINE the following macros if detected:
-#
-# BLUEGENE_L If BlueGene/L architecture is detected
-# BLUEGENE_P If BlueGene/P architecture is detected
-# BLUEGENE_Q If BlueGene/Q architecture is detected
-#
-
-
+#m4_include([m4/lx_detect_bluegene.m4])
 #Configure operations that are common between the Spindle and Spindle-client configurations
 #Network port and local storage location
 DEFAULT_PORT=21940
@@ -16045,6 +16034,15 @@ if test "${enable_cobo+set}" = set; then
   enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
 fi
 
+
+# Check whether --enable-bluegene was given.
+if test "${enable_bluegene+set}" = set; then
+  enableval=$enable_bluegene; OS_BUILD=bluegene
+fi
+
+if test "x$OS_BUILD" == "x"; then
+  OS_BUILD=linux
+fi
 
  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
   LMON_DYNAMIC_TRUE=
@@ -16169,7 +16167,8 @@ _ACEOF
 
 fi
 
- if test "x$target_os" == "xcnk"; then
+#OS defines
+ if test "x$OS_BUILD" == "xbluegene"; then
   BGQ_BLD_TRUE=
   BGQ_BLD_FALSE='#'
 else
@@ -16177,7 +16176,7 @@ else
   BGQ_BLD_FALSE=
 fi
 
- if test "x$target_os" == "xlinux-gnu"; then
+ if test "x$OS_BUILD" == "xlinux"; then
   LINUX_BLD_TRUE=
   LINUX_BLD_FALSE='#'
 else
@@ -16185,6 +16184,21 @@ else
   LINUX_BLD_FALSE=
 fi
 
+
+if test "x$OS_BUILD" == "xlinux"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define os_linux 1
+_ACEOF
+
+fi
+if test "x$OS_BUILD" == "xbluegene"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define os_bluegene 1
+_ACEOF
+
+fi
 
 #Python prefix
 
@@ -16216,197 +16230,6 @@ _ACEOF
 
 fi
 
-#BlueGene detection
-if test "x$target_os" == "xcnk"; then
-CC_HOLD=$CC
-CC=$MPICC
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#ifndef __blrts__
-#error "not BlueGene/L"
-#endif /* __blrts__ */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgl 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#ifdef __linux__
-#include <linux/config.h>
-#endif /* __linux__ */
-#if !(defined(__bgp__) || defined(CONFIG_BGP))
-#error "not BlueGene/P"
-#endif /* !(defined(__bgp__) || defined(CONFIG_BGP)) */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgp 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#if !defined(__bgq__)
-#error "not BlueGene/Q"
-#endif
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bgq 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define os_bg 1
-_ACEOF
-
-
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-
-CC=$CC_HOLD
-fi
-
-#Linux detection
-if (( "x$target_os" == "xlinux" || "x$target_os" == "xlinux-gnu" )); then
-
-cat >>confdefs.h <<\_ACEOF
-#define os_linux 1
-_ACEOF
-
-fi
 
 
 #MPI detection
@@ -16852,6 +16675,17 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
      fi
 
          fi
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19544,6 +19378,336 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
+#Set BE_CC, BE_CXX and related flags
+
+
+if test "$BE_CC x $BE_CXX x $BE_host" != " x  x "; then
+   USER_SPECIFIED_COMPS="true"
+fi
+
+if test "x$OS_BUILD" == "xbluegene"; then
+  if test -d /bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin; then
+     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin/
+  elif test -d /bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin; then
+     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin/
+  fi
+fi
+
+
+  VARNAME=\$BE_CC
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CC=$BE_VAR
+     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-gcc" != "x"; then
+       CLIENT_CC=${BG_COMP_PATH}powerpc64-bgq-linux-gcc
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CC to $CC
+       CLIENT_CC=
+     else
+       CLIENT_CC=$CC
+     fi
+     SERVER_CC=$CC
+     FE_CC=$CC
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CC
+       fi
+     fi
+     CLIENT_CC=$BE_VAR
+     SERVER_CC=$BE_VAR
+     FE_CC=$CC
+  fi
+
+  VARNAME=\$BE_CFLAGS
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CFLAGS=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_CFLAGS=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CFLAGS to $CFLAGS
+       CLIENT_CFLAGS=
+     else
+       CLIENT_CFLAGS=$CFLAGS
+     fi
+     SERVER_CFLAGS=$CFLAGS
+     FE_CFLAGS=$CFLAGS
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CFLAGS
+       fi
+     fi
+     CLIENT_CFLAGS=$BE_VAR
+     SERVER_CFLAGS=$BE_VAR
+     FE_CFLAGS=$CFLAGS
+  fi
+
+  VARNAME=\$BE_LDFLAGS
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_LDFLAGS=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_LDFLAGS=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_LDFLAGS to $LDFLAGS
+       CLIENT_LDFLAGS=
+     else
+       CLIENT_LDFLAGS=$LDFLAGS
+     fi
+     SERVER_LDFLAGS=$LDFLAGS
+     FE_LDFLAGS=$LDFLAGS
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$LDFLAGS
+       fi
+     fi
+     CLIENT_LDFLAGS=$BE_VAR
+     SERVER_LDFLAGS=$BE_VAR
+     FE_LDFLAGS=$LDFLAGS
+  fi
+
+  VARNAME=\$BE_LIBS
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_LIBS=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_LIBS=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_LIBS to $LIBS
+       CLIENT_LIBS=
+     else
+       CLIENT_LIBS=$LIBS
+     fi
+     SERVER_LIBS=$LIBS
+     FE_LIBS=$LIBS
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$LIBS
+       fi
+     fi
+     CLIENT_LIBS=$BE_VAR
+     SERVER_LIBS=$BE_VAR
+     FE_LIBS=$LIBS
+  fi
+
+  VARNAME=\$BE_CPPFLAGS
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CPPFLAGS=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_CPPFLAGS=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CPPFLAGS to $CPPFLAGS
+       CLIENT_CPPFLAGS=
+     else
+       CLIENT_CPPFLAGS=$CPPFLAGS
+     fi
+     SERVER_CPPFLAGS=$CPPFLAGS
+     FE_CPPFLAGS=$CPPFLAGS
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CPPFLAGS
+       fi
+     fi
+     CLIENT_CPPFLAGS=$BE_VAR
+     SERVER_CPPFLAGS=$BE_VAR
+     FE_CPPFLAGS=$CPPFLAGS
+  fi
+
+  VARNAME=\$BE_CXX
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CXX=$BE_VAR
+     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-c++" != "x"; then
+       CLIENT_CXX=${BG_COMP_PATH}powerpc64-bgq-linux-c++
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CXX to $CXX
+       CLIENT_CXX=
+     else
+       CLIENT_CXX=$CXX
+     fi
+     SERVER_CXX=$CXX
+     FE_CXX=$CXX
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CXX
+       fi
+     fi
+     CLIENT_CXX=$BE_VAR
+     SERVER_CXX=$BE_VAR
+     FE_CXX=$CXX
+  fi
+
+  VARNAME=\$BE_CXXFLAGS
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CXXFLAGS=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_CXXFLAGS=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CXXFLAGS to $CXXFLAGS
+       CLIENT_CXXFLAGS=
+     else
+       CLIENT_CXXFLAGS=$CXXFLAGS
+     fi
+     SERVER_CXXFLAGS=$CXXFLAGS
+     FE_CXXFLAGS=$CXXFLAGS
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CXXFLAGS
+       fi
+     fi
+     CLIENT_CXXFLAGS=$BE_VAR
+     SERVER_CXXFLAGS=$BE_VAR
+     FE_CXXFLAGS=$CXXFLAGS
+  fi
+
+  VARNAME=\$BE_CPP
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CPP=$BE_VAR
+     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-cpp" != "x"; then
+       CLIENT_CPP=${BG_COMP_PATH}powerpc64-bgq-linux-cpp
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CPP to $CPP
+       CLIENT_CPP=
+     else
+       CLIENT_CPP=$CPP
+     fi
+     SERVER_CPP=$CPP
+     FE_CPP=$CPP
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CPP
+       fi
+     fi
+     CLIENT_CPP=$BE_VAR
+     SERVER_CPP=$BE_VAR
+     FE_CPP=$CPP
+  fi
+
+  VARNAME=\$BE_CXXCPP
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_CXXCPP=$BE_VAR
+     elif test "x" != "x"; then
+       CLIENT_CXXCPP=
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_CXXCPP to $CXXCPP
+       CLIENT_CXXCPP=
+     else
+       CLIENT_CXXCPP=$CXXCPP
+     fi
+     SERVER_CXXCPP=$CXXCPP
+     FE_CXXCPP=$CXXCPP
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$CXXCPP
+       fi
+     fi
+     CLIENT_CXXCPP=$BE_VAR
+     SERVER_CXXCPP=$BE_VAR
+     FE_CXXCPP=$CXXCPP
+  fi
+
+  VARNAME=\$BE_STRIP
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_STRIP=$BE_VAR
+     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-strip" != "x"; then
+       CLIENT_STRIP=${BG_COMP_PATH}powerpc64-bgq-linux-strip
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_STRIP to $STRIP
+       CLIENT_STRIP=
+     else
+       CLIENT_STRIP=$STRIP
+     fi
+     SERVER_STRIP=$STRIP
+     FE_STRIP=$STRIP
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$STRIP
+       fi
+     fi
+     CLIENT_STRIP=$BE_VAR
+     SERVER_STRIP=$BE_VAR
+     FE_STRIP=$STRIP
+  fi
+
+  VARNAME=\$BE_AR
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_AR=$BE_VAR
+     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-ar" != "x"; then
+       CLIENT_AR=${BG_COMP_PATH}powerpc64-bgq-linux-ar
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_AR to $AR
+       CLIENT_AR=
+     else
+       CLIENT_AR=$AR
+     fi
+     SERVER_AR=$AR
+     FE_AR=$AR
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$AR
+       fi
+     fi
+     CLIENT_AR=$BE_VAR
+     SERVER_AR=$BE_VAR
+     FE_AR=$AR
+  fi
+
+  VARNAME=\$BE_host
+  BE_VAR=`eval echo $VARNAME`
+  if test "x$OS_BUILD" == "xbluegene"; then
+     if test "x$BE_VAR" != "x"; then
+       CLIENT_host=$BE_VAR
+     elif test "xpowerpc64-bgq-linux" != "x"; then
+       CLIENT_host=powerpc64-bgq-linux
+     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
+       echo Setting CLIENT_host to $host
+       CLIENT_host=
+     else
+       CLIENT_host=$host
+     fi
+     SERVER_host=$host
+     FE_host=$host
+  elif test "x$OS_BUILD" == "xlinux"; then
+     if test "x$BE_VAR" == "x"; then
+       if test "x$USER_SPECIFIED_COMPS" == "x"; then
+         BE_VAR=$host
+       fi
+     fi
+     CLIENT_host=$BE_VAR
+     SERVER_host=$BE_VAR
+     FE_host=$host
+  fi
+
+
+
 
 
 
@@ -19603,14 +19767,10 @@ fi
        ;;
      CXXCPP=*)
        ;;
-     -build | --build | --buil | --bui | --bu)
-      ac_prev=build ;;
-     --build=* | --buil=* | --bui=* | --bu=*)
-      ;;
-     -target | --target | --targe | --targ | --tar | --ta | --t)
-      ac_prev=target ;;
-     --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-      ;;
+     STRIP=*)
+       ;;
+     AR=*)
+       ;;
      -host | --host | --hos | --ho)
       ac_prev=host ;;
      --host=* | --hos=* | --ho=*)
@@ -19649,10 +19809,70 @@ fi
 
    echo "=== configuring in src/client"
 
-   ac_sub_configure_args="$ac_sub_configure_args 'CC=$CC' 'CFLAGS=$CFLAGS' 'LDFLAGS=$LDFLAGS' 'LIBS=$LIBS' 'CPPFLAGS=$CPPFLAGS' 'CXX=$CXX' 'CXXFLAGS=$CXXFLAGS' 'CPP=$CPP' 'CXXCPP=$CXXCPP' '--build=$build' '--host=$host' '--target=$target'"
 
-   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args"
+  if test "x$CLIENT_CC" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CC=$CLIENT_CC'"
+  fi
+
+
+  if test "x$CLIENT_CFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CFLAGS=$CLIENT_CFLAGS'"
+  fi
+
+
+  if test "x$CLIENT_LDFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LDFLAGS=$CLIENT_LDFLAGS'"
+  fi
+
+
+  if test "x$CLIENT_LIBS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LIBS=$CLIENT_LIBS'"
+  fi
+
+
+  if test "x$CLIENT_CPPFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPPFLAGS=$CLIENT_CPPFLAGS'"
+  fi
+
+
+  if test "x$CLIENT_CXX" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXX=$CLIENT_CXX'"
+  fi
+
+
+  if test "x$CLIENT_CXXFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXFLAGS=$CLIENT_CXXFLAGS'"
+  fi
+
+
+  if test "x$CLIENT_CPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPP=$CLIENT_CPP'"
+  fi
+
+
+  if test "x$CLIENT_CXXCPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXCPP=$CLIENT_CXXCPP'"
+  fi
+
+
+  if test "x$CLIENT_STRIP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'STRIP=$CLIENT_STRIP'"
+  fi
+
+
+  if test "x$CLIENT_AR" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'AR=$CLIENT_AR'"
+  fi
+
+   if test "x$CLIENT_host" != "x$build"; then
+     ac_sub_configure_args="$ac_sub_configure_args --build=$build --host=$CLIENT_host"
+   fi
+
+   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args" || { { $as_echo "$as_me:$LINENO: error: configure failed in $srcdir" >&5
+$as_echo "$as_me: error: configure failed in $srcdir" >&2;}
+   { (exit 1); exit 1; }; }
    cd $orig_dir
+
 
    #
    # The following argument parsing code, except for where we remove/add
@@ -19710,14 +19930,10 @@ fi
        ;;
      CXXCPP=*)
        ;;
-     -build | --build | --buil | --bui | --bu)
-      ac_prev=build ;;
-     --build=* | --buil=* | --bui=* | --bu=*)
-      ;;
-     -target | --target | --targe | --targ | --tar | --ta | --t)
-      ac_prev=target ;;
-     --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-      ;;
+     STRIP=*)
+       ;;
+     AR=*)
+       ;;
      -host | --host | --hos | --ho)
       ac_prev=host ;;
      --host=* | --hos=* | --ho=*)
@@ -19756,10 +19972,70 @@ fi
 
    echo "=== configuring in src/server"
 
-   ac_sub_configure_args="$ac_sub_configure_args 'CC=$CC' 'CFLAGS=$CFLAGS' 'LDFLAGS=$LDFLAGS' 'LIBS=$LIBS' 'CPPFLAGS=$CPPFLAGS' 'CXX=$CXX' 'CXXFLAGS=$CXXFLAGS' 'CPP=$CPP' 'CXXCPP=$CXXCPP' '--build=$build' '--host=$host' '--target=$target'"
 
-   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args"
+  if test "x$SERVER_CC" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CC=$SERVER_CC'"
+  fi
+
+
+  if test "x$SERVER_CFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CFLAGS=$SERVER_CFLAGS'"
+  fi
+
+
+  if test "x$SERVER_LDFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LDFLAGS=$SERVER_LDFLAGS'"
+  fi
+
+
+  if test "x$SERVER_LIBS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LIBS=$SERVER_LIBS'"
+  fi
+
+
+  if test "x$SERVER_CPPFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPPFLAGS=$SERVER_CPPFLAGS'"
+  fi
+
+
+  if test "x$SERVER_CXX" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXX=$SERVER_CXX'"
+  fi
+
+
+  if test "x$SERVER_CXXFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXFLAGS=$SERVER_CXXFLAGS'"
+  fi
+
+
+  if test "x$SERVER_CPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPP=$SERVER_CPP'"
+  fi
+
+
+  if test "x$SERVER_CXXCPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXCPP=$SERVER_CXXCPP'"
+  fi
+
+
+  if test "x$SERVER_STRIP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'STRIP=$SERVER_STRIP'"
+  fi
+
+
+  if test "x$SERVER_AR" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'AR=$SERVER_AR'"
+  fi
+
+   if test "x$SERVER_host" != "x$build"; then
+     ac_sub_configure_args="$ac_sub_configure_args --build=$build --host=$SERVER_host"
+   fi
+
+   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args" || { { $as_echo "$as_me:$LINENO: error: configure failed in $srcdir" >&5
+$as_echo "$as_me: error: configure failed in $srcdir" >&2;}
+   { (exit 1); exit 1; }; }
    cd $orig_dir
+
 
    #
    # The following argument parsing code, except for where we remove/add
@@ -19817,14 +20093,10 @@ fi
        ;;
      CXXCPP=*)
        ;;
-     -build | --build | --buil | --bui | --bu)
-      ac_prev=build ;;
-     --build=* | --buil=* | --bui=* | --bu=*)
-      ;;
-     -target | --target | --targe | --targ | --tar | --ta | --t)
-      ac_prev=target ;;
-     --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-      ;;
+     STRIP=*)
+       ;;
+     AR=*)
+       ;;
      -host | --host | --hos | --ho)
       ac_prev=host ;;
      --host=* | --hos=* | --ho=*)
@@ -19863,7 +20135,67 @@ fi
 
    echo "=== configuring in src/fe"
 
-   ac_sub_configure_args="$ac_sub_configure_args 'CC=$CC' 'CFLAGS=$CFLAGS' 'LDFLAGS=$LDFLAGS' 'LIBS=$LIBS' 'CPPFLAGS=$CPPFLAGS' 'CXX=$CXX' 'CXXFLAGS=$CXXFLAGS' 'CPP=$CPP' 'CXXCPP=$CXXCPP' '--build=$build' '--host=$host' '--target=$target'"
 
-   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args"
+  if test "x$FE_CC" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CC=$FE_CC'"
+  fi
+
+
+  if test "x$FE_CFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CFLAGS=$FE_CFLAGS'"
+  fi
+
+
+  if test "x$FE_LDFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LDFLAGS=$FE_LDFLAGS'"
+  fi
+
+
+  if test "x$FE_LIBS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'LIBS=$FE_LIBS'"
+  fi
+
+
+  if test "x$FE_CPPFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPPFLAGS=$FE_CPPFLAGS'"
+  fi
+
+
+  if test "x$FE_CXX" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXX=$FE_CXX'"
+  fi
+
+
+  if test "x$FE_CXXFLAGS" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXFLAGS=$FE_CXXFLAGS'"
+  fi
+
+
+  if test "x$FE_CPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CPP=$FE_CPP'"
+  fi
+
+
+  if test "x$FE_CXXCPP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'CXXCPP=$FE_CXXCPP'"
+  fi
+
+
+  if test "x$FE_STRIP" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'STRIP=$FE_STRIP'"
+  fi
+
+
+  if test "x$FE_AR" != "x"; then
+    ac_sub_configure_args="$ac_sub_configure_args 'AR=$FE_AR'"
+  fi
+
+   if test "x$FE_host" != "x$build"; then
+     ac_sub_configure_args="$ac_sub_configure_args --build=$build --host=$FE_host"
+   fi
+
+   eval "\$SHELL \"$conf_cmd\" $ac_sub_configure_args" || { { $as_echo "$as_me:$LINENO: error: configure failed in $srcdir" >&5
+$as_echo "$as_me: error: configure failed in $srcdir" >&2;}
+   { (exit 1); exit 1; }; }
    cd $orig_dir
+

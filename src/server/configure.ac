@@ -15,7 +15,7 @@ m4_include([../../m4/lx_detect_bluegene.m4])
 m4_include([../../configure.common.ac])
 
 #Include LaunchMON
-m4_include([../../configure.lmon.ac])
+m4_include([../../m4/lmon.m4])
 
 #Check if we can static link libstdc++ and libgcc, which is desirable 
 # for bootstrapping purposes on spindle_be.  We only do this if we

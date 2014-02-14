@@ -103,17 +103,8 @@
 /* Define if we're compiling for an x86_64 target */
 #undef arch_x86_64
 
-/* Define if we're compiling for any BlueGene system */
-#undef os_bg
-
-/* Define if we're compiling for a BlueGene/L system */
-#undef os_bgl
-
-/* Define if we're compiling for a BlueGene/P system */
-#undef os_bgp
-
-/* Define if we're compiling for a BlueGene/Q system */
-#undef os_bgq
+/* Define if we're compiling for a BlueGene target */
+#undef os_bluegene
 
 /* Define if we're compiling for a linux target */
 #undef os_linux
