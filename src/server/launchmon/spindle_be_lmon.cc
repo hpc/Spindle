@@ -52,7 +52,7 @@ int releaseApplication(spindle_args_t *) {
   lmon_rc_e lrc;
   int signum, i;
 
-#if defined(os_bg)
+#if defined(os_bluegene)
   signum = 0;
 #elif defined(os_linux)
   signum = SIGCONT;

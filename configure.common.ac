@@ -66,23 +66,30 @@ AC_MSG_NOTICE([Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM])
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then
   AC_DEFINE([arch_x86_64],[1],[Define if we're compiling for an x86_64 target])
+  ARCH_BUILD=x86_64
 fi
 if test "x$target_cpu" == "xppc64"; then
   AC_DEFINE([arch_ppc64],[1],[Define if we're compiling for a ppc64 target])
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xpowerpc64"; then
   AC_DEFINE([arch_ppc64],[1],[Define if we're compiling for a ppc64 target])
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xppc32"; then
   AC_DEFINE([arch_ppc32],[1],[Define if we're compiling for a ppc64 target])
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xpowerpc32"; then
   AC_DEFINE([arch_ppc32],[1],[Define if we're compiling for a ppc64 target])
+  ARCH_BUILD=ppc64
 fi
 
 #OS defines
 AM_CONDITIONAL([BGQ_BLD], [test "x$OS_BUILD" == "xbluegene"])
 AM_CONDITIONAL([LINUX_BLD], [test "x$OS_BUILD" == "xlinux"])
+AM_CONDITIONAL([X86_64_BLD], [test "x$ARCH_BUILD" == "x86_64"])
+AM_CONDITIONAL([PPC64_BLD], [test "x$ARCH_BUILD" == "ppc64"])
 
 if test "x$OS_BUILD" == "xlinux"; then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])

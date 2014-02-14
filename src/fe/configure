@@ -793,6 +793,10 @@ LAUNCHMON_RMCOMM
 LAUNCHMON_LIB
 LAUNCHMON_INC
 LAUNCHMON_STATIC_LIBS
+PPC64_BLD_FALSE
+PPC64_BLD_TRUE
+X86_64_BLD_FALSE
+X86_64_BLD_TRUE
 LINUX_BLD_FALSE
 LINUX_BLD_TRUE
 BGQ_BLD_FALSE
@@ -4998,13 +5002,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5001: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5005: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5004: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5008: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5007: output\"" >&5)
+  (eval echo "\"\$as_me:5011: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6210,7 +6214,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6213 "configure"' > conftest.$ac_ext
+  echo '#line 6217 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8801,11 +8805,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8804: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8808: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8808: \$? = $ac_status" >&5
+   echo "$as_me:8812: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9140,11 +9144,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9143: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9147: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9147: \$? = $ac_status" >&5
+   echo "$as_me:9151: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9245,11 +9249,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9248: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9252: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9252: \$? = $ac_status" >&5
+   echo "$as_me:9256: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9300,11 +9304,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9303: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9307: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9307: \$? = $ac_status" >&5
+   echo "$as_me:9311: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12103,7 +12107,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12106 "configure"
+#line 12110 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12199,7 +12203,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12202 "configure"
+#line 12206 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14219,11 +14223,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14222: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14226: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14226: \$? = $ac_status" >&5
+   echo "$as_me:14230: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14318,11 +14322,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14321: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14325: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14325: \$? = $ac_status" >&5
+   echo "$as_me:14329: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14370,11 +14374,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14373: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14377: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14377: \$? = $ac_status" >&5
+   echo "$as_me:14381: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15566,6 +15570,7 @@ cat >>confdefs.h <<\_ACEOF
 #define arch_x86_64 1
 _ACEOF
 
+  ARCH_BUILD=x86_64
 fi
 if test "x$target_cpu" == "xppc64"; then
 
@@ -15573,6 +15578,7 @@ cat >>confdefs.h <<\_ACEOF
 #define arch_ppc64 1
 _ACEOF
 
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xpowerpc64"; then
 
@@ -15580,6 +15586,7 @@ cat >>confdefs.h <<\_ACEOF
 #define arch_ppc64 1
 _ACEOF
 
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xppc32"; then
 
@@ -15587,6 +15594,7 @@ cat >>confdefs.h <<\_ACEOF
 #define arch_ppc32 1
 _ACEOF
 
+  ARCH_BUILD=ppc64
 fi
 if test "x$target_cpu" == "xpowerpc32"; then
 
@@ -15594,6 +15602,7 @@ cat >>confdefs.h <<\_ACEOF
 #define arch_ppc32 1
 _ACEOF
 
+  ARCH_BUILD=ppc64
 fi
 
 #OS defines
@@ -15611,6 +15620,22 @@ fi
 else
   LINUX_BLD_TRUE='#'
   LINUX_BLD_FALSE=
+fi
+
+ if test "x$ARCH_BUILD" == "x86_64"; then
+  X86_64_BLD_TRUE=
+  X86_64_BLD_FALSE='#'
+else
+  X86_64_BLD_TRUE='#'
+  X86_64_BLD_FALSE=
+fi
+
+ if test "x$ARCH_BUILD" == "ppc64"; then
+  PPC64_BLD_TRUE=
+  PPC64_BLD_FALSE='#'
+else
+  PPC64_BLD_TRUE='#'
+  PPC64_BLD_FALSE=
 fi
 
 
@@ -16191,6 +16216,20 @@ if test -z "${LINUX_BLD_TRUE}" && test -z "${LINUX_BLD_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"LINUX_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"LINUX_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${X86_64_BLD_TRUE}" && test -z "${X86_64_BLD_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"X86_64_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"X86_64_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${PPC64_BLD_TRUE}" && test -z "${PPC64_BLD_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"PPC64_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"PPC64_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
