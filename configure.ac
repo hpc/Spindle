@@ -14,11 +14,12 @@ AC_PROG_LN_S
 LT_INIT
 
 m4_include([m4/ax_tls.m4])
+m4_include([configure.lmon.ac])
 AX_TLS
 
-AC_CONFIG_SUBDIRS(src/client)
-AC_CONFIG_SUBDIRS(src/server)
-AC_CONFIG_SUBDIRS(src/fe)
+#AC_CONFIG_SUBDIRS(src/client)
+#AC_CONFIG_SUBDIRS(src/server)
+#AC_CONFIG_SUBDIRS(src/fe)
 
 #Default flags
 AC_SUBST([AM_CFLAGS], [-Wall])
@@ -39,3 +40,7 @@ LX_FIND_MPI
 
 AC_OUTPUT
 
+m4_include([m4/runconf.m4])
+RUN_CONFIG_W_COMPILER([src/client], [$CC], [$CFLAGS], [$LDFLAGS], [$LIBS], [$CPPFLAGS], [$CXX], [$CXXFLAGS], [$CPP], [$CXXCPP], [$build], [$host], [$target])
+RUN_CONFIG_W_COMPILER([src/server], [$CC], [$CFLAGS], [$LDFLAGS], [$LIBS], [$CPPFLAGS], [$CXX], [$CXXFLAGS], [$CPP], [$CXXCPP], [$build], [$host], [$target])
+RUN_CONFIG_W_COMPILER([src/fe], [$CC], [$CFLAGS], [$LDFLAGS], [$LIBS], [$CPPFLAGS], [$CXX], [$CXXFLAGS], [$CPP], [$CXXCPP], [$build], [$host], [$target])
