@@ -1,85 +1,24 @@
-
-# /
-/Makefile
+*~
 /autom4te.cache
-/config.h
-/config.log
-/config.status
-/libtool
-/stamp-h1
+/src/server/autom4te.cache
+/src/client/autom4te.cache
+/src/fe/autom4te.cache
 
-# /auditclient/
-/auditclient/.deps
-/auditclient/Makefile
-/auditclient/helloworld
-/auditclient/helloworld2
-/auditclient/helloworld3
-/auditclient/helloworld3_mpi
-
-# /auditserver/
-/auditserver/.deps
-/auditserver/Makefile
-/auditserver/ldcs_audit_server_par_pipe
-/auditserver/ldcs_audit_server_par_pipe_md
-/auditserver/ldcs_audit_server_par_pipe_msocket
-/auditserver/ldcs_audit_server_pipe
-/auditserver/ldcs_audit_server_socket
-
-# /cache/
-/cache/.deps
-/cache/Makefile
-
-# /client/
-/client/.deps
-/client/Makefile
-/client/ldcs_simple_client_pipe
-/client/ldcs_simple_client_pipe_mpi
-/client/ldcs_simple_client_socket
-
-# /comlib/
-/comlib/.deps
-/comlib/Makefile
-
-# /launchmon/
-/launchmon/.deps
-/launchmon/core
-/launchmon/sample_be
-/launchmon/sample_client
-/launchmon/sample_fe
-/launchmon/spindle_be
-/launchmon/spindle_fe
-
-# /simulator/
-/simulator/.deps
-/simulator/Makefile
-/simulator/_cache_1_of_8.dat
-/simulator/_cache_2_of_8.dat
-/simulator/_cache_3_of_8.dat
-/simulator/_cache_4_of_8.dat
-/simulator/_cache_5_of_8.dat
-/simulator/_cache_6_of_8.dat
-/simulator/_cache_7_of_8.dat
-/simulator/_cache_8_of_8.dat
-/simulator/searchlist.dat
-/simulator/simulator_pipe_mpi_cobo
-/simulator/simulator_pipe_mpi_msocket
-
-# /tools/cobo/src/
-/tools/cobo/src/.deps
-/tools/cobo/src/Makefile
-
-# /tools/cobo/test/
-/tools/cobo/test/.deps
-/tools/cobo/test/Makefile
-/tools/cobo/test/client
-/tools/cobo/test/server_rsh
-/tools/cobo/test/server_rsh_ldcs
-/tools/cobo/test/server_rsh_ldcs_preload
-
-# /tools/shmemtest/
-/tools/shmemtest/ldcs_shmem_test_mpi
-/tools/shmemtest/shmem_test_mpi
-
-# /tools/sion_debug/
-/tools/sion_debug/.deps
-/tools/sion_debug/Makefile
+#Need if someone does an in-source configure/build
+Makefile
+config.h
+config.log
+config.status
+libtool
+stamp-h1
+.deps
+.libs
+*.o
+*.lo
+*.la
+spindle_bootstrap
+spindle
+spindle_logd
+spindled_logd
+libstdc++.a
+spindle_be
