@@ -22,6 +22,8 @@
 #define COMM pipe
 #elif defined(COMM_SOCKETS)
 #define COMM socket
+#elif defined(COMM_BITER)
+#define COMM biter
 #elif defined(COMM_SHMEM)
 #define COMM shmem
 #else

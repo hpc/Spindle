@@ -49,33 +49,40 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libserver_pipe_la_LIBADD =
-am__objects_1 = libserver_pipe_la-ldcs_api_util.lo \
-	libserver_pipe_la-ldcs_api_listen.lo \
-	libserver_pipe_la-ldcs_api_wrapper.lo
-am_libserver_pipe_la_OBJECTS = libserver_pipe_la-ldcs_api_pipe.lo \
-	libserver_pipe_la-ldcs_api_pipe_notify.lo $(am__objects_1)
-libserver_pipe_la_OBJECTS = $(am_libserver_pipe_la_OBJECTS)
+libserver_biter_la_LIBADD =
+am__objects_1 = libserver_biter_la-ldcs_api_util.lo \
+	libserver_biter_la-ldcs_api_listen.lo \
+	libserver_biter_la-ldcs_api_wrapper.lo
+am_libserver_biter_la_OBJECTS = libserver_biter_la-ldcs_api_biter.lo \
+	$(am__objects_1)
+libserver_biter_la_OBJECTS = $(am_libserver_biter_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libserver_pipe_la_LIBADD =
+am__objects_2 = libserver_pipe_la-ldcs_api_util.lo \
+	libserver_pipe_la-ldcs_api_listen.lo \
+	libserver_pipe_la-ldcs_api_wrapper.lo
+am_libserver_pipe_la_OBJECTS = libserver_pipe_la-ldcs_api_pipe.lo \
+	libserver_pipe_la-ldcs_api_pipe_notify.lo $(am__objects_2)
+libserver_pipe_la_OBJECTS = $(am_libserver_pipe_la_OBJECTS)
 libserver_shmem_la_LIBADD =
 am__libserver_shmem_la_SOURCES_DIST = ldcs_api_shmem.c ldcs_api_util.c \
 	ldcs_api_listen.c ldcs_api_wrapper.c
-am__objects_2 = libserver_shmem_la-ldcs_api_util.lo \
+am__objects_3 = libserver_shmem_la-ldcs_api_util.lo \
 	libserver_shmem_la-ldcs_api_listen.lo \
 	libserver_shmem_la-ldcs_api_wrapper.lo
 @SHMEM_TRUE@am_libserver_shmem_la_OBJECTS =  \
 @SHMEM_TRUE@	libserver_shmem_la-ldcs_api_shmem.lo \
-@SHMEM_TRUE@	$(am__objects_2)
+@SHMEM_TRUE@	$(am__objects_3)
 libserver_shmem_la_OBJECTS = $(am_libserver_shmem_la_OBJECTS)
 @SHMEM_TRUE@am_libserver_shmem_la_rpath =
 libserver_socket_la_LIBADD =
-am__objects_3 = libserver_socket_la-ldcs_api_util.lo \
+am__objects_4 = libserver_socket_la-ldcs_api_util.lo \
 	libserver_socket_la-ldcs_api_listen.lo \
 	libserver_socket_la-ldcs_api_wrapper.lo
 am_libserver_socket_la_OBJECTS =  \
-	libserver_socket_la-ldcs_api_socket.lo $(am__objects_3)
+	libserver_socket_la-ldcs_api_socket.lo $(am__objects_4)
 libserver_socket_la_OBJECTS = $(am_libserver_socket_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
@@ -103,9 +110,10 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libserver_pipe_la_SOURCES) $(libserver_shmem_la_SOURCES) \
-	$(libserver_socket_la_SOURCES)
-DIST_SOURCES = $(libserver_pipe_la_SOURCES) \
+SOURCES = $(libserver_biter_la_SOURCES) $(libserver_pipe_la_SOURCES) \
+	$(libserver_shmem_la_SOURCES) $(libserver_socket_la_SOURCES)
+DIST_SOURCES = $(libserver_biter_la_SOURCES) \
+	$(libserver_pipe_la_SOURCES) \
 	$(am__libserver_shmem_la_SOURCES_DIST) \
 	$(libserver_socket_la_SOURCES)
 ETAGS = etags
@@ -239,13 +247,15 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libserver_pipe.la libserver_socket.la \
-	$(am__append_1)
+	libserver_biter.la $(am__append_1)
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
 BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
 libserver_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=pipe
 libserver_pipe_la_SOURCES = ldcs_api_pipe.c ldcs_api_pipe_notify.c $(BASE_SRCS)
 libserver_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=socket
 libserver_socket_la_SOURCES = ldcs_api_socket.c $(BASE_SRCS)
+libserver_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=biter -I$(top_srcdir)/../biter
+libserver_biter_la_SOURCES = ldcs_api_biter.c $(BASE_SRCS)
 @SHMEM_TRUE@libserver_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=shmem
 @SHMEM_TRUE@libserver_shmem_la_SOURCES = ldcs_api_shmem.c $(BASE_SRCS)
 all: all-am
@@ -291,6 +301,8 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+libserver_biter.la: $(libserver_biter_la_OBJECTS) $(libserver_biter_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libserver_biter_la_OBJECTS) $(libserver_biter_la_LIBADD) $(LIBS)
 libserver_pipe.la: $(libserver_pipe_la_OBJECTS) $(libserver_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libserver_pipe_la_OBJECTS) $(libserver_pipe_la_LIBADD) $(LIBS)
 libserver_shmem.la: $(libserver_shmem_la_OBJECTS) $(libserver_shmem_la_DEPENDENCIES) 
@@ -304,6 +316,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_biter_la-ldcs_api_biter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_biter_la-ldcs_api_listen.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_biter_la-ldcs_api_util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_biter_la-ldcs_api_wrapper.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_listen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe_notify.Plo@am__quote@
@@ -341,6 +357,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libserver_biter_la-ldcs_api_biter.lo: ldcs_api_biter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_biter_la-ldcs_api_biter.lo -MD -MP -MF $(DEPDIR)/libserver_biter_la-ldcs_api_biter.Tpo -c -o libserver_biter_la-ldcs_api_biter.lo `test -f 'ldcs_api_biter.c' || echo '$(srcdir)/'`ldcs_api_biter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_biter_la-ldcs_api_biter.Tpo $(DEPDIR)/libserver_biter_la-ldcs_api_biter.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ldcs_api_biter.c' object='libserver_biter_la-ldcs_api_biter.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_biter_la-ldcs_api_biter.lo `test -f 'ldcs_api_biter.c' || echo '$(srcdir)/'`ldcs_api_biter.c
+
+libserver_biter_la-ldcs_api_util.lo: ldcs_api_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_biter_la-ldcs_api_util.lo -MD -MP -MF $(DEPDIR)/libserver_biter_la-ldcs_api_util.Tpo -c -o libserver_biter_la-ldcs_api_util.lo `test -f 'ldcs_api_util.c' || echo '$(srcdir)/'`ldcs_api_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_biter_la-ldcs_api_util.Tpo $(DEPDIR)/libserver_biter_la-ldcs_api_util.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ldcs_api_util.c' object='libserver_biter_la-ldcs_api_util.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_biter_la-ldcs_api_util.lo `test -f 'ldcs_api_util.c' || echo '$(srcdir)/'`ldcs_api_util.c
+
+libserver_biter_la-ldcs_api_listen.lo: ldcs_api_listen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_biter_la-ldcs_api_listen.lo -MD -MP -MF $(DEPDIR)/libserver_biter_la-ldcs_api_listen.Tpo -c -o libserver_biter_la-ldcs_api_listen.lo `test -f 'ldcs_api_listen.c' || echo '$(srcdir)/'`ldcs_api_listen.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_biter_la-ldcs_api_listen.Tpo $(DEPDIR)/libserver_biter_la-ldcs_api_listen.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ldcs_api_listen.c' object='libserver_biter_la-ldcs_api_listen.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_biter_la-ldcs_api_listen.lo `test -f 'ldcs_api_listen.c' || echo '$(srcdir)/'`ldcs_api_listen.c
+
+libserver_biter_la-ldcs_api_wrapper.lo: ldcs_api_wrapper.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_biter_la-ldcs_api_wrapper.lo -MD -MP -MF $(DEPDIR)/libserver_biter_la-ldcs_api_wrapper.Tpo -c -o libserver_biter_la-ldcs_api_wrapper.lo `test -f 'ldcs_api_wrapper.c' || echo '$(srcdir)/'`ldcs_api_wrapper.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_biter_la-ldcs_api_wrapper.Tpo $(DEPDIR)/libserver_biter_la-ldcs_api_wrapper.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ldcs_api_wrapper.c' object='libserver_biter_la-ldcs_api_wrapper.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_biter_la-ldcs_api_wrapper.lo `test -f 'ldcs_api_wrapper.c' || echo '$(srcdir)/'`ldcs_api_wrapper.c
 
 libserver_pipe_la-ldcs_api_pipe.lo: ldcs_api_pipe.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_pipe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_pipe_la-ldcs_api_pipe.lo -MD -MP -MF $(DEPDIR)/libserver_pipe_la-ldcs_api_pipe.Tpo -c -o libserver_pipe_la-ldcs_api_pipe.lo `test -f 'ldcs_api_pipe.c' || echo '$(srcdir)/'`ldcs_api_pipe.c

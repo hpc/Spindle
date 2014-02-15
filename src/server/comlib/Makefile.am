@@ -12,11 +12,12 @@ noinst_LTLIBRARIES += libserver_socket.la
 libserver_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=socket
 libserver_socket_la_SOURCES = ldcs_api_socket.c $(BASE_SRCS)
 
+noinst_LTLIBRARIES += libserver_biter.la
+libserver_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=biter -I$(top_srcdir)/../biter
+libserver_biter_la_SOURCES = ldcs_api_biter.c $(BASE_SRCS)
+
 if SHMEM
 noinst_LTLIBRARIES += libserver_shmem.la 
 libserver_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=shmem
 libserver_shmem_la_SOURCES = ldcs_api_shmem.c $(BASE_SRCS)
 endif
-
-
-

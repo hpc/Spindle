@@ -12,6 +12,6 @@ noinst_LTLIBRARIES += libclient_socket.la
 libclient_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=socket
 libclient_socket_la_SOURCES = client_api_socket.c $(BASE_SRCS)
 
-#noinst_LTLIBRARIES += libclient_shmem.la
-#libclient_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=shmem
-#libclient_shmem_la_SOURCES = client_api_shmem.c $(BASE_SRCS)
+noinst_LTLIBRARIES += libclient_biter.la
+libclient_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=biter -I$(top_srcdir)/../biter
+libclient_biter_la_SOURCES = client_api_biter.c $(BASE_SRCS)

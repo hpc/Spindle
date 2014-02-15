@@ -48,22 +48,29 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libclient_pipe_la_LIBADD =
-am__objects_1 = libclient_pipe_la-client_api.lo \
-	libclient_pipe_la-client_heap.lo \
-	libclient_pipe_la-client_wrappers.lo
-am_libclient_pipe_la_OBJECTS = libclient_pipe_la-client_api_pipe.lo \
-	$(am__objects_1)
-libclient_pipe_la_OBJECTS = $(am_libclient_pipe_la_OBJECTS)
+libclient_biter_la_LIBADD =
+am__objects_1 = libclient_biter_la-client_api.lo \
+	libclient_biter_la-client_heap.lo \
+	libclient_biter_la-client_wrappers.lo
+am_libclient_biter_la_OBJECTS =  \
+	libclient_biter_la-client_api_biter.lo $(am__objects_1)
+libclient_biter_la_OBJECTS = $(am_libclient_biter_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libclient_pipe_la_LIBADD =
+am__objects_2 = libclient_pipe_la-client_api.lo \
+	libclient_pipe_la-client_heap.lo \
+	libclient_pipe_la-client_wrappers.lo
+am_libclient_pipe_la_OBJECTS = libclient_pipe_la-client_api_pipe.lo \
+	$(am__objects_2)
+libclient_pipe_la_OBJECTS = $(am_libclient_pipe_la_OBJECTS)
 libclient_socket_la_LIBADD =
-am__objects_2 = libclient_socket_la-client_api.lo \
+am__objects_3 = libclient_socket_la-client_api.lo \
 	libclient_socket_la-client_heap.lo \
 	libclient_socket_la-client_wrappers.lo
 am_libclient_socket_la_OBJECTS =  \
-	libclient_socket_la-client_api_socket.lo $(am__objects_2)
+	libclient_socket_la-client_api_socket.lo $(am__objects_3)
 libclient_socket_la_OBJECTS = $(am_libclient_socket_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
@@ -91,9 +98,10 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libclient_pipe_la_SOURCES) $(libclient_socket_la_SOURCES)
-DIST_SOURCES = $(libclient_pipe_la_SOURCES) \
+SOURCES = $(libclient_biter_la_SOURCES) $(libclient_pipe_la_SOURCES) \
 	$(libclient_socket_la_SOURCES)
+DIST_SOURCES = $(libclient_biter_la_SOURCES) \
+	$(libclient_pipe_la_SOURCES) $(libclient_socket_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -212,13 +220,16 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libclient_pipe.la libclient_socket.la
+noinst_LTLIBRARIES = libclient_pipe.la libclient_socket.la \
+	libclient_biter.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
 BASE_SRCS = client_api.c client_heap.c client_wrappers.c
 libclient_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=pipe
 libclient_pipe_la_SOURCES = client_api_pipe.c $(BASE_SRCS)
 libclient_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=socket
 libclient_socket_la_SOURCES = client_api_socket.c $(BASE_SRCS)
+libclient_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=biter -I$(top_srcdir)/../biter
+libclient_biter_la_SOURCES = client_api_biter.c $(BASE_SRCS)
 all: all-am
 
 .SUFFIXES:
@@ -262,6 +273,8 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+libclient_biter.la: $(libclient_biter_la_OBJECTS) $(libclient_biter_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libclient_biter_la_OBJECTS) $(libclient_biter_la_LIBADD) $(LIBS)
 libclient_pipe.la: $(libclient_pipe_la_OBJECTS) $(libclient_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libclient_pipe_la_OBJECTS) $(libclient_pipe_la_LIBADD) $(LIBS)
 libclient_socket.la: $(libclient_socket_la_OBJECTS) $(libclient_socket_la_DEPENDENCIES) 
@@ -273,6 +286,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_biter_la-client_api.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_biter_la-client_api_biter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_biter_la-client_heap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_biter_la-client_wrappers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_pipe_la-client_api.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_pipe_la-client_api_pipe.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclient_pipe_la-client_heap.Plo@am__quote@
@@ -305,6 +322,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libclient_biter_la-client_api_biter.lo: client_api_biter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libclient_biter_la-client_api_biter.lo -MD -MP -MF $(DEPDIR)/libclient_biter_la-client_api_biter.Tpo -c -o libclient_biter_la-client_api_biter.lo `test -f 'client_api_biter.c' || echo '$(srcdir)/'`client_api_biter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libclient_biter_la-client_api_biter.Tpo $(DEPDIR)/libclient_biter_la-client_api_biter.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client_api_biter.c' object='libclient_biter_la-client_api_biter.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libclient_biter_la-client_api_biter.lo `test -f 'client_api_biter.c' || echo '$(srcdir)/'`client_api_biter.c
+
+libclient_biter_la-client_api.lo: client_api.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libclient_biter_la-client_api.lo -MD -MP -MF $(DEPDIR)/libclient_biter_la-client_api.Tpo -c -o libclient_biter_la-client_api.lo `test -f 'client_api.c' || echo '$(srcdir)/'`client_api.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libclient_biter_la-client_api.Tpo $(DEPDIR)/libclient_biter_la-client_api.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client_api.c' object='libclient_biter_la-client_api.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libclient_biter_la-client_api.lo `test -f 'client_api.c' || echo '$(srcdir)/'`client_api.c
+
+libclient_biter_la-client_heap.lo: client_heap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libclient_biter_la-client_heap.lo -MD -MP -MF $(DEPDIR)/libclient_biter_la-client_heap.Tpo -c -o libclient_biter_la-client_heap.lo `test -f 'client_heap.c' || echo '$(srcdir)/'`client_heap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libclient_biter_la-client_heap.Tpo $(DEPDIR)/libclient_biter_la-client_heap.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client_heap.c' object='libclient_biter_la-client_heap.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libclient_biter_la-client_heap.lo `test -f 'client_heap.c' || echo '$(srcdir)/'`client_heap.c
+
+libclient_biter_la-client_wrappers.lo: client_wrappers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libclient_biter_la-client_wrappers.lo -MD -MP -MF $(DEPDIR)/libclient_biter_la-client_wrappers.Tpo -c -o libclient_biter_la-client_wrappers.lo `test -f 'client_wrappers.c' || echo '$(srcdir)/'`client_wrappers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libclient_biter_la-client_wrappers.Tpo $(DEPDIR)/libclient_biter_la-client_wrappers.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client_wrappers.c' object='libclient_biter_la-client_wrappers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_biter_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libclient_biter_la-client_wrappers.lo `test -f 'client_wrappers.c' || echo '$(srcdir)/'`client_wrappers.c
 
 libclient_pipe_la-client_api_pipe.lo: client_api_pipe.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libclient_pipe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libclient_pipe_la-client_api_pipe.lo -MD -MP -MF $(DEPDIR)/libclient_pipe_la-client_api_pipe.Tpo -c -o libclient_pipe_la-client_api_pipe.lo `test -f 'client_api_pipe.c' || echo '$(srcdir)/'`client_api_pipe.c
@@ -573,10 +622,6 @@ uninstall-am:
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am
 
-
-#noinst_LTLIBRARIES += libclient_shmem.la
-#libclient_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=shmem
-#libclient_shmem_la_SOURCES = client_api_shmem.c $(BASE_SRCS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
