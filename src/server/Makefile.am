@@ -1,1 +1,1 @@
-SUBDIRS = logging cache cobo comlib auditserver launchmon
+SUBDIRS = logging biter cache cobo comlib auditserver launchmon 

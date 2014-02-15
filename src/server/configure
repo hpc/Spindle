@@ -4386,7 +4386,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile cache/Makefile auditserver/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile biter/Makefile cache/Makefile auditserver/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -17320,6 +17320,7 @@ do
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "logging/Makefile") CONFIG_FILES="$CONFIG_FILES logging/Makefile" ;;
+    "biter/Makefile") CONFIG_FILES="$CONFIG_FILES biter/Makefile" ;;
     "cache/Makefile") CONFIG_FILES="$CONFIG_FILES cache/Makefile" ;;
     "auditserver/Makefile") CONFIG_FILES="$CONFIG_FILES auditserver/Makefile" ;;
     "cobo/Makefile") CONFIG_FILES="$CONFIG_FILES cobo/Makefile" ;;
