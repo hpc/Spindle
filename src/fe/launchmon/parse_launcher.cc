@@ -24,6 +24,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 
 #include "spindle_launch.h"
+#include "config.h"
 
 #define FL_LAUNCHER       1<<0
 #define FL_GNU_PARAM      1<<2
@@ -39,10 +40,25 @@ typedef struct {
 
 static const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
 
+char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
+char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
+char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
+
+#if defined(COMM_SOCKET)
+static char *default_libstr = libstr_socket;
+#elif defined(COMM_PIPES)
+static char *default_libstr = libstr_pipe;
+#elif defined(COMM_BITER)
+static char *default_libstr = libstr_biter;
+#else
+#error Unknown connection type
+#endif
+
 #define serial_size 1
 static cmdoption_t serial_options[] = {
    { "", NULL, FL_LAUNCHER }
 };
+static const char *serial_bg_env_str = NULL;
 
 #define srun_size (sizeof(srun_options) / sizeof(cmdoption_t))
 static cmdoption_t srun_options[] = {
@@ -133,6 +149,7 @@ static cmdoption_t srun_options[] = {
    { NULL,   "--usage",              0 },
    { "-V",   "--version",            0 },
 };
+static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s";
 
 #define wreckrun_size (sizeof(wreckrun_options) / sizeof(cmdoption_t))
 static cmdoption_t wreckrun_options[] = {
@@ -140,6 +157,7 @@ static cmdoption_t wreckrun_options[] = {
    { "-h",   "--help",               0},
    { "-n",   "--procs-per-node",     FL_GNU_PARAM },
 };
+static const char *wreck_bg_env_str = NULL;
 
 static int isIntegerString(char *s)
 {
@@ -380,6 +398,7 @@ static int parseLaunchCmdLine(int argc, char *argv[],
 static int modifyCmdLineForLauncher(int argc, char *argv[],
                                     int *new_argc, char **new_argv[],
                                     cmdoption_t *options, int options_len,
+                                    const char *bg_env_str,
                                     const char *ldcs_location,
                                     const char *ldcs_number,
                                     unsigned long ldcs_options)
@@ -407,10 +426,21 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
    *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
    for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
       if (i == found_exec_at) {
+#if defined(os_bluegene)
+         /* If this assert hits, you need to update your <launcher>_bg_env_str to tell
+            how to pass the --envs option to runjob.  See srun_bg_env_str as an example. */
+         assert(bg_env_str);
+         int str_len = strlen(bg_env_str) + strlen(ldcs_location) + strlen(ldcs_number) + strlen(ldcs_options_str) +
+            strlen(default_libstr) + 1;
+         char *bg_env = (char *) malloc(str_len);
+         snprintf(bg_env, str_len, bg_env_str, default_libstr, ldcs_location, ldcs_number, ldcs_options_str);
+         (*new_argv)[j++] = bg_env;
+#else
          (*new_argv)[j++] = strdup(spindle_bootstrap);
          (*new_argv)[j++] = strdup(ldcs_location);
          (*new_argv)[j++] = strdup(ldcs_number);
          (*new_argv)[j++] = strdup(ldcs_options_str);
+#endif
       }
       (*new_argv)[j] = argv[i];
    }
@@ -447,7 +477,7 @@ int createNewCmdLine(int argc, char *argv[],
    /* Serial */
    if (test_launchers & TEST_SERIAL) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, serial_options, serial_size,
-                                        params->location, number_s, params->opts);
+                                        serial_bg_env_str, params->location, number_s, params->opts);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)
@@ -457,7 +487,7 @@ int createNewCmdLine(int argc, char *argv[],
    /* Slurm */
    if (test_launchers & TEST_SLURM) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
-                                        params->location, number_s, params->opts);
+                                        srun_bg_env_str, params->location, number_s, params->opts);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)
@@ -467,7 +497,7 @@ int createNewCmdLine(int argc, char *argv[],
    /* FLUX */
    if (test_launchers & TEST_FLUX) {
       result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, wreckrun_options, wreckrun_size,
-                                        params->location, number_s, params->opts);
+                                        wreck_bg_env_str, params->location, number_s, params->opts);
       if (result == 0)
          return 0;
       else if (result == NO_EXEC)
