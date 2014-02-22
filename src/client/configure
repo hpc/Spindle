@@ -934,13 +934,13 @@ with_gnu_ld
 enable_libtool_lock
 with_default_port
 with_localstorage
+enable_bluegene
 enable_pipes
 enable_socket
 enable_shmem
 enable_biter
 enable_msocket
 enable_cobo
-enable_bluegene
 with_python_prefix
 with_usage_logging
 '
@@ -1593,13 +1593,13 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
+  --enable-bluegene       Build Spindle for BlueGene/Q
   --enable-pipes          Use pipes for server/client communication
   --enable-socket         Use sockets for server/client communication
   --enable-shmem          Use shared memory for server/client communication
   --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
-  --enable-bluegene       Build Spindle for BlueGene/Q
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -11244,8 +11244,25 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+#OS Detection
+# Check whether --enable-bluegene was given.
+if test "${enable_bluegene+set}" = set; then
+  enableval=$enable_bluegene; OS_BUILD=bluegene
+fi
+
+if test "x$OS_BUILD" == "x"; then
+  OS_BUILD=linux
+fi
+
+
 #Runmode detection (pipe/socket or cobo/msocket communications)
-CLIENT_SERVER_COM=pipes
+if test "x$OS_BUILD" == "xlinux"; then
+  CLIENT_SERVER_COM=pipes
+fi
+if test "x$OS_BUILD" == "xbluegene"; then
+  CLIENT_SERVER_COM=biter
+fi
+
 SERVER_SERVER_COM=cobo
 # Check whether --enable-pipes was given.
 if test "${enable_pipes+set}" = set; then
@@ -11279,15 +11296,6 @@ if test "${enable_cobo+set}" = set; then
   enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
 fi
 
-
-# Check whether --enable-bluegene was given.
-if test "${enable_bluegene+set}" = set; then
-  enableval=$enable_bluegene; OS_BUILD=bluegene
-fi
-
-if test "x$OS_BUILD" == "x"; then
-  OS_BUILD=linux
-fi
 
  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
   LMON_DYNAMIC_TRUE=
