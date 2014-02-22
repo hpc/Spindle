@@ -155,7 +155,7 @@ int ldcs_open_server_connection_socket(int fd) {
   return(connfd);
 };
 
-int ldcs_open_server_connections_socket(int fd, int *more_avail) {
+int ldcs_open_server_connections_socket(int fd, int nc, int *more_avail) {
   *more_avail=0;
   return(ldcs_open_server_connection_socket(fd));
 };
@@ -336,4 +336,12 @@ int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t 
   return(0);
 }
 
+int ldcs_get_aux_fd_socket()
+{
+   return -1;
+}
 
+int ldcs_socket_id_to_nc_socket(int id, int fd)
+{
+   return id;
+}

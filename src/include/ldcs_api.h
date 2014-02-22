@@ -99,10 +99,12 @@ typedef struct ldcs_message_struct ldcs_message_t;
 int ldcs_send_msg(int connid, ldcs_message_t * msg);
 ldcs_message_t * ldcs_recv_msg(int fd, ldcs_read_block_t block);
 int ldcs_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+int ldcs_socket_id_to_nc(int id, int fd);
+int ldcs_get_aux_fd();
 
 int ldcs_create_server(char* location, int number);
 int ldcs_open_server_connection(int serverid);
-int ldcs_open_server_connections(int fd, int *more_avail);
+int ldcs_open_server_connections(int fd, int nc, int *more_avail);
 int ldcs_close_server_connection(int connid);
 int ldcs_destroy_server(int cid);
 int ldcs_select(int serverid);

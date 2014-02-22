@@ -134,6 +134,7 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secre
 int ldcs_audit_server_process (spindle_args_t *args);
 int ldcs_audit_server_run();
 
+#define CLIENT_CB_AUX_FD INT32_MAX
 int _ldcs_client_CB ( int fd, int nc, void *data );
 int _ldcs_server_CB ( int infd, int serverid, void *data );
 

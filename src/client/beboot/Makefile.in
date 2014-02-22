@@ -36,6 +36,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 pkglibexec_PROGRAMS = spindle_bootstrap$(EXEEXT)
+@PIPES_TRUE@am__append_1 = $(top_builddir)/client_comlib/libclient_pipe.la
+@BITER_TRUE@am__append_2 = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/biter/libbiterc.la
 subdir = beboot
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,8 +58,8 @@ am_spindle_bootstrap_OBJECTS =  \
 	spindle_bootstrap-exec_util.$(OBJEXT)
 spindle_bootstrap_OBJECTS = $(am_spindle_bootstrap_OBJECTS)
 spindle_bootstrap_DEPENDENCIES =  \
-	$(top_builddir)/logging/libspindlelogc.la \
-	$(top_builddir)/client_comlib/libclient_pipe.la
+	$(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
+	$(am__append_2)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -213,7 +215,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 spindle_bootstrap_LDFLAGS = -all-static $(AM_LDFLAGS)
 spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient
-spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la $(top_builddir)/client_comlib/libclient_pipe.la
+spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la \
+	$(am__append_1) $(am__append_2)
 spindle_bootstrap_SOURCES = spindle_bootstrap.c parseloc.c $(top_srcdir)/auditclient/exec_util.c
 all: all-am
 

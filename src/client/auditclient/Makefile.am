@@ -6,6 +6,9 @@ endif
 if PIPES
 pkglibexec_LTLIBRARIES += libspindle_client_pipe.la
 endif
+if BITER
+pkglibexec_LTLIBRARIES += libspindle_client_biter.la
+endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include
 
@@ -24,3 +27,7 @@ libspindle_client_socket_la_LDFLAGS = -shared
 libspindle_client_pipe_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_pipe_la_LIBADD = $(top_builddir)/client_comlib/libclient_pipe.la $(top_builddir)/logging/libspindlelogc.la
 libspindle_client_pipe_la_LDFLAGS = -shared
+
+libspindle_client_biter_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
+libspindle_client_biter_la_LIBADD = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/logging/libspindlelogc.la
+libspindle_client_biter_la_LDFLAGS = -shared

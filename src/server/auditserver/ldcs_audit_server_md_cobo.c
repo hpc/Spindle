@@ -38,6 +38,8 @@ int ldcs_audit_server_md_cobo_send_msg ( int fd, ldcs_message_t *msg );
 
 extern unsigned int shared_secret;
 
+extern int ll_read(int fd, void *buf, size_t count);
+
 int read_msg(int fd, node_peer_t *peer, ldcs_message_t *msg)
 {
    int result;

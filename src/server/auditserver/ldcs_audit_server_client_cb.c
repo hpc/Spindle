@@ -38,12 +38,16 @@ int _ldcs_client_dump_info ( ldcs_process_data_t *ldcs_process_data );
 static  char buffer_in[MAX_PATH_LEN];
 /* static  char buffer_out[MAX_PATH_LEN]; */
 
-int _ldcs_client_CB ( int fd, int nc, void *data ) {
+int _ldcs_client_CB ( int fd, int id, void *data ) {
   int rc=0;
   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data ;
   ldcs_message_t in_msg;
   double cb_starttime = ldcs_get_time();
-  int connid = ldcs_process_data->client_table[nc].connid;
+  int connid;
+  int nc;
+
+  nc = ldcs_socket_id_to_nc(id, fd);
+  connid = ldcs_process_data->client_table[nc].connid;
 
   debug_printf3("Receiving message from client %d on fd %d\n", nc, fd);
   in_msg.header.type=LDCS_MSG_UNKNOWN;

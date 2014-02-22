@@ -142,7 +142,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_audit_server_md_register_fd(&ldcs_process_data);
   
    /* register server listen fd to listener */
-   ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
+   if (fd != -1)
+      ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
   
    debug_printf3("Initializing cache\n");
    ldcs_cache_init();

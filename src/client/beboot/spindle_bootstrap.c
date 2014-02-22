@@ -51,11 +51,14 @@ unsigned long opts;
 
 char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
 char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
+char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
 
 #if defined(COMM_SOCKET)
 static char *default_libstr = libstr_socket;
 #elif defined(COMM_PIPES)
 static char *default_libstr = libstr_pipe;
+#elif defined(COMM_BITER)
+static char *default_libstr = libstr_biter;
 #else
 #error Unknown connection type
 #endif

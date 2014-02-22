@@ -814,6 +814,8 @@ COBO_FALSE
 COBO_TRUE
 MSOCKET_FALSE
 MSOCKET_TRUE
+BITER_FALSE
+BITER_TRUE
 SHMEM_FALSE
 SHMEM_TRUE
 SOCKETS_FALSE
@@ -966,6 +968,7 @@ with_localstorage
 enable_pipes
 enable_socket
 enable_shmem
+enable_biter
 enable_msocket
 enable_cobo
 enable_bluegene
@@ -1638,6 +1641,7 @@ Optional Features:
   --enable-pipes          Use pipes for server/client communication
   --enable-socket         Use sockets for server/client communication
   --enable-shmem          Use shared memory for server/client communication
+  --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-bluegene       Build Spindle for BlueGene/Q
@@ -5111,13 +5115,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5114: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5118: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5117: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5121: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5120: output\"" >&5)
+  (eval echo "\"\$as_me:5124: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6323,7 +6327,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6326 "configure"' > conftest.$ac_ext
+  echo '#line 6330 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8914,11 +8918,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8917: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8921: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8921: \$? = $ac_status" >&5
+   echo "$as_me:8925: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9253,11 +9257,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9256: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9260: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9260: \$? = $ac_status" >&5
+   echo "$as_me:9264: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9358,11 +9362,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9361: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9365: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9365: \$? = $ac_status" >&5
+   echo "$as_me:9369: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9413,11 +9417,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9416: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9420: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9420: \$? = $ac_status" >&5
+   echo "$as_me:9424: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12216,7 +12220,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12219 "configure"
+#line 12223 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12312,7 +12316,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12315 "configure"
+#line 12319 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14332,11 +14336,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14335: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14339: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14339: \$? = $ac_status" >&5
+   echo "$as_me:14343: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14431,11 +14435,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14434: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14438: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14438: \$? = $ac_status" >&5
+   echo "$as_me:14442: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14483,11 +14487,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14486: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14490: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14490: \$? = $ac_status" >&5
+   echo "$as_me:14494: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16023,6 +16027,12 @@ if test "${enable_shmem+set}" = set; then
   enableval=$enable_shmem; CLIENT_SERVER_COM=shmem;
 fi
 
+# Check whether --enable-biter was given.
+if test "${enable_biter+set}" = set; then
+  enableval=$enable_biter; CLIENT_SERVER_COM=biter;
+fi
+
+
 
 # Check whether --enable-msocket was given.
 if test "${enable_msocket+set}" = set; then
@@ -16076,6 +16086,14 @@ else
   SHMEM_FALSE=
 fi
 
+ if test x$CLIENT_SERVER_COM == xbiter; then
+  BITER_TRUE=
+  BITER_FALSE='#'
+else
+  BITER_TRUE='#'
+  BITER_FALSE=
+fi
+
  if test x$SERVER_SERVER_COM == xmsocket; then
   MSOCKET_TRUE=
   MSOCKET_FALSE='#'
@@ -16104,6 +16122,13 @@ if test "x$CLIENT_SERVER_COM" == "xsocket"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define COMM_SOCKET 1
+_ACEOF
+
+fi
+if test "x$CLIENT_SERVER_COM" == "xbiter"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define COMM_BITER 1
 _ACEOF
 
 fi
@@ -16868,6 +16893,13 @@ if test -z "${SHMEM_TRUE}" && test -z "${SHMEM_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"SHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"SHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"BITER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"BITER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

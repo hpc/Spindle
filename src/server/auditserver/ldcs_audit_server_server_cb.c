@@ -50,7 +50,7 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       }
       if(nc==ldcs_process_data->client_table_size) _error("internal error with client table (table full)");
     
-      ldcs_process_data->client_table[nc].connid       = ldcs_open_server_connections(serverid,&more_avail);
+      ldcs_process_data->client_table[nc].connid       = ldcs_open_server_connections(serverid, nc, &more_avail);
       ldcs_process_data->client_table[nc].state        = LDCS_CLIENT_STATUS_ACTIVE;
       ldcs_process_data->client_table[nc].null_msg_cnt = 0;    
       ldcs_process_data->client_table[nc].query_open   = 0;
@@ -64,9 +64,14 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
     
       /* register client fd to listener */
       fd=ldcs_get_fd(ldcs_process_data->client_table[nc].connid);
-      ldcs_listen_register_fd(fd, nc, &_ldcs_client_CB, (void *) ldcs_process_data);
+      if (fd != -1)
+         ldcs_listen_register_fd(fd, nc, &_ldcs_client_CB, (void *) ldcs_process_data);
       ldcs_process_data->server_stat.num_connections++;
    }
+
+   fd = ldcs_get_aux_fd();
+   if (fd != -1)
+      ldcs_listen_register_fd(fd, CLIENT_CB_AUX_FD, &_ldcs_client_CB, (void *) ldcs_process_data);
 
    /* remember timestamp of connect of first client */
    if(ldcs_process_data->server_stat.starttime<0) {

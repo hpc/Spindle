@@ -248,7 +248,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libserver_pipe.la libserver_socket.la \
 	libserver_biter.la $(am__append_1)
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/auditserver
 BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
 libserver_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=pipe
 libserver_pipe_la_SOURCES = ldcs_api_pipe.c ldcs_api_pipe_notify.c $(BASE_SRCS)

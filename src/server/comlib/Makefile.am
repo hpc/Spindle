@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES =
 
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/auditserver
 
 BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
 

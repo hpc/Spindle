@@ -38,6 +38,7 @@ typedef struct biterd_session {
 } biterd_session_t;
 
 static biterd_session_t sessions[BITER_MAX_SESSIONS];
+static int max_session = 0;
 
 extern void init_queue(int num_procs, void *session);
 
@@ -175,6 +176,9 @@ int biterd_newsession(const char *tmpdir, int cn_id)
       biterd_accept(session_id);
    }
    
+   if (session_id > max_session)
+      max_session = session_id;
+
    return session_id;
 
   error:
@@ -353,6 +357,16 @@ int biterd_fill_in_read_set(int session_id, fd_set *readset, int *max_fd)
    return 0;
 }
 
+int biterd_get_fd(int session_id)
+{
+   return sessions[session_id].c2s_fd;
+}
+
+int biterd_get_aux_fd()
+{
+   return get_aux_fd();
+}
+
 int biterd_has_data_avail(int session_id, fd_set *readset)
 {
    biterd_session_t *session = sessions + session_id;
@@ -382,6 +396,39 @@ int biterd_has_data_avail(int session_id, fd_set *readset)
       if (client_id != -1)
          return client_id;
    }
+   
+   return -1;
+}
+
+int biterd_get_session_proc_w_aux_data(int *session_result, int *proc_result)
+{
+   static int last_session = 0;
+   int cur_session, start_session, j;
+   biterd_session_t *session;
+   cur_session = start_session = last_session;
+
+   do {
+      session = sessions+cur_session;
+
+      if (session->local_bytes_cached) {
+         for (j = 0; j < session->num_clients; j++) {
+            if (has_message(j, session)) {
+               *session_result = cur_session;
+               *proc_result = j;
+
+               last_session = cur_session+1;
+               if (last_session == max_session)
+                  last_session = 0;
+
+               return 0;
+            }
+         }
+      }
+
+      cur_session++;
+      if (cur_session == max_session)
+         cur_session = 0;      
+   } while (cur_session != start_session);
    
    return -1;
 }

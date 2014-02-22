@@ -34,6 +34,9 @@ static char *cached_location;
 int client_open_connection_biter(char* location, int number)
 {
    session = biterc_newsession(location, BITERC_SHM_SIZE);
+   if (session == -1) {
+      err_printf("Client failed to create connection: %s\n", biterc_lasterror_str());
+   }
    cached_location = location;
    return session;
 }
@@ -45,6 +48,7 @@ int client_close_connection_biter(int connid)
       return -1;
    }
    session = -1;
+   return 0;
 }
 
 int client_register_connection_biter(char *connection_str)

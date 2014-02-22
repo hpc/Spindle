@@ -149,7 +149,7 @@ int ldcs_open_server_connection_pipe(int fd) {
   return(-1);
 }
 
-int ldcs_open_server_connections_pipe(int fd, int *more_avail) {
+int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
   int  fifoid, inout, connfd;
   char fifo[MAX_PATH_LEN];
   char *fifo_file;
@@ -439,3 +439,12 @@ int _ldcs_write_pipe(int fd, const void *data, int bytes ) {
   return (bsumwrote);
 }
 
+int ldcs_get_aux_fd_pipe()
+{
+   return -1;
+}
+
+int ldcs_socket_id_to_nc_pipe(int id, int fd)
+{
+   return id;
+}

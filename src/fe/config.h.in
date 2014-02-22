@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if were using biter for client/server communication */
+#undef COMM_BITER
+
 /* Define if were using cobo for server/server communication */
 #undef COMM_COBO
 

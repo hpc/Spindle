@@ -746,14 +746,14 @@ static int cobo_open_tree()
 
         /* attempt to bind a socket on this port */
         if (bind(sockfd, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
-            err_printf("Binding parent socket (bind() %m errno=%d) port=%d\n",
+            debug_printf3("Binding parent socket (bind() %m errno=%d) port=%d\n",
                 errno, port);
             continue;
         }
 
         /* set the socket to listen for connections */
         if (listen(sockfd, 1) < 0) {
-            err_printf("Setting parent socket to listen (listen() %m errno=%d) port=%d\n",
+           debug_printf3("Setting parent socket to listen (listen() %m errno=%d) port=%d\n",
                 errno, port);
             continue;
         }

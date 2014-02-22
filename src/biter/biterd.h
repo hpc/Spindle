@@ -12,6 +12,10 @@ extern int biterd_num_clients(int session_id);
 
 extern int biterd_fill_in_read_set(int session_id, fd_set *readset, int *max_fd);
 extern int biterd_has_data_avail(int session_id, fd_set *readset);
+extern int biterd_get_fd(int session_id);
+extern int biterd_get_aux_fd();
+extern int biterd_find_client_w_data(int session_id);
+extern int biterd_get_session_proc_w_aux_data(int *session, int *proc);
 
 extern int biterd_get_rank(int compute_node_id, int client_id);
 

@@ -43,6 +43,7 @@ pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
 @MSOCKET_TRUE@am__append_5 = $(top_builddir)/auditserver/libaudit_server_msocket.la
 @SOCKETS_TRUE@am__append_6 = $(top_builddir)/comlib/libserver_socket.la
 @PIPES_TRUE@am__append_7 = $(top_builddir)/comlib/libserver_pipe.la
+@BITER_TRUE@am__append_8 = $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
 subdir = launchmon
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -67,7 +68,8 @@ am__DEPENDENCIES_1 =
 spindle_be_DEPENDENCIES = $(top_builddir)/cache/libldcs_cache.la \
 	$(top_builddir)/logging/libspindlelogc.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) $(am__append_4) \
-	$(am__append_5) $(am__append_6) $(am__append_7)
+	$(am__append_5) $(am__append_6) $(am__append_7) \
+	$(am__append_8)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -256,7 +258,7 @@ spindle_be_SOURCES = spindle_be_main.cc spindle_be_lmon.cc spindle_be_serial.cc 
 spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la \
 	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
 	$(am__append_3) $(am__append_4) $(am__append_5) \
-	$(am__append_6) $(am__append_7)
+	$(am__append_6) $(am__append_7) $(am__append_8)
 @LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
 @LINK_LIBSTDCXX_STATIC_TRUE@BUILT_SOURCES = ./libstdc++.a
 all: $(BUILT_SOURCES)

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <assert.h>
 #include "daemon_ids.h"
 
@@ -8,6 +9,10 @@ int biterd_num_compute_nodes()
 
 int biterd_ranks_in_cn(int cn_id)
 {
+   char *proc_s = getenv("PROCS");
+   if (proc_s)
+      return atoi(proc_s);
+      
    assert(0);
 }
 
