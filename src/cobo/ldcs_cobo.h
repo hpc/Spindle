@@ -31,6 +31,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef _COBO_H
 #define _COBO_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#include "handshake.h"
+
 #define COBO_SUCCESS (0)
 
 #define COBO_NAMESPACE ldcs
@@ -55,6 +61,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define cobo_get_num_childs COMBINE(COBO_NAMESPACE, cobo_get_num_childs)
 #define cobo_bcast_down COMBINE(COBO_NAMESPACE, cobo_bcast_down)
 #define cobo_get_child_socket COMBINE(COBO_NAMESPACE, cobo_get_child_socket)
+#define cobo_set_handshake COMBINE(COBO_NAMESPACE, cobo_set_handshake)
 #endif
 
 /*
@@ -144,5 +151,16 @@ int cobo_get_num_childs(int* num_childs);
 
 /* Methods to access child fds */
 int cobo_get_child_socket(int num, int *fd);
+
+void cobo_set_handshake(handshake_protocol_t *hs);
+
+void handle_security_error(const char *msg);
+
+void handle_security_error(const char *msg);
+int initialize_handshake_security(handshake_protocol_t *protocol);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _COBO_H */

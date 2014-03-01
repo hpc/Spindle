@@ -30,9 +30,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <assert.h>
 #include "ldcs_cobo.h"
 #include "spindle_debug.h"
 #include "cobo_comm.h"
+#include "config.h"
 
 /* read size bytes into buf from fd, retry if necessary */
 static int ldcs_cobo_read_fd_w_timeout(int fd, void* buf, int size, int usecs)
@@ -209,4 +211,41 @@ int write_msg(int fd, ldcs_message_t *msg)
    }
 
    return 0;
+}
+
+int initialize_handshake_security(handshake_protocol_t *protocol)
+{
+   if (spindle_debug_prints > 2)
+      handshake_enable_debug_prints(spindle_debug_output_f);
+
+   assert(handshake_is_security_type_enabled(protocol->mechanism));
+   cobo_set_handshake(protocol);
+   handshake_enable_read_timeout(10);
+
+   return 0;
+}
+
+extern char *parse_location(char *loc);
+void handle_security_error(const char *msg)
+{
+   char *pathname;
+#if defined(SECURITY_LOG_FILE)
+   pathname = parse_location(SECURITY_LOG_FILE);
+   if (pathname == NULL)
+      pathname = SECURITY_LOG_FILE;
+#else
+   pathname = "./spindle_security_log_file";
+#endif
+   FILE *f = fopen(pathname, "a");
+   if (f) {
+      debug_printf("Appending message '%s' to security log %s\n",
+                   msg, pathname);
+      fprintf(f, "%s", msg);
+      fclose(f);
+   }
+   else {
+      debug_printf("Unable to open %s to append security log message '%s' due to error: %s\n",
+                   pathname, msg, strerror(errno));
+   }
+   abort();
 }

@@ -49,7 +49,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libaudit_server_cobo_la_DEPENDENCIES = $(LDADD) libserverbase.la \
-	$(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
+	$(COD)/libldcs_cobo.la
 am_libaudit_server_cobo_la_OBJECTS = ldcs_audit_server_md_cobo.lo
 libaudit_server_cobo_la_OBJECTS =  \
 	$(am_libaudit_server_cobo_la_OBJECTS)
@@ -123,6 +123,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
+GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -144,6 +146,8 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -157,6 +161,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -235,7 +240,7 @@ libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/cobo/
 #libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
-libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
+libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la
 all: all-am
 
 .SUFFIXES:

@@ -4,8 +4,8 @@ AM_LDFLAGS = $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM)
 AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/../logging
 
 spindle_be_LDFLAGS = $(AM_LDFLAGS) -static
-spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_lmon.cc spindle_be_serial.cc spindle_be.cc $(top_srcdir)/../client/beboot/parseloc.c
+spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_lmon.cc spindle_be_serial.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c
 spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la $(top_builddir)/logging/libspindlelogc.la
 
 if LINK_LIBSTDCXX_STATIC
@@ -16,12 +16,13 @@ CLEANFILES = ./libstdc++.a
 BUILT_SOURCES=./libstdc++.a
 endif
 
+spindle_be_LDADD += $(MUNGE_LIBS) $(GCRYPT_LIBS)
+
 if LMON_DYNAMIC
 spindle_be_LDADD += -lmonbeapi -lgcrypt
 else
 spindle_be_LDADD += $(LAUNCHMON_STATIC_LIBS)
 endif
-
 if COBO
 spindle_be_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la
 endif

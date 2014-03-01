@@ -440,6 +440,7 @@ static int modifyCmdLineForLauncher(int argc, char *argv[],
          (*new_argv)[j++] = strdup(ldcs_location);
          (*new_argv)[j++] = strdup(ldcs_number);
          (*new_argv)[j++] = strdup(ldcs_options_str);
+         (void) default_libstr;
 #endif
       }
       (*new_argv)[j] = argv[i];

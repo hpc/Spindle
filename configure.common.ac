@@ -129,3 +129,127 @@ if test "x$USAGE_LOGS" != "x"; then
   AC_DEFINE_UNQUOTED([USAGE_LOGGING_FILE],"[$USAGE_LOGS]",[The file for storing usage logs])
 fi
 
+#Security options
+AC_DEFINE([KEY_SIZE_BYTES], [32], [Number of bytes in keys for gcrypt])
+
+AC_ARG_ENABLE(sec-munge,
+              [AS_HELP_STRING([--enable-sec-munge],[Enable munge for connection authentication])],
+              [WANT_MUNGE="true"; EXPLICIT_SEC="true"],)
+AC_ARG_ENABLE(sec-keyfile,
+              [AS_HELP_STRING([--enable-sec-keyfile=keydir],[Enable filesystem directory 'keydir' to propagate authentication key for connections])],
+              [WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"],)
+AC_ARG_ENABLE(sec-launchmon,
+              [AS_HELP_STRING([--enable-sec-launchmon],[Enable LaunchmMON to propagate authentication key for connections])],
+              [WANT_SECLMON="true";EXPLICIT_SEC="true"],)
+AC_ARG_ENABLE(sec-none,
+              [AS_HELP_STRING([--enable-sec-none],[Disable security authentication of connections])],
+              [WANT_NOSEC="true";EXPLICIT_SEC="true"],)
+
+AC_ARG_WITH(gcrypt-dir,
+            [AS_HELP_STRING([--with-gcrypt-dir=DIR],[Look in DIR for gcrypt installation])],
+            [GCRYPT_CFLAGS="-I${withval}/include";GCRYPT_LIBS="-L${withval}/lib"],)
+
+m4_define_default([PKG_CHECK_MODULES],[AC_MSG_CHECKING([$1]); AC_MSG_RESULT([no]); $4])
+AC_DEFUN([CHOOSE_SEC],[
+        AC_LANG_PUSH(C)
+        CFLAGS_HOLD=$CFLAGS
+        LIBS_HOLD=$LIBS
+
+        #Check for munge availability
+        PKG_CHECK_MODULES(MUNGE, munge, , [AC_MSG_NOTICE([pkg-config couldn't find munge])])
+        if test "x$MUNGE_LIBS" == "x"; then
+           MUNGE_LIBS=-lmunge
+        fi
+        CFLAGS="$CFLAGS $MUNGE_CFLAGS"
+        LIBS="$LIBS $MUNGE_LIBS"
+        HAVE_MUNGE="true"
+        AC_CHECK_HEADER([munge.h], , [HAVE_MUNGE="false"])
+        AC_CHECK_LIB(munge, munge_encode, , [HAVE_MUNGE="false"])
+        CFLAGS=$CFLAGS_HOLD
+        LIBS=$LIBS_HOLD
+
+        #Check for libgcrypt availability
+        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt"
+        CFLAGS="$CFLAGS $GCRYPT_CFLAGS"
+        LIBS="$LIBS $GCRYPT_LIBS"
+        HAVE_GCRYPT="true"
+        AC_CHECK_HEADER([gcrypt.h], , [HAVE_GCRYPT="false"])
+        AC_CHECK_LIB(gcrypt, gcry_md_open, , [HAVE_GCRYPT="false"])
+        CFLAGS=$CFLAGS_HOLD
+        LIBS=$LIBS_HOLD
+        
+        #If the user didn't specify security options, then make some choices based on what we have
+        if test "x$EXPLICIT_SEC" != "xtrue"; then
+           if test "x$HAVE_MUNGE" == "xtrue"; then
+             MUNGE="true"
+           fi
+           if test "x$HAVE_GCRYPT" == "xtrue"; then
+             GCRYPT="true"
+             SECLMON="true"
+           fi
+        fi
+
+        if test "x$WANT_MUNGE" == "xtrue"; then
+           if test "x$HAVE_MUNGE" == "xtrue"; then
+              MUNGE="true"
+           else
+              AC_MSG_ERROR([Could not find munge])
+           fi
+        fi
+
+        if test "x$WANT_KEYFILE" == "xtrue"; then
+           if test "x$HAVE_GCRYPT" == "xtrue"; then
+             KEYFILE="true"
+             GCRYPT="true"
+           else
+             AC_MSG_ERROR([Could not find gcrypt for keyfile authentication])
+           fi
+        fi
+
+        if test "x$WANT_SECLMON" == "xtrue"; then
+           if test "x$HAVE_GCRYPT" == "xtrue"; then
+             SECLMON="true"
+             GCRYPT="true"
+           else
+             AC_MSG_ERROR([Could not find gcrypt for lmon authentication])
+           fi
+        fi
+
+        if test "x$WANT_NOSEC" == "xtrue"; then
+           ENABLE_NULL_ENCRYPTION="true"
+        fi
+
+        if test "x$MUNGE" != "xtrue"; then
+           MUNGE_CFLAGS=""
+           MUNGE_LIBS=""
+        fi
+        if test "x$KEYFILE x$SECLMON" == "x x"; then
+           GCRYPT_CFLAGS=""
+           GCRYPT_LIBS=""
+        fi
+
+        AC_LANG_POP
+        AC_DEFINE_UNQUOTED([SEC_KEYDIR], "[$SEC_KEYDIR]",[Directory to store key files in])
+        AC_SUBST(GCRYPT_CFLAGS)
+        AC_SUBST(GCRYPT_LIBS)
+        AC_SUBST(MUNGE_CFLAGS)
+        AC_SUBST(MUNGE_LIBS)
+        if test "x$MUNGE" == "xtrue"; then
+           AC_MSG_NOTICE([Enabling munge for security authentication])        
+           AC_DEFINE([MUNGE], [1], [Use munge for authentication])
+        fi
+        if test "x$GCRYPT" == "xtrue"; then
+           AC_DEFINE([GCRYPT], [1], [Enable gcrypt for authentication])
+        fi
+        if test "x$KEYFILE" == "xtrue"; then
+           AC_MSG_NOTICE([Enabling keyfile for security authentication])
+           AC_DEFINE([KEYFILE], [1], [Use keyfile for authentication])
+        fi
+        if test "x$SECLMON" == "xtrue"; then
+           AC_MSG_NOTICE([Enabling LaunchMON key for security authentication])
+           AC_DEFINE([SECLMON], [1], [Use LaunchMON for authentication"]) 
+        fi
+        if test "x$ENABLE_NULL_ENCRYPTION" == "xtrue"; then
+           AC_MSG_NOTICE([Enabling NULL encryption]);
+           AC_DEFINE([ENABLE_NULL_ENCRYPTION], [1], [Allow NULL encryption])
+        fi])

@@ -217,7 +217,7 @@ spindle_bootstrap_LDFLAGS = -all-static $(AM_LDFLAGS)
 spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient
 spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la \
 	$(am__append_1) $(am__append_2)
-spindle_bootstrap_SOURCES = spindle_bootstrap.c parseloc.c $(top_srcdir)/auditclient/exec_util.c
+spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/auditclient/exec_util.c
 all: all-am
 
 .SUFFIXES:
@@ -349,21 +349,21 @@ spindle_bootstrap-spindle_bootstrap.obj: spindle_bootstrap.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-spindle_bootstrap.obj `if test -f 'spindle_bootstrap.c'; then $(CYGPATH_W) 'spindle_bootstrap.c'; else $(CYGPATH_W) '$(srcdir)/spindle_bootstrap.c'; fi`
 
-spindle_bootstrap-parseloc.o: parseloc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-parseloc.o -MD -MP -MF $(DEPDIR)/spindle_bootstrap-parseloc.Tpo -c -o spindle_bootstrap-parseloc.o `test -f 'parseloc.c' || echo '$(srcdir)/'`parseloc.c
+spindle_bootstrap-parseloc.o: $(top_srcdir)/../utils/parseloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-parseloc.o -MD -MP -MF $(DEPDIR)/spindle_bootstrap-parseloc.Tpo -c -o spindle_bootstrap-parseloc.o `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-parseloc.Tpo $(DEPDIR)/spindle_bootstrap-parseloc.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parseloc.c' object='spindle_bootstrap-parseloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/parseloc.c' object='spindle_bootstrap-parseloc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-parseloc.o `test -f 'parseloc.c' || echo '$(srcdir)/'`parseloc.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-parseloc.o `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
 
-spindle_bootstrap-parseloc.obj: parseloc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-parseloc.obj -MD -MP -MF $(DEPDIR)/spindle_bootstrap-parseloc.Tpo -c -o spindle_bootstrap-parseloc.obj `if test -f 'parseloc.c'; then $(CYGPATH_W) 'parseloc.c'; else $(CYGPATH_W) '$(srcdir)/parseloc.c'; fi`
+spindle_bootstrap-parseloc.obj: $(top_srcdir)/../utils/parseloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-parseloc.obj -MD -MP -MF $(DEPDIR)/spindle_bootstrap-parseloc.Tpo -c -o spindle_bootstrap-parseloc.obj `if test -f '$(top_srcdir)/../utils/parseloc.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/parseloc.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/parseloc.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_bootstrap-parseloc.Tpo $(DEPDIR)/spindle_bootstrap-parseloc.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parseloc.c' object='spindle_bootstrap-parseloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/parseloc.c' object='spindle_bootstrap-parseloc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-parseloc.obj `if test -f 'parseloc.c'; then $(CYGPATH_W) 'parseloc.c'; else $(CYGPATH_W) '$(srcdir)/parseloc.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_bootstrap-parseloc.obj `if test -f '$(top_srcdir)/../utils/parseloc.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/parseloc.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/parseloc.c'; fi`
 
 spindle_bootstrap-exec_util.o: $(top_srcdir)/auditclient/exec_util.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_bootstrap-exec_util.o -MD -MP -MF $(DEPDIR)/spindle_bootstrap-exec_util.Tpo -c -o spindle_bootstrap-exec_util.o `test -f '$(top_srcdir)/auditclient/exec_util.c' || echo '$(srcdir)/'`$(top_srcdir)/auditclient/exec_util.c

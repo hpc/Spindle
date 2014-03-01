@@ -29,6 +29,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_debug.h"
 #include "parseargs.h"
 #include "spindle_launch.h"
+#include "keyfile.h"
+#include "ldcs_cobo.h"
+#include "ldcs_api.h"
 
 using namespace std;
 
@@ -38,6 +41,7 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
 static void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 static void logUser();
 static unsigned int get_shared_secret();
+static void setupSecurity(spindle_args_t *params);
 
 #if defined(USAGE_LOGGING_FILE)
 static const char *logging_file = USAGE_LOGGING_FILE;
@@ -55,6 +59,7 @@ extern int startSerialFE(int app_argc, char *app_argv[],
 int main(int argc, char *argv[])
 {
    int result;
+
    setupLogging(argc, argv);
 
    spindle_args_t params;
@@ -72,6 +77,8 @@ int main(int argc, char *argv[])
    }
    bare_printf2("\n");
 
+   setupSecurity(&params);
+
    int daemon_argc;
    char **daemon_argv;
    getDaemonCommandLine(&daemon_argc, &daemon_argv, &params);
@@ -85,6 +92,10 @@ int main(int argc, char *argv[])
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
    else
       result = startLaunchmonFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
+
+   if (OPT_GET_SEC(params.opts) == OPT_SEC_KEYFILE) {
+      clean_keyfile(params.number);
+   }
 
    LOGGING_FINI;
    return result;
@@ -175,8 +186,12 @@ char spindle_serial_arg[] = "--spindle_serial";
 char spindle_lmon_arg[] = "--spindle_lmon";
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args)
 {
-   char **daemon_opts = (char **) malloc(6 * sizeof(char *));
+   char **daemon_opts = (char **) malloc(8 * sizeof(char *));
+   char number_s[32];
    int i = 0;
+
+   snprintf(number_s, 32, "%d", args->number);
+
    //daemon_opts[i++] = "/usr/local/bin/valgrind";
    //daemon_opts[i++] = "--tool=memcheck";
    //daemon_opts[i++] = "--leak-check=full";
@@ -185,6 +200,18 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
       daemon_opts[i++] = spindle_serial_arg;
    else
       daemon_opts[i++] = spindle_lmon_arg;
+
+#define STR2(X) #X
+#define STR(X) STR2(X)
+#define STR_CASE(X) case X: daemon_opts[i++] = const_cast<char *>(STR(X)); break
+   switch (OPT_GET_SEC(args->opts)) {
+      STR_CASE(OPT_SEC_MUNGE);
+      STR_CASE(OPT_SEC_KEYLMON);
+      STR_CASE(OPT_SEC_KEYFILE);
+      STR_CASE(OPT_SEC_NULL);
+   }
+   daemon_opts[i++] = strdup(number_s);
+
    daemon_opts[i++] = NULL;
 
    *daemon_argc = i;
@@ -240,4 +267,45 @@ static void logUser()
    }
    fprintf(f, "%s\n", log_message.c_str());
    fclose(f);
+}
+
+static void setupSecurity(spindle_args_t *params)
+{
+   handshake_protocol_t handshake;
+   int result;
+   /* Setup security */
+   switch (OPT_GET_SEC(params->opts)) {
+      case OPT_SEC_MUNGE:
+         debug_printf("Initializing FE with munge-based security\n");
+         handshake.mechanism = hs_munge;
+         break;
+      case OPT_SEC_KEYFILE: {
+         char *path;
+         int len;
+         debug_printf("Initializing FE with keyfile-based security\n");
+         create_keyfile(params->number);
+         len = MAX_PATH_LEN+1;
+         path = (char *) malloc(len);
+         get_keyfile_path(path, len, params->number);
+         handshake.mechanism = hs_key_in_file;
+         handshake.data.key_in_file.key_filepath = path;
+         handshake.data.key_in_file.key_length_bytes = KEY_SIZE_BYTES;
+         break;
+      }
+      case OPT_SEC_KEYLMON:
+         debug_printf("Initializing BE with launchmon-based security\n");
+         handshake.mechanism = hs_explicit_key;
+         fprintf(stderr, "Error, launchmon based keys not yet implemented\n");
+         exit(-1);
+         break;
+      case OPT_SEC_NULL:
+         debug_printf("Initializing BE with NULL security\n");
+         handshake.mechanism = hs_none;
+         break;
+   }
+   result = initialize_handshake_security(&handshake);
+   if (result == -1) {
+      err_printf("Could not initialize security\n");
+      exit(-1);
+   }
 }

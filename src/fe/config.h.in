@@ -15,11 +15,23 @@
 /* Define if were using sockets for client/server communication */
 #undef COMM_SOCKET
 
+/* Allow NULL encryption */
+#undef ENABLE_NULL_ENCRYPTION
+
+/* Enable gcrypt for authentication */
+#undef GCRYPT
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
+#undef HAVE_LIBGCRYPT
+
+/* Define to 1 if you have the `munge' library (-lmunge). */
+#undef HAVE_LIBMUNGE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -45,12 +57,21 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Use keyfile for authentication */
+#undef KEYFILE
+
+/* Number of bytes in keys for gcrypt */
+#undef KEY_SIZE_BYTES
+
 /* The bin directory for launchmon */
 #undef LAUNCHMON_BIN_DIR
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
+
+/* Use munge for authentication */
+#undef MUNGE
 
 /* Number of ports for COBO to search for an open port */
 #undef NUM_COBO_PORTS
@@ -75,6 +96,12 @@
 
 /* Python installation prefixes */
 #undef PYTHON_INST_PREFIX
+
+/* Use LaunchMON for authentication" */
+#undef SECLMON
+
+/* Directory to store key files in */
+#undef SEC_KEYDIR
 
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC

@@ -16,5 +16,7 @@ m4_include([../../configure.common.ac])
 #Include LaunchMON
 m4_include([../../m4/lmon.m4])
 
+CHOOSE_SEC
+
 AC_OUTPUT
 

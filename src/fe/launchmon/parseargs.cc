@@ -50,11 +50,28 @@ using namespace std;
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
 #define DISABLE_LOGGING 'z'
+#define SECMUNGE (256+OPT_SEC_MUNGE)
+#define SECKEYLMON (256+OPT_SEC_KEYLMON)
+#define SECKEYFILE (256+OPT_SEC_KEYFILE)
+#define SECNULL (256+OPT_SEC_NULL)
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
 #define GROUP_NETWORK 3
-#define GROUP_MISC 4
+#define GROUP_SEC 4
+#define GROUP_MISC 5
+
+#if defined(MUNGE)
+#define DEFAULT_SEC OPT_SEC_MUNGE
+#elif defined(SECLMON)
+#define DEFAULT_SEC OPT_SEC_KEYFILE
+#elif defined(KEYFILE)
+#define DEFAULT_SEC OPT_SEC_KEYFILE
+#elif defined(ENABLE_NULL_ENCRYPTION)
+#define DEFAULT_SEC OPT_SEC_NULL
+#else
+#error No security model available
+#endif
 
 static const char *YESNO = "yes|no";
 
@@ -69,6 +86,7 @@ static const unsigned long default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OP
 static const unsigned long default_network_opts = OPT_COBO;
 static const unsigned long default_pushpull_opts = OPT_PUSH;
 static const unsigned long default_misc_opts = OPT_STRIP;
+static const unsigned long default_sec = DEFAULT_SEC;
 
 static unsigned long enabled_opts = 0;
 static unsigned long disabled_opts = 0;
@@ -79,6 +97,7 @@ static int mpi_argc;
 static bool done = false;
 static bool use_mpi = true;
 static bool hide_fd = true;
+static int sec_model = -1;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -119,6 +138,22 @@ struct argp_option options[] = {
      "TCP Port for Spindle servers.  Default: " STR(SPINDLE_PORT), GROUP_NETWORK },
    { "location", LOCATION, "directory", 0,
      "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_NETWORK },
+#if defined(MUNGE)
+   { "security-munge", SECMUNGE, NULL, 0,
+     "Use munge for security authentication", GROUP_SEC },
+#endif
+#if defined(SECLMON)
+   { "security-lmon", SECKEYLMON, NULL, 0,
+     "Use LaunchMON to exchange keys for security authentication", GROUP_SEC },
+#endif
+#if defined(KEYFILE)
+   { "security-keyfile", SECKEYFILE, NULL, 0,
+     "Use a keyfile stored in a global file system for security authentication", GROUP_SEC },
+#endif
+#if defined(ENABLE_NULL_ENCRYPTION)
+   { "security-none", SECNULL, NULL, 0,
+     "Do not do any security authentication", GROUP_SEC },
+#endif
    { "python-prefix", PYTHONPREFIX, "=path", 0,
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
@@ -224,6 +259,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= OPT_NOHIDE;
       return 0;
    }
+   else if (entry->group == GROUP_SEC) {
+      sec_model = key - 256;
+      return 0;
+   }
    else if (key == ARGP_KEY_ARG) {
       if (state->argc == 0) {
          return 0;
@@ -261,6 +300,11 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 
       /* Set any reloc options */
       opts |= all_reloc_opts & ~disabled_opts & (enabled_opts | default_reloc_opts);
+
+      /* Set security options */
+      if (sec_model == -1)
+         sec_model = default_sec;
+      OPT_SET_SEC(opts, sec_model);
 
       /* Set any misc options */
       opts |= all_misc_opts & ~disabled_opts & (enabled_opts | default_misc_opts);

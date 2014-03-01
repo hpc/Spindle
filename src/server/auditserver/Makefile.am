@@ -13,4 +13,4 @@ libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/cobo/
 #libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
-libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la $(COD)/libcobocomm.la
+libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la

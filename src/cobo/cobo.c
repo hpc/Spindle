@@ -110,6 +110,8 @@ static int  cobo_num_child_incl = 0; /* total number of children this node is re
 
 static int cobo_root_fd = -1;
 
+static handshake_protocol_t cobo_handshake;
+
 double __cobo_ts = 0.0f;
 
 /* startup time, time between starting cobo_open and finishing cobo_close */
@@ -483,6 +485,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
     int connected = 0;
     int connect_timeout = cobo_connect_timeout;
     int reply_timeout = cobo_connect_timeout * 10;
+    int result;
     while (!connected && secs < cobo_connect_timelimit) {
         /* iterate over our ports trying to find a connection */
         int i;
@@ -499,6 +502,25 @@ static int cobo_connect_hostname(char* hostname, int rank)
                 debug_printf3("Connected to rank %d port %d on %s\n", rank, port, hostname);
                 int test_failed = 0;
 
+                result = handshake_client(s, &cobo_handshake, cobo_sessionid);
+                switch (result) {
+                   case HSHAKE_SUCCESS:
+                      break;
+                   case HSHAKE_INTERNAL_ERROR:
+                      err_printf("Internal error doing handshake: %s", handshake_last_error_str());
+                      exit(-1);
+                      break;
+                   case HSHAKE_DROP_CONNECTION:
+                      debug_printf3("Handshake said to drop connection\n");
+                      close(s);
+                      continue;
+                   case HSHAKE_ABORT:
+                      handle_security_error(handshake_last_error_str());
+                      abort();
+                   default:
+                      assert(0 && "Unknown return value from handshake_server\n");
+                }
+                
                 /* write cobo service id */
                 if (!test_failed && cobo_write_fd_w_suppress(s, &cobo_serviceid, sizeof(cobo_serviceid), 1) < 0) {
                     debug_printf3("Writing service id to %s on port %d\n",
@@ -794,9 +816,27 @@ static int cobo_open_tree()
         socklen_t parent_len = sizeof(parent_addr);
         cobo_parent_fd = accept(sockfd, (struct sockaddr *) &parent_addr, &parent_len);
 
-	_cobo_opt_socket(sockfd);
+        _cobo_opt_socket(sockfd);
 
-        /* TODO: need to handshake/authenticate our connection to make sure it one of our processes */
+        /* handshake/authenticate our connection to make sure it one of our processes */
+        int result = handshake_server(cobo_parent_fd, &cobo_handshake, cobo_sessionid);
+        switch (result) {
+           case HSHAKE_SUCCESS:
+              break;
+           case HSHAKE_INTERNAL_ERROR:
+              err_printf("Internal error doing handshake: %s", handshake_last_error_str());
+              exit(-1);
+              break;
+           case HSHAKE_DROP_CONNECTION:
+              debug_printf3("Handshake said to drop connection\n");
+              close(cobo_parent_fd);
+              continue;
+           case HSHAKE_ABORT:
+              handle_security_error(handshake_last_error_str());
+              abort();
+           default:
+              assert(0 && "Unknown return value from handshake_server\n");
+        }
 
         /* read the service id */
         unsigned int received_serviceid = 0;
@@ -1560,3 +1600,7 @@ int cobo_server_close()
     return COBO_SUCCESS;
 }
 
+void cobo_set_handshake(handshake_protocol_t *hs)
+{
+   cobo_handshake = *hs;
+}

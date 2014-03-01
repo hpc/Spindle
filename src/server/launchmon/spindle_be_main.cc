@@ -17,9 +17,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <stdlib.h>
 #include "spindle_debug.h"
+#include "spindle_launch.h"
+#include "keyfile.h"
+#include "handshake.h"
+#include "ldcs_api.h"
+#include "ldcs_cobo.h"
+#include "config.h"
 
 static void setupLogging();
-static void parseCommandLine(int argc, char *argv[]);
+static int parseCommandLine(int argc, char *argv[]);
+static void initSecurity();
+
 extern int startLaunchmonBE(int argc, char *argv[]);
 extern int startSerialBE(int argc, char *argv[]);
 enum startup_type_t {
@@ -27,6 +35,8 @@ enum startup_type_t {
    serial
 };
 startup_type_t startup_type;
+static int security_type;
+static int number;
 
 int main(int argc, char *argv[])
 {
@@ -39,8 +49,15 @@ int main(int argc, char *argv[])
    }
    bare_printf("\n");
 
-   parseCommandLine(argc, argv);
-   
+   result = parseCommandLine(argc, argv);
+   if (result == -1) {
+      err_printf("Could not parse command line\n");
+      fprintf(stderr, "Error, spindle_be must be launched via spindle\n");
+      exit(-1);
+   }
+
+   initSecurity();
+
    switch (startup_type) {
       case lmon:
          result = startLaunchmonBE(argc, argv);
@@ -74,21 +91,68 @@ static void setupLogging()
    dup2(fd, 2);
 }
 
-static void parseCommandLine(int argc, char *argv[])
+static int parseCommandLine(int argc, char *argv[])
 {
    int i;
    for (i = 0; i < argc; i++) {
       if (strcmp(argv[i], "--spindle_lmon") == 0) {
          startup_type = lmon;
-         return;
+         break;
       }
       else if (strcmp(argv[i], "--spindle_serial") == 0) {
          startup_type = serial;
-         return;
+         break;
       }
    }
-   
-   err_printf("Could not parse command line\n");
-   fprintf(stderr, "Error, spindle_be must be launched via spindle\n");
-   exit(-1);      
+
+   i++;
+   if (i >= argc) return -1;   
+   security_type = atoi(argv[i]);
+
+   i++;
+   if (i >= argc) return -1;   
+   number = atoi(argv[i]);
+
+   return 0;
+}
+
+static void initSecurity()
+{
+   int result;
+   handshake_protocol_t handshake;
+   switch (security_type) {
+      case OPT_SEC_MUNGE:
+         debug_printf("Initializing BE with munge-based security\n");
+         handshake.mechanism = hs_munge;
+         break;
+      case OPT_SEC_KEYFILE: {
+         char *path;
+         int len;
+         debug_printf("Initializing BE with keyfile-based security\n");
+         len = MAX_PATH_LEN+1;
+         path = (char *) malloc(len);
+         get_keyfile_path(path, len, number);
+         handshake.mechanism = hs_key_in_file;
+         handshake.data.key_in_file.key_filepath = path;
+         handshake.data.key_in_file.key_length_bytes = KEY_SIZE_BYTES;
+         break;
+      }
+      case OPT_SEC_KEYLMON: {
+         debug_printf("Initializing BE with launchmon-based security\n");
+         handshake.mechanism = hs_explicit_key;
+         err_printf("Error, launchmon based keys not yet implemented\n");
+         exit(-1);
+         break;
+      }
+      case OPT_SEC_NULL:
+         handshake.mechanism = hs_none;
+         debug_printf("Initializing BE with NULL security\n");
+         break;
+   }
+
+   result = initialize_handshake_security(&handshake);
+   if (result == -1) {
+      err_printf("Could not initialize security\n");
+      exit(-1);
+   }
 }
