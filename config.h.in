@@ -82,6 +82,9 @@
 /* Python installation prefixes */
 #undef PYTHON_INST_PREFIX
 
+/* File for appending security logs */
+#undef SECURITY_LOG_FILE
+
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
 

@@ -960,10 +960,11 @@ enable_cobo
 with_python_prefix
 with_usage_logging
 enable_sec_munge
-enable_sec_keyfile
+enable_sec_keydir
 enable_sec_launchmon
 enable_sec_none
 with_gcrypt_dir
+enable_sec_logs
 with_launchmon
 with_launchmon_incdir
 with_launchmon_libdir
@@ -1639,6 +1640,7 @@ Optional Features:
   --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
                           for connections
   --enable-sec-none       Disable security authentication of connections
+  --enable-sec-logs=file  Enable writing of security log messages to 'file'
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5031,13 +5033,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5034: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5036: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5037: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5039: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5040: output\"" >&5)
+  (eval echo "\"\$as_me:5042: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6243,7 +6245,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6246 "configure"' > conftest.$ac_ext
+  echo '#line 6248 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8834,11 +8836,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8837: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8839: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8841: \$? = $ac_status" >&5
+   echo "$as_me:8843: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9173,11 +9175,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9176: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9178: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9180: \$? = $ac_status" >&5
+   echo "$as_me:9182: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9278,11 +9280,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9281: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9283: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9285: \$? = $ac_status" >&5
+   echo "$as_me:9287: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9333,11 +9335,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9336: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9338: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9340: \$? = $ac_status" >&5
+   echo "$as_me:9342: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12136,7 +12138,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12139 "configure"
+#line 12141 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12232,7 +12234,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12235 "configure"
+#line 12237 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14252,11 +14254,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14255: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14257: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14259: \$? = $ac_status" >&5
+   echo "$as_me:14261: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14351,11 +14353,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14354: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14356: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14358: \$? = $ac_status" >&5
+   echo "$as_me:14360: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14403,11 +14405,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14406: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14408: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14410: \$? = $ac_status" >&5
+   echo "$as_me:14412: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15754,9 +15756,9 @@ if test "${enable_sec_munge+set}" = set; then
   enableval=$enable_sec_munge; WANT_MUNGE="true"; EXPLICIT_SEC="true"
 fi
 
-# Check whether --enable-sec-keyfile was given.
-if test "${enable_sec_keyfile+set}" = set; then
-  enableval=$enable_sec_keyfile; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
+# Check whether --enable-sec-keydir was given.
+if test "${enable_sec_keydir+set}" = set; then
+  enableval=$enable_sec_keydir; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
 fi
 
 # Check whether --enable-sec-launchmon was given.
@@ -15776,6 +15778,19 @@ if test "${with_gcrypt_dir+set}" = set; then
   withval=$with_gcrypt_dir; GCRYPT_CFLAGS="-I${withval}/include";GCRYPT_LIBS="-L${withval}/lib"
 fi
 
+
+# Check whether --enable-sec-logs was given.
+if test "${enable_sec_logs+set}" = set; then
+  enableval=$enable_sec_logs; SEC_LOG_FILE=${enableval}
+fi
+
+if test "x$SEC_LOG_FILE" != "x"; then
+
+cat >>confdefs.h <<_ACEOF
+#define SECURITY_LOG_FILE "$SEC_LOG_FILE"
+_ACEOF
+
+fi
 
 
 
