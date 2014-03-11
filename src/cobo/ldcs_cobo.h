@@ -155,8 +155,6 @@ int cobo_get_child_socket(int num, int *fd);
 void cobo_set_handshake(handshake_protocol_t *hs);
 
 void handle_security_error(const char *msg);
-
-void handle_security_error(const char *msg);
 int initialize_handshake_security(handshake_protocol_t *protocol);
 
 #if defined(__cplusplus)

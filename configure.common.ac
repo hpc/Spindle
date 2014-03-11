@@ -136,7 +136,7 @@ AC_ARG_ENABLE(sec-munge,
               [AS_HELP_STRING([--enable-sec-munge],[Enable munge for connection authentication])],
               [WANT_MUNGE="true"; EXPLICIT_SEC="true"],)
 AC_ARG_ENABLE(sec-keydir,
-              [AS_HELP_STRING([--enable-sec-keyfile=keydir],[Enable filesystem directory 'keydir' to propagate authentication key for connections])],
+              [AS_HELP_STRING([--enable-sec-keydir=keydir],[Enable filesystem directory 'keydir' to propagate authentication key for connections])],
               [WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"],)
 AC_ARG_ENABLE(sec-launchmon,
               [AS_HELP_STRING([--enable-sec-launchmon],[Enable LaunchmMON to propagate authentication key for connections])],
@@ -148,13 +148,6 @@ AC_ARG_ENABLE(sec-none,
 AC_ARG_WITH(gcrypt-dir,
             [AS_HELP_STRING([--with-gcrypt-dir=DIR],[Look in DIR for gcrypt installation])],
             [GCRYPT_CFLAGS="-I${withval}/include";GCRYPT_LIBS="-L${withval}/lib"],)
-
-AC_ARG_ENABLE(sec-logs,
-              [AS_HELP_STRING([--enable-sec-logs=file],[Enable writing of security log messages to 'file'])],
-              [SEC_LOG_FILE=${enableval}],)
-if test "x$SEC_LOG_FILE" != "x"; then
-  AC_DEFINE_UNQUOTED([SECURITY_LOG_FILE],"[$SEC_LOG_FILE]",[File for appending security logs])
-fi
 
 m4_define_default([PKG_CHECK_MODULES],[AC_MSG_CHECKING([$1]); AC_MSG_RESULT([no]); $4])
 AC_DEFUN([CHOOSE_SEC],[

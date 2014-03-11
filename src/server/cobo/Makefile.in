@@ -49,7 +49,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libldcs_cobo_la_LIBADD =
-am_libldcs_cobo_la_OBJECTS = cobo.lo handshake.lo cobo_comm.lo
+am_libldcs_cobo_la_OBJECTS = cobo.lo handshake.lo cobo_comm.lo \
+	cobo_handshake.lo
 libldcs_cobo_la_OBJECTS = $(am_libldcs_cobo_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -218,7 +219,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libldcs_cobo.la
-libldcs_cobo_la_SOURCES = $(top_srcdir)/../cobo/cobo.c $(top_srcdir)/../cobo/handshake.c $(top_srcdir)/../cobo/cobo_comm.c
+libldcs_cobo_la_SOURCES = $(top_srcdir)/../cobo/cobo.c $(top_srcdir)/../cobo/handshake.c $(top_srcdir)/../cobo/cobo_comm.c $(top_srcdir)/../cobo/cobo_handshake.c
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../cobo -I$(top_srcdir)/../include $(MUNGE_CFLAGS) $(GCRYPT_CFLAGS)
 all: all-am
 
@@ -274,6 +275,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo_comm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo_handshake.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/handshake.Plo@am__quote@
 
 .c.o:
@@ -323,6 +325,14 @@ cobo_comm.lo: $(top_srcdir)/../cobo/cobo_comm.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../cobo/cobo_comm.c' object='cobo_comm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cobo_comm.lo `test -f '$(top_srcdir)/../cobo/cobo_comm.c' || echo '$(srcdir)/'`$(top_srcdir)/../cobo/cobo_comm.c
+
+cobo_handshake.lo: $(top_srcdir)/../cobo/cobo_handshake.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cobo_handshake.lo -MD -MP -MF $(DEPDIR)/cobo_handshake.Tpo -c -o cobo_handshake.lo `test -f '$(top_srcdir)/../cobo/cobo_handshake.c' || echo '$(srcdir)/'`$(top_srcdir)/../cobo/cobo_handshake.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cobo_handshake.Tpo $(DEPDIR)/cobo_handshake.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../cobo/cobo_handshake.c' object='cobo_handshake.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cobo_handshake.lo `test -f '$(top_srcdir)/../cobo/cobo_handshake.c' || echo '$(srcdir)/'`$(top_srcdir)/../cobo/cobo_handshake.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

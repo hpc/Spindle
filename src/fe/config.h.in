@@ -100,9 +100,6 @@
 /* Use LaunchMON for authentication" */
 #undef SECLMON
 
-/* File for appending security logs */
-#undef SECURITY_LOG_FILE
-
 /* Directory to store key files in */
 #undef SEC_KEYDIR
 
