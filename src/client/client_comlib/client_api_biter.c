@@ -29,7 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 static int session = -1;
 static char *cached_location;
 
-#warning Move BITERC_SHM_SIZE to config parameter
+//#warning Move BITERC_SHM_SIZE to config parameter
 #define BITERC_SHM_SIZE 2*1024*1024
 int client_open_connection_biter(char* location, int number)
 {

@@ -36,8 +36,7 @@ int initialize_handshake_security(handshake_protocol_t *protocol)
 
 void handle_security_error(const char *msg)
 {
-#warning remove testing message
-   char *prefix = "(legendre is testing security logging) spindle security error: ";
+   char *prefix = "Spindle security error: ";
    char *newstr;
    size_t msg_size;
 

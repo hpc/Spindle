@@ -42,7 +42,7 @@ static int fetchPhdrs(ElfW(Addr) *aout_base, ElfW(Phdr) **phdrs, unsigned int *p
    int fd = 0, result, i;
    ElfW(auxv_t) auxv;
    ElfW(Phdr) *phdr;
-   ElfW(Addr) phdr_offset;
+   ElfW(Addr) phdr_offset = 0;
    
    pid = getpid();
    debug_printf2("Reading auxv for process %d for exec remapping\n", pid);
