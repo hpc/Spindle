@@ -158,7 +158,7 @@ struct argp_option options[] = {
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
      "Hide spindle from debuggers so they think libraries come from the original locations. " 
-     "Enabling this disables reloc-exec.  Default: no", GROUP_MISC },
+     "Default: no", GROUP_MISC },
    { "preload", PRELOAD, "FILE", 0,
      "Provides a text file containing a white-space separated list of files that should be "
      "relocated to each node before execution begins", GROUP_MISC },
@@ -308,11 +308,6 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 
       /* Set any misc options */
       opts |= all_misc_opts & ~disabled_opts & (enabled_opts | default_misc_opts);
-      if ((enabled_opts & OPT_DEBUG) && (enabled_opts & OPT_RELOCAOUT)) {
-         argp_error(state, "Cannot enable both --debug and --reloc-exec");
-      }
-      if (opts & OPT_DEBUG)
-         opts &= ~OPT_RELOCAOUT;
 
       return 0;
    }
