@@ -104,8 +104,8 @@ fi
 #OS defines
 AM_CONDITIONAL([BGQ_BLD], [test "x$OS_BUILD" == "xbluegene"])
 AM_CONDITIONAL([LINUX_BLD], [test "x$OS_BUILD" == "xlinux"])
-AM_CONDITIONAL([X86_64_BLD], [test "x$ARCH_BUILD" == "x86_64"])
-AM_CONDITIONAL([PPC64_BLD], [test "x$ARCH_BUILD" == "ppc64"])
+AM_CONDITIONAL([X86_64_BLD], [test "x$ARCH_BUILD" == "xx86_64"])
+AM_CONDITIONAL([PPC64_BLD], [test "x$ARCH_BUILD" == "xppc64"])
 
 if test "x$OS_BUILD" == "xlinux"; then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])

@@ -15685,7 +15685,7 @@ else
   LINUX_BLD_FALSE=
 fi
 
- if test "x$ARCH_BUILD" == "x86_64"; then
+ if test "x$ARCH_BUILD" == "xx86_64"; then
   X86_64_BLD_TRUE=
   X86_64_BLD_FALSE='#'
 else
@@ -15693,7 +15693,7 @@ else
   X86_64_BLD_FALSE=
 fi
 
- if test "x$ARCH_BUILD" == "ppc64"; then
+ if test "x$ARCH_BUILD" == "xppc64"; then
   PPC64_BLD_TRUE=
   PPC64_BLD_FALSE='#'
 else
