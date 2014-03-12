@@ -33,10 +33,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(LIBEXEC)
 #error Expected to have LIBEXEC defined
 #endif
+#if !defined(DAEMON_NAME)
+#error Expected to have DAEMON_NAME defined
+#endif
 
 #define STR2(S) #S
 #define STR(S) STR2(S)
-#define LOG_DAEMON STR(LIBEXEC) "/spindle_logd"
+#define LOG_DAEMON STR(LIBEXEC) "/" STR(DAEMON_NAME)
 
 static int debug_fd = -1;
 static int test_fd = -1;

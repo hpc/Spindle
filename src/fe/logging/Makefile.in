@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-pkglibexec_PROGRAMS = spindled_logd$(EXEEXT)
+pkglibexec_PROGRAMS = spindlef_logd$(EXEEXT)
 subdir = logging
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -62,9 +62,9 @@ libspindlelogc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	-o $@
 am__installdirs = "$(DESTDIR)$(pkglibexecdir)"
 PROGRAMS = $(pkglibexec_PROGRAMS)
-am_spindled_logd_OBJECTS = spindle_logd.$(OBJEXT)
-spindled_logd_OBJECTS = $(am_spindled_logd_OBJECTS)
-spindled_logd_DEPENDENCIES =
+am_spindlef_logd_OBJECTS = spindle_logd.$(OBJEXT)
+spindlef_logd_OBJECTS = $(am_spindlef_logd_OBJECTS)
+spindlef_logd_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -107,8 +107,8 @@ am__v_CXXLD_0 = @echo "  CXXLD " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libspindlelogc_la_SOURCES) $(spindled_logd_SOURCES)
-DIST_SOURCES = $(libspindlelogc_la_SOURCES) $(spindled_logd_SOURCES)
+SOURCES = $(libspindlelogc_la_SOURCES) $(spindlef_logd_SOURCES)
+DIST_SOURCES = $(libspindlelogc_la_SOURCES) $(spindlef_logd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -242,12 +242,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libspindlelogc.la
-spindled_logd_SOURCES = ../../logging/spindle_logd.cc
-spindled_logd_CPP = -I../../logging
-spindled_logd_LDADD = -lpthread
+spindlef_logd_SOURCES = ../../logging/spindle_logd.cc
+spindlef_logd_CPP = -I../../logging
+spindlef_logd_LDADD = -lpthread
 libspindlelogc_la_SOURCES = ../../logging/spindle_logc.c
 libspindlelogc_la_CPP = -I../../logging
-libspindlelogc_la_CFLAGS = -DLIBEXEC=${pkglibexecdir} -DDAEMON_NAME=spindled_logd
+libspindlelogc_la_CFLAGS = -DLIBEXEC=${pkglibexecdir} -DDAEMON_NAME=spindlef_logd
 all: all-am
 
 .SUFFIXES:
@@ -336,9 +336,9 @@ clean-pkglibexecPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-spindled_logd$(EXEEXT): $(spindled_logd_OBJECTS) $(spindled_logd_DEPENDENCIES) 
-	@rm -f spindled_logd$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(spindled_logd_OBJECTS) $(spindled_logd_LDADD) $(LIBS)
+spindlef_logd$(EXEEXT): $(spindlef_logd_OBJECTS) $(spindlef_logd_DEPENDENCIES) 
+	@rm -f spindlef_logd$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(spindlef_logd_OBJECTS) $(spindlef_logd_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
