@@ -31,9 +31,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 using namespace std;
 
-#if !defined(BINDIR)
-#error Expected BINDIR to be defined
-#endif
 #if !defined(LAUNCHMON_BIN_DIR)
 #error Expected LAUNCHMON_BIN_DIR to be defined
 #endif

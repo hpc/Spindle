@@ -18,6 +18,15 @@
 /* Allow NULL encryption */
 #undef ENABLE_NULL_ENCRYPTION
 
+/* Enable support for openmpi */
+#undef ENABLE_OPENMPI_LAUNCHER
+
+/* Enable support for srun */
+#undef ENABLE_SRUN_LAUNCHER
+
+/* Enable support for srun */
+#undef ENABLE_WRECKRUN_LAUNCHER
+
 /* Enable gcrypt for authentication */
 #undef GCRYPT
 

@@ -43,7 +43,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
-	$(top_srcdir)/../../m4/lmon.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/../../m4/lmon.m4 \
+	$(top_srcdir)/../../m4/launcher.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -56,6 +57,7 @@ am_spindle_OBJECTS = spindle-spindle_fe_main.$(OBJEXT) \
 	spindle-spindle_fe_lmon.$(OBJEXT) \
 	spindle-spindle_fe_serial.$(OBJEXT) \
 	spindle-spindle_fe.$(OBJEXT) spindle-parse_launcher.$(OBJEXT) \
+	spindle-parse_launcher_args.$(OBJEXT) \
 	spindle-parseargs.$(OBJEXT) spindle-parse_preload.$(OBJEXT) \
 	spindle-pathfn.$(OBJEXT) spindle-keyfile.$(OBJEXT) \
 	spindle-parseloc.$(OBJEXT)
@@ -246,8 +248,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_LDFLAGS = $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM)
 AM_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/../logging
-spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\"
-spindle_SOURCES = spindle_fe_main.cc spindle_fe_lmon.cc spindle_fe_serial.cc spindle_fe.cc parse_launcher.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
+spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DLIBEXECDIR=\"$(pkglibexecdir)\"
+spindle_SOURCES = spindle_fe_main.cc spindle_fe_lmon.cc spindle_fe_serial.cc spindle_fe.cc parse_launcher.cc parse_launcher_args.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
 spindle_LDADD = $(AM_LDFLAGS) -lmonfeapi \
 	$(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
 	$(am__append_2) $(MUNGE_LIBS) $(GCRYPT_LIBS)
@@ -340,6 +342,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-keyfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher_args.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_preload.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parseargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parseloc.Po@am__quote@
@@ -524,6 +527,22 @@ spindle-parse_launcher.obj: parse_launcher.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher.cc' object='spindle-parse_launcher.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher.obj `if test -f 'parse_launcher.cc'; then $(CYGPATH_W) 'parse_launcher.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher.cc'; fi`
+
+spindle-parse_launcher_args.o: parse_launcher_args.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_launcher_args.o -MD -MP -MF $(DEPDIR)/spindle-parse_launcher_args.Tpo -c -o spindle-parse_launcher_args.o `test -f 'parse_launcher_args.cc' || echo '$(srcdir)/'`parse_launcher_args.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_launcher_args.Tpo $(DEPDIR)/spindle-parse_launcher_args.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher_args.cc' object='spindle-parse_launcher_args.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher_args.o `test -f 'parse_launcher_args.cc' || echo '$(srcdir)/'`parse_launcher_args.cc
+
+spindle-parse_launcher_args.obj: parse_launcher_args.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parse_launcher_args.obj -MD -MP -MF $(DEPDIR)/spindle-parse_launcher_args.Tpo -c -o spindle-parse_launcher_args.obj `if test -f 'parse_launcher_args.cc'; then $(CYGPATH_W) 'parse_launcher_args.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher_args.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-parse_launcher_args.Tpo $(DEPDIR)/spindle-parse_launcher_args.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='parse_launcher_args.cc' object='spindle-parse_launcher_args.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher_args.obj `if test -f 'parse_launcher_args.cc'; then $(CYGPATH_W) 'parse_launcher_args.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher_args.cc'; fi`
 
 spindle-parseargs.o: parseargs.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-parseargs.o -MD -MP -MF $(DEPDIR)/spindle-parseargs.Tpo -c -o spindle-parseargs.o `test -f 'parseargs.cc' || echo '$(srcdir)/'`parseargs.cc

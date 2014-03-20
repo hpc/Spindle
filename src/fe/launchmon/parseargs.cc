@@ -39,7 +39,6 @@ using namespace std;
 #define FOLLOWFORK 'f'
 #define HIDE 'h'
 #define RELOCSO 'l'
-#define NOMPI 'm'
 #define NOCLEAN 'n'
 #define LOCATION 'o'
 #define PUSH 'p'
@@ -54,12 +53,17 @@ using namespace std;
 #define SECKEYLMON (256+OPT_SEC_KEYLMON)
 #define SECKEYFILE (256+OPT_SEC_KEYFILE)
 #define SECNULL (256+OPT_SEC_NULL)
+#define SLURM 270
+#define OPENMPI 271
+#define WRECK 272
+#define NOMPI 273
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
 #define GROUP_NETWORK 3
 #define GROUP_SEC 4
-#define GROUP_MISC 5
+#define GROUP_LAUNCHER 5
+#define GROUP_MISC 6
 
 #if defined(MUNGE)
 #define DEFAULT_SEC OPT_SEC_MUNGE
@@ -95,9 +99,9 @@ static char *preload_file;
 static char **mpi_argv;
 static int mpi_argc;
 static bool done = false;
-static bool use_mpi = true;
 static bool hide_fd = true;
 static int sec_model = -1;
+static int launcher = 0;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -118,6 +122,8 @@ string spindle_location(SPINDLE_LOC);
 unsigned long opts = 0;
 
 struct argp_option options[] = {
+   { NULL, 0, NULL, 0,
+     "These options specify what types of files should be loaded through the Spindle network" },
    { "reloc-aout", RELOCAOUT, YESNO, 0, 
      "Relocate the main executable through Spindle. Default: yes", GROUP_RELOC },
    { "reloc-libs", RELOCSO, YESNO, 0,
@@ -128,16 +134,21 @@ struct argp_option options[] = {
      "Relocate the targets of exec/execv/execve/... calls. Default: yes", GROUP_RELOC },
    { "follow-fork", FOLLOWFORK, YESNO, 0,
      "Relocate objects in fork'd child processes. Default: yes", GROUP_RELOC },
+   { NULL, 0, NULL, 0,
+     "These options specify how the Spindle network should distibute files.  Push is better for SPMD programs.  Pull is better for MPMD programs. Default is push.", GROUP_PUSHPULL },
    { "push", PUSH, NULL, 0,
      "Use a push model where objects loaded by any process are made available to all processes", GROUP_PUSHPULL },
    { "pull", PULL, NULL, 0,
      "Use a pull model where objects are only made available to processes that require them", GROUP_PUSHPULL },
+   { NULL, 0, NULL, 0,
+     "These options configure Spindle's network model.  Typical Spindle runs should not need to set these.", GROUP_NETWORK },
    { "cobo", COBO, NULL, 0,
      "Use a tree-based cobo network for distributing objects", GROUP_NETWORK },
    { "port", PORT, "number", 0,
      "TCP Port for Spindle servers.  Default: " STR(SPINDLE_PORT), GROUP_NETWORK },
-   { "location", LOCATION, "directory", 0,
-     "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_NETWORK },
+   { NULL, 0, NULL, 0,
+     "These options specify the security model Spindle should use for validating TCP connections. "
+     "Spindle will choose a default value if no option is specified.", GROUP_SEC },
 #if defined(MUNGE)
    { "security-munge", SECMUNGE, NULL, 0,
      "Use munge for security authentication", GROUP_SEC },
@@ -154,22 +165,39 @@ struct argp_option options[] = {
    { "security-none", SECNULL, NULL, 0,
      "Do not do any security authentication", GROUP_SEC },
 #endif
-   { "python-prefix", PYTHONPREFIX, "=path", 0,
+   { NULL, 0, NULL, 0,
+     "These options specify the job launcher Spindle is being run with.  If unspecified, Spindle will try to autodetect.", GROUP_LAUNCHER },
+#if defined(ENABLE_SRUN_LAUNCHER)
+   { "slurm", SLURM, NULL, 0,
+     "MPI job is launched with the srun job launcher.", GROUP_LAUNCHER },
+#endif
+#if defined(ENABLE_OPENMPI_LAUNCHER)
+   { "openmpi", OPENMPI, NULL, 0,
+     "MPI job is launched with the OpenMPI job jauncher.", GROUP_LAUNCHER },
+#endif
+#if defined(ENABLE_WRECKRUN_LAUNCHER)
+   { "wreck", WRECK, NULL, 0,
+     "MPI Job is launched with the wreck job launcher.", GROUP_LAUNCHER },
+#endif
+   { "no-mpi", NOMPI, NULL, 0,
+     "Run serial jobs instead of MPI job", GROUP_LAUNCHER },
+   { NULL, 0, NULL, 0,
+     "Misc options", GROUP_MISC },
+   { "python-prefix", PYTHONPREFIX, "path", 0,
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
-     "Hide spindle from debuggers so they think libraries come from the original locations. " 
-     "Default: no", GROUP_MISC },
+     "If yes, hide spindle from debuggers so they think libraries come from the original locations.  May cause extra overhead. Default: no", GROUP_MISC },
    { "preload", PRELOAD, "FILE", 0,
      "Provides a text file containing a white-space separated list of files that should be "
      "relocated to each node before execution begins", GROUP_MISC },
    { "strip", STRIP, YESNO, 0,
      "Strip debug and symbol information from binaries before distributing them. Default: yes", GROUP_MISC },
+   { "location", LOCATION, "directory", 0,
+     "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_MISC },
    { "noclean", NOCLEAN, YESNO, 0,
      "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
    { "disable-logging", DISABLE_LOGGING, NULL, DISABLE_LOGGING_FLAGS,
      "Disable usage logging for this invocation of Spindle", GROUP_MISC },
-   { "no-mpi", NOMPI, NULL, 0,
-     "Run serial jobs instead of MPI job" },
    { "no-hide", HIDE, NULL, 0,
      "Don't hide spindle file descriptors from application\n", GROUP_MISC },
    {0}
@@ -249,9 +277,20 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       logging_enabled = false;
       return 0;
    }
+   else if (key == SLURM) {
+      launcher = srun_launcher;
+      return 0;
+   }
+   else if (key == OPENMPI) {
+      launcher = openmpi_launcher;
+      return 0;
+   }
+   else if (key == WRECK) {
+      launcher = wreckrun_launcher;
+      return 0;
+   }
    else if (key == NOMPI) {
-      use_mpi = false;
-      opts |= OPT_NOMPI;
+      launcher = serial_launcher;
       return 0;
    }
    else if (key == HIDE) {
@@ -332,7 +371,7 @@ unsigned long parseArgs(int argc, char *argv[])
    bzero(&arg_parser, sizeof(arg_parser));
    arg_parser.options = options;
    arg_parser.parser = parse;
-   arg_parser.args_doc = "[OPTIONS..] mpi_command";
+   arg_parser.args_doc = "mpi_command";
  
    result = argp_parse(&arg_parser, argc, argv, ARGP_IN_ORDER, NULL, NULL);
    assert(result == 0);
@@ -405,11 +444,6 @@ bool isLoggingEnabled()
    return logging_enabled;
 }
 
-bool isMPIJob()
-{
-   return use_mpi;
-}
-
 bool hideFDs()
 {
    return hide_fd;
@@ -422,4 +456,7 @@ int getAppArgs(int *argc, char ***argv)
    return 0;
 }
 
-
+int getLauncher()
+{
+   return launcher;
+}

@@ -47,7 +47,7 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 4;
+   buffer_size = sizeof(unsigned int) * 5;
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
@@ -58,6 +58,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->port, buf, pos);
    pack_param(args->opts, buf, pos);
    pack_param(args->shared_secret, buf, pos);
+   pack_param(args->use_launcher, buf, pos);
    pack_param(args->location, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);

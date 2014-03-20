@@ -23,493 +23,295 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <stdio.h>
 
+#include <set>
+#include <string>
+#include <map>
+
 #include "spindle_launch.h"
+#include "spindle_debug.h"
 #include "config.h"
+#include "parse_launcher.h"
 
-#define FL_LAUNCHER       1<<0
-#define FL_GNU_PARAM      1<<2
-#define FL_OPTIONAL       1<<3
-#define FL_INTEGER        1<<4
-#define FL_CHDIR          1<<5
+using namespace std;
 
-typedef struct {
-   const char *opt;
-   const char *long_opt;
-   int flags;
-} cmdoption_t;
 
-static const char spindle_bootstrap[] = BINDIR "/spindle_bootstrap";
-
-char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
-char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
-char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
+/**
+ * Setup library locations, which come from autoconf
+ **/
+static const char spindle_bootstrap[] = LIBEXECDIR "/spindle_bootstrap";
+static const char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
+static const char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
+static const char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
 
 #if defined(COMM_SOCKET)
-static char *default_libstr = libstr_socket;
+static const char *default_libstr = libstr_socket;
 #elif defined(COMM_PIPES)
-static char *default_libstr = libstr_pipe;
+static const char *default_libstr = libstr_pipe;
 #elif defined(COMM_BITER)
-static char *default_libstr = libstr_biter;
+static const char *default_libstr = libstr_biter;
 #else
 #error Unknown connection type
 #endif
 
-#define serial_size 1
-static cmdoption_t serial_options[] = {
-   { "", NULL, FL_LAUNCHER }
-};
-static const char *serial_bg_env_str = NULL;
+SRunParser *srunparser;
+SerialParser *serialparser;
+OpenMPIParser *openmpiparser;
+WreckRunParser *wreckrunparser;
 
-#define srun_size (sizeof(srun_options) / sizeof(cmdoption_t))
-static cmdoption_t srun_options[] = {
-   { "srun", NULL,                   FL_LAUNCHER },
-   { "-A",   "--account",            FL_GNU_PARAM },
-   { NULL,   "--begin",              FL_GNU_PARAM },
-   { "-c",   "--cpus-per-task",      FL_GNU_PARAM },
-   { NULL,   "--checkpoint",         FL_GNU_PARAM },
-   { NULL,   "--checkpoint-dir",     FL_GNU_PARAM },
-   { NULL,   "--comment",            FL_GNU_PARAM },
-   { "-d",   "--dependency",         FL_GNU_PARAM },
-   { "-D",   "--chdir",              FL_GNU_PARAM | FL_CHDIR },
-   { "-e",   "--error",              FL_GNU_PARAM },
-   { NULL,   "--epilog",             FL_GNU_PARAM },
-   { "-E",   "--preserve-env",       0 },
-   { NULL,   "--get-user-env",       0 },
-   { NULL,   "--gres",               FL_GNU_PARAM },
-   { "-H",   "--hold",               0 },
-   { "-i",   "--input",              FL_GNU_PARAM },
-   { "-I",   "--immediate",          FL_OPTIONAL | FL_GNU_PARAM | FL_INTEGER },
-   { NULL,   "--jobid",              FL_GNU_PARAM },
-   { "-J",   "--job-name",           FL_GNU_PARAM },
-   { "-k",   "--no-kill",            0 },
-   { "-K",   "--kill-on-bad-exit",   0 },
-   { "-l",   "--label",              0 },
-   { "-L",   "--licenses",           FL_GNU_PARAM },
-   { "-m",   "--distribution",       FL_GNU_PARAM },
-   { NULL,   "--mail-type",          FL_GNU_PARAM },
-   { NULL,   "--mail-user",          FL_GNU_PARAM },
-   { NULL,   "--mpi",                FL_GNU_PARAM },
-   { NULL,   "--multi-prog",         0 },
-   { "-n",   "--ntasks",             FL_GNU_PARAM },
-   { NULL,   "--nice",               FL_OPTIONAL | FL_GNU_PARAM | FL_INTEGER },
-   { NULL,   "--ntasks-per-node",    FL_GNU_PARAM },
-   { "-N",   "--nodes",              FL_GNU_PARAM },
-   { "-o",   "--output",             FL_GNU_PARAM },
-   { "-O",   "--overcommit",         0 },
-   { "-p",   "--partition",          FL_GNU_PARAM },
-   { NULL,   "--prolog",             FL_GNU_PARAM },
-   { NULL,   "--propagate",          FL_OPTIONAL | FL_GNU_PARAM },
-   { NULL,   "--pty",                0 },
-   { "-q",   "--quit-on-interrupt",  0 },
-   { NULL,   "--qos",                FL_GNU_PARAM },
-   { "-Q",   "--quiet",              0 },
-   { "-r",   "--relative",           FL_GNU_PARAM },
-   { NULL,   "--restart-dir",        FL_GNU_PARAM },
-   { "-s",   "--share",              0 },
-   { NULL,   "--slurmd-debug",       FL_GNU_PARAM },
-   { NULL,   "--task-epilog",        FL_GNU_PARAM },
-   { NULL,   "--task-prolog",        FL_GNU_PARAM },
-   { "-T",   "--threads",            FL_GNU_PARAM },
-   { "-t",   "--time",               FL_GNU_PARAM },
-   { NULL,   "--time-min",           FL_GNU_PARAM },
-   { "-u",   "--unbuffered",         0 },
-   { "-v",   "--verbose",            0 },
-   { "-W",   "--wait",               FL_GNU_PARAM },
-   { "-X",   "--disable-status",     0 },
-   { NULL,   "--switch",             FL_GNU_PARAM },
-   { NULL,   "--contiguous",         0 },
-   { "-C",   "--constraint",         FL_GNU_PARAM },
-   { NULL,   "--mem",                FL_GNU_PARAM },
-   { NULL,   "--mincpus",            FL_GNU_PARAM },
-   { NULL,   "--reservation",        FL_GNU_PARAM },
-   { NULL,   "--tmp",                FL_GNU_PARAM },
-   { "-w",   "--nodelist",           FL_GNU_PARAM },
-   { "-x",   "--exclude",            FL_GNU_PARAM },
-   { "-Z",   "--no-allocate",        0 },
-   { NULL,   "--exclusive",          0 },
-   { NULL,   "--mem-per-cpu",        FL_GNU_PARAM },
-   { NULL,   "--resv-ports",         0 },
-   { "-B",   "--extra-node-info",    FL_GNU_PARAM },
-   { NULL,   "--sockets-per-node",   FL_GNU_PARAM },
-   { NULL,   "--cores-per-socket",   FL_GNU_PARAM },
-   { NULL,   "--threads-per-core",   FL_GNU_PARAM },
-   { NULL,   "--ntasks-per-core",    FL_GNU_PARAM },
-   { NULL,   "--ntasks-per-socket",  FL_GNU_PARAM },
-   { NULL,   "--use-env",            FL_GNU_PARAM },
-   { NULL,   "--auto-affinity",      FL_GNU_PARAM },
-   { NULL,   "--io-watchdog",        FL_GNU_PARAM },
-   { NULL,   "--renice",             FL_GNU_PARAM },
-   { NULL,   "--thp",                FL_GNU_PARAM },
-   { NULL,   "--overcommit-memory",  FL_GNU_PARAM },
-   { NULL,   "--overcommit-ratio",   FL_GNU_PARAM },
-   { NULL,   "--private-namespace",  0 },
-   { NULL,   "--hugepages",          FL_GNU_PARAM },
-   { NULL,   "--drop-caches",        FL_GNU_PARAM },
-   { "-h",   "--help",               0 },
-   { NULL,   "--usage",              0 },
-   { "-V",   "--version",            0 },
-};
-static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s";
+unsigned int default_launchers_enabled = 0
+#if defined(ENABLE_SRUN_LAUNCHER)
+   | srun_launcher
+#endif
+#if defined(ENABLE_OPENMPI_LAUNCHER)
+   | openmpi_launcher
+#endif
+#if defined(ENABLE_WRECKRUN_LAUNCHER)
+   | wreckrun_launcher
+#endif
+   ;
 
-#define wreckrun_size (sizeof(wreckrun_options) / sizeof(cmdoption_t))
-static cmdoption_t wreckrun_options[] = {
-   { "wreckrun", NULL,               FL_LAUNCHER },
-   { "-h",   "--help",               0},
-   { "-n",   "--procs-per-node",     FL_GNU_PARAM },
-};
-static const char *wreck_bg_env_str = NULL;
-
-static int isIntegerString(char *s)
+CmdLineParser::CmdLineParser(int argc_, char **argv_, LauncherParser *parser_) :
+   argc(argc_),
+   argv(argv_),
+   launcher_at(-1),
+   exec_at(-1),
+   parser(parser_)
 {
-   if (*s >= '0' && *s <= '9')
-      return 1;
-   if ((*s == '-' || *s == '+') && 
-       s[1] >= '0' && s[1] <= '9')
-      return 1;
-   return 0;
 }
 
-static int isExec(char *s, char *dir_s)
+CmdLineParser::~CmdLineParser()
 {
-   int result;
-   struct stat buf;
-   
-   if (dir_s) {
-      if (*s == '/') {
-         /* Absolute path, ignore dir_s */
-         return isExec(s, NULL);
-      }
-      int s_strlen = strlen(s);
-      int dir_strlen = strlen(dir_s);
-      char *newstr = (char *) malloc(dir_strlen + 1 + s_strlen + 1);
-      strcpy(newstr, dir_s);
-      if (dir_s[dir_strlen-1] != '/') {
-         strcat(newstr, "/");
-      }
-      strcat(newstr, s);
-      result = isExec(newstr, NULL);
-      free(newstr);
-      return result;
-   }
-   
-   result = stat(s, &buf);
-   if (result == -1)
-      return 0;
-
-   if ((buf.st_mode & S_IFLNK) == S_IFLNK) {
-      /* Dereference any symbolic link and try again */
-      char *realname = realpath(s, NULL);
-      result = isExec(realname, NULL);
-      free(realname);
-      return result;
-   }
-
-   /* Return true if not a directory and at least one execute bit is set */
-   return (!(buf.st_mode & S_IFDIR) && (buf.st_mode & 0111));
 }
 
-static int isPathExec(char *s)
+CmdLineParser::parse_ret_t CmdLineParser::parse()
 {
-   char *path, *r;
-   if (*s == '/') {
-      /* Absolute file path.  Not searched in PATH. */
-      return 0;
+   int cur = 0;
+
+   if (spindle_debug_prints) {
+      string cmdline = string(argv[0]);
+      for (int i = 1; i < argc; i++) 
+         cmdline = cmdline + string(" ") + string(argv[i]);
+      debug_printf("Launcher Parsing: Using %s to parse command line:\n\t%s\n",
+                    getParser()->getName().c_str(), cmdline.c_str());
    }
-   path = getenv("PATH");
-   if (!path) {
-      return 0;
-   }
-   path = strdup(path);
-
-   for (r = strtok(path, ":"); r != NULL; r = strtok(NULL, ":")) {
-      if (isExec(s, r)) {
-         free(path);
-         return 1;
-      }
-   }
-   free(path);
-   return 0;
-}
-
-static int isExecutableFile(char *s, char *cwd_s)
-{
-   return isExec(s, cwd_s) || isPathExec(s);
-}
-
-static int parseLaunchCmdLine(int argc, char *argv[],
-                              int *found_launcher_at, int *found_exec_at,
-                              cmdoption_t *options, int options_len)
-{
-   int i, j;
-   *found_launcher_at = -1;
-   *found_exec_at = -1;
-   char *chdir_s = NULL;
-
-   /**
-    * Find the location of the launcher (ie, srun or mpirun) in argv.  We're looking for
-    * an exact match of 'launcher' or '/launcher' at the end of an argument
-    **/
-   assert(options[0].flags & FL_LAUNCHER);
-   for (i = 0; i < options_len; i++) {
-      if (!(options[i].flags & FL_LAUNCHER))
-         continue;
-      const char *launcher_name = options[i].opt;
-      if (launcher_name[0] == '\0') {
-         found_launcher_at = 0;
-         return 0;
-      }
-      assert(launcher_name);
-      int launcher_name_size = strlen(launcher_name);
-      assert(launcher_name_size);
-      for (j = 0; j < argc; j++) {
-         char *tmparg = strdup (argv[j]);
-         char *arg = basename (tmparg);
-         if (strcmp(arg, launcher_name) == 0) {
-            *found_launcher_at = j;
-            free(tmparg);
+   //Locate the launcher command.  Usually at argv[0]
+   if (parser->usesLauncher()) {
+      for (cur = 0; cur < argc; cur++) {
+         if (parser->isLauncher(argc, argv, cur)) {
+            launcher_at = cur;
             break;
          }
-         int len = strlen(arg);
-         if ((len >= launcher_name_size+1) &&
-             (strcmp(arg + (len-launcher_name_size), launcher_name) == 0) &&
-             (arg[len-launcher_name_size-1] == '/'))
-         {
-            *found_launcher_at = j;
-            free(tmparg);
-            break;
-         }
-         free(tmparg);
       }
-      if (*found_launcher_at != -1)
-         break;
+      if (launcher_at == -1)
+         return no_launcher;
+      cur++;
    }
-   if (*found_launcher_at == -1)
-      return NO_LAUNCHER;
 
-
-   /**
-    * Parse launcher arguments, looking for executable
-    **/
-   for (i = (*found_launcher_at)+1; i < argc; i++) {
-      char *arg = argv[i];
-      int is_launcher_param = 0;
-
-      for (j = 0; j < options_len; j++) {
-         cmdoption_t *opt = options+j;
-         if (opt->flags & FL_LAUNCHER) {
-            continue;
-         }
-         else if (opt->flags & FL_GNU_PARAM) {
-            /* GNU style options.  Short opts have a space and then a parameter,
-               long opts have an = and a parameter */
-            int long_opt_len = opt->long_opt ? strlen(opt->long_opt) : 0;
-            int matched_long;
-            if (opt->opt && strcmp(arg, opt->opt) == 0) {
-               is_launcher_param = 1;
-               matched_long = 0;
-            }
-            else if (opt->long_opt && strncmp(arg, opt->long_opt, long_opt_len) == 0) {
-               is_launcher_param = 1;
-               matched_long = 1;
-            }
+   for (; cur < argc; cur++) {
+      cmdoption_t *opt = parser->getArg(argc, argv, cur);
+      if (!opt && parser->isExecutable(argc, argv, cur, exedirs)) {
+         debug_printf2("Launcher Parsing: %s is the application executable\n", argv[cur]);
+         exec_at = cur;
+         return success;
+      }
+      else if (opt) {
+         vector<string> argOptions;
+         int inc_argc = 0;
+         parser->getArgOptions(argc, argv, cur, opt, argOptions, inc_argc);
+         if (spindle_debug_prints) {
+            if (argOptions.empty()) 
+               debug_printf2("Launcher Parsing: %s is a launcher argument\n", argv[cur]);
             else {
-               continue;
-            }
-
-            if (opt->flags & FL_CHDIR) {
-               /* This paramter will chdir before the executable will run.
-                  Record its value so that we can find the exec with it. */
-               if (matched_long) {
-                  chdir_s = strchr(arg, '=');
-                  if (chdir_s)
-                     chdir_s++;
+               debug_printf2("Launcher Parsing: %s is a launcher argument with values\n", argv[cur]);
+               for (vector<string>::iterator j = argOptions.begin(); j != argOptions.end(); j++) {
+                  debug_printf2("Launcher Parsing: %s is a argument value to %s\n", j->c_str(), argv[cur]);
                }
-               else {
-                  chdir_s = (i + 1 < argc) ? argv[i+1] : NULL;
-               }
-               if (chdir_s && *chdir_s == '\0')
-                  chdir_s = NULL;
-            }
-
-            /* Parse out the parameter */
-            if (matched_long == 1) {
-               /* Already consumed the parameters along with the long option */
-            }
-            else if (!(opt->flags & FL_OPTIONAL)) {
-               /* Required parameter, must be in next slot */
-               i++;
-            }
-            else if (i+1 < argc) {
-               char *param = argv[i+1];
-               if (*param == '-') {
-                  /* Optional parameter not present, found a different option */
-               }
-               else if ((opt->flags & FL_INTEGER) && isIntegerString(param)) {
-                  /* Optional integer parameter found, skipping */
-                  i++;
-               }
-               else if (isExecutableFile(param, chdir_s)) {
-                  /* Found exec candidate, not parameter */
-               }
-               else {
-                  /* Found likely optional parameter.  Skipping past it. */
-                  i++;
-               }
-            }
-            break;
-         }
-         else if (opt->flags == 0) {
-            /* Basic option.  Just match short or long opt */
-            if ((opt->opt && strcmp(arg, opt->opt) == 0) ||
-                (opt->long_opt && strcmp(arg, opt->long_opt) == 0))
-            {
-               is_launcher_param = 1;
-               break;
             }
          }
-         else {
-            assert(0);
+         
+         if (opt->flags & FL_EXEDIR) {
+            for (vector<string>::iterator j = argOptions.begin(); j != argOptions.end(); j++) {
+               debug_printf2("Launcher Parsing: %s is a directory to use for executable searching\n", j->c_str());
+               exedirs.insert(*j);
+            }
          }
+         if (opt->flags & FL_CUSTOM_OPTION) {
+            debug_printf2("Launcher Parsing: %s is handled by a custom argument parser\n", argv[cur]);
+            parser->parseCustomArg(argc, argv, cur, inc_argc);
+         }
+         cur += inc_argc;
       }
-
-      if (is_launcher_param) {
-         /* We've identified this as a launcher parameter. Move on. */
-         continue;
+      else {
+         debug_printf2("Launcher Parsing: Warning: %s is an unrecognized option.  Assuming it's a launcher option\n",
+                       argv[cur]);
       }
-      if (*arg == '-') {
-         /* This is an unrecognized command line argument.  Move on */
-         continue;
-      }
-      if (isExecutableFile(arg, chdir_s)) {
-         /* We found the executable.  Yeah. */
-         *found_exec_at = i;
-         break;
-      }
-
-      /* If we get here, then it's likely an unrecognized launcher parameter */
    }
 
-   if (*found_exec_at == -1)
-      return NO_EXEC;
-
-   return 0;
+   return no_exec;
 }
 
-static int modifyCmdLineForLauncher(int argc, char *argv[],
-                                    int *new_argc, char **new_argv[],
-                                    cmdoption_t *options, int options_len,
-                                    const char *bg_env_str,
-                                    const char *ldcs_location,
-                                    const char *ldcs_number,
-                                    unsigned long ldcs_options)
+int CmdLineParser::launcherAt()
 {
-   int result;
-   int found_launcher_at, found_exec_at;
-   int i, j;
-   char ldcs_options_str[32];
+   return launcher_at;
+}
 
-   snprintf(ldcs_options_str, 32, "%lu", ldcs_options);
+int CmdLineParser::appExecutableAt()
+{
+   return exec_at;
+}
 
-   if (options != serial_options) {
-      /* Parse the command line */
-      result = parseLaunchCmdLine(argc, argv, &found_launcher_at, &found_exec_at, options, options_len);
-      if (result < 0)
-         return result;
+LauncherParser *CmdLineParser::getParser()
+{
+   return parser;
+}
+
+ModifyArgv::ModifyArgv(int argc_, char **argv_,
+                       spindle_args_t *params_) :
+   argc(argc_),
+   argv(argv_),
+   new_argc(0),
+   new_argv(NULL),
+   params(params_),
+   parser(NULL)
+{
+}
+
+void ModifyArgv::chooseParser()
+{
+   if (!params->use_launcher) {
+      autodetectParser();
+      return;
    }
-   else {
-      found_launcher_at = 0;
-      found_exec_at = 0;
+
+   set<LauncherParser *> parsers;
+   initParsers(params->use_launcher, parsers);
+   assert(parsers.size() == 1);
+   parser = new CmdLineParser(argc, argv, *parsers.begin());
+}
+
+void ModifyArgv::autodetectParser()
+{
+   //Get all the LauncherParsers we've been configured with
+   set<LauncherParser *> parsers;
+
+   initParsers(default_launchers_enabled, parsers);
+   if (parsers.empty()) {
+      fprintf(stderr, "Error: Spindle was not configured with support for any MPI implementations.");
+      exit(-1);
+   }
+   
+   //Get the list of CmdLineParsers that can work with our argv/argc
+   set<CmdLineParser *> cmdline_parsers;
+   for (set<LauncherParser*>::iterator i = parsers.begin(); i != parsers.end(); i++) {
+      LauncherParser *lparser = *i;
+      if (!lparser->valid(argc, argv))
+         continue;
+      cmdline_parsers.insert(new CmdLineParser(argc, argv, lparser)); 
    }
 
-   /* Add the bootstrapper to the cmdline before the executable */
-   *new_argc = argc + 4;
-   *new_argv = (char **) malloc(sizeof(char *) * (*new_argc + 1));
-   for (i = found_launcher_at, j = 0; i < argc; i++, j++) {
-      if (i == found_exec_at) {
+   //If there are multiple valid command line parsers that can work, then 
+   // (e.g, mvapich and openmpi both use 'mpirun' as their launcher name),
+   // we need to look more closely at the parsers.
+   if (cmdline_parsers.size() != 1) {
+      for (set<CmdLineParser *>::iterator i = cmdline_parsers.begin(); i != cmdline_parsers.end(); ) {
+         CmdLineParser *cl_parser = *i;
+         LauncherParser *lparser = cl_parser->getParser();
+         if (!lparser->valid2(argc, argv)) {
+            set<CmdLineParser *>::iterator j = i;
+            i++;
+            delete *j;
+            cmdline_parsers.erase(j);
+         }
+         else 
+            i++;
+      }      
+   }
+   if (cmdline_parsers.size() != 1) {
+      exit_w_err("Spindle could not identify the MPI implementation used on the command line\n");
+   }
+   parser = *cmdline_parsers.begin();
+   params->use_launcher = parser->getParser()->getCode();
+}
+
+void ModifyArgv::exit_w_err(string msg)
+{
+   fprintf(stderr, "%s\n", msg.c_str());
+   exit(-1);
+}
+
+void ModifyArgv::modifyCmdLine()
+{
+   char options_str[32];
+   snprintf(options_str, 32, "%u", params->opts);
+   string options(options_str);
+   
+   string location(params->location);
+   
+   char number_str[32];
+   snprintf(number_str, 32, "%u", params->number);
+   string number(number_str);
+
+   new_argv = (char **) malloc(sizeof(char *) * (argc + 5));
+   
+   int n = 0;
+   int p = parser->launcherAt();
+   if (p == -1) p = 0;
+
+   for (; p < argc; p++) {
+      if (p == parser->appExecutableAt()) {
 #if defined(os_bluegene)
-         /* If this assert hits, you need to update your <launcher>_bg_env_str to tell
-            how to pass the --envs option to runjob.  See srun_bg_env_str as an example. */
-         assert(bg_env_str);
-         int str_len = strlen(bg_env_str) + strlen(ldcs_location) + strlen(ldcs_number) + strlen(ldcs_options_str) +
-            strlen(default_libstr) + 1;
+         string bg_env_str = parser->getLauncher()->getBGString();
+         int str_len = bg_env_str.length() + options.length() + location.length() + number.length() + string(default_libstr).length() + 1;
          char *bg_env = (char *) malloc(str_len);
-         snprintf(bg_env, str_len, bg_env_str, default_libstr, ldcs_location, ldcs_number, ldcs_options_str);
-         (*new_argv)[j++] = bg_env;
+         snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str());
+         new_argv[n++] = bg_env;
 #else
-         (*new_argv)[j++] = strdup(spindle_bootstrap);
-         (*new_argv)[j++] = strdup(ldcs_location);
-         (*new_argv)[j++] = strdup(ldcs_number);
-         (*new_argv)[j++] = strdup(ldcs_options_str);
-         (void) default_libstr;
+         new_argv[n++] = strdup(spindle_bootstrap);
+         new_argv[n++] = strdup(location.c_str());
+         new_argv[n++] = strdup(number.c_str());
+         new_argv[n++] = strdup(options.c_str());
+         (void) default_libstr; //Not needed on linux
 #endif
       }
-      (*new_argv)[j] = argv[i];
+      new_argv[n++] = strdup(argv[p]);         
    }
-   (*new_argv)[j] = NULL;
-   return 0;
+   new_argv[n] = NULL;
+   new_argc = n;
 }
 
-int createNewCmdLine(int argc, char *argv[],
-                     int *new_argc, char **new_argv[],
-                     spindle_args_t *params,
-                     unsigned int test_launchers)
+void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
 {
-   int result = 0;
-   int had_noexec = 0;
-   int i;
-
-   /* Presetup */
-   if (test_launchers & TEST_PRESETUP) {
-      /* If the bootstrapper is already present, don't do anything. Assume user has it right. */
-      const char *bootstrapper_exec = strrchr(spindle_bootstrap, '/');
-      bootstrapper_exec = bootstrapper_exec ? bootstrapper_exec+1 : spindle_bootstrap;
-      for (i = 0; i < argc; i++) {
-         if (strstr(argv[i], bootstrapper_exec)) {
-            *new_argc = argc;
-            *new_argv = argv;
-            return 0;
-         }
-      }
+   if (new_argv) {
+      newargc = new_argc;
+      newargv = new_argv;
+      return;
    }
-
-   char number_s[32];
-   snprintf(number_s, 32, "%d", params->number);
-
-   /* Serial */
-   if (test_launchers & TEST_SERIAL) {
-      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, serial_options, serial_size,
-                                        serial_bg_env_str, params->location, number_s, params->opts);
-      if (result == 0)
-         return 0;
-      else if (result == NO_EXEC)
-         had_noexec = 1;
-   }
-
-   /* Slurm */
-   if (test_launchers & TEST_SLURM) {
-      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, srun_options, srun_size,
-                                        srun_bg_env_str, params->location, number_s, params->opts);
-      if (result == 0)
-         return 0;
-      else if (result == NO_EXEC)
-         had_noexec = 1;
-   }
-
-   /* FLUX */
-   if (test_launchers & TEST_FLUX) {
-      result = modifyCmdLineForLauncher(argc, argv, new_argc, new_argv, wreckrun_options, wreckrun_size,
-                                        wreck_bg_env_str, params->location, number_s, params->opts);
-      if (result == 0)
-         return 0;
-      else if (result == NO_EXEC)
-         had_noexec = 1;
-   }
-
-   /* Add other launchers here */
-   /* ... */
    
-   /* Return the NO_EXEC error with priority over the NO_LAUNCHER */
-   if (had_noexec)
-      return NO_EXEC;
-   return NO_LAUNCHER;
+   chooseParser();
+   assert(parser);
+
+   CmdLineParser::parse_ret_t result;
+   result = parser->parse();
+   switch (result) {
+      case CmdLineParser::success:
+         break;
+      case CmdLineParser::no_exec:
+         err_printf("Could not find executable in command line\n");
+         exit_w_err("Spindle was unable to locate an executable in your command line\n");
+      case CmdLineParser::no_launcher:
+         err_printf("Could not find launcher in command line\n");
+         exit_w_err("Spindle was unable to find the job launcher command in your command line\n");
+   }
+   
+   modifyCmdLine();
+   
+   if (spindle_debug_prints) {
+      string new_cmdline = string(new_argv[0]);
+      for (int i = 1; i < new_argc; i++) {
+         new_cmdline = new_cmdline + string(" ") + string(new_argv[i]);
+      }
+      debug_printf("Launcher Parsing: New command line is:\n\t%s\n", new_cmdline.c_str());
+   }
+   newargc = new_argc;
+   newargv = new_argv;
 }

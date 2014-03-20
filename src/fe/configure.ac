@@ -15,6 +15,8 @@ m4_include([../../m4/lx_detect_bluegene.m4])
 m4_include([../../configure.common.ac])
 #Include LaunchMON
 m4_include([../../m4/lmon.m4])
+#Include RM Selection
+m4_include([../../m4/launcher.m4])
 
 CHOOSE_SEC
 

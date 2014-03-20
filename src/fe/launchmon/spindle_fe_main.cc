@@ -32,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "keyfile.h"
 #include "ldcs_cobo.h"
 #include "ldcs_api.h"
+#include "parse_launcher.h"
 
 using namespace std;
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
    }
    bare_printf2("\n");
 
-   if (params.opts & OPT_NOMPI)
+   if (params.use_launcher == serial_launcher)
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
    else
       result = startLaunchmonFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
@@ -109,6 +110,7 @@ static void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->port = getPort();
    args->opts = opts;
    args->shared_secret = get_shared_secret();
+   args->use_launcher = getLauncher();
    args->location = strdup(getLocation(args->number).c_str());
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
@@ -153,35 +155,16 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
    int app_argc;
    char **app_argv;
 
-   int launchers_to_use = TEST_PRESETUP;
-   if (params->opts & OPT_NOMPI) {
-      launchers_to_use |= TEST_SERIAL;
-   }
-   else {
-      launchers_to_use |= TEST_SLURM;
-      launchers_to_use |= TEST_FLUX; 
-   }
-
    getAppArgs(&app_argc, &app_argv);
 
-   int result = createNewCmdLine(app_argc, app_argv, mod_argc, mod_argv, 
-                                 params, launchers_to_use);
-   if (result != 0) {
-      fprintf(stderr, "Error parsing command line:\n");
-      if (result == NO_LAUNCHER) {
-         fprintf(stderr, "Could not find a job launcher (mpirun, srun, wreckrun...) in the command line\n");
-      }
-      if (result == NO_EXEC) {
-         fprintf(stderr, "Could not find an executable in the given command line\n");
-      }
-      exit(EXIT_FAILURE);
-   }
+   ModifyArgv modargv(app_argc, app_argv, params);
+   modargv.getNewArgv(*mod_argc, *mod_argv);
 }
 
-#if !defined(BINDIR)
-#error Expected BINDIR to be defined
+#if !defined(LIBEXECDIR)
+#error Expected LIBEXECDIR to be defined
 #endif
-char spindle_daemon[] = BINDIR "/spindle_be";
+char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 char spindle_serial_arg[] = "--spindle_serial";
 char spindle_lmon_arg[] = "--spindle_lmon";
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args)
@@ -196,7 +179,7 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
    //daemon_opts[i++] = "--tool=memcheck";
    //daemon_opts[i++] = "--leak-check=full";
    daemon_opts[i++] = spindle_daemon;
-   if (args->opts & OPT_NOMPI)
+   if (args->use_launcher == serial_launcher)
       daemon_opts[i++] = spindle_serial_arg;
    else
       daemon_opts[i++] = spindle_lmon_arg;

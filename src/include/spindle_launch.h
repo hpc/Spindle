@@ -33,10 +33,9 @@ extern "C" {
 #define OPT_RELOCPY    (1 << 10)
 #define OPT_STRIP      (1 << 11)
 #define OPT_NOCLEAN    (1 << 12)
-#define OPT_NOMPI      (1 << 13)
-#define OPT_NOHIDE     (1 << 14)
-#define OPT_REMAPEXEC  (1 << 15)
-#define OPT_SEC        ((1 << 16) | (1 << 17))
+#define OPT_NOHIDE     (1 << 13)
+#define OPT_REMAPEXEC  (1 << 14)
+#define OPT_SEC        ((1 << 15) | (1 << 16))
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 16)
 #define OPT_GET_SEC(OPT) ((OPT >> 16) & 3)
@@ -44,6 +43,12 @@ extern "C" {
 #define OPT_SEC_KEYLMON 1
 #define OPT_SEC_KEYFILE 2
 #define OPT_SEC_NULL 3
+
+/* Possible values for use_launcher */
+#define srun_launcher (1 << 0)
+#define serial_launcher (1 << 1)
+#define openmpi_launcher (1 << 2)
+#define wreckrun_launcher (1 << 3)
 
 /* Parameters for configuring Spindle */
 typedef struct {
@@ -59,6 +64,9 @@ typedef struct {
    /* A unique (and hopefully random) shared-secret number that all servers will need
       to provide to join the Spindle network */
    unsigned int shared_secret;
+
+   /* The type of the MPI launcher */
+   unsigned int use_launcher;
 
    /* The local-disk location where Spindle will store its cache */
    char *location;
@@ -77,15 +85,6 @@ int spindleCloseFE();
 
 /* Runs the server process on a BE, returns when server is done */
 int spindleRunBE(unsigned int port, unsigned int shared_secret, int (*post_setup)(spindle_args_t *));
-
-/* Function for adding the bootstrapper executable to an application command line */
-int createNewCmdLine(int argc, char *argv[],
-                     int *new_argc, char **new_argv[],
-                     spindle_args_t *params,
-                     unsigned int test_launchers);
-/* Error returns for createNewCmdLine */
-#define NO_LAUNCHER -1
-#define NO_EXEC -2
 
 /* Bitmask of values for the test_launchers parameter */
 #define TEST_PRESETUP 1<<0
