@@ -71,6 +71,7 @@ public:
    virtual bool isLauncher(int argc, char **argv, int pos) const;
    virtual bool isExecutable(int argc, char **argv, int pos, const std::set<std::string> &exedirs) const;
    virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;
+   virtual bool includeArg(int argc, char **argv, int pos);
    cmdoption_t *getArg(int argc, char **argv, int pos) const;
    bool getArgOptions(int argc, char **argv, int arg_pos, cmdoption_t *opt,
                       std::vector<std::string> &argOptions, int &inc_argc) const;
@@ -83,6 +84,7 @@ public:
  * Types for instances of launchers
  **/
 typedef LauncherParser SRunParser;
+typedef LauncherParser WreckRunParser;
 
 class SerialParser : public LauncherParser
 {
@@ -103,12 +105,23 @@ class OpenMPIParser : public LauncherParser
    virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;
 };
 
-typedef LauncherParser WreckRunParser;
+class MarkerParser : public LauncherParser
+{
+  public:
+   MarkerParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_);
+   ~MarkerParser();
+   virtual bool valid(int argc, char **argv);
+   virtual bool usesLauncher() const;
+   cmdoption_t *getArg(int argc, char **argv, int pos) const;
+   virtual bool isExecutable(int argc, char **argv, int pos, const std::set<std::string> &exedirs) const;
+   virtual bool includeArg(int argc, char **argv, int pos);
+};
 
 extern SRunParser *srunparser;
 extern SerialParser *serialparser;
 extern OpenMPIParser *openmpiparser;
 extern WreckRunParser *wreckrunparser;
+extern MarkerParser *markerparser;
 
 void initParsers(int parsers_enabled, std::set<LauncherParser *> &all_parsers);
 

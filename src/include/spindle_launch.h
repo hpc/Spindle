@@ -49,6 +49,7 @@ extern "C" {
 #define serial_launcher (1 << 1)
 #define openmpi_launcher (1 << 2)
 #define wreckrun_launcher (1 << 3)
+#define marker_launcher (1 << 4)
 
 /* Parameters for configuring Spindle */
 typedef struct {

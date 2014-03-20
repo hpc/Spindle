@@ -159,6 +159,13 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
 
    ModifyArgv modargv(app_argc, app_argv, params);
    modargv.getNewArgv(*mod_argc, *mod_argv);
+
+   #warning remove this
+   for (int i = 0; i < *mod_argc; i++) {
+      printf("%s ", (*mod_argv)[i]);
+   }
+   printf("\n");
+   exit(0);
 }
 
 #if !defined(LIBEXECDIR)

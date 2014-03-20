@@ -123,7 +123,7 @@ static cmdoption_t openmpi_options[] = {
    { "-x", NULL,                     FL_PARAM },
    { "-xml", NULL,                   FL_OPTIONAL_DASH },
    { "-xml-file", NULL,              FL_OPTIONAL_DASH | FL_PARAM },
-   { "-xterm", NULL,                 FL_OPTIONAL_DASH | FL_PARAM },
+   { "-xterm", NULL,                 FL_OPTIONAL_DASH | FL_PARAM }
 };
 static const char *openmpi_bg_env_str = "-x LD_AUDIT=%s -x LDCS_LOCATION=%s -x LDCS_NUMBER=%s -x LDCS_OPTIONS=%s";
 static const unsigned int openmpi_size = (sizeof(openmpi_options) / sizeof(cmdoption_t));
@@ -214,7 +214,7 @@ static cmdoption_t srun_options[] = {
    { NULL,   "--drop-caches",        FL_GNU_PARAM },
    { "-h",   "--help",               0 },
    { NULL,   "--usage",              0 },
-   { "-V",   "--version",            0 },
+   { "-V",   "--version",            0 }
 };
 static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s";
 static const unsigned int srun_size (sizeof(srun_options) / sizeof(cmdoption_t));
@@ -222,10 +222,16 @@ static const unsigned int srun_size (sizeof(srun_options) / sizeof(cmdoption_t))
 static cmdoption_t wreckrun_options[] = {
    { "wreckrun", NULL,               FL_LAUNCHER },
    { "-h",   "--help",               0},
-   { "-n",   "--procs-per-node",     FL_GNU_PARAM },
+   { "-n",   "--procs-per-node",     FL_GNU_PARAM }
 };
 static const char *wreck_bg_env_str = "";
 static const unsigned int wreckrun_size = (sizeof(wreckrun_options) / sizeof(cmdoption_t));
+
+static cmdoption_t marker_options[] = {
+   { NULL, NULL, 0 }
+};
+static const char *marker_bg_env_str = "";
+static const unsigned int marker_size = 1;
 
 static ExeTest exetest;
 
@@ -344,6 +350,14 @@ bool LauncherParser::parseCustomArg(int /*argc*/, char** /*argv*/, int /*arg_pos
 {
    assert(0); //Any launcher that specifies custom args should overload this function
    return false;
+}
+
+/**
+ * Return false if a launcher argument should be stripped from the command line.
+ **/
+bool LauncherParser::includeArg(int argc, char **argv, int pos)
+{
+   return true;
 }
 
 /**
@@ -524,6 +538,53 @@ bool OpenMPIParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_
    exit(-1);
 }
 
+MarkerParser::MarkerParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_) :
+   LauncherParser(options, options_size, bg_string, name_, code_)
+{
+}
+
+MarkerParser::~MarkerParser()
+{
+}
+
+bool MarkerParser::valid(int argc, char **argv)
+{
+   for (int i=0; i<argc; i++) {
+      if (strcmp(argv[i], "spindlemarker") == 0) {
+         return true;
+      }
+   }
+   return false;
+}
+
+bool MarkerParser::usesLauncher() const
+{
+   return false;
+}
+
+cmdoption_t *MarkerParser::getArg(int argc, char **argv, int pos) const
+{
+   for (int i=0; i<argc; i++) {
+      if (strcmp(argv[i], "spindlemarker") == 0) {
+         if (pos <= i)
+            return marker_options;
+         return NULL;
+      }
+   }
+   assert(0); //Should be unreachable
+   return NULL;
+}
+
+bool MarkerParser::isExecutable(int argc, char **argv, int pos, const std::set<std::string> &exedirs) const
+{
+   return (pos > 0 && strcmp(argv[pos-1], "spindlemarker") == 0);
+}
+
+bool MarkerParser::includeArg(int argc, char **argv, int pos)
+{
+   return (strcmp(argv[pos], "spindlemarker") != 0);
+}
+
 void initParsers(int parsers_enabled, set<LauncherParser *> &all_parsers)
 {
    if (parsers_enabled & srun_launcher) {
@@ -545,6 +606,11 @@ void initParsers(int parsers_enabled, set<LauncherParser *> &all_parsers)
       if (!wreckrunparser)
          wreckrunparser = new WreckRunParser(wreckrun_options, wreckrun_size, wreck_bg_env_str, "wreckrun", wreckrun_launcher);
       all_parsers.insert(wreckrunparser);
+   }
+   if (parsers_enabled & marker_launcher) {
+      if (!markerparser)
+         markerparser = new MarkerParser(marker_options, marker_size, marker_bg_env_str, "marker", marker_launcher);
+      all_parsers.insert(markerparser);
    }
 }
 

@@ -57,6 +57,7 @@ SRunParser *srunparser;
 SerialParser *serialparser;
 OpenMPIParser *openmpiparser;
 WreckRunParser *wreckrunparser;
+MarkerParser *markerparser;
 
 unsigned int default_launchers_enabled = 0
 #if defined(ENABLE_SRUN_LAUNCHER)
@@ -68,7 +69,7 @@ unsigned int default_launchers_enabled = 0
 #if defined(ENABLE_WRECKRUN_LAUNCHER)
    | wreckrun_launcher
 #endif
-   ;
+   | marker_launcher;
 
 CmdLineParser::CmdLineParser(int argc_, char **argv_, LauncherParser *parser_) :
    argc(argc_),
@@ -213,6 +214,22 @@ void ModifyArgv::autodetectParser()
    // (e.g, mvapich and openmpi both use 'mpirun' as their launcher name),
    // we need to look more closely at the parsers.
    if (cmdline_parsers.size() != 1) {
+      for (set<CmdLineParser *>::iterator i = cmdline_parsers.begin(); i != cmdline_parsers.end(); i++) {
+         //If the marker_launcher is one of our set, then always use that one.
+         CmdLineParser *cl_parser = *i;
+         LauncherParser *lparser = cl_parser->getParser();
+         if (lparser->getCode() == marker_launcher) {
+            for (set<CmdLineParser *>::iterator j = cmdline_parsers.begin(); j != cmdline_parsers.end(); j++) {
+               if (*j != cl_parser)
+                  delete *j;
+            }
+            cmdline_parsers.clear();
+            cmdline_parsers.insert(cl_parser);
+            break;
+         }
+      }
+   }
+   if (cmdline_parsers.size() != 1) {
       for (set<CmdLineParser *>::iterator i = cmdline_parsers.begin(); i != cmdline_parsers.end(); ) {
          CmdLineParser *cl_parser = *i;
          LauncherParser *lparser = cl_parser->getParser();
@@ -227,7 +244,7 @@ void ModifyArgv::autodetectParser()
       }      
    }
    if (cmdline_parsers.size() != 1) {
-      exit_w_err("Spindle could not identify the MPI implementation used on the command line\n");
+      exit_w_err("Spindle could not identify the MPI implementation used on the command line");
    }
    parser = *cmdline_parsers.begin();
    params->use_launcher = parser->getParser()->getCode();
@@ -236,6 +253,11 @@ void ModifyArgv::autodetectParser()
 void ModifyArgv::exit_w_err(string msg)
 {
    fprintf(stderr, "%s\n", msg.c_str());
+   fprintf(stderr, "\n");
+   fprintf(stderr, "Try explicitely specifying the job launcher on the spindle command line.  E.g:\n");
+   fprintf(stderr, " spindle -openmpi mpirun -np 4 a.out arg1 arg2\n");
+   fprintf(stderr, "Alternatively, try adding the 'spindlemarker' keyword before your executable.  E.g:\n");
+   fprintf(stderr, " spindle mpirun -np 4 spindlemarker a.out arg1 arg2\n\n");
    exit(-1);
 }
 
@@ -273,6 +295,8 @@ void ModifyArgv::modifyCmdLine()
          (void) default_libstr; //Not needed on linux
 #endif
       }
+      if (!parser->getParser()->includeArg(argc, argv, p))
+         continue;
       new_argv[n++] = strdup(argv[p]);         
    }
    new_argv[n] = NULL;
@@ -297,10 +321,10 @@ void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
          break;
       case CmdLineParser::no_exec:
          err_printf("Could not find executable in command line\n");
-         exit_w_err("Spindle was unable to locate an executable in your command line\n");
+         exit_w_err("Spindle was unable to locate an executable in your command line");
       case CmdLineParser::no_launcher:
          err_printf("Could not find launcher in command line\n");
-         exit_w_err("Spindle was unable to find the job launcher command in your command line\n");
+         exit_w_err("Spindle was unable to find the job launcher command in your command line");
    }
    
    modifyCmdLine();
