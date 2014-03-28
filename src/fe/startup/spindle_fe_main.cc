@@ -50,9 +50,11 @@ static const char *logging_file = USAGE_LOGGING_FILE;
 static const char *logging_file = NULL;
 #endif
 
+#if defined(HAVE_LMON)
 extern int startLaunchmonFE(int app_argc, char *app_argv[],
                             int daemon_argc, char *daemon_argv[],
                             spindle_args_t *params);
+#endif
 extern int startSerialFE(int app_argc, char *app_argv[],
                          int daemon_argc, char *daemon_argv[],
                          spindle_args_t *params);
@@ -91,8 +93,15 @@ int main(int argc, char *argv[])
 
    if (params.use_launcher == serial_launcher)
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
-   else
+   else {
+#if defined(HAVE_LMON)
       result = startLaunchmonFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
+#else
+      fprintf(stderr, "Spindle Error: Spindle was not built with LaunchMON support\n");
+      err_printf("HAVE_LMON not defined\n");
+      return -1;
+#endif
+   }
 
    if (OPT_GET_SEC(params.opts) == OPT_SEC_KEYFILE) {
       clean_keyfile(params.number);

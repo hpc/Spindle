@@ -159,6 +159,7 @@ FGREP = @FGREP@
 GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
 GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
+HAVE_LMON = @HAVE_LMON@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -261,7 +262,7 @@ pkglibexec_LTLIBRARIES = libompiintercept.la
 noinst_LTLIBRARIES = libparseompi.la
 libompiintercept_la_SOURCES = ompi_intercept.c
 libparseompi_la_SOURCES = parse_openmpi.cc
-AM_CPPFLAGS = -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/launchmon
+AM_CPPFLAGS = -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/startup
 libparseompi_la_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\"
 all: all-am
 
