@@ -4416,7 +4416,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -18014,6 +18014,7 @@ do
     "logging/Makefile") CONFIG_FILES="$CONFIG_FILES logging/Makefile" ;;
     "cobo/Makefile") CONFIG_FILES="$CONFIG_FILES cobo/Makefile" ;;
     "comlib/Makefile") CONFIG_FILES="$CONFIG_FILES comlib/Makefile" ;;
+    "openmpi_intercept/Makefile") CONFIG_FILES="$CONFIG_FILES openmpi_intercept/Makefile" ;;
     "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;

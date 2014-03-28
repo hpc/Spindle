@@ -674,6 +674,28 @@ bool ExeTest::isPathExec(string executable)
    return false;
 }
 
+string ExeTest::getExecutablePath(string executable)
+{
+   if (executable.empty())
+      return string();
+   if (executable.find('/') != string::npos || executable[0] == '/') { 
+      if (isExec(executable, string()))
+         return executable;
+      return string();
+   }
+
+   for (vector<string>::iterator i = path.begin(); i != path.end(); i++) {
+      string directory = *i;
+      if (isExec(executable, directory)) {
+         if (directory[directory.length()-1] == '/')
+            return directory + executable;
+         return directory + string("/") + executable;
+      }
+   }
+   
+   return string();
+}
+
 bool ExeTest::isExecutableFile(string file, const set<string> &exedirs)
 {
    if (isPathExec(file))

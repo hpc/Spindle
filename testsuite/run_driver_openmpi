@@ -1,0 +1,5 @@
+#!/bin/sh
+
+PROCS=$SPINDLE_TEST_ARGS
+export PROCS
+$SPINDLE $SPINDLE_OPTS mpiexec -np $PROCS $*

@@ -165,6 +165,7 @@ private:
 public:
    ExeTest();
    bool isExecutableFile(std::string file, const std::set<std::string> &exedirs);
+   std::string getExecutablePath(std::string file);
 };
 
 

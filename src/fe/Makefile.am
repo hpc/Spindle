@@ -1,1 +1,1 @@
-SUBDIRS = logging cobo comlib launchmon 
+SUBDIRS = logging cobo comlib openmpi_intercept launchmon 

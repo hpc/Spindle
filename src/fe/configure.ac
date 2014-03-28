@@ -7,7 +7,7 @@ AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AC_PROG_CXX
-AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile Makefile])
+AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile Makefile])
 LT_INIT
 
 #Include common ops

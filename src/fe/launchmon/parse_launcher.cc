@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 using namespace std;
 
+extern bool setOpenMPIInterceptEnv(string launcher_rel);
 
 /**
  * Setup library locations, which come from autoconf
@@ -338,4 +339,8 @@ void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
    }
    newargc = new_argc;
    newargv = new_argv;
+
+   if (params->use_launcher == openmpi_launcher) {
+      setOpenMPIInterceptEnv(argv[parser->launcherAt()]);
+   }
 }
