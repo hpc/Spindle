@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "spindle_debug.h"
 #include "spindle_launch.h"
 #include "keyfile.h"
@@ -28,7 +29,10 @@ static void setupLogging();
 static int parseCommandLine(int argc, char *argv[]);
 static void initSecurity();
 
+#if defined(HAVE_LMON)
 extern int startLaunchmonBE(int argc, char *argv[]);
+#endif
+
 extern int startSerialBE(int argc, char *argv[]);
 enum startup_type_t {
    lmon,
@@ -60,7 +64,11 @@ int main(int argc, char *argv[])
 
    switch (startup_type) {
       case lmon:
+#if defined(HAVE_LMON)
          result = startLaunchmonBE(argc, argv);
+#else
+         assert(0);
+#endif
          break;
       case serial:
          result = startSerialBE(argc, argv);

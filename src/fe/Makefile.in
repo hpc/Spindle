@@ -80,7 +80,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = logging cobo comlib launchmon startup
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -148,6 +148,7 @@ FGREP = @FGREP@
 GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
 GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
+HAVE_LMON = @HAVE_LMON@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -246,7 +247,8 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = logging cobo comlib launchmon 
+@LMON_TRUE@BUILD_LMON = launchmon
+SUBDIRS = logging cobo comlib $(BUILD_LMON) startup
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

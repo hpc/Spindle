@@ -809,8 +809,6 @@ SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
-LMON_DYNAMIC_FALSE
-LMON_DYNAMIC_TRUE
 CPP
 OTOOL64
 OTOOL
@@ -4490,13 +4488,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4493: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4491: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4496: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4494: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4499: output\"" >&5)
+  (eval echo "\"\$as_me:4497: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5702,7 +5700,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5705 "configure"' > conftest.$ac_ext
+  echo '#line 5703 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7555,11 +7553,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7558: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7556: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7562: \$? = $ac_status" >&5
+   echo "$as_me:7560: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7894,11 +7892,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7897: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7895: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7901: \$? = $ac_status" >&5
+   echo "$as_me:7899: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7999,11 +7997,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8002: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8000: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8006: \$? = $ac_status" >&5
+   echo "$as_me:8004: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8054,11 +8052,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8057: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8055: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8061: \$? = $ac_status" >&5
+   echo "$as_me:8059: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10857,7 +10855,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10860 "configure"
+#line 10858 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10953,7 +10951,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10956 "configure"
+#line 10954 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11309,14 +11307,6 @@ if test "${enable_cobo+set}" = set; then
   enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
 fi
 
-
- if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-  LMON_DYNAMIC_TRUE=
-  LMON_DYNAMIC_FALSE='#'
-else
-  LMON_DYNAMIC_TRUE='#'
-  LMON_DYNAMIC_FALSE=
-fi
 
  if test x$CLIENT_SERVER_COM == xpipes; then
   PIPES_TRUE=
@@ -11687,13 +11677,6 @@ if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"am__fastdepCC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"am__fastdepCC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
-  { { $as_echo "$as_me:$LINENO: error: conditional \"LMON_DYNAMIC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-$as_echo "$as_me: error: conditional \"LMON_DYNAMIC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

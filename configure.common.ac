@@ -52,7 +52,6 @@ AC_ARG_ENABLE(cobo,
               [AS_HELP_STRING([--enable-cobo],[Use msocket for inter-server communication])],
               [SERVER_SERVER_COM=cobo;],)
 
-AM_CONDITIONAL([LMON_DYNAMIC], [test "x$LAUNCHMON_STATIC_LIBS" == "x"])
 AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
 AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
 AM_CONDITIONAL([SHMEM], [test x$CLIENT_SERVER_COM == xshmem])

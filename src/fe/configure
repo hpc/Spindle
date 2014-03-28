@@ -794,9 +794,14 @@ GCRYPT_CFLAGS
 MUNGE_LIBS
 MUNGE_CFLAGS
 PKG_CONFIG
+LMON_DYNAMIC_FALSE
+LMON_DYNAMIC_TRUE
+LMON_FALSE
+LMON_TRUE
 LAUNCHMON_RMCOMM
 LAUNCHMON_LIB
 LAUNCHMON_INC
+HAVE_LMON
 LAUNCHMON_STATIC_LIBS
 PPC64_BLD_FALSE
 PPC64_BLD_TRUE
@@ -818,8 +823,6 @@ SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
-LMON_DYNAMIC_FALSE
-LMON_DYNAMIC_TRUE
 CXXCPP
 CPP
 OTOOL64
@@ -4410,7 +4413,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile startup/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -5031,13 +5034,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5034: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5037: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5037: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5040: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5040: output\"" >&5)
+  (eval echo "\"\$as_me:5043: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6243,7 +6246,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6246 "configure"' > conftest.$ac_ext
+  echo '#line 6249 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8834,11 +8837,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8837: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8840: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8841: \$? = $ac_status" >&5
+   echo "$as_me:8844: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9173,11 +9176,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9176: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9179: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9180: \$? = $ac_status" >&5
+   echo "$as_me:9183: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9278,11 +9281,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9281: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9284: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9285: \$? = $ac_status" >&5
+   echo "$as_me:9288: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9333,11 +9336,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9336: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9339: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9340: \$? = $ac_status" >&5
+   echo "$as_me:9343: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12136,7 +12139,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12139 "configure"
+#line 12142 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12232,7 +12235,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12235 "configure"
+#line 12238 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14252,11 +14255,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14255: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14258: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14259: \$? = $ac_status" >&5
+   echo "$as_me:14262: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14351,11 +14354,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14354: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14357: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14358: \$? = $ac_status" >&5
+   echo "$as_me:14361: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14403,11 +14406,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14406: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14409: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14410: \$? = $ac_status" >&5
+   echo "$as_me:14413: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15520,14 +15523,6 @@ if test "${enable_cobo+set}" = set; then
 fi
 
 
- if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-  LMON_DYNAMIC_TRUE=
-  LMON_DYNAMIC_FALSE='#'
-else
-  LMON_DYNAMIC_TRUE='#'
-  LMON_DYNAMIC_FALSE=
-fi
-
  if test x$CLIENT_SERVER_COM == xpipes; then
   PIPES_TRUE=
   PIPES_FALSE='#'
@@ -15788,24 +15783,25 @@ if test "${with_launchmon+set}" = set; then
   withval=$with_launchmon; LAUNCHMON_INC_DIR="${withval}/include";
         LAUNCHMON_LIB_DIR="${withval}/lib";
         LAUNCHMON_RMCOMM_DIR="${withval}/lib"
+        EXPLICIT_LMON=true
 fi
 
 
 # Check whether --with-launchmon-incdir was given.
 if test "${with_launchmon_incdir+set}" = set; then
-  withval=$with_launchmon_incdir; LAUNCHMON_INC_DIR="${withval}";
+  withval=$with_launchmon_incdir; LAUNCHMON_INC_DIR="${withval}";EXPLICIT_LMON=true
 fi
 
 
 # Check whether --with-launchmon-libdir was given.
 if test "${with_launchmon_libdir+set}" = set; then
-  withval=$with_launchmon_libdir; LAUNCHMON_LIB_DIR="${withval}";
+  withval=$with_launchmon_libdir; LAUNCHMON_LIB_DIR="${withval}";EXPLICIT_LMON=true
 fi
 
 
 # Check whether --with-launchmon-rmcommdir was given.
 if test "${with_launchmon_rmcommdir+set}" = set; then
-  withval=$with_launchmon_rmcommdir; LAUNCHMON_RMCOMM_DIR="${withval}";
+  withval=$with_launchmon_rmcommdir; LAUNCHMON_RMCOMM_DIR="${withval}";EXPLICIT_LMON=true
 fi
 
 
@@ -15950,27 +15946,32 @@ if test "x$ac_cv_header_lmon_api_lmon_fe_h" = x""yes; then
   { $as_echo "$as_me:$LINENO: Found launchmon headers" >&5
 $as_echo "$as_me: Found launchmon headers" >&6;}
 else
-  { { $as_echo "$as_me:$LINENO: error: Couldn't find or build LaunchMON includes" >&5
-$as_echo "$as_me: error: Couldn't find or build LaunchMON includes" >&2;}
+  if test "x$EXPLICIT_LMON" == "xtrue";
+                   then { { $as_echo "$as_me:$LINENO: error: Could not find or build LaunchMON includes" >&5
+$as_echo "$as_me: error: Could not find or build LaunchMON includes" >&2;}
    { (exit 1); exit 1; }; }
+                   else { $as_echo "$as_me:$LINENO: WARNING: Could not find or build LaunchMON includes" >&5
+$as_echo "$as_me: WARNING: Could not find or build LaunchMON includes" >&2;}; HAVE_LMON=false
+                 fi
 fi
 
 
 CPPFLAGS=$CPPFLAGS_HOLD
 
-LDFLAGS_HOLD=$LDFLAGS
-LIBS_HOLD=$LIBS
-if test "x$LAUNCHMON_LIB_DIR" != "x"; then
-  LAUNCHMON_LIB=-L$LAUNCHMON_LIB_DIR
-  LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
-fi
-LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
+if test "xHAVE_LMON" != "xfalse"; then
+  LDFLAGS_HOLD=$LDFLAGS
+  LIBS_HOLD=$LIBS
+  if test "x$LAUNCHMON_LIB_DIR" != "x"; then
+    LAUNCHMON_LIB=-L$LAUNCHMON_LIB_DIR
+    LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
+  fi
+  LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
 
-if test "x$LAUNCHMON_RMCOMM_DIR" != "x"; then
-  LAUNCHMON_RMCOMM="-Wl,-rpath=$LAUNCHMON_RMCOMM_DIR"
-fi
+  if test "x$LAUNCHMON_RMCOMM_DIR" != "x"; then
+    LAUNCHMON_RMCOMM="-Wl,-rpath=$LAUNCHMON_RMCOMM_DIR"
+  fi
 
-{ $as_echo "$as_me:$LINENO: checking for LMON_fe_init in -lmonfeapi" >&5
+  { $as_echo "$as_me:$LINENO: checking for LMON_fe_init in -lmonfeapi" >&5
 $as_echo_n "checking for LMON_fe_init in -lmonfeapi... " >&6; }
 if test "${ac_cv_lib_monfeapi_LMON_fe_init+set}" = set; then
   $as_echo_n "(cached) " >&6
@@ -16037,24 +16038,31 @@ fi
 $as_echo "$ac_cv_lib_monfeapi_LMON_fe_init" >&6; }
 if test "x$ac_cv_lib_monfeapi_LMON_fe_init" = x""yes; then
   { $as_echo "$as_me:$LINENO: Found launchmon libraries" >&5
-$as_echo "$as_me: Found launchmon libraries" >&6;}
+$as_echo "$as_me: Found launchmon libraries" >&6;};HAVE_LMON=true
 else
-  { { $as_echo "$as_me:$LINENO: error: Couldn't find LaunchMON libraries" >&5
-$as_echo "$as_me: error: Couldn't find LaunchMON libraries" >&2;}
+  if test "x$EXPLICIT_LMON" == "xtrue";
+                   then { { $as_echo "$as_me:$LINENO: error: Could not find or build LaunchMON libraries" >&5
+$as_echo "$as_me: error: Could not find or build LaunchMON libraries" >&2;}
    { (exit 1); exit 1; }; }
+                   else { $as_echo "$as_me:$LINENO: WARNING: Could not find or build LaunchMON libraries" >&5
+$as_echo "$as_me: WARNING: Could not find or build LaunchMON libraries" >&2;}; HAVE_LMON=false
+                fi
 fi
 
-ac_ext=cpp
+fi
+
+if test "xHAVE_LMON" != "xfalse"; then
+  ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-{ $as_echo "$as_me:$LINENO: checking whether we can statically link launchmon" >&5
+  { $as_echo "$as_me:$LINENO: checking whether we can statically link launchmon" >&5
 $as_echo_n "checking whether we can statically link launchmon... " >&6; }
-LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"
-LIBS="$LIBS $LAUNCHMON_STATIC_LIBS_TEST"
-cat >conftest.$ac_ext <<_ACEOF
+  LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"
+  LIBS="$LIBS $LAUNCHMON_STATIC_LIBS_TEST"
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -16091,7 +16099,7 @@ $as_echo "$ac_try_echo") >&5
 	 $as_test_x conftest$ac_exeext
        }; then
   LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST
-               { $as_echo "$as_me:$LINENO: result: yes" >&5
+                 { $as_echo "$as_me:$LINENO: result: yes" >&5
 $as_echo "yes" >&6; }
 else
   $as_echo "$as_me: failed program was:" >&5
@@ -16104,14 +16112,17 @@ fi
 rm -rf conftest.dSYM
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
-ac_ext=c
+  ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-LDFLAGS=$LDFLAGS_HOLD
-LIBS=$LIBS_HOLD
+  LDFLAGS=$LDFLAGS_HOLD
+  LIBS=$LIBS_HOLD
+fi
+
+
 
 
 
@@ -16122,6 +16133,31 @@ cat >>confdefs.h <<_ACEOF
 #define LAUNCHMON_BIN_DIR "$LAUNCHMON_BIN"
 _ACEOF
 
+
+ if test "x$HAVE_LMON" == "xtrue"; then
+  LMON_TRUE=
+  LMON_FALSE='#'
+else
+  LMON_TRUE='#'
+  LMON_FALSE=
+fi
+
+ if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
+  LMON_DYNAMIC_TRUE=
+  LMON_DYNAMIC_FALSE='#'
+else
+  LMON_DYNAMIC_TRUE='#'
+  LMON_DYNAMIC_FALSE=
+fi
+
+
+if test "x$HAVE_LMON" == "xtrue"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LMON 1
+_ACEOF
+
+fi
 
 
 
@@ -17017,13 +17053,6 @@ $as_echo "$as_me: error: conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
-  { { $as_echo "$as_me:$LINENO: error: conditional \"LMON_DYNAMIC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-$as_echo "$as_me: error: conditional \"LMON_DYNAMIC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"PIPES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -17091,6 +17120,20 @@ if test -z "${PPC64_BLD_TRUE}" && test -z "${PPC64_BLD_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"PPC64_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"PPC64_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${LMON_TRUE}" && test -z "${LMON_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"LMON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"LMON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"LMON_DYNAMIC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"LMON_DYNAMIC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -17959,6 +18002,7 @@ do
     "cobo/Makefile") CONFIG_FILES="$CONFIG_FILES cobo/Makefile" ;;
     "comlib/Makefile") CONFIG_FILES="$CONFIG_FILES comlib/Makefile" ;;
     "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
+    "startup/Makefile") CONFIG_FILES="$CONFIG_FILES startup/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
 
