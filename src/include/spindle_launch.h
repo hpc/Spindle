@@ -51,6 +51,11 @@ extern "C" {
 #define wreckrun_launcher (1 << 3)
 #define marker_launcher (1 << 4)
 
+/* Possible values for startup_type */
+#define startup_serial 0
+#define startup_lmon 1
+#define startup_hostbin 2
+
 /* Parameters for configuring Spindle */
 typedef struct {
    /* A unique number that will be used to identify this spindle session */
@@ -68,6 +73,9 @@ typedef struct {
 
    /* The type of the MPI launcher */
    unsigned int use_launcher;
+
+   /* The mechanism used to start Spindle daemons */
+   unsigned int startup_type;
 
    /* The local-disk location where Spindle will store its cache */
    char *location;

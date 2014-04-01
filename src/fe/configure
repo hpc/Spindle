@@ -954,6 +954,7 @@ enable_libtool_lock
 with_default_port
 with_localstorage
 enable_bluegene
+with_hostbin
 enable_pipes
 enable_socket
 enable_shmem
@@ -1657,6 +1658,7 @@ Optional Packages:
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-default-port=NUM TCP Port for Spindle server communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
+  --with-hostbin=EXE      Executable for returning host lists for jobs
   --with-python-prefix=STR
                           List of directories containing python installs
   --with-usage-logging=FILE
@@ -4419,7 +4421,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile startup/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile startup/Makefile hostbin/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -5040,13 +5042,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5043: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5045: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5046: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5048: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5049: output\"" >&5)
+  (eval echo "\"\$as_me:5051: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6252,7 +6254,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6255 "configure"' > conftest.$ac_ext
+  echo '#line 6257 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8843,11 +8845,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8846: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8848: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8850: \$? = $ac_status" >&5
+   echo "$as_me:8852: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9182,11 +9184,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9185: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9187: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9189: \$? = $ac_status" >&5
+   echo "$as_me:9191: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9287,11 +9289,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9290: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9292: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9294: \$? = $ac_status" >&5
+   echo "$as_me:9296: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9342,11 +9344,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9345: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9347: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9349: \$? = $ac_status" >&5
+   echo "$as_me:9351: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12145,7 +12147,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12148 "configure"
+#line 12150 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12241,7 +12243,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12244 "configure"
+#line 12246 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14261,11 +14263,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14264: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14266: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14268: \$? = $ac_status" >&5
+   echo "$as_me:14270: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14360,11 +14362,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14363: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14365: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14367: \$? = $ac_status" >&5
+   echo "$as_me:14369: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14412,11 +14414,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14415: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14417: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14419: \$? = $ac_status" >&5
+   echo "$as_me:14421: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15484,6 +15486,17 @@ fi
 
 if test "x$OS_BUILD" == "x"; then
   OS_BUILD=linux
+fi
+
+#Startup type
+
+# Check whether --with-hostbin was given.
+if test "${with_hostbin+set}" = set; then
+  withval=$with_hostbin;
+cat >>confdefs.h <<_ACEOF
+#define HOSTBIN_PATH "${withval}"
+_ACEOF
+
 fi
 
 
@@ -18060,6 +18073,7 @@ do
     "openmpi_intercept/Makefile") CONFIG_FILES="$CONFIG_FILES openmpi_intercept/Makefile" ;;
     "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
     "startup/Makefile") CONFIG_FILES="$CONFIG_FILES startup/Makefile" ;;
+    "hostbin/Makefile") CONFIG_FILES="$CONFIG_FILES hostbin/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
 

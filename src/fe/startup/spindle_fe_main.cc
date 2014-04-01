@@ -37,7 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 using namespace std;
 
 static void setupLogging(int argc, char **argv);
-static void getAppCommandLine(int argc, char *argv[], spindle_args_t *args, int *mod_argc, char ***mod_argv);
+static void getAppCommandLine(int argc, char *argv[], int daemon_argc, char *daemon_argv[], spindle_args_t *args, int *mod_argc, char ***mod_argv);
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args);
 static void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 static void logUser();
@@ -59,6 +59,10 @@ extern int startSerialFE(int app_argc, char *app_argv[],
                          int daemon_argc, char *daemon_argv[],
                          spindle_args_t *params);
 
+extern int startHostbinFE(string hostbin_exe,
+                          int app_argc, char **app_argv,
+                          spindle_args_t *params);
+
 int main(int argc, char *argv[])
 {
    int result;
@@ -71,15 +75,6 @@ int main(int argc, char *argv[])
    if (isLoggingEnabled())
       logUser();
 
-   int app_argc;
-   char **app_argv;
-   getAppCommandLine(argc, argv, &params, &app_argc, &app_argv);     
-   debug_printf2("Application CmdLine: ");
-   for (int i = 0; i < app_argc; i++) {
-      bare_printf2("%s ", app_argv[i]);
-   }
-   bare_printf2("\n");
-
    setupSecurity(&params);
 
    int daemon_argc;
@@ -91,9 +86,21 @@ int main(int argc, char *argv[])
    }
    bare_printf2("\n");
 
-   if (params.use_launcher == serial_launcher)
+   int app_argc;
+   char **app_argv;
+   getAppCommandLine(argc, argv, daemon_argc, daemon_argv, &params, &app_argc, &app_argv);     
+   debug_printf2("Application CmdLine: ");
+   for (int i = 0; i < app_argc; i++) {
+      bare_printf2("%s ", app_argv[i]);
+   }
+   bare_printf2("\n");
+
+   if (params.use_launcher == serial_launcher) {
+      debug_printf("Starting application in serial mode\n");
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
-   else {
+   }
+   else if (params.startup_type == startup_lmon) {
+      debug_printf("Starting application with launchmon\n");
 #if defined(HAVE_LMON)
       result = startLaunchmonFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
 #else
@@ -101,6 +108,11 @@ int main(int argc, char *argv[])
       err_printf("HAVE_LMON not defined\n");
       return -1;
 #endif
+   }
+   else if (params.startup_type == startup_hostbin) {
+      debug_printf("Starting application with hostbin\n");
+      result = startHostbinFE(getHostbin(),
+                              app_argc, app_argv, &params);
    }
 
    if (OPT_GET_SEC(params.opts) == OPT_SEC_KEYFILE) {
@@ -120,6 +132,7 @@ static void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->opts = opts;
    args->shared_secret = get_shared_secret();
    args->use_launcher = getLauncher();
+   args->startup_type = getStartupType();
    args->location = strdup(getLocation(args->number).c_str());
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
@@ -139,7 +152,10 @@ static void setupLogging(int argc, char **argv)
 
 static unsigned int get_shared_secret()
 {
-   unsigned int shared_secret;
+   static unsigned int shared_secret = 0;
+   if (shared_secret != 0)
+      return shared_secret;
+
    int fd = open("/dev/urandom", O_RDONLY);
    if (fd == -1)
       fd = open("/dev/random", O_RDONLY);
@@ -159,14 +175,14 @@ static unsigned int get_shared_secret()
 }
 
 
-static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, int *mod_argc, char ***mod_argv)
+static void getAppCommandLine(int argc, char *argv[], int daemon_argc, char *daemon_argv[], spindle_args_t *params, int *mod_argc, char ***mod_argv)
 {
    int app_argc;
    char **app_argv;
 
    getAppArgs(&app_argc, &app_argv);
 
-   ModifyArgv modargv(app_argc, app_argv, params);
+   ModifyArgv modargv(app_argc, app_argv, daemon_argc, daemon_argv, params);
    modargv.getNewArgv(*mod_argc, *mod_argv);
 }
 
@@ -176,9 +192,11 @@ static void getAppCommandLine(int argc, char *argv[], spindle_args_t *params, in
 char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 char spindle_serial_arg[] = "--spindle_serial";
 char spindle_lmon_arg[] = "--spindle_lmon";
+char spindle_hostbin_arg[] = "--spindle_hostbin";
+
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args)
 {
-   char **daemon_opts = (char **) malloc(8 * sizeof(char *));
+   char **daemon_opts = (char **) malloc(10 * sizeof(char *));
    char number_s[32];
    int i = 0;
 
@@ -190,8 +208,10 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
    daemon_opts[i++] = spindle_daemon;
    if (args->use_launcher == serial_launcher)
       daemon_opts[i++] = spindle_serial_arg;
-   else
+   else if (args->startup_type == startup_lmon)
       daemon_opts[i++] = spindle_lmon_arg;
+   else if (args->startup_type == startup_hostbin)
+      daemon_opts[i++] = spindle_hostbin_arg;
 
 #define STR2(X) #X
 #define STR(X) STR2(X)
@@ -204,7 +224,14 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
    }
    daemon_opts[i++] = strdup(number_s);
 
-   daemon_opts[i++] = NULL;
+   if (args->startup_type == startup_hostbin) {
+      char port_str[32], ss_str[32];
+      snprintf(port_str, 32, "%d", getPort());
+      snprintf(ss_str, 32, "%d", get_shared_secret());
+      daemon_opts[i++] = strdup(port_str);
+      daemon_opts[i++] = strdup(ss_str);
+   }
+   daemon_opts[i] = NULL;
 
    *daemon_argc = i;
    *daemon_argv = daemon_opts;

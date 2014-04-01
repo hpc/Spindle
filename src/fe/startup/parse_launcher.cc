@@ -168,11 +168,14 @@ LauncherParser *CmdLineParser::getParser()
 }
 
 ModifyArgv::ModifyArgv(int argc_, char **argv_,
+                       int daemon_argc_, char **daemon_argv_,
                        spindle_args_t *params_) :
    argc(argc_),
    argv(argv_),
    new_argc(0),
    new_argv(NULL),
+   daemon_argc(daemon_argc_),
+   daemon_argv(daemon_argv_),
    params(params_),
    parser(NULL)
 {
@@ -274,7 +277,11 @@ void ModifyArgv::modifyCmdLine()
    snprintf(number_str, 32, "%u", params->number);
    string number(number_str);
 
-   new_argv = (char **) malloc(sizeof(char *) * (argc + 5));
+   char daemon_argc_str[32];
+   snprintf(daemon_argc_str, 32, "%u", daemon_argc);
+
+   int new_argv_size = argc + 7 + daemon_argc;
+   new_argv = (char **) malloc(sizeof(char *) * new_argv_size);
    
    int n = 0;
    int p = parser->launcherAt();
@@ -290,6 +297,13 @@ void ModifyArgv::modifyCmdLine()
          new_argv[n++] = bg_env;
 #else
          new_argv[n++] = strdup(spindle_bootstrap);
+         if (params->startup_type == startup_hostbin) {
+            new_argv[n++] = strdup("-daemon_args");
+            new_argv[n++] = strdup(daemon_argc_str);
+            for (int k = 0; k < daemon_argc; k++) {
+               new_argv[n++] = strdup(daemon_argv[k]);
+            }
+         }
          new_argv[n++] = strdup(location.c_str());
          new_argv[n++] = strdup(number.c_str());
          new_argv[n++] = strdup(options.c_str());
@@ -301,6 +315,7 @@ void ModifyArgv::modifyCmdLine()
       new_argv[n++] = strdup(argv[p]);         
    }
    new_argv[n] = NULL;
+   assert(n < new_argv_size);
    new_argc = n;
 }
 
@@ -340,7 +355,7 @@ void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
    newargc = new_argc;
    newargv = new_argv;
 
-   if (params->use_launcher == openmpi_launcher) {
+   if (params->use_launcher == openmpi_launcher && params->startup_type == startup_lmon) {
       setOpenMPIInterceptEnv(argv[parser->launcherAt()]);
    }
 }

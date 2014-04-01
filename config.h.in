@@ -51,6 +51,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Hostbin executable */
+#undef HOSTBIN_PATH
+
 /* Number of bytes in keys for gcrypt */
 #undef KEY_SIZE_BYTES
 

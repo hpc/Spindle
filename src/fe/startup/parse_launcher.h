@@ -35,6 +35,8 @@ class ModifyArgv {
    char **argv;
    int new_argc;
    char **new_argv;
+   int daemon_argc;
+   char **daemon_argv;
    spindle_args_t *params;
    CmdLineParser *parser;
    
@@ -45,6 +47,7 @@ class ModifyArgv {
    
   public:
    ModifyArgv(int argc, char **argv,
+              int daemon_argc, char **daemon_argv,
               spindle_args_t *params);
    void getNewArgv(int &newargc, char** &newargv);
 };

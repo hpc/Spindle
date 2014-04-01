@@ -57,6 +57,7 @@ using namespace std;
 #define OPENMPI 271
 #define WRECK 272
 #define NOMPI 273
+#define HOSTBIN 274
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -92,6 +93,13 @@ static const unsigned long default_pushpull_opts = OPT_PUSH;
 static const unsigned long default_misc_opts = OPT_STRIP;
 static const unsigned long default_sec = DEFAULT_SEC;
 
+#if defined(HOSTBIN_PATH)
+static char default_hostbin_path[] = HOSTBIN_PATH;
+static char *hostbin_path = default_hostbin_path;
+#else
+static char *hostbin_path = NULL;
+#endif
+
 static unsigned long enabled_opts = 0;
 static unsigned long disabled_opts = 0;
 
@@ -102,6 +110,7 @@ static bool done = false;
 static bool hide_fd = true;
 static int sec_model = -1;
 static int launcher = 0;
+static int startup_type = 0;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -187,6 +196,8 @@ struct argp_option options[] = {
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
      "If yes, hide spindle from debuggers so they think libraries come from the original locations.  May cause extra overhead. Default: no", GROUP_MISC },
+   { "hostbin", HOSTBIN, "EXECUTABLE", 0,
+     "Path to a script that returns the hostlist for a job on a cluster", GROUP_MISC },
    { "preload", PRELOAD, "FILE", 0,
      "Provides a text file containing a white-space separated list of files that should be "
      "relocated to each node before execution begins", GROUP_MISC },
@@ -312,6 +323,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       user_python_prefixes = arg;
       return 0;
    }
+   else if (key == HOSTBIN) {
+      hostbin_path = arg;
+      return 0;
+   }
    else if (key == ARGP_KEY_ARGS) {
       mpi_argv = state->argv + state->next;
       mpi_argc = state->argc - state->next;
@@ -339,6 +354,14 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 
       /* Set any reloc options */
       opts |= all_reloc_opts & ~disabled_opts & (enabled_opts | default_reloc_opts);
+
+      /* Set startup type */
+      if (launcher == serial_launcher)
+         startup_type = startup_serial;
+      else if (hostbin_path != NULL)
+         startup_type = startup_hostbin;
+      else
+         startup_type = startup_lmon;
 
       /* Set security options */
       if (sec_model == -1)
@@ -459,4 +482,14 @@ int getAppArgs(int *argc, char ***argv)
 int getLauncher()
 {
    return launcher;
+}
+
+std::string getHostbin()
+{
+   return string(hostbin_path);
+}
+
+int getStartupType()
+{
+   return startup_type;
 }

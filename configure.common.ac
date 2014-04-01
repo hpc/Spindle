@@ -21,6 +21,10 @@ if test "x$OS_BUILD" == "x"; then
   OS_BUILD=linux
 fi
 
+#Startup type
+AC_ARG_WITH(hostbin,
+            [AS_HELP_STRING([--with-hostbin=EXE],[Executable for returning host lists for jobs])],
+            [AC_DEFINE_UNQUOTED([HOSTBIN_PATH],"[${withval}]",[Hostbin executable])],)
 
 #Runmode detection (pipe/socket or cobo/msocket communications)
 if test "x$OS_BUILD" == "xlinux"; then

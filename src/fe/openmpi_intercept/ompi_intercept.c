@@ -140,7 +140,7 @@ static void on_load()
       exit(-1);
    }
 
-   result = sscanf(args, "%255s ; %lx ;%lx ; %lx", filename, &bp_addr, &ptable_addr, &ptable_size_addr);
+   result = sscanf(args, "%255s %lx %lx %lx", filename, &bp_addr, &ptable_addr, &ptable_size_addr);
    if (result != 4) {
       fprintf(stderr, "Spindle error in mpiexec intercept: Could not parse SPINDLE_OMPI_INTERCEPT\n");
       fprintf(stderr, "result = %d, args = %s, filename = %s\n", result, args, filename);

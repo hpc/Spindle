@@ -69,6 +69,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Hostbin executable */
+#undef HOSTBIN_PATH
+
 /* Use keyfile for authentication */
 #undef KEYFILE
 

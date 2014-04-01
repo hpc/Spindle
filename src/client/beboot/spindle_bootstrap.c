@@ -21,6 +21,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 #include <assert.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -36,7 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(LIBEXECDIR)
 #error Expected to be built with libdir defined
 #endif
-
+char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 
 int ldcsid;
 static int rankinfo[4]={-1,-1,-1,-1};
@@ -46,6 +48,7 @@ static char **cmdline;
 static char *executable;
 static char *client_lib;
 static char *opts_s;
+static char **daemon_args;
 
 unsigned long opts;
 
@@ -98,17 +101,69 @@ static void setup_environment()
 
 static int parse_cmdline(int argc, char *argv[])
 {
+   int i, daemon_arg_count;
    if (argc < 4)
       return -1;
+   
+   i = 1;
+   if (strcmp(argv[1], "-daemon_args") == 0) {
+      debug_printf("Parsing daemon args out of bootstrap launch line\n");
+      daemon_arg_count = atoi(argv[2]);
+      daemon_args = malloc(sizeof(char *) * (daemon_arg_count + 2));
+      daemon_args[0] = spindle_daemon;
+      for (i = 4; i < 3 + daemon_arg_count; i++)
+         daemon_args[i - 3] = argv[i];
+      daemon_args[i - 3] = NULL;
+   }
 
-   location = argv[1];
-   number_s = argv[2];
+   location = argv[i++];
+   number_s = argv[i++];
    number = atoi(number_s);
-   opts_s = argv[3];
+   opts_s = argv[i++];
    opts = atoi(opts_s);
-   cmdline = argv + 4;
+   cmdline = argv + i;
+   assert(i < argc);
 
    return 0;
+}
+
+static void launch_daemon(char *location)
+{
+   /*grand-child fork, then execv daemon.  By grand-child forking we ensure that
+     the app won't get confused by seeing an unknown process as a child. */
+   pid_t child, gchild;
+   int status;
+   int fd;
+   char unique_file[MAX_PATH_LEN+1];
+   char buffer[32];
+
+   snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", location);
+   unique_file[MAX_PATH_LEN] = '\0';
+   fd = open(unique_file, O_CREAT | O_EXCL | O_WRONLY, 0600);
+   if (fd == -1) {
+      debug_printf("Not starting daemon -- %s already exists\n", unique_file);
+      return;
+   }
+   debug_printf("Client is spawning daemon\n");
+      
+   child = fork();
+   if (child == 0) {
+      gchild = fork();
+      if (gchild != 0) {
+         snprintf(buffer, sizeof(buffer), "%d\n", getpid());
+         write(fd, buffer, strlen(buffer));
+         close(fd);
+         exit(0);
+      }
+      close(fd);
+      execv(spindle_daemon, daemon_args);
+      fprintf(stderr, "Spindle error: Could not execv daemon %s\n", daemon_args[0]);
+      exit(-1);
+   }
+   else if (child > 0) {
+      close(fd);
+      waitpid(child, &status, 0);
+   }
 }
 
 static void get_executable()
@@ -129,8 +184,6 @@ static void get_executable()
       debug_printf("Relocated executable %s to %s\n", *cmdline, executable);
       chmod(executable, 0700);
    }
-
-   
 }
 
 static void adjust_script()
@@ -226,6 +279,10 @@ int main(int argc, char *argv[])
       return -1;
    }
    location = realize(location);
+
+   if (daemon_args) {
+      launch_daemon(location);
+   }
    
    result = establish_connection();
    if (result == -1) {

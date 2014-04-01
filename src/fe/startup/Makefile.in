@@ -65,8 +65,9 @@ spindle_OBJECTS = $(am_spindle_OBJECTS)
 am__DEPENDENCIES_1 =
 spindle_DEPENDENCIES = $(top_builddir)/logging/libspindlelogc.la \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_1) \
+	$(am__append_2) $(am__append_3) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -252,8 +253,8 @@ spindle_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/com
 spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc spindle_fe.cc parse_launcher.cc parse_launcher_args.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
 spindle_LDADD = $(top_builddir)/logging/libspindlelogc.la \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(am__append_1) $(am__append_2) $(am__append_3) $(MUNGE_LIBS) \
-	$(GCRYPT_LIBS)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_1) \
+	$(am__append_2) $(am__append_3) $(MUNGE_LIBS) $(GCRYPT_LIBS)
 all: all-am
 
 .SUFFIXES:

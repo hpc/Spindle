@@ -272,9 +272,9 @@ bool setOpenMPIInterceptEnv(string launcher_rel)
    last_slash = last_slash ? last_slash+1 : real_launcher;
    
    stringstream ss;
-   ss << last_slash << " ; " << std::hex << 
-      parser->getMPIRBreakpointAddr() << ";" << 
-      parser->getMPIRProctabAddr() << ";" << 
+   ss << last_slash << " " << std::hex << 
+      parser->getMPIRBreakpointAddr() << " " << 
+      parser->getMPIRProctabAddr() << " " << 
       parser->getMPIRProctabSizeAddr();
    
    setenv("SPINDLE_OMPI_INTERCEPT", ss.str().c_str(), 1);

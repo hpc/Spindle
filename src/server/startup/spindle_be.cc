@@ -51,6 +51,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->opts, buf, pos);
    unpack_param(args->shared_secret, buf, pos);
    unpack_param(args->use_launcher, buf, pos);
+   unpack_param(args->startup_type, buf, pos);
    unpack_param(args->location, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);

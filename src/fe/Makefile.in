@@ -81,7 +81,8 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = logging cobo comlib openmpi_intercept launchmon startup
+DIST_SUBDIRS = logging cobo comlib openmpi_intercept launchmon hostbin \
+	startup
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -249,7 +250,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @LMON_TRUE@BUILD_LMON = launchmon
-SUBDIRS = logging cobo comlib openmpi_intercept $(BUILD_LMON) startup
+SUBDIRS = logging cobo comlib openmpi_intercept $(BUILD_LMON) hostbin startup
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

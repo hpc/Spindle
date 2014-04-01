@@ -32,15 +32,19 @@ static void initSecurity();
 #if defined(HAVE_LMON)
 extern int startLaunchmonBE(int argc, char *argv[]);
 #endif
-
+extern int startHostbinBE(unsigned int port, unsigned int shared_secret);
 extern int startSerialBE(int argc, char *argv[]);
+
 enum startup_type_t {
    lmon,
-   serial
+   serial,
+   hostbin
 };
 startup_type_t startup_type;
 static int security_type;
 static int number;
+static int port;
+static int shared_secret;
 
 int main(int argc, char *argv[])
 {
@@ -72,6 +76,9 @@ int main(int argc, char *argv[])
          break;
       case serial:
          result = startSerialBE(argc, argv);
+         break;
+      case hostbin:
+         result = startHostbinBE(port, shared_secret);
          break;
       default:
          err_printf("Unknown startup mode\n");
@@ -111,15 +118,23 @@ static int parseCommandLine(int argc, char *argv[])
          startup_type = serial;
          break;
       }
+      else if (strcmp(argv[i], "--spindle_hostbin") == 0) {
+         startup_type = hostbin;
+         break;
+      }
    }
 
-   i++;
-   if (i >= argc) return -1;   
+   if (++i >= argc) return -1;   
    security_type = atoi(argv[i]);
 
-   i++;
-   if (i >= argc) return -1;   
+   if (++i >= argc) return -1;   
    number = atoi(argv[i]);
+
+   if (startup_type == hostbin) {
+      if (++i >= argc) return -1;
+      port = atoi(argv[i]);
+      number = atoi(argv[i]);
+   }
 
    return 0;
 }

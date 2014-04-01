@@ -191,7 +191,6 @@ int startLaunchmonFE(int app_argc, char *app_argv[],
       err_printf("[LMON FE] Error getting process table\n");
       return EXIT_FAILURE;
    }
-
    
    result = spindleInitFE(hosts, params);
    if (result == -1) {

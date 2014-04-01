@@ -14,21 +14,10 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSEARGS_H_)
-#define PARSEARGS_H_
+#include "spindle_launch.h"
+#include "spindle_debug.h"
 
-#include <string>
-
-unsigned long parseArgs(int argc, char *argv[]);
-char *getPreloadFile();
-unsigned int getPort();
-std::string getLocation(int number);
-std::string getPythonPrefixes();
-std::string getHostbin();
-int getStartupType();
-bool isLoggingEnabled();
-int getLauncher();
-bool hideFDs();
-int getAppArgs(int *argc, char ***argv);
-
-#endif
+int startHostbinBE(unsigned int port, unsigned int shared_secret)
+{
+   return spindleRunBE(port, shared_secret, NULL);
+}
