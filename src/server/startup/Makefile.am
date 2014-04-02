@@ -4,7 +4,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
 spindle_be_LDFLAGS = -static
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
 spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la $(top_builddir)/logging/libspindlelogc.la
 spindle_be_LDADD += $(MUNGE_LIBS) $(GCRYPT_LIBS)
 

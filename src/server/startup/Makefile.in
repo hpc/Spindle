@@ -62,7 +62,8 @@ am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
 	spindle_be-spindle_be_serial.$(OBJEXT) \
 	spindle_be-spindle_be_hostbin.$(OBJEXT) \
 	spindle_be-spindle_be.$(OBJEXT) spindle_be-parseloc.$(OBJEXT) \
-	spindle_be-keyfile.$(OBJEXT)
+	spindle_be-keyfile.$(OBJEXT) \
+	spindle_be-spindle_mkdir.$(OBJEXT)
 spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
 am__DEPENDENCIES_1 =
 @LMON_DYNAMIC_TRUE@@LMON_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/launchmon/libbelmon.la \
@@ -265,7 +266,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 spindle_be_LDFLAGS = -static $(am__append_1)
 spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
 spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la \
 	$(top_builddir)/logging/libspindlelogc.la $(MUNGE_LIBS) \
 	$(GCRYPT_LIBS) $(am__append_2) $(am__append_3) $(am__append_4) \
@@ -367,6 +368,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be_hostbin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be_serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_mkdir.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -423,6 +425,22 @@ spindle_be-keyfile.obj: $(top_srcdir)/../utils/keyfile.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/keyfile.c' object='spindle_be-keyfile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-keyfile.obj `if test -f '$(top_srcdir)/../utils/keyfile.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/keyfile.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/keyfile.c'; fi`
+
+spindle_be-spindle_mkdir.o: $(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_mkdir.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_mkdir.Tpo -c -o spindle_be-spindle_mkdir.o `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_mkdir.Tpo $(DEPDIR)/spindle_be-spindle_mkdir.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/spindle_mkdir.c' object='spindle_be-spindle_mkdir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_mkdir.o `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+
+spindle_be-spindle_mkdir.obj: $(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-spindle_mkdir.obj -MD -MP -MF $(DEPDIR)/spindle_be-spindle_mkdir.Tpo -c -o spindle_be-spindle_mkdir.obj `if test -f '$(top_srcdir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/spindle_mkdir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-spindle_mkdir.Tpo $(DEPDIR)/spindle_be-spindle_mkdir.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/spindle_mkdir.c' object='spindle_be-spindle_mkdir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_mkdir.obj `if test -f '$(top_srcdir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/spindle_mkdir.c'; fi`
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

@@ -97,9 +97,10 @@ int ldcs_get_fd_pipe (int fd) {
 }
 /* end of fd list */
 
+extern int spindle_mkdir(char *orig_path);
+
 int ldcs_create_server_pipe(char* location, int number) {
   int fd;
-  struct stat st;
 
   fd=get_new_fd_pipe();
   if(fd<0) return(-1);
@@ -108,21 +109,9 @@ int ldcs_create_server_pipe(char* location, int number) {
   char *staging_dir = (char *) malloc(len);
   snprintf(staging_dir, len, "%s/spindle_comm", location);
 
-  debug_printf3("test direcrory before mkdir %s\n",staging_dir);
-  if (stat(staging_dir, &st) == -1) {
-    /* try create directory */
-    if (-1 == mkdir(staging_dir, 0766)) {
-      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
-      _error("mkdir failed");
-    }
-    debug_printf3("after mkdir %s\n",staging_dir);
-  } else {
-    if(S_ISDIR(st.st_mode)) {
-      debug_printf3("%s already exists, using this direcory\n",staging_dir);
-    } else {
-      printf("mkdir: ERROR %s exists and is not a directory\n", staging_dir);
-      _error("mkdir failed");
-    }
+  if (-1 == spindle_mkdir(staging_dir)) {
+     printf("mkdir: ERROR during mkdir %s\n", staging_dir);
+     _error("mkdir failed");
   }
 
   /* FiFos will be created by client */

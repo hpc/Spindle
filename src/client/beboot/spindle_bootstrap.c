@@ -66,6 +66,7 @@ static char *default_libstr = libstr_biter;
 #error Unknown connection type
 #endif
 
+extern int spindle_mkdir(char *path);
 extern char *parse_location(char *loc);
 
 static int establish_connection()
@@ -132,11 +133,16 @@ static void launch_daemon(char *location)
    /*grand-child fork, then execv daemon.  By grand-child forking we ensure that
      the app won't get confused by seeing an unknown process as a child. */
    pid_t child, gchild;
-   int status;
+   int status, result;
    int fd;
    char unique_file[MAX_PATH_LEN+1];
    char buffer[32];
 
+   result = spindle_mkdir(location);
+   if (result == -1) {
+      debug_printf("Exiting due to spindle_mkdir error\n");
+      exit(-1);
+   }
    snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", location);
    unique_file[MAX_PATH_LEN] = '\0';
    fd = open(unique_file, O_CREAT | O_EXCL | O_WRONLY, 0600);

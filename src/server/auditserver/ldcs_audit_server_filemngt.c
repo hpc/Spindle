@@ -36,25 +36,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 char *_ldcs_audit_server_tmpdir;
 
+extern int spindle_mkdir(char *path);
+
 int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;
-   struct stat st;
 
    _ldcs_audit_server_tmpdir = location;
 
-   if (stat(_ldcs_audit_server_tmpdir, &st) == -1) {
-     /* try create directory */
-      if (-1 == mkdir(_ldcs_audit_server_tmpdir, 0700)) {
-         err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
-         _error("mkdir failed");
-      }
-   } else {
-     if(S_ISDIR(st.st_mode)) {
-       debug_printf3("%s already exists, using this direcory\n",_ldcs_audit_server_tmpdir);
-     } else {
-        err_printf("mkdir: ERROR %s exists and is not a directory\n", _ldcs_audit_server_tmpdir);
-        _error("mkdir failed");
-     }
+   if (-1 == spindle_mkdir(_ldcs_audit_server_tmpdir)) {
+      err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
+      _error("mkdir failed");
    }
 
    return(rc);
