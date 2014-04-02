@@ -133,7 +133,8 @@ static int parseCommandLine(int argc, char *argv[])
    if (startup_type == hostbin) {
       if (++i >= argc) return -1;
       port = atoi(argv[i]);
-      number = atoi(argv[i]);
+      if (++i >= argc) return -1;
+      shared_secret = atoi(argv[i]);
    }
 
    return 0;

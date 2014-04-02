@@ -167,15 +167,16 @@ int ldcs_audit_server_run()
 
    _ldcs_server_stat_print(&ldcs_process_data.server_stat);
   
-   debug_printf3("destroy server (%s,%d)\n", ldcs_process_data.location, ldcs_process_data.number);
+   debug_printf("destroy server (%s,%d)\n", ldcs_process_data.location, ldcs_process_data.number);
    ldcs_destroy_server(ldcs_process_data.serverid);
   
    /* destroy md support (multi-daemon) */
    ldcs_audit_server_md_destroy(&ldcs_process_data);
   
    /* destroy file cache */
-   if (!(ldcs_process_data.opts & OPT_NOCLEAN))
+   if (!(ldcs_process_data.opts & OPT_NOCLEAN)) {
       ldcs_audit_server_filemngt_clean();
+   }
   
    return 0;
 }

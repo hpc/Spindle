@@ -96,13 +96,16 @@ private:
    bool copyInput(int from_fd, int to_fd1, int to_fd2, bool &read_anything) {
       ssize_t result;
       read_anything = false;
+      if (from_fd == -1)
+         return false;
+
       do {
          do {
             result = read(from_fd, read_buffer, sizeof(read_buffer));
          } while (result == -1 && errno == EINTR);
          if (result == -1) {
             char *errstr = strerror(errno);
-            err_printf("IOThread Failed to read input from %d: %s\n", from_fd, errstr);
+            debug_printf("IOThread Failed to read input from %d: %s\n", from_fd, errstr);
             return false;
          }
          if (result > 0) {
@@ -184,7 +187,7 @@ private:
       launcher_done = true;
       close(launcher_stdout_pipe[RD]);
       close(launcher_stderr_pipe[RD]);
-      launcher_stdout_pipe[RD] = launcher_stderr_pipe[WR] = -1;
+      launcher_stdout_pipe[RD] = launcher_stderr_pipe[RD] = -1;
    }
 
    void markHostbinDone()
@@ -483,6 +486,7 @@ public:
       pthread_mutex_lock(&exited_mut);
       while (!exit_detected) 
          pthread_cond_wait(&exited_cvar, &exited_mut);
+      exit_detected = false;
       pthread_mutex_unlock(&exited_mut);
 
       if (hostbin_running) {

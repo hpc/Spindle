@@ -162,6 +162,10 @@ static void launch_daemon(char *location)
          exit(0);
       }
       close(fd);
+      result = setpgid(0, 0);
+      if (result == -1) {
+         err_printf("Failed to setpgid: %s\n", strerror(errno));
+      }
       execv(spindle_daemon, daemon_args);
       fprintf(stderr, "Spindle error: Could not execv daemon %s\n", daemon_args[0]);
       exit(-1);
