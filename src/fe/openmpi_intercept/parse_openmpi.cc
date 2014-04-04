@@ -245,6 +245,14 @@ ParseOpenMPIBinary::~ParseOpenMPIBinary()
 {
 }
 
+static string getPreloadStr()
+{
+   const char *ldpreload = getenv("LD_PRELOAD");
+   if (!ldpreload)
+      return string(openmpi_intercept_lib);
+   return string(openmpi_intercept_lib) + string(" ") + string(ldpreload);
+}
+
 bool setOpenMPIInterceptEnv(string launcher_rel)
 {
    ExeTest exetest;
@@ -279,7 +287,7 @@ bool setOpenMPIInterceptEnv(string launcher_rel)
    
    setenv("SPINDLE_OMPI_INTERCEPT", ss.str().c_str(), 1);
    
-   setenv("LD_PRELOAD", openmpi_intercept_lib, 1);
+   setenv("LD_PRELOAD", getPreloadStr().c_str(), 1);
 
    free(real_launcher);
    delete parser;

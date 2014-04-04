@@ -125,6 +125,21 @@ static void spawn_monitor_thread()
    pthread_attr_destroy(&attrs);
 }
 
+static void clear_preload()
+{
+   char *ldpreload = getenv("LD_PRELOAD");
+   char *space;
+   if (!ldpreload)
+      return;
+
+   space = strchr(ldpreload, ' ');
+   if (!space) {
+      unsetenv("LD_PRELOAD");
+      return;
+   }
+
+   setenv("LD_PRELOAD", space+1, 1);
+}
 
 static void on_load() __attribute__((constructor));
 static void on_load()
@@ -166,6 +181,8 @@ static void on_load()
    proctable_ptr = (volatile MPIR_PROCDESC **) ptable_addr;
    proctable_size_ptr = (int *) ptable_size_addr;
    mpirbreakpoint = (mpir_breakpoint_t) bp_addr;
+
+   clear_preload();
 
    spawn_monitor_thread();
 }
