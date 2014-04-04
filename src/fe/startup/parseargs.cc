@@ -247,7 +247,8 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    if (done && key != ARGP_KEY_END)
       return 0;
 
-   for (entry = options; entry->key; entry++) {
+   struct argp_option *last = options + (sizeof(options) / sizeof(struct argp_option)) - 1;
+   for (entry = options; entry != last; entry++) {
       if (entry->key == key)
          break;
    }

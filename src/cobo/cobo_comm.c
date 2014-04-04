@@ -177,7 +177,7 @@ int ll_read(int fd, void *buf, size_t count)
 
 int ll_write(int fd, void *buf, size_t count)
 {
-   int result;
+   int result, error;
    size_t pos = 0;
 
    while (pos < count) {
@@ -188,7 +188,8 @@ int ll_write(int fd, void *buf, size_t count)
       if (result == -1 || result == 0) {
          if (errno == EINTR || errno == EAGAIN)
             continue;
-         err_printf("Error writing to cobo FD %d\n", fd);
+         error = errno;
+         err_printf("Error writing to cobo FD %d: %s\n", fd, strerror(error));
          return -1;
       }
       pos += result;

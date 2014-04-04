@@ -107,10 +107,14 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.pending_stat_requests = new_requestor_list();
    ldcs_process_data.completed_stat_requests = new_requestor_list();
 
-   if (ldcs_process_data.opts & OPT_PULL)
+   if (ldcs_process_data.opts & OPT_PULL) {
+      debug_printf("Using PULL model\n");
       ldcs_process_data.dist_model = LDCS_PULL;
-   else if (ldcs_process_data.opts & OPT_PUSH)
+   }
+   else if (ldcs_process_data.opts & OPT_PUSH) {
+      debug_printf("Using PUSH model\n");
       ldcs_process_data.dist_model = LDCS_PUSH;
+   }
    else {
       err_printf("Neither push nor pull options were set\n");
       assert(0);
