@@ -60,6 +60,7 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       ldcs_process_data->client_table[nc].query_localpath = NULL;
       ldcs_process_data->client_table_used++;
       ldcs_process_data->client_counter++;
+      ldcs_process_data->clients_live++;
       debug_printf("Adding new client %d\n", nc);
     
       /* register client fd to listener */

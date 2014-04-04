@@ -102,6 +102,7 @@ struct ldcs_process_data_struct
   int client_table_used;
   int clients_connected;
   int client_counter;
+  int clients_live;
   int serverid;
   int serverfd;
   ldcs_dist_model_t dist_model;
