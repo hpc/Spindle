@@ -35,7 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "pathfn.h"
 
 /** 
- * This function contains the "brains" of Spindle.  It's public interface,
+ * This file contains the "brains" of Spindle.  It's public interface,
  * declared in the handlers header, is invoked when a packet is received
  * from a client or other server.  These functions will then decode that 
  * packet and decide how to respond.  Those responses could be things like:
@@ -136,6 +136,10 @@ static int handle_client_stat_result(ldcs_process_data_t *procdata, int nc);
 static int handle_stat_request(ldcs_process_data_t *procdata, char *pathname, node_peer_t from);
 static int handle_stat_request_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer);
 static int handle_load_and_broadcast_stat(ldcs_process_data_t *procdata, char *pathname);
+static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata);
+static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_exit_cancel_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_send_exit_cancel(ldcs_process_data_t *procdata);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -1220,11 +1224,26 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_stat_recv(procdata, msg, peer);
       case LDCS_MSG_STAT_NET_REQUEST:
          return handle_stat_request_recv(procdata, msg, peer);
+      case LDCS_MSG_EXIT_READY:
+         return handle_exit_ready_msg(procdata, msg);
+      case LDCS_MSG_EXIT_CANCEL:
+         return handle_exit_cancel_msg(procdata, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
    }
    return -1;
+}
+
+/**
+ * Handle new client 
+ **/
+int handle_client_start(ldcs_process_data_t *procdata, int nc)
+{
+   if (procdata->sent_exit_ready) {
+      return handle_send_exit_cancel(procdata);
+   }
+   return 0;
 }
 
 /**
@@ -1247,10 +1266,7 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    
    assert(procdata->clients_live > 0);
    procdata->clients_live--;
-   if (!procdata->clients_live)
-      mark_exit();
-      
-   return 0;
+   return handle_send_exit_ready_if_done(procdata);
 }
 
 static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg)
@@ -1810,4 +1826,98 @@ static int handle_load_and_broadcast_stat(ldcs_process_data_t *procdata, char *p
    }
 
    return 0;
+}
+
+/**
+ * If all of our clients are exited, and all of our child servers have
+ * sent an exit_ready, then send an exit_ready to our parent
+ **/
+static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
+{
+   ldcs_message_t msg;
+   debug_printf2("Checking if we need to send an exit ready message\n");
+
+   if (procdata->sent_exit_ready) {
+      debug_printf2("Already sent an exit message.  Not sending another\n");
+      return 0;
+   }
+   
+   if (procdata->clients_live > 0) {
+      debug_printf2("Still have live clients (%d).  Not exiting\n", procdata->clients_live);
+      return 0;
+   }
+
+   int num_children = ldcs_audit_server_md_get_num_children(procdata);
+   if (procdata->exit_readys_recvd < num_children) {
+      debug_printf2("Not all child servers are ready to exit.\n");
+      return 0;
+   }
+   
+   msg.header.type = LDCS_MSG_EXIT_READY;
+   msg.header.len = 0;
+   msg.data = NULL;
+   procdata->sent_exit_ready = 1;
+
+   if (ldcs_audit_server_md_is_responsible(procdata, "")) {
+      debug_printf("Exit globally ready.  Sending exit broadcast.\n");
+      return handle_exit_broadcast(procdata);
+   }
+   else {
+      debug_printf2("Sending exit ready message to parent\n");
+      return ldcs_audit_server_md_forward_query(procdata, &msg);
+   }
+}
+
+/** 
+ * We've recvd an exit ready message from a child.  Update our count
+ * and trigger see if that makes us exit ready.
+ **/
+static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg)
+{
+   debug_printf2("Got exit ready message\n");
+   procdata->exit_readys_recvd++;
+   return handle_send_exit_ready_if_done(procdata);
+}
+
+/**
+ * Someone who sent us an exit ready got a new client and is now
+ * canceling their exit_ready message.  We may have to cancel our own
+ * exit ready if we've sent one.
+ **/
+static int handle_exit_cancel_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg)
+{
+   debug_printf2("Got exit cancel\n");
+   assert(procdata->exit_readys_recvd > 0);
+   procdata->exit_readys_recvd--;
+   
+   if (!procdata->sent_exit_ready)
+      return 0;
+
+   int result = handle_send_exit_cancel(procdata);
+   if (result == -1)
+      return -1;
+
+   procdata->sent_exit_ready = 0;
+   return 0;
+}
+
+/**
+ * Send an exit cancel to parent, if we're not the root
+ **/
+static int handle_send_exit_cancel(ldcs_process_data_t *procdata)
+{
+   ldcs_message_t msg;
+
+   assert(procdata->sent_exit_ready);
+   if (ldcs_audit_server_md_is_responsible(procdata, "")) {
+      err_printf("Top of tree got exit cancel, but we've already started shutdown\n");
+      return 0;
+   }
+
+   debug_printf2("Sending exit cancel to parent\n");
+   msg.header.type = LDCS_MSG_EXIT_CANCEL;
+   msg.header.len = 0;
+   msg.data = NULL;
+
+   return ldcs_audit_server_md_forward_query(procdata, &msg);
 }

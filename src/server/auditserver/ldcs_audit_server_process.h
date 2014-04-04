@@ -105,6 +105,8 @@ struct ldcs_process_data_struct
   int clients_live;
   int serverid;
   int serverfd;
+  int sent_exit_ready;
+  int exit_readys_recvd;
   ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
   char *location;

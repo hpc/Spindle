@@ -24,6 +24,7 @@
 #include "ldcs_api.h"
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
+#include "ldcs_audit_server_handlers.h"
 
 int _ldcs_server_CB ( int infd, int serverid, void *data ) {
    int rc=0;
@@ -68,6 +69,8 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       if (fd != -1)
          ldcs_listen_register_fd(fd, nc, &_ldcs_client_CB, (void *) ldcs_process_data);
       ldcs_process_data->server_stat.num_connections++;
+
+      handle_client_start(ldcs_process_data, nc);
    }
 
    fd = ldcs_get_aux_fd();

@@ -101,6 +101,8 @@ int ldcs_audit_server_md_send_noncontig(ldcs_process_data_t *ldcs_process_data, 
 int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg,
                                              void *secondary_data, size_t secondary_size);
 
+int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata);
+
 #if defined(__cplusplus)
 }
 #endif

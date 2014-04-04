@@ -344,3 +344,9 @@ int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_d
    return global_result;   
 }
 
+int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
+{
+   int num_childs = 0;
+   cobo_get_num_childs(&num_childs);
+   return num_childs;
+}
