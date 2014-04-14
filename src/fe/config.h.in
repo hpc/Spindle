@@ -39,9 +39,6 @@
 /* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
 #undef HAVE_LIBGCRYPT
 
-/* Define to 1 if you have the `munge' library (-lmunge). */
-#undef HAVE_LIBMUNGE
-
 /* Build with LaunchMON support */
 #undef HAVE_LMON
 

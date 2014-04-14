@@ -13,6 +13,8 @@ AC_PROG_LIBTOOL
 AC_PROG_LN_S
 LT_INIT
 
+#Include common ops
+m4_include([configure.common.ac])
 m4_include([m4/ax_tls.m4])
 m4_include([m4/lmon.m4])
 AX_TLS
@@ -25,10 +27,6 @@ AC_ARG_WITH(testrm,
             [TESTRM=${withval}],
             [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
 AC_SUBST(TESTRM)
-
-#Include common ops
-#m4_include([m4/lx_detect_bluegene.m4])
-m4_include([configure.common.ac])
 
 #MPI detection
 m4_include([m4/lx_find_mpi.m4])
@@ -99,7 +97,6 @@ SET_BE_COMPILER_VAR([CXXCPP])
 SET_BE_COMPILER_VAR([STRIP], [${BG_COMP_PATH}powerpc64-bgq-linux-strip])
 SET_BE_COMPILER_VAR([AR], [${BG_COMP_PATH}powerpc64-bgq-linux-ar])
 SET_BE_COMPILER_VAR([host], [powerpc64-bgq-linux])
-
 m4_include([m4/runconf.m4]) 
 RUN_CONFIG_W_COMPILER([src/client], [$CLIENT_CC], [$CLIENT_CFLAGS], [$CLIENT_LDFLAGS], [$CLIENT_LIBS], [$CLIENT_CPPFLAGS], [$CLIENT_CXX], [$CLIENT_CXXFLAGS], [$CLIENT_CPP], [$CLIENT_CXXCPP], [$CLIENT_STRIP], [$CLIENT_AR], [$CLIENT_host])
 

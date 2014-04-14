@@ -14,6 +14,8 @@ LT_INIT
 m4_include([../../m4/lx_detect_bluegene.m4])
 m4_include([../../configure.common.ac])
 
+CHOOSE_SEC
+
 #Include LaunchMON
 m4_include([../../m4/lmon.m4])
 
@@ -77,8 +79,6 @@ fi
 AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
-
-CHOOSE_SEC
 
 AC_OUTPUT
 

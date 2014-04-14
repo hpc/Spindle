@@ -16,7 +16,6 @@ AC_ARG_WITH(localstorage,
             [AS_HELP_STRING([--with-localstorage=DIR],[Directory on back-ends for storing relocated files])],
             [SPINDLE_LOC=${withval}],
             [SPINDLE_LOC=$DEFAULT_LOC])
-MAX_PORT=`expr $SPINDLE_PORT + NUM_COBO_PORTS`
 AC_DEFINE_UNQUOTED([SPINDLE_PORT],[$SPINDLE_PORT],[The default port for Spindle])
 AC_DEFINE_UNQUOTED([NUM_COBO_PORTS],[$NUM_COBO_PORTS],[Number of ports for COBO to search for an open port])
 AC_DEFINE_UNQUOTED([SPINDLE_MAX_PORT],[$(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))],[The maximum port value])
@@ -161,22 +160,42 @@ AC_ARG_WITH(gcrypt-dir,
             [AS_HELP_STRING([--with-gcrypt-dir=DIR],[Look in DIR for gcrypt installation])],
             [GCRYPT_CFLAGS="-I${withval}/include";GCRYPT_LIBS="-L${withval}/lib"],)
 
-m4_define_default([PKG_CHECK_MODULES],[AC_MSG_CHECKING([$1]); AC_MSG_RESULT([no]); $4])
+AC_ARG_WITH(munge-dir,
+            [AS_HELP_STRING([--with-munge-dir=DIR],[Look in DIR for munge installation])],
+            [MUNGE_DIR=${withval}])
+
 AC_DEFUN([CHOOSE_SEC],[
         AC_LANG_PUSH(C)
         CFLAGS_HOLD=$CFLAGS
         LIBS_HOLD=$LIBS
 
         #Check for munge availability
-        PKG_CHECK_MODULES(MUNGE, munge, , [AC_MSG_NOTICE([pkg-config couldn't find munge])])
-        if test "x$MUNGE_LIBS" == "x"; then
+        if test "x$MUNGE_DIR" != "x"; then
+           MUNGE_CFLAGS=-I$MUNGE_DIR
+           MUNGE_LIBS="-L$MUNGE_DIR/lib -lmunge"
+        else
            MUNGE_LIBS=-lmunge
         fi
         CFLAGS="$CFLAGS $MUNGE_CFLAGS"
-        LIBS="$LIBS $MUNGE_LIBS"
-        HAVE_MUNGE="true"
-        AC_CHECK_HEADER([munge.h], , [HAVE_MUNGE="false"])
-        AC_CHECK_LIB(munge, munge_encode, , [HAVE_MUNGE="false"])
+        AC_CHECK_HEADER([munge.h], [HAVE_MUNGE="true"], [HAVE_MUNGE="false"])
+        if test "x$HAVE_MUNGE" == "xtrue"; then
+          HAVE_MUNGE="false"
+          LIBS="$LIBS $MUNGE_LIBS"
+          AC_MSG_CHECKING([whether we have dynamic libmunge])
+          AC_LINK_IFELSE(AC_LANG_PROGRAM([extern void munge_encode();],[munge_encode();]),
+                         [HAVE_MUNGE="true";MUNGE_DYN_LIB=$MUNGE_LIBS;AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+          AC_MSG_CHECKING([wheter we have a static libmunge])
+          MUNGE_STATIC_LIB=`$CC $MUNGE_LIBS --print-file-name=libmunge.a`
+          if test -f $MUNGE_STATIC_LIB; then
+            LIBS="$LIBS_HOLD $MUNGE_STATIC_LIB"
+            AC_LINK_IFELSE(AC_LANG_PROGRAM([extern int munge_encode();],[return munge_encode();]),
+                           [AC_MSG_RESULT([yes]); MUNGE_LIBS=$MUNGE_STATIC_LIB;HAVE_MUNGE="true"],
+                           [AC_MSG_RESULT([no])])
+          else
+            MUNGE_STATIC_LIB=""
+            AC_MSG_RESULT([no])
+          fi
+        fi
         CFLAGS=$CFLAGS_HOLD
         LIBS=$LIBS_HOLD
 
@@ -238,6 +257,7 @@ AC_DEFUN([CHOOSE_SEC],[
         if test "x$KEYFILE x$SECLMON" == "x x"; then
            GCRYPT_CFLAGS=""
            GCRYPT_LIBS=""
+           GCRYPT="false"           
         fi
 
         AC_LANG_POP
