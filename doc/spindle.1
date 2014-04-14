@@ -1,0 +1,161 @@
+.TH SPINDLE 1
+.SH NAME
+spindle \- Load dynamic libraries at scale
+.SH SYNOPSIS
+\fBspindle\fR [\fISPINDLE_OPTION\fR]... \fIMPI_COMMAND\fR [\fIMPI_COMMAND_ARG\fR]...
+
+.SH DESCRIPTION
+Spindle improves the library-loading performance of dynamically-linked HPC applications.  Without Spindle large MPI jobs can hammer on a shared file system when loading dynamically-linked libraries, causing site-wide performance problems.
+
+Spindle takes over the library loading mechanism of each process in a job.  When processes load their dynamically-linked libraries, Spindle will intercept their IO operations and redirect them through a scalable broadcast system.  Instead of potentially thousands of processes loading libraries from a shared file system, Spindle will have a single process read the libraries and broadcast the results to every other process.  Spindle can also be used to scalably load Python files and application data files.
+
+.SH EXAMPLE
+To run Spindle on an MPI job, put the spindle command before your MPI launcher.  Spindle arguments can optionally go between Spindle and the MPI launcher.  For example:
+
+.nf
+.RS
+spindle srun -n 512 ./mpi_hello_world
+spindle -q --reloc-python=no mpirun -np 512 ./my_mpi_app apparg1 apparg2
+.fi
+.RE
+
+.SH OPTIONS
+.TP
+\fB\-a \fIyes\fR|\fIno\fR, \fB\-\-reloc\-aout\fR=\fIyes\fR|\fIno\fR
+Load the application's executable through Spindle.  Default: yes
+
+.TP
+\fB\-l\fR \fIyes\fR|\fIno\fR, \fB\-\-reloc\-libs\fR=\fIyes\fR|\fIno\fR
+Load the application's shared libraries through Spindle.  Default: yes
+
+.TP
+\fB\-y\fR \fIyes\fR|\fIno\fR, \fB\-\-reloc\-python\fR=\fIyes\fR|\fIno\fR
+Load python modules (.py/.pyc/.pyo) files through Spindle. Default: yes
+
+.TP
+\fB\-x\fR \fIyes\fR|\fIno\fR, \fB\-\-reloc\-exec\fR=\fIyes\fR|\fIno\fR
+Load the targets of exec/execv/execv/... through Spindle.  Default: yes
+
+.TP
+\fB\-f\fR \fIyes\fR|\fIno\fR, \fB\-\-follow\-fork=\fIyes\fR|\fIno\fR
+Specify whether Spindle should follow process forks.  If this option is enabled, and a spindle-controlled process forks a new child process, then Spindle will also take control over the child process.  Default: yes
+
+.TP
+\fB\-p\fR, \fB\-\-push\fR
+Use a push model for distributing objects through Spindle.  When any process requests an object (such as a library), it is preemptively distributed to every node in the job.  This option offers better runtime performance on SPMD (Single Program, Multiple Data) codes where every process loads the same libraries.  It can cause extra overhead on MPMD (Multiple Program, Multiple Data) codes where different processes load different libraries.  Push mode is enabled by default.  The alternative to \fB--push\fR is \fB--pull\fR.
+
+.TP
+\fB\-q\fR, \fB\-\-pull\fR
+Use a pull model for distributing objects through Spindle.  Objects are only distributed to the nodes that explicitly request them.  This model may cause higher runtime performance on SPMD codes, but may save memory on MPMD codes.  Pull mode is not used by default.
+
+.TP
+\fB\-c\fR, \fB\-\-cobo\fR
+Use COBO for Spindle's tree communication options.  This option is enabled by default.
+
+.TP
+\fB-t\fR \fIport1\fR[\fI\-port2\fR]\fR, \fB\-\-port=\fIport1\fR[\fI\-port2\fR]\fR
+Specifies the TCP/IP port to use for server-to-server communications.  If a single number is specified then Spindle will only communicate on \fIport1\fR.  If a range of ports are specified, then Spindle will search for an available port between \fIport1\fR and \fIport2\fR.  By default Spindle will use ports 21940-21964, through this can also be changed at Spindle's configure time.
+
+.TP
+\fB\-\-security\-munge\fR
+Use Munge for authenticating network connections between Spindle servers, which prevents other users from connecting into Spindle's communication network.  This option will only be available if Spindle was compiled with Munge support.  Spindle will use munge as its default security mechanism if available.
+
+.TP
+\fB\-\-security\-lmon\fR
+Use gcrypt based signatures to authenticate connections between Spindle servers, and distribute the key via LaunchMON.  This option is only available if Spindle was built with gcrypt support.  This option is Spindle's second choice for a security mechanism, and is selected by default only if Munge is not available.
+
+.TP
+\fB\-\-security\-keyfile\fR
+Use gcrypt based signatures to authenticate connections between Spindle servers, and distribute the key by writing it to a permission-restricted file in a shared file system.  The file location is specified at Spindle's configure time.  This option is only available if Spindle was built with gcrypt support.  This option is Spindle's third choice for a default security mechanism.
+
+.TP
+\fB\-\-security\-none\fR
+Spindle will not attempt to authenticate connections between Spindle server.  Any outside users may be able to connect into Spindle's server network and provide/request files as the user.  This option must be explicitly enabled at Spindle build time before it will be available.
+
+.TP
+\fB\-\-no\-mpi\fR
+Tells spindle to run a serial job rather than an MPI job.  Spindle does not provide significant performance benefits for serial jobs, but this option can be useful for debugging.
+
+.TP
+\fB\-\-openmpi\fR
+By default Spindle will attempt to auto-detect the job launcher implementation from the launcher command line.  This option tells Spindle to assume it is working with OpenMPI/ORTE.
+
+.TP
+\fB\-\-slurm\fR
+By default Spindle will attempt to auto-detect the job launcher implementation from the launcher command line.  This option tells Spindle to assume it is working with SLURM.
+
+.TP
+\fB\-\-wreck\fR
+By default Spindle will attempt to auto-detect the MPI implementation from the launcher command line.  This option tells Spindle to assume it is working with FLUX.
+
+.TP
+\fB\-d \fIyes\fR|\fIno\fR, \fR\-\-debug=\fIyes\fR|\fIno\fR
+If yes, Spindle will adjust its operations so that debuggers can also attach to spindle-controlled processes.  Note that there may be other factors outside of Spindle's control that may still prevent debuggers from working on Spindle-controlled processes.  As of this writing, \fB\-\-debug=yes\fR will allow gdb to attach to a Spindle process, but not TotalView.  This option may also cause extra overhead when starting processes.  This option defaults to no.
+
+.TP
+\fB\-e \fIFILE\fR, \fB\-\-preload=\fIFILE\fR
+Provides a text file containing white-space separated filenames.  Spindle will preload the files in \fIFILE\fR onto each node before starting process execution.  
+
+.TP
+\fB\-\-hostbin=\fIEXECUTABLE\fR
+By default Spindle will try to launch itself via the LaunchMON middleware tool.  However, on some clusters LaunchMON is either unavailable or does not provide a sufficient level-of-service for Spindle.  Without LaunchMON Spindle needs an alternative mechanism for obtaining the list of hostnames that are running an MPI job.  The \fB\-\-hostbin\fR option allows external services to provide this information.  When starting a job Spindle will exec the script/executable specified by \fIEXECUTABLE\fR.  The MPI launcher's stdout and stderr are piped into \fIEXECUTABLE\fR's stdin, and the PID of the job launcher process is passed to \fIEXECUTABLE\fR on the command line.  \fIEXECUTABLE\fR should print the list of hosts that are running job processes, separated by newlines, to stdout and then exit with a zero return code.
+
+.TP
+\fB\-h\fR, \fB\-\-no\-hide\fR
+Spindle opens extra file descriptors in each application process.  By default Spindle will attempt to hide these file descriptors because some applications, such as tcsh, will search for and close unrecognized file descriptors.  This option tells Spindle not to hide its file descriptors from the application.
+
+.TP
+\fB\-n\fR \fIyes\fR|\fIno\fR, \fB\-\-noclean=\fIyes\fR|\fIno\fR
+Don't remove the files in the Spindle file cache after Spindle execution completes.  This can be useful for debugging Spindle.  By default \fB\-\-noclean\fR is no, which cleans the cache files.
+
+.TP
+\fB\-o\fR \fIDIRECTORY\fR, \fB\-\-location=\fIDIRECTORY\fR
+Spindle requires local storage on each node (such as a ramdisk or SSD) for storing an application's libraries and executable.  This option specifies the directory Spindle should use for accessing that local storage.  Environment variables can be passed to this command by prefixing them with a '$' character (which may need to be escaped in your shell).  These environment variables will be expanded on the back-ends nodes.  By default Spindle uses $TMPDIR, though this can be changed at Spindle configure time.
+
+.TP
+\fB\-r\fR \fIPATH\fR, \fB\-\-python\-prefix=\fIPATH\fR
+Spindle can provide a better quality-of-service on Python programs if it knows the prefix where Python was installed.  This option provides a colon-separated list of directories where Spindle may find Python installations.  The directories in \fIPATH\fR are treated as prefixes, and any file operation in their subdirectories are assumed to be on Python files.  This directory list should not contain any directories where the application will make writes (so it would be a bad idea to add '/' to this list).
+
+.TP
+\fB\-s\fR \fIyes\fR|\fIno\fR, \fB\-\-strip=\fIyes\fR|\fIno\fR
+If yes, spindle will not transmit the debug and symbol information from libraries and executables.  This can save memory and improve network performance.  Default is yes.
+
+.TP
+\fB\-z\fR \fB\-\-disable\-logging\fR
+Spindle can be configured to log every invocation in a log file.  If this option is provided then Spindle will not log this invocation.
+
+.TP
+\fB\-?\fR, \fB\-\-help\fR
+Print a help message containing Spindle options and exit.
+
+.TP
+\fB\-\-usage\fR
+Print a short usage message and exit.
+
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print the Spindle version number and exit
+
+.SH ENVIRONMENT VARIABLES
+Some Spindle functionality can be enabled by setting environment variables:
+
+.TP
+\fBSPINDLE_DEBUG\fR [\fI1\fR|\fI2\fR|\fI3\fR]
+Setting the \fBSPINDLE_DEBUG\fR environment variable before running Spindle will enable Spindle's debug mode.  The Spindle front-end, back-end and application clients will write execution logs to the current directory.  Each node that runs part of Spindle will produce a log file with its hostname as part of the filename.  Setting \fBSPINDLE_DEBUG\fR to 1, 2, or 3 will control the level of detail and amount of data Spindle prints.  1 will produce the least detail and data, while 3 will produce the most details and data.
+
+.SH EXIT STATUS
+Spindle will return after the completion of the MPI launcher and with its error code.  If Spindle encounters a fatal error independent of the MPI launcher it will return with a non-zero exit code.
+
+.SH COPYRIGHT
+Copyright (c) 2014, Lawrence Livermore National Security, LLC. Produced at
+the Lawrence Livermore National Laboratory. Written by Matthew LeGendre 
+legendre1@llnl.gov. CODE-636292. All rights reserved.
+
+Copyright (c) 2014, Juelich Supercomputing Center.  Written by Wolfgang Frings
+W.Frings@fz-juelich.de. All rights reserved.
+
+License: LGPL 2.1
+
+.SH BUGS
+Report bugs to legendre1@llnl.gov
+
