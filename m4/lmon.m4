@@ -58,12 +58,16 @@ if test "xHAVE_LMON" != "xfalse"; then
                  [LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST]
                  AC_MSG_RESULT([yes]),
                  [])
-  if test "x$LAUNCHMON_STATIC_LIBS x$HAVE_MUNGE" == "x xtrue"; then
-    LIBS="$LIBS_HOLD $MUNGE_STATIC_LIB"
-    AC_LINK_IFELSE(AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();]),
-                   [LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB]
-                    AC_MSG_RESULT([yes]),
-                   [AC_MSG_RESULT([no])])
+  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
+    if test "x$HAVE_MUNGE" == "xtrue"; then
+      LIBS="$LIBS_HOLD $LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
+      AC_LINK_IFELSE(AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();]),
+                     [LAUNCHMON_STATIC_LIBS="$LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"]
+                      AC_MSG_RESULT([yes]),
+                     [AC_MSG_RESULT([no])])
+    else
+      AC_MSG_RESULT([no])
+    fi
   fi
   AC_LANG_POP
   LDFLAGS=$LDFLAGS_HOLD
