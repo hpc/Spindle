@@ -123,13 +123,15 @@ static int packfebe_cb(void *udata,
 {  
    spindle_args_t *args = (spindle_args_t *) udata;
 
-   *msgbuflen = sizeof(unsigned int) * 2;
+   *msgbuflen = sizeof(unsigned int) * 3;
    assert(*msgbuflen < msgbufmax);
    
    char *buffer = (char *) msgbuf;
    int pos = 0;
    memcpy(buffer + pos, &args->port, sizeof(args->port));
    pos += sizeof(args->port);
+   memcpy(buffer + pos, &args->num_ports, sizeof(args->num_ports));
+   pos += sizeof(args->num_ports);
    memcpy(buffer + pos, &args->shared_secret, sizeof(args->shared_secret));
    pos += sizeof(args->shared_secret);
 

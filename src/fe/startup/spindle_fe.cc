@@ -47,7 +47,7 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 6;
+   buffer_size = sizeof(unsigned int) * 7;
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
@@ -56,6 +56,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    char *buf = (char *) malloc(buffer_size);
    pack_param(args->number, buf, pos);
    pack_param(args->port, buf, pos);
+   pack_param(args->num_ports, buf, pos);
    pack_param(args->opts, buf, pos);
    pack_param(args->shared_secret, buf, pos);
    pack_param(args->use_launcher, buf, pos);
@@ -93,7 +94,7 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    /* Start FE server */
    debug_printf("Starting FE servers with hostlist of size %u on port %u\n", hosts_size, params->port);
    ldcs_audit_server_fe_md_open(const_cast<char **>(hosts), hosts_size, 
-                                params->port, params->shared_secret,
+                                params->port, params->num_ports, params->shared_secret,
                                 &md_data_ptr);
 
    /* Broadcast parameters */

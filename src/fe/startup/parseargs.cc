@@ -126,6 +126,8 @@ static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
 static bool logging_enabled = DEFAULT_LOGGING_ENABLED;
 
 static unsigned int spindle_port = SPINDLE_PORT;
+static unsigned int num_ports = NUM_COBO_PORTS;
+
 string spindle_location(SPINDLE_LOC);
 
 unsigned long opts = 0;
@@ -153,8 +155,8 @@ struct argp_option options[] = {
      "These options configure Spindle's network model.  Typical Spindle runs should not need to set these.", GROUP_NETWORK },
    { "cobo", COBO, NULL, 0,
      "Use a tree-based cobo network for distributing objects", GROUP_NETWORK },
-   { "port", PORT, "number", 0,
-     "TCP Port for Spindle servers.  Default: " STR(SPINDLE_PORT), GROUP_NETWORK },
+   { "port", PORT, "port1-port2", 0,
+     "TCP/IP port range for Spindle servers.  Default: " STR(SPINDLE_PORT) "-" STR(SPINDLE_MAX_PORT), GROUP_NETWORK },
    { NULL, 0, NULL, 0,
      "These options specify the security model Spindle should use for validating TCP connections. "
      "Spindle will choose a default value if no option is specified.", GROUP_SEC },
@@ -278,6 +280,20 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       spindle_port = atoi(arg);
       if (!spindle_port) {
          argp_error(state, "Port was given a 0 value");
+      }
+      char *second_port = strchr(arg, '-');
+      if (second_port == NULL) {
+         num_ports = 1;
+      }
+      else {
+         unsigned int port2 = atoi(second_port+1);
+         if (spindle_port > port2) {
+            argp_error(state, "port2 must be larger than port1");
+         }
+         if (spindle_port + 128 < port2) {
+            argp_error(state, "port2 must be within 128 of port1");
+         }
+         num_ports = port2 - spindle_port + 1;
       }
       return 0;
    }
@@ -493,4 +509,9 @@ std::string getHostbin()
 int getStartupType()
 {
    return startup_type;
+}
+
+unsigned int getNumPorts()
+{
+   return num_ports;
 }

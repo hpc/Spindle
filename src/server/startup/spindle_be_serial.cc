@@ -20,12 +20,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 int startSerialBE(int /*argc*/, char * /*argv*/[])
 {
-   char *port_s, *shared_secret_s;
-   unsigned int port, shared_secret;
+   char *port_s, *num_ports_s, *shared_secret_s;
+   unsigned int port, num_ports, shared_secret;
 
    port_s = getenv("SPINDLE_SERIAL_PORT");
    if (!port_s) {
       err_printf("SPINDLE_SERIAL_PORT wasn't set\n");
+      return -1;
+   }
+   num_ports_s = getenv("SPINDLE_SERIAL_NUMPORTS");
+   if (!num_ports_s) {
+      err_printf("SPINDLE_SERIAL_NUMPORTS wasn't set\n");
       return -1;
    }
    shared_secret_s = getenv("SPINDLE_SERIAL_SHARED");
@@ -35,6 +40,7 @@ int startSerialBE(int /*argc*/, char * /*argv*/[])
    }
    port = atoi(port_s);
    shared_secret = atoi(shared_secret_s);
+   num_ports = atoi(num_ports_s);
 
-   return spindleRunBE(port, shared_secret, NULL);
+   return spindleRunBE(port, num_ports, shared_secret, NULL);
 }

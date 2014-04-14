@@ -64,6 +64,9 @@ typedef struct {
    /* The beginning port in a range that will be used for server->server communication */
    unsigned int port;
 
+   /* The number of ports in the port range */
+   unsigned int num_ports;
+
    /* A bitfield of the above OPT_* values */
    unsigned int opts;
 
@@ -93,7 +96,7 @@ int spindleInitFE(const char **hosts, spindle_args_t *params);
 int spindleCloseFE();
 
 /* Runs the server process on a BE, returns when server is done */
-int spindleRunBE(unsigned int port, unsigned int shared_secret, int (*post_setup)(spindle_args_t *));
+int spindleRunBE(unsigned int port, unsigned int num_ports, unsigned int shared_secret, int (*post_setup)(spindle_args_t *));
 
 /* Bitmask of values for the test_launchers parameter */
 #define TEST_PRESETUP 1<<0

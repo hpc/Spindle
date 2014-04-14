@@ -32,7 +32,7 @@ static void initSecurity();
 #if defined(HAVE_LMON)
 extern int startLaunchmonBE(int argc, char *argv[]);
 #endif
-extern int startHostbinBE(unsigned int port, unsigned int shared_secret);
+extern int startHostbinBE(unsigned int port, unsigned int num_ports, unsigned int shared_secret);
 extern int startSerialBE(int argc, char *argv[]);
 
 enum startup_type_t {
@@ -44,6 +44,7 @@ startup_type_t startup_type;
 static int security_type;
 static int number;
 static int port;
+static int num_ports;
 static int shared_secret;
 
 int main(int argc, char *argv[])
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
          result = startSerialBE(argc, argv);
          break;
       case hostbin:
-         result = startHostbinBE(port, shared_secret);
+         result = startHostbinBE(port, num_ports, shared_secret);
          break;
       default:
          err_printf("Unknown startup mode\n");
@@ -133,6 +134,8 @@ static int parseCommandLine(int argc, char *argv[])
    if (startup_type == hostbin) {
       if (++i >= argc) return -1;
       port = atoi(argv[i]);
+      if (++i >= argc) return -1;
+      num_ports = atoi(argv[i]);
       if (++i >= argc) return -1;
       shared_secret = atoi(argv[i]);
    }

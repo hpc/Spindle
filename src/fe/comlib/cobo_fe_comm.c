@@ -20,20 +20,27 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "fe_comm.h"
 #include "config.h"
+#include <assert.h>
+#include <stdlib.h>
 
-int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, unsigned int shared_secret, 
+int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, unsigned int num_ports,
+                                   unsigned int shared_secret, 
                                    void **data  ) {
    int rc=0;
-   int portlist[NUM_COBO_PORTS];
+   int *portlist;
    int root_fd, ack;
    int i;
 
-   for (i = 0; i < NUM_COBO_PORTS; i++) {
+   assert(num_ports >= 1);
+   portlist = malloc(sizeof(int) * (num_ports+1));
+   for (i = 0; i < num_ports; i++) {
       portlist[i] = port + i;
    }
+   portlist[num_ports] = 0;
 
-   debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[NUM_COBO_PORTS-1]);
-   cobo_server_open(shared_secret, hostlist, numhosts, portlist, NUM_COBO_PORTS);
+   debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[num_ports-1]);
+   cobo_server_open(shared_secret, hostlist, numhosts, portlist, num_ports);
+   free(portlist);
 
    cobo_server_get_root_socket(&root_fd);
   

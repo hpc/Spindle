@@ -23,8 +23,8 @@ extern "C" {
 
 #include "ldcs_api.h"
 
-int ldcs_audit_server_fe_md_open(char **hostlist, int numhosts, unsigned int port, unsigned int shared_secret, 
-                                 void **data);
+int ldcs_audit_server_fe_md_open(char **hostlist, int numhosts, unsigned int port, unsigned int num_ports,
+                                 unsigned int shared_secret, void **data);
 int ldcs_audit_server_fe_md_close(void *data);
 int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
 

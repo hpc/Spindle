@@ -129,6 +129,7 @@ static void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
 
    args->number = getpid();
    args->port = getPort();
+   args->num_ports = getNumPorts();
    args->opts = opts;
    args->shared_secret = get_shared_secret();
    args->use_launcher = getLauncher();
@@ -196,7 +197,7 @@ char spindle_hostbin_arg[] = "--spindle_hostbin";
 
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args)
 {
-   char **daemon_opts = (char **) malloc(10 * sizeof(char *));
+   char **daemon_opts = (char **) malloc(11 * sizeof(char *));
    char number_s[32];
    int i = 0;
 
@@ -225,10 +226,12 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
    daemon_opts[i++] = strdup(number_s);
 
    if (args->startup_type == startup_hostbin) {
-      char port_str[32], ss_str[32];
-      snprintf(port_str, 32, "%d", getPort());
-      snprintf(ss_str, 32, "%d", get_shared_secret());
+      char port_str[32], ss_str[32], port_num_str[32];
+      snprintf(port_str, 32, "%d", args->port);
+      snprintf(port_num_str, 32, "%d", args->num_ports);
+      snprintf(ss_str, 32, "%d", args->shared_secret);
       daemon_opts[i++] = strdup(port_str);
+      daemon_opts[i++] = strdup(port_num_str);
       daemon_opts[i++] = strdup(ss_str);
    }
    daemon_opts[i] = NULL;

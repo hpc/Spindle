@@ -121,6 +121,9 @@
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
 
+/* The maximum port value */
+#undef SPINDLE_MAX_PORT
+
 /* The default port for Spindle */
 #undef SPINDLE_PORT
 

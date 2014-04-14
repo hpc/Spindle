@@ -957,6 +957,7 @@ enable_fast_install
 with_gnu_ld
 enable_libtool_lock
 with_default_port
+with_default_num_ports
 with_localstorage
 enable_bluegene
 with_hostbin
@@ -1655,7 +1656,10 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
-  --with-default-port=NUM TCP Port for Spindle server communication
+  --with-default-port=NUM TCP/IP Port for Spindle server communication
+  --with-default-numports=NUM
+                          Number of TCP/IP ports to scan for Spindle server
+                          communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
   --with-hostbin=EXE      Executable for returning host lists for jobs
   --with-python-prefix=STR
@@ -5041,13 +5045,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5044: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5048: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5047: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5051: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5050: output\"" >&5)
+  (eval echo "\"\$as_me:5054: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6253,7 +6257,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6256 "configure"' > conftest.$ac_ext
+  echo '#line 6260 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8844,11 +8848,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8847: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8851: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8851: \$? = $ac_status" >&5
+   echo "$as_me:8855: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9183,11 +9187,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9186: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9190: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9190: \$? = $ac_status" >&5
+   echo "$as_me:9194: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9288,11 +9292,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9291: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9295: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9295: \$? = $ac_status" >&5
+   echo "$as_me:9299: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9343,11 +9347,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9346: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9350: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9350: \$? = $ac_status" >&5
+   echo "$as_me:9354: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12146,7 +12150,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12149 "configure"
+#line 12153 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12242,7 +12246,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12245 "configure"
+#line 12249 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14262,11 +14266,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14265: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14269: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14269: \$? = $ac_status" >&5
+   echo "$as_me:14273: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14361,11 +14365,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14364: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14368: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14368: \$? = $ac_status" >&5
+   echo "$as_me:14372: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14413,11 +14417,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14416: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14420: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14420: \$? = $ac_status" >&5
+   echo "$as_me:14424: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15450,12 +15454,22 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #Network port and local storage location
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
+DEFAULT_NUM_COBO_PORTS=25
+
 
 # Check whether --with-default-port was given.
 if test "${with_default_port+set}" = set; then
   withval=$with_default_port; SPINDLE_PORT=${withval}
 else
   SPINDLE_PORT=$DEFAULT_PORT
+fi
+
+
+# Check whether --with-default-num-ports was given.
+if test "${with_default_num_ports+set}" = set; then
+  withval=$with_default_num_ports; NUM_COBO_PORTS=${withval}
+else
+  NUM_COBO_PORTS=$DEFAULT_NUM_COBO_PORTS
 fi
 
 
@@ -15466,6 +15480,7 @@ else
   SPINDLE_LOC=$DEFAULT_LOC
 fi
 
+MAX_PORT=`expr $SPINDLE_PORT + NUM_COBO_PORTS`
 
 cat >>confdefs.h <<_ACEOF
 #define SPINDLE_PORT $SPINDLE_PORT
@@ -15473,8 +15488,19 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
+#define NUM_COBO_PORTS $NUM_COBO_PORTS
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define SPINDLE_MAX_PORT $(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
 #define SPINDLE_LOC "$SPINDLE_LOC"
 _ACEOF
+
 
 
 #OS Detection
@@ -15625,11 +15651,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-
-cat >>confdefs.h <<\_ACEOF
-#define NUM_COBO_PORTS 25
-_ACEOF
-
 
 { $as_echo "$as_me:$LINENO: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&5
 $as_echo "$as_me: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&6;}

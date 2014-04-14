@@ -132,7 +132,7 @@ struct ldcs_process_data_struct
 };
 typedef struct ldcs_process_data_struct ldcs_process_data_t;
 
-int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secret,
+int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, unsigned int shared_secret,
                                     void **packed_setup_data, int *data_size);
 int ldcs_audit_server_process (spindle_args_t *args);
 int ldcs_audit_server_run();

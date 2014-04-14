@@ -77,24 +77,28 @@ int read_msg(int fd, node_peer_t *peer, ldcs_message_t *msg)
    return 0;
 }
 
-int ldcs_audit_server_md_init(unsigned int port, unsigned int shared_secret, ldcs_process_data_t *data)
+int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, 
+                              unsigned int shared_secret, ldcs_process_data_t *data)
 {
    int rc=0;
-   int portlist[NUM_COBO_PORTS];
+   unsigned int *portlist;
    int my_rank, ranks, fanout;
    int i;
 
-   for (i = 0; i < NUM_COBO_PORTS; i++) {
+   portlist = malloc(sizeof(unsigned int) * (num_ports + 1));
+   for (i = 0; i < num_ports; i++) {
       portlist[i] = port + i;
    }
+   portlist[num_ports] = 0;
 
    /* initialize the client (read environment variables) */
-   debug_printf2("Opening cobo with port %d - %d\n", portlist[0], portlist[NUM_COBO_PORTS-1]);
-   if (cobo_open(shared_secret, portlist, NUM_COBO_PORTS, &my_rank, &ranks) != COBO_SUCCESS) {
+   debug_printf2("Opening cobo with port %d - %d\n", portlist[0], portlist[num_ports-1]);
+   if (cobo_open(shared_secret, (int *) portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
       printf("Failed to init\n");
       exit(1);
    }
    debug_printf2("cobo_open complete. Cobo rank %d/%d\n", my_rank, ranks);
+   free(portlist);
 
    data->server_stat.md_rank = data->md_rank = my_rank;
    data->server_stat.md_size = data->md_size = ranks;

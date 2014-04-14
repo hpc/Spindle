@@ -36,6 +36,9 @@ static int unpackfebe_cb(void* udatabuf,
 
    memcpy(&args->port, buffer + pos, sizeof(args->port));
    pos += sizeof(args->port);
+
+   memcpy(&args->num_ports, buffer + pos, sizeof(args->num_ports));
+   pos += sizeof(args->num_ports);
    
    memcpy(&args->shared_secret, buffer + pos, sizeof(args->shared_secret));
    pos += sizeof(args->shared_secret);
@@ -102,6 +105,7 @@ int startLaunchmonBE(int argc, char *argv[])
 {
    struct {
       unsigned int port;
+      unsigned int num_ports;
       unsigned int shared_secret;
    } conn_info;
    lmon_rc_e rc;
@@ -153,6 +157,7 @@ int startLaunchmonBE(int argc, char *argv[])
       }
       if (LMON_be_amIMaster() == LMON_YES) {
          conn_info.port = args.port;
+         conn_info.num_ports = args.num_ports;
          conn_info.shared_secret = args.shared_secret;
       }
    }
@@ -164,7 +169,7 @@ int startLaunchmonBE(int argc, char *argv[])
       return -1;
    }
    
-   result = spindleRunBE(conn_info.port, conn_info.shared_secret, releaseApplication);
+   result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.shared_secret, releaseApplication);
    if (result == -1) {
       err_printf("Failed in call to spindleInitBE\n");
       return -1;

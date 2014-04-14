@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 unsigned long parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
 unsigned int getPort();
+unsigned int getNumPorts();
 std::string getLocation(int number);
 std::string getPythonPrefixes();
 std::string getHostbin();

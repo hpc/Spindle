@@ -57,7 +57,7 @@ int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
   return(rc);
 }
 
-int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secret, 
+int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, unsigned int shared_secret, 
                                     void **packed_setup_data, int *data_size)
 {
    int result;
@@ -66,7 +66,7 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int shared_secre
    memset(&ldcs_process_data, 0, sizeof(ldcs_process_data));
 
    /* Initialize server->server network */
-   ldcs_audit_server_md_init(port, shared_secret, &ldcs_process_data);
+   ldcs_audit_server_md_init(port, num_ports, shared_secret, &ldcs_process_data);
 
    /* Use network to broadcast configuration parameters */
    ldcs_message_t msg;
