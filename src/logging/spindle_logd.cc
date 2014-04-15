@@ -62,7 +62,7 @@ MsgReader *test_reader;
 bool runTests = false;
 bool runDebug = false;
 
-static char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
+static unsigned char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
 
 class UniqueProcess
 {
@@ -123,7 +123,7 @@ public:
 
    bool isExitCode(const char *msg1, int msg1_size, const char *msg2, int msg2_size)
    {
-      if (msg1[0] != exitcode[0])
+      if (msg1[0] != (char) exitcode[0])
          return false;
       if (msg1_size + msg2_size != 8)
          return false;
@@ -137,7 +137,7 @@ public:
          code[i] = msg2[j];
       
       for (i = 0; i<8; i++) {
-         if (code[i] != exitcode[i]) 
+         if (code[i] != (char) exitcode[i]) 
             return false;
       }
       return true;

@@ -184,7 +184,7 @@ typedef ParseSizedBinary<Elf32_Addr, Elf32_Ehdr, Elf32_Shdr, Elf32_Sym> ParseSiz
 ParseOpenMPIBinary *ParseOpenMPIBinary::newParser(string path)
 {
    struct stat stat_buf;
-   size_t filesize;
+   size_t filesize = 0;
    int fd = -1;
    void *mmap_result;
 

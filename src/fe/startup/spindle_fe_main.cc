@@ -65,7 +65,7 @@ extern int startHostbinFE(string hostbin_exe,
 
 int main(int argc, char *argv[])
 {
-   int result;
+   int result = 0;
 
    setupLogging(argc, argv);
 
