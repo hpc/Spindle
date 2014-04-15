@@ -186,7 +186,7 @@ ParseOpenMPIBinary *ParseOpenMPIBinary::newParser(string path)
    struct stat stat_buf;
    size_t filesize = 0;
    int fd = -1;
-   void *mmap_result;
+   void *mmap_result = NULL;
 
    try {
       int result = stat(path.c_str(), &stat_buf);
@@ -209,7 +209,7 @@ ParseOpenMPIBinary *ParseOpenMPIBinary::newParser(string path)
       
       if (fd != -1)
          close(fd);
-      if (mmap_result != NULL)
+      if (mmap_result != NULL && mmap_result != MAP_FAILED)
          munmap(mmap_result, filesize);
       return NULL;
    }
