@@ -1,0 +1,13 @@
+Spindle 0.9
+-----------
+  - Support for OpenMPI's ORTE-based launching
+  - Support for the flux resource manager
+  - Improve support for co-existing with debuggers
+  - Reorganize source tree to separate FE/BE/CLIENT builds
+  - Support for building different spindle components with different compilers
+  - Add security models for authentication TCP/IP connections
+  - New hostbin-based startup for when LaunchMON doesn't work
+  - New spindle man page
+  - Fix a crash when dealing with size 0 libraries
+  - Fix a race-condition hang on startup
+
