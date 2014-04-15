@@ -1,8 +1,8 @@
 =============================================================================
 == SPINDLE: Scalable Parallel Input Network for Dynamic Load Environments  ==
 =============================================================================
-Authors:    SPINDLE:              W.Frings <W.Frings at fz-juelich dot de>
-                                  Matthew LeGendre (legendre1 at llnl dot gov)
+Authors:    SPINDLE:              Matthew LeGendre (legendre1 at llnl dot gov)
+                                  W.Frings <W.Frings at fz-juelich dot de>
             COBO:                 Adam Moody <moody20 at llnl dot gov>
 
 Version:    0.9 (April 2014)
@@ -17,81 +17,55 @@ Documentation:
 ============
 https://computation-rnd.llnl.gov/spindle/
 
-Introduction:
+Overview:
 ============
 
-Dynamic linking and loading are widely used in High Performance
-Computing (HPC). As HPC applications are becoming increasingly
-complex, developers leverage these techniques that are well-suited for
-large-scale software development through support for modularization
-and computational steering. But the growing trend towards high numbers
-of dynamically linked libraries (DLLs) within applications poses
-greater challenges to application start-up. During start-up at scale,
-a large number of processes simultaneously access many DLLs, which
-creates file access storms that overwhelm shared file systems and acts
-like site-wide denial-of-service attacks. 
+Using dynamically-linked libraries is common in most computational
+environments, but they can cause serious problem when used on large
+clusters and supercomputers.  Shared libraries are frequently stored
+on shared file systems, such as NFS.  When thousands of processes
+simultaneously start and attempt to search for and load libraries, it
+resembles a denial-of-service attack against the shared file system.
+This "attack" doesn't just slow down the application, but impacts
+every user on the system.  We encountered cases where it took over ten
+hours for a dynamically-linked MPI application running on 16K
+processes to reach main.
 
-The Scalable Parallel Input Network for Dynamic Loading Environment
-(SPINDLE) presents a novel approach that provides a scalable and
-transparent dynamic linking and loading environment. SPINDLE extends
-the stock dynamic loader (e.g., ld.so) with a scalable file cache
-server overlay network. The network forms a forest topology that
-allows SPINDLE to use a varying number of communication trees in the
-forest, thereby only the roots of the trees perform file operations of
-dynamic loading and scalably propagate the results to all other cache
-servers. The cached results are then used by SPINDLE clients that
-intercept and re-route file operations of the dynamic
-loaders. Building on the existing loader auditing interface, system
-requires no modifications to either the loader or the application.
+Spindle presents a novel solution to this problem.  It transparently
+runs alongside your distributed application and takes over its library
+loading mechanism.  When processes start to load a new library,
+Spindle intercepts the operation, designates one process to read the
+file from the shared file system, then distributes the library's
+contents to every process with a scalable broadcast operation.
 
-Scalability:
-------------
+Spindle is very scalable.  On a cluster at LLNL the Pynamic benchmark
+(which measures library loading performance) was unable to scale much
+past 100 nodes.  Even at that small scale it was causing significant
+performance problems that were impacting everyone on the cluster.
+When running Pynamic under Spindle, we were able to scale up to the
+max job size at 1,280 nodes without showing any signs of file-system
+stress or library-related slowdowns.
 
-Preliminary results on LLNL Linux clusters indicate that SPINDLE
-prototype improves the performance of Pynamic, a benchmark that
-stresses the dynamic loading system, by a factor of 3.5 over the
-traditional approach at 768 MPI processes, the scale at which we could
-run the traditional scheme without significantly affecting other
-jobs. Further this benchmark under SPINDLE support scales well on LLNL
-clusters without pounding on the shared resources up to 8400
-processes.
+Unlike competing solutions, Spindle does not require any special
+hardware, and libraries do not have to be staged into any special
+locations.  Applications can work out-of-the-box do not need any
+special compile or link flags.  Spindle is completely userspace and
+does not require kernel patches or root privileges.
 
-
-Directories:
-============
-
-./auditclient      --> Implementation of Loader Auditing Interface for SPINDLE,
-                       Sample client applications
-./auditserver      --> Implementation of SPINDLE server,
-                       High level communication layer (cobo, msocket)
-./beboot           --> Implementation of bootstrapper, which relocates executables and
-                       assists in Spindle startup
-./cache            --> Internal data structure for file meta data (cache)
-./client_comlib    --> Client-side of client/server communications infrastructure
-./comlib           --> Server-side of client/server communications infrastructure
-./launchmon        --> LaunchMON start-up command and BE-server
-./logging          --> Logging deamon that collects debug logs from clients and servers
-./m4               --> Autoconf helper routines
-./scripts          --> Autoconf helper scripts
-./testsuite        --> A testsutie for 
-./tools/cobo/src   --> cobo src used by one of the high level SPINDLE comm. layers      
-./tools/sion_debug --> Implements DPRINTF interface for selective printf-debugging
-                       from SIONlib package
+Spindle can trigger scalable loading of dlopened libraries, dependent
+library, executables, python modules and specified application data
+files.
 
 
 Compilation:
 ============
 
-1) Run spindle/configure from a build directory
-
-2) 'make install' from that build directory
+Please see INSTALL file in the Spindle source tree.
 
 Usage:
 ======
 
-spindle <job launch command>
+Put 'spindle' before your job launch command.  E.g:
 
- e.g,
-
-spindle mpirun -n 128 mpi_hello_world
+  spindle mpirun -n 128 mpi_hello_world
 

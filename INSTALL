@@ -1,0 +1,185 @@
+=============================================================================
+== SPINDLE INSTALLATION
+=============================================================================
+
+Wait! Were you about to type './configure && make && make install'?
+Unfortunately, it's not going to be that easy.  There's likely several
+options you'll have to pass to Spindle's configure line before it'll
+work with your cluster.  In short, you may have to provide some subset
+of the following to configure:
+
+1) Specify a security model 
+2) Specify a compiler to use for both front-end and back-end processes
+3) Specify a start-up mechanism that works on your cluster
+4) Specify a back-end local storage location
+5) Optionally specify any misc tuning options
+
+You can run 'configure --help' to see all of Spindle's configuration
+options, though most of these can be left as defaults.  Here's some
+details about the above options.
+
+1) Specify a security model
+
+Spindle creates a network of daemons, one running on each node, and
+connected via TCP/IP connections.  Any file's contents can be
+requested through this network, and executable code can be sent along
+the network to be run on other processes.  If an external process
+makes an TCP/IP connection into the network on the appropriate port,
+they'll essentially be able to get complete control over someone's
+account.
+
+Spindle thus has several security models that authenticate connections
+into its network.  Each of these has trade offs or requirements.  As of
+this writing there are four configure options for setting the security
+mode.  If multiple options are provided then Spindle will compile in
+support for each option, and a user can select the security model at
+runtime:
+
+  --enable-sec-munge - This option tells Spindle to use munge for its
+    security model.  Munge is an external package
+    (https://code.google.com/p/munge) that runs as a daemon on each
+    node in a cluster.  It's fast, scalable and relatively easy to
+    install (though it requires a root install) authentication
+    mechanism.  If Munge is available, it's Spindle's first choice for
+    a security mechanism.  You can point Spindle at a munge
+    installation directory with the --with-munge-dir configure option.
+
+
+  --enable-sec-keydir=DIR - This option tells Spindle to use gcrypt to
+    authenticate connections.  Spindle will share a key need by gcrypt
+    by writing it into a permission-restricted file in DIR.  DIR will
+    need to be a shared file system mounted across your cluster.  You
+    can specify environment variables in DIR, which (when properly
+    escaped) will be evaluated at Spindle's runtime.  So if $HOME is
+    globally mounted, you could do
+    '--enable-sec-keydir=\$HOME/.spindle'.  Note that this option will
+    cause some extra runtime overhead, as a daemon on each node in the
+    cluster will need to read the keyfile.
+
+  --enable-sec-launchmon - This option tells Spindle to use gcrypt to
+    authenticate connections.  Spindle will share a key by
+    broadcasting it with LaunchMON's communication infrastructure.
+    Note that this makes the key only as secure as LaunchMON's
+    communications.  The (currently pending) LaunchMON 1.0.0 release
+    should have its own security infrastrucure. 
+
+  --enable-sec-none - This option tells Spindle not to authenticate
+    connections into its network.  This should only be used in secure
+    and broadly-trusted environments.  This option is never selected
+    by default, and must be explicitly passed on the command line.
+
+
+2) Specify a compiler to use for both front-end and back-end processes
+
+Spindle has multiple components that run on different parts of a
+cluster.  Spindle is expected to be launched from a front-end node,
+where MPI jobs are launched.  On back-end, where MPI jobs run, it also
+expects to run a daemon and inject a library into applications.
+
+If your cluster has a single compiler that can build libraries and
+executables for the front-end and back-end nodes, then you don't have
+to do much here.  Make sure configure uses that compiler (set the
+standard CC/CXX variables if necessary) and you're good to go.
+
+If you need to use different compilers to build code for the front-end
+and back-ends, then you need to point Spindle at those compilers.  The
+standard CC/CXX environment variables will be used to build code for
+the front-end, while the BE_CC/BE_CXX environment variables are
+expected to point at compilers that build code for the back-ends.  For
+example, if gcc/g++ build code for the front-ends, and icc/icpc build
+code for the backends, then you could run configure with something
+like:
+
+  configure CC=gcc CXX=g++ BE_CC=icc BE_CXX=icpc
+
+Note that Spindle doesn't use MPI, so you may not want to pass
+mpi-wrapper compilers to Spindle's configure.
+
+There are other variables for controlling Spindle's compiler usage,
+run 'configure --help' to see them all.
+
+
+3) Specify a start-up mechanism that works on your cluster
+
+Spindle prefers to use LaunchMON
+(http://sourceforge.net/projects/launchmon) to start its daemons, but
+that won't work on all clusters.  LaunchMON is normally used for
+starting debuggers on clusters, but Spindle has different requirements
+than debuggers.  One way to tell if Spindle/LaunchMON will work on
+your system is to create an MPI job under your favorite debugger on
+your cluster.  If the debugger give you control of your processes
+while they're in MPI_Init, then Spindle/LaunchMON won't work on your
+cluster* (because Spindle needs to get control before libraries are
+loaded, which happens before MPI_Init).  If the debugger gives you
+control at the first instruction in the process, then
+Spindle/LaunchMON should also work.
+
+* = OpenMPI is an exception to this rule.  Normally when running with
+  OpenMPI a debugger you'll get control in MPI_Init, but Spindle knows
+  some tricks to make LaunchMON work with OpenMPI.
+
+If LaunchMON is going to work on your cluster, then install it and
+point configure at LaunchMON with the --with-launchmon configure
+option.
+
+If LaunchMON isn't going to work, then you'll need to run Spindle in
+"hostbin" mode.  This may involve writing a script that plugs into
+Spindle.  Without LaunchMON, Spindle needs an alternative mechanism
+for obtaining the list of back-end hostnames that are associated with
+an MPI job, which can be different on each cluster.  The
+--with-hostbin=EXE configure option allows external services to
+provide this information.  When starting a job Spindle will execute
+the script/executable specified by EXE.  The MPI launcher's stdout and
+stderr are piped into EXE's stdin, and the PID of the job launcher
+process is passed to EXE on the command line.  EXE should print the
+list of hosts that are running job processes, separated by newlines,
+to stdout and then exit with a zero return code.
+
+
+4) Specify a back-end local storage location
+
+Spindle is transmiting library files to each back-end, and it needs a
+location to store those libraries.  That location does not need to be
+shared across the cluster, and it should provide fast, scalable access
+to files.  A ramdisk or local SSD would be ideal.
+
+The --with-localstorage=DIR option should be used to specify this
+location.  The DIR parameter can be an escaped environment variable,
+which will be evaluated on the back-end nodes.  The default value for
+this option is --with-localstorage=\$TMPDIR.
+
+
+5) Optionally specify any misc tuning options
+
+There are a few other non-standard configure options you may care
+about:
+
+  --with-python-prefix=DIRS - Spindle can provide a better
+    quality-of-service on Python programs if it knows the prefix where
+    Python was installed.  This configure option provides a
+    colon-separated list of directories where Spindle may find Python
+    installations.  The directories in DIRS are treated as prefixes,
+    and any file operation in their subdirectories are assumed to be
+    on Python files.  This directory list should not contain any
+    directories where the application will make writes (so it would be
+    a bad idea to add '/' to this list).
+
+  --with-testrm=ARG - Spindle has a testsuite, which can be invoked by
+    running $SPINDLE_BUILDDIR/testsuite/runTests.  The testsuite needs
+    to know how to launch MPI jobs on your system.  When given this
+    option, Spindle's testsuite will look for a script at
+    $SPINDLE_SRCDIR/testsuite/run_driver_$ARG that invokes MPI jobs.
+    See the testsuite/run_driver_template for an example script.  As
+    of this writing, Spindle ships with with run_driver_flux,
+    run_driver_openmpi, and run_driver_slurm.
+
+  --with-usage-logging=FILE - Spindle can write an entry into FILE
+    every time it's invoked.  This entry records the user who ran
+    spindle, the time it was run, and the Spindle version.
+
+  --with-default-numports=NUM
+  --with-default-port=NUM - These options specify a range of TCP/IP
+    ports that Spindle will use for communicating between its daemons.
+    It's usually okay to leave these at their default values (port
+    range 21940-21964), unless there happens to be a conflict.
+
