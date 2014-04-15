@@ -23,12 +23,13 @@ void writeFile(FILE *f, char *prefix, int size)
 {
    int i;
    fprintf(f, "int %s_cache[%d];\n", prefix, size+1);
+   fprintf(f, "volatile int always_zero = 0;\n");
+   fprintf(f, "volatile int vals[16];\n");
    fprintf(f, "#define SPACE_FILLER \\\n");
-   fprintf(f, "  *v = *v + 1; \\\n");
-   fprintf(f, "  if (*v > 0) { ; } \\\n");
-   for (i = 0; i <= 16; i++)
-      fprintf(f, "  else if (*v == -%d) { *v += %d; } \\\n", i, i);
-   fprintf(f, "   else { *v = 0; }\n");
+   fprintf(f, "   if (always_zero) { \\\n");
+   for (i = 0; i < 16; i++)
+      fprintf(f, "    vals[%d]++;\\\n", i);
+   fprintf(f, "}\n");
    fprintf(f, "int %s_fib0(volatile int *v) { return 0; }\n", prefix);
    fprintf(f, "int %s_fib1(volatile int *v) { return 1; }\n", prefix);
    for (i = 2; i <= size; i++) {
