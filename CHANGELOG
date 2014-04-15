@@ -11,3 +11,10 @@ Spindle 0.9
   - Fix a crash when dealing with size 0 libraries
   - Fix a race-condition hang on startup
 
+Spindle 0.8
+-----------
+  - New Spindle API allows for manually requesting Spindle semantics of open and stat calls
+  - Support for running serial processes under Spindle with the --no-mpi option
+  - Support for Spindle interception of stat and lstat calls.
+  - Improved Python support, supported by --python-prefixes option
+  - Bug fixes, many focused around following processes through fork/exec
