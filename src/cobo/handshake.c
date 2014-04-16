@@ -158,19 +158,19 @@ static int exchange_sig(int sockfd);
 static int log_security_error(const char *format, ...);
 static int log_error(const char *format, ...);
 
-int handshake_server(int sockfd, handshake_protocol_t *hdata, uint64_t session_id)
+int spindle_handshake_server(int sockfd, handshake_protocol_t *hdata, uint64_t session_id)
 {
    debug_printf("Starting handshake from server\n");
    return handshake_wrapper(sockfd, hdata, session_id, 1);
 }
 
-int handshake_client(int sockfd, handshake_protocol_t *hdata, uint64_t session_id)
+int spindle_handshake_client(int sockfd, handshake_protocol_t *hdata, uint64_t session_id)
 {
    debug_printf("Starting handshake from client\n");
    return handshake_wrapper(sockfd, hdata, session_id, 0);
 }
 
-int handshake_is_security_type_enabled(handshake_security_t sectype)
+int spindle_handshake_is_security_type_enabled(handshake_security_t sectype)
 {
    switch (sectype) {
       case hs_none:
@@ -196,7 +196,7 @@ int handshake_is_security_type_enabled(handshake_security_t sectype)
    return 0;
 }
 
-char *handshake_last_error_str()
+char *spindle_handshake_last_error_str()
 {
    if (last_security_message)
       return last_security_message;
@@ -204,12 +204,12 @@ char *handshake_last_error_str()
       return last_error_message;
 }
 
-void handshake_enable_debug_prints(FILE *debug_output)
+void spindle_handshake_enable_debug_prints(FILE *debug_output)
 {
    debug_file = debug_output;
 }
 
-void handshake_enable_read_timeout(int timeout_sec)
+void spindle_handshake_enable_read_timeout(int timeout_sec)
 {
    timeout_seconds = timeout_sec;
 }

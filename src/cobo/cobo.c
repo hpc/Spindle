@@ -503,12 +503,12 @@ static int cobo_connect_hostname(char* hostname, int rank)
                 debug_printf3("Connected to rank %d port %d on %s\n", rank, port, hostname);
                 int test_failed = 0;
 
-                result = handshake_client(s, &cobo_handshake, cobo_sessionid);
+                result = spindle_handshake_client(s, &cobo_handshake, cobo_sessionid);
                 switch (result) {
                    case HSHAKE_SUCCESS:
                       break;
                    case HSHAKE_INTERNAL_ERROR:
-                      err_printf("Internal error doing handshake: %s", handshake_last_error_str());
+                      err_printf("Internal error doing handshake: %s", spindle_handshake_last_error_str());
                       exit(-1);
                       break;
                    case HSHAKE_DROP_CONNECTION:
@@ -516,7 +516,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
                       close(s);
                       continue;
                    case HSHAKE_ABORT:
-                      handle_security_error(handshake_last_error_str());
+                      handle_security_error(spindle_handshake_last_error_str());
                       abort();
                    default:
                       assert(0 && "Unknown return value from handshake_server\n");
@@ -820,12 +820,12 @@ static int cobo_open_tree()
         _cobo_opt_socket(sockfd);
 
         /* handshake/authenticate our connection to make sure it one of our processes */
-        int result = handshake_server(cobo_parent_fd, &cobo_handshake, cobo_sessionid);
+        int result = spindle_handshake_server(cobo_parent_fd, &cobo_handshake, cobo_sessionid);
         switch (result) {
            case HSHAKE_SUCCESS:
               break;
            case HSHAKE_INTERNAL_ERROR:
-              err_printf("Internal error doing handshake: %s", handshake_last_error_str());
+              err_printf("Internal error doing handshake: %s", spindle_handshake_last_error_str());
               exit(-1);
               break;
            case HSHAKE_DROP_CONNECTION:
@@ -833,7 +833,7 @@ static int cobo_open_tree()
               close(cobo_parent_fd);
               continue;
            case HSHAKE_ABORT:
-              handle_security_error(handshake_last_error_str());
+              handle_security_error(spindle_handshake_last_error_str());
               abort();
            default:
               assert(0 && "Unknown return value from handshake_server\n");

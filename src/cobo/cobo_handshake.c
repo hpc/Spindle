@@ -25,11 +25,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 int initialize_handshake_security(handshake_protocol_t *protocol)
 {
    if (spindle_debug_prints > 2)
-      handshake_enable_debug_prints(spindle_debug_output_f);
+      spindle_handshake_enable_debug_prints(spindle_debug_output_f);
 
-   assert(handshake_is_security_type_enabled(protocol->mechanism));
+   assert(spindle_handshake_is_security_type_enabled(protocol->mechanism));
    cobo_set_handshake(protocol);
-   handshake_enable_read_timeout(10);
+   spindle_handshake_enable_read_timeout(10);
 
    return 0;
 }

@@ -59,13 +59,13 @@ typedef struct {
    } data;
 } handshake_protocol_t;
 
-int handshake_server(int sockfd, handshake_protocol_t *hdata, uint64_t session_id);
-int handshake_client(int sockfd, handshake_protocol_t *hdata, uint64_t session_id);
-int handshake_is_security_type_enabled(handshake_security_t sectype);
-char *handshake_last_error_str();
+int spindle_handshake_server(int sockfd, handshake_protocol_t *hdata, uint64_t session_id);
+int spindle_handshake_client(int sockfd, handshake_protocol_t *hdata, uint64_t session_id);
+int spindle_handshake_is_security_type_enabled(handshake_security_t sectype);
+char *spindle_handshake_last_error_str();
 
-void handshake_enable_read_timeout(int timeout_sec);
-void handshake_enable_debug_prints(FILE *debug_output);
+void spindle_handshake_enable_read_timeout(int timeout_sec);
+void spindle_handshake_enable_debug_prints(FILE *debug_output);
 
 #if defined(__cplusplus)
 }
