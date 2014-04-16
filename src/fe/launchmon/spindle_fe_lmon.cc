@@ -203,7 +203,7 @@ int startLaunchmonFE(int app_argc, char *app_argv[],
   
    waitfor_done();
 
-   result = spindleCloseFE();
+   result = spindleCloseFE(params);
    if (result == -1) {
       err_printf("[LMON FE] spindleFinishFE returned an error\n");
       return EXIT_FAILURE;

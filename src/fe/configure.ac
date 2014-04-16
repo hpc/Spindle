@@ -20,5 +20,11 @@ m4_include([../../m4/lmon.m4])
 #Include RM Selection
 m4_include([../../m4/launcher.m4])
 
+CPPFLAGS="$CPPFLAGS -DSPINDLEFE"
+CFLAGS="$CFLAGS -fvisibility=hidden"
+CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
+
+AC_SUBST([SPINDLEFE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlefe`])
+
 AC_OUTPUT
 

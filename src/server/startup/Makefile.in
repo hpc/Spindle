@@ -15,6 +15,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -36,14 +37,14 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
-@LINK_LIBSTDCXX_STATIC_TRUE@am__append_1 = $(STATIC_LIBGCC_OPT) -L.
-@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__append_2 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt
-@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__append_3 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
-@COBO_TRUE@am__append_4 = $(top_builddir)/auditserver/libaudit_server_cobo.la
-@MSOCKET_TRUE@am__append_5 = $(top_builddir)/auditserver/libaudit_server_msocket.la
-@SOCKETS_TRUE@am__append_6 = $(top_builddir)/comlib/libserver_socket.la
-@PIPES_TRUE@am__append_7 = $(top_builddir)/comlib/libserver_pipe.la
-@BITER_TRUE@am__append_8 = $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
+@COBO_TRUE@am__append_1 = $(top_builddir)/auditserver/libaudit_server_cobo.la
+@MSOCKET_TRUE@am__append_2 = $(top_builddir)/auditserver/libaudit_server_msocket.la
+@SOCKETS_TRUE@am__append_3 = $(top_builddir)/comlib/libserver_socket.la
+@PIPES_TRUE@am__append_4 = $(top_builddir)/comlib/libserver_pipe.la
+@BITER_TRUE@am__append_5 = $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
+@LINK_LIBSTDCXX_STATIC_TRUE@am__append_6 = $(STATIC_LIBGCC_OPT) -L.
+@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__append_7 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt
+@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__append_8 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
 subdir = startup
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,29 +57,62 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(pkglibexecdir)"
-PROGRAMS = $(pkglibexec_PROGRAMS)
-am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
-	spindle_be-spindle_be_serial.$(OBJEXT) \
-	spindle_be-spindle_be_hostbin.$(OBJEXT) \
-	spindle_be-spindle_be.$(OBJEXT) spindle_be-parseloc.$(OBJEXT) \
-	spindle_be-keyfile.$(OBJEXT) \
-	spindle_be-spindle_mkdir.$(OBJEXT)
-spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkglibexecdir)"
+LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/launchmon/libbelmon.la \
-@LMON_DYNAMIC_TRUE@@LMON_TRUE@	$(am__DEPENDENCIES_1) \
-@LMON_DYNAMIC_TRUE@@LMON_TRUE@	$(am__DEPENDENCIES_1)
-@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/launchmon/libbelmon.la \
-@LMON_DYNAMIC_FALSE@@LMON_TRUE@	$(am__DEPENDENCIES_1)
-spindle_be_DEPENDENCIES = $(top_builddir)/cache/libldcs_cache.la \
-	$(top_builddir)/logging/libspindlelogc.la \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) $(am__append_4) \
-	$(am__append_5) $(am__append_6) $(am__append_7) \
-	$(am__append_8) $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindlelogc.la \
+	$(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_5) $(am__DEPENDENCIES_1)
+libspindlebe_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_1)
+am__objects_1 = libspindlebe_la-spindle_be.lo \
+	libspindlebe_la-parseloc.lo libspindlebe_la-keyfile.lo \
+	libspindlebe_la-spindle_mkdir.lo
+am_libspindlebe_la_OBJECTS = $(am__objects_1)
+libspindlebe_la_OBJECTS = $(am_libspindlebe_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libspindlebe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(libspindlebe_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+PROGRAMS = $(pkglibexec_PROGRAMS)
+am__objects_2 = spindle_be-spindle_be.$(OBJEXT) \
+	spindle_be-parseloc.$(OBJEXT) spindle_be-keyfile.$(OBJEXT) \
+	spindle_be-spindle_mkdir.$(OBJEXT)
+am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
+	spindle_be-spindle_be_serial.$(OBJEXT) \
+	spindle_be-spindle_be_hostbin.$(OBJEXT) $(am__objects_2)
+spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
+@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/launchmon/libbelmon.la \
+@LMON_DYNAMIC_TRUE@@LMON_TRUE@	$(am__DEPENDENCIES_1) \
+@LMON_DYNAMIC_TRUE@@LMON_TRUE@	$(am__DEPENDENCIES_1)
+@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/launchmon/libbelmon.la \
+@LMON_DYNAMIC_FALSE@@LMON_TRUE@	$(am__DEPENDENCIES_1)
+spindle_be_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 spindle_be_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(spindle_be_LDFLAGS) $(LDFLAGS) -o $@
@@ -124,8 +158,8 @@ am__v_CXXLD_0 = @echo "  CXXLD " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(spindle_be_SOURCES)
-DIST_SOURCES = $(spindle_be_SOURCES)
+SOURCES = $(libspindlebe_la_SOURCES) $(spindle_be_SOURCES)
+DIST_SOURCES = $(libspindlebe_la_SOURCES) $(spindle_be_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -182,6 +216,7 @@ LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_DYN_LIB = @MUNGE_DYN_LIB@
 MUNGE_LIBS = @MUNGE_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -200,6 +235,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SPINDLEBE_LIB_VERSION = @SPINDLEBE_LIB_VERSION@
 STATIC_LIBGCC_OPT = @STATIC_LIBGCC_OPT@
 STATIC_LIBSTDCXX = @STATIC_LIBSTDCXX@
 STRIP = @STRIP@
@@ -261,15 +297,22 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+lib_LTLIBRARIES = libspindlebe.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
-spindle_be_LDFLAGS = -static $(am__append_1)
-spindle_be_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
-spindle_be_LDADD = $(top_builddir)/cache/libldcs_cache.la \
-	$(top_builddir)/logging/libspindlelogc.la $(am__append_2) \
-	$(am__append_3) $(am__append_4) $(am__append_5) \
-	$(am__append_6) $(am__append_7) $(am__append_8) $(MUNGE_LIBS) \
-	$(GCRYPT_LIBS)
+CORE_SOURCES = spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
+CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
+	$(am__append_2) $(am__append_3) $(am__append_4) \
+	$(am__append_5) $(GCRYPT_LIBS)
+libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB
+libspindlebe_la_SOURCES = $(CORE_SOURCES)
+libspindlebe_la_LIBADD = $(CORE_LDADD) $(MUNGE_DYN_LIB)
+libspindlebe_la_LDFLAGS = -version-info $(SPINDLEBE_LIB_VERSION)
+spindle_be_LDFLAGS = -static $(am__append_6)
+spindle_be_CPPFLAGS = $(CORE_CPPFLAGS)
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc $(CORE_SOURCES)
+spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS) $(am__append_7) \
+	$(am__append_8)
 @LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
 @LINK_LIBSTDCXX_STATIC_TRUE@BUILT_SOURCES = ./libstdc++.a
 all: $(BUILT_SOURCES)
@@ -307,6 +350,39 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
+	}
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
+	done
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+libspindlebe.la: $(libspindlebe_la_OBJECTS) $(libspindlebe_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(libspindlebe_la_LINK) -rpath $(libdir) $(libspindlebe_la_OBJECTS) $(libspindlebe_la_LIBADD) $(LIBS)
 install-pkglibexecPROGRAMS: $(pkglibexec_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkglibexecdir)" || $(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)"
@@ -360,6 +436,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-keyfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-parseloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_be.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_mkdir.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-keyfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-parseloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be.Po@am__quote@
@@ -391,6 +471,30 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libspindlebe_la-parseloc.lo: $(top_srcdir)/../utils/parseloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-parseloc.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-parseloc.Tpo -c -o libspindlebe_la-parseloc.lo `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-parseloc.Tpo $(DEPDIR)/libspindlebe_la-parseloc.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/parseloc.c' object='libspindlebe_la-parseloc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-parseloc.lo `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
+
+libspindlebe_la-keyfile.lo: $(top_srcdir)/../utils/keyfile.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-keyfile.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-keyfile.Tpo -c -o libspindlebe_la-keyfile.lo `test -f '$(top_srcdir)/../utils/keyfile.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/keyfile.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-keyfile.Tpo $(DEPDIR)/libspindlebe_la-keyfile.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/keyfile.c' object='libspindlebe_la-keyfile.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-keyfile.lo `test -f '$(top_srcdir)/../utils/keyfile.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/keyfile.c
+
+libspindlebe_la-spindle_mkdir.lo: $(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-spindle_mkdir.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-spindle_mkdir.Tpo -c -o libspindlebe_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-spindle_mkdir.Tpo $(DEPDIR)/libspindlebe_la-spindle_mkdir.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/../utils/spindle_mkdir.c' object='libspindlebe_la-spindle_mkdir.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
 
 spindle_be-parseloc.o: $(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-parseloc.o -MD -MP -MF $(DEPDIR)/spindle_be-parseloc.Tpo -c -o spindle_be-parseloc.o `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
@@ -463,6 +567,14 @@ spindle_be-spindle_mkdir.obj: $(top_srcdir)/../utils/spindle_mkdir.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+libspindlebe_la-spindle_be.lo: spindle_be.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlebe_la-spindle_be.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-spindle_be.Tpo -c -o libspindlebe_la-spindle_be.lo `test -f 'spindle_be.cc' || echo '$(srcdir)/'`spindle_be.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-spindle_be.Tpo $(DEPDIR)/libspindlebe_la-spindle_be.Plo
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='spindle_be.cc' object='libspindlebe_la-spindle_be.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlebe_la-spindle_be.lo `test -f 'spindle_be.cc' || echo '$(srcdir)/'`spindle_be.cc
 
 spindle_be-spindle_be_main.o: spindle_be_main.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-spindle_be_main.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be_main.Tpo -c -o spindle_be-spindle_be_main.o `test -f 'spindle_be_main.cc' || echo '$(srcdir)/'`spindle_be_main.cc
@@ -619,9 +731,9 @@ distdir: $(DISTFILES)
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkglibexecdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -654,8 +766,8 @@ maintainer-clean-generic:
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-pkglibexecPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
+	clean-pkglibexecPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -681,7 +793,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-pkglibexecPROGRAMS
+install-exec-am: install-libLTLIBRARIES install-pkglibexecPROGRAMS
 
 install-html: install-html-am
 
@@ -721,23 +833,25 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-pkglibexecPROGRAMS
+uninstall-am: uninstall-libLTLIBRARIES uninstall-pkglibexecPROGRAMS
 
 .MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-pkglibexecPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-pkglibexecPROGRAMS
+	clean-libLTLIBRARIES clean-libtool clean-pkglibexecPROGRAMS \
+	ctags distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-libLTLIBRARIES install-man install-pdf \
+	install-pdf-am install-pkglibexecPROGRAMS install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-libLTLIBRARIES \
+	uninstall-pkglibexecPROGRAMS
 
 @LINK_LIBSTDCXX_STATIC_TRUE@./libstdc++.a:
 @LINK_LIBSTDCXX_STATIC_TRUE@	$(AM_V_GEN)$(LN_S) $(STATIC_LIBSTDCXX) $@

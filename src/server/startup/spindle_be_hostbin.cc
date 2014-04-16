@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "spindle_debug.h"
 
-int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id)
+int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type)
 {
-   return spindleRunBE(port, num_ports, unique_id, NULL);
+   return spindleRunBE(port, num_ports, unique_id, security_type, NULL);
 }

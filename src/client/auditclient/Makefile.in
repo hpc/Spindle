@@ -206,6 +206,7 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBSPINDLE_LIB_VERSION = @LIBSPINDLE_LIB_VERSION@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -295,13 +296,13 @@ BASE_SOURCES = client.c auditclient.c intercept_open.c intercept_exec.c intercep
 @X86_64_BLD_TRUE@ARCH_SOURCES = auditclient_x86_64.c
 libspindle_client_socket_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_socket_la_LDFLAGS = -shared
+libspindle_client_socket_la_LDFLAGS = -shared -avoid-version
 libspindle_client_pipe_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_pipe_la_LIBADD = $(top_builddir)/client_comlib/libclient_pipe.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_pipe_la_LDFLAGS = -shared
+libspindle_client_pipe_la_LDFLAGS = -shared -avoid-version
 libspindle_client_biter_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_biter_la_LIBADD = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_biter_la_LDFLAGS = -shared
+libspindle_client_biter_la_LDFLAGS = -shared -avoid-version
 all: all-am
 
 .SUFFIXES:

@@ -4,4 +4,3 @@ endif
 
 SUBDIRS = logging cobo comlib openmpi_intercept $(BUILD_LMON) hostbin startup
 
-

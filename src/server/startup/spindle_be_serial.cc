@@ -18,7 +18,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_debug.h"
 #include <cstdlib>
 
-int startSerialBE(int /*argc*/, char * /*argv*/[])
+int startSerialBE(int /*argc*/, char * /*argv*/[], int security_type)
 {
    char *port_s, *num_ports_s, *unique_id_s;
    unsigned port, num_ports;
@@ -43,5 +43,5 @@ int startSerialBE(int /*argc*/, char * /*argv*/[])
    unique_id = strtoul(unique_id_s, NULL, 10);
    num_ports = atoi(num_ports_s);
 
-   return spindleRunBE(port, num_ports, unique_id, NULL);
+   return spindleRunBE(port, num_ports, unique_id, security_type, NULL);
 }

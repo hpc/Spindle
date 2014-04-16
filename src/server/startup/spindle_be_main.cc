@@ -19,21 +19,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include "spindle_debug.h"
 #include "spindle_launch.h"
-#include "keyfile.h"
-#include "handshake.h"
 #include "ldcs_api.h"
-#include "ldcs_cobo.h"
 #include "config.h"
 
 static void setupLogging();
 static int parseCommandLine(int argc, char *argv[]);
-static void initSecurity();
 
 #if defined(HAVE_LMON)
-extern int startLaunchmonBE(int argc, char *argv[]);
+extern int startLaunchmonBE(int argc, char *argv[], int security_type);
 #endif
-extern int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id);
-extern int startSerialBE(int argc, char *argv[]);
+extern int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type);
+extern int startSerialBE(int argc, char *argv[], int security_type);
 
 enum startup_type_t {
    lmon,
@@ -65,21 +61,19 @@ int main(int argc, char *argv[])
       exit(-1);
    }
 
-   initSecurity();
-
    switch (startup_type) {
       case lmon:
 #if defined(HAVE_LMON)
-         result = startLaunchmonBE(argc, argv);
+         result = startLaunchmonBE(argc, argv, security_type);
 #else
          assert(0);
 #endif
          break;
       case serial:
-         result = startSerialBE(argc, argv);
+         result = startSerialBE(argc, argv, security_type);
          break;
       case hostbin:
-         result = startHostbinBE(port, num_ports, unique_id);
+         result = startHostbinBE(port, num_ports, unique_id, security_type);
          break;
       default:
          err_printf("Unknown startup mode\n");
@@ -141,45 +135,4 @@ static int parseCommandLine(int argc, char *argv[])
    }
 
    return 0;
-}
-
-static void initSecurity()
-{
-   int result;
-   handshake_protocol_t handshake;
-   switch (security_type) {
-      case OPT_SEC_MUNGE:
-         debug_printf("Initializing BE with munge-based security\n");
-         handshake.mechanism = hs_munge;
-         break;
-      case OPT_SEC_KEYFILE: {
-         char *path;
-         int len;
-         debug_printf("Initializing BE with keyfile-based security\n");
-         len = MAX_PATH_LEN+1;
-         path = (char *) malloc(len);
-         get_keyfile_path(path, len, number);
-         handshake.mechanism = hs_key_in_file;
-         handshake.data.key_in_file.key_filepath = path;
-         handshake.data.key_in_file.key_length_bytes = KEY_SIZE_BYTES;
-         break;
-      }
-      case OPT_SEC_KEYLMON: {
-         debug_printf("Initializing BE with launchmon-based security\n");
-         handshake.mechanism = hs_explicit_key;
-         err_printf("Error, launchmon based keys not yet implemented\n");
-         exit(-1);
-         break;
-      }
-      case OPT_SEC_NULL:
-         handshake.mechanism = hs_none;
-         debug_printf("Initializing BE with NULL security\n");
-         break;
-   }
-
-   result = initialize_handshake_security(&handshake);
-   if (result == -1) {
-      err_printf("Could not initialize security\n");
-      exit(-1);
-   }
 }

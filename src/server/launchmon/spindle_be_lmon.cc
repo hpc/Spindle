@@ -101,7 +101,7 @@ int releaseApplication(spindle_args_t *) {
   return(rc);
 }
 
-int startLaunchmonBE(int argc, char *argv[])
+int startLaunchmonBE(int argc, char *argv[], int security_type)
 {
    struct {
       unsigned int port;
@@ -169,7 +169,8 @@ int startLaunchmonBE(int argc, char *argv[])
       return -1;
    }
    
-   result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.unique_id, releaseApplication);
+   result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.unique_id, security_type,
+                         releaseApplication);
    if (result == -1) {
       err_printf("Failed in call to spindleInitBE\n");
       return -1;

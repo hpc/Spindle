@@ -147,7 +147,7 @@ int startSerialFE(int app_argc, char *app_argv[],
    collectResults(collect_app);
    
 
-   result = spindleCloseFE();
+   result = spindleCloseFE(params);
    if (result == -1) {
       err_printf("Error in spindleCloseFE\n");
       return -1;

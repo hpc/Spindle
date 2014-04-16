@@ -3,7 +3,7 @@ noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils
 LDADD = $(top_builddir)/cache/libldcs_cache.la
-AM_LDFLAGS = -all-static
+#AM_LDFLAGS = -all-static
 
 libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c
 

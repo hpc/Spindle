@@ -17,14 +17,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(KEYFILE_H_)
 #define KEYFILE_H_
 
+#include <stdint.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 void create_key(unsigned char *buffer, int key_size_bytes);
-void get_keyfile_path(char *pathname, int pathname_len, int number);
-void create_keyfile(int number);
-void clean_keyfile(int number);
+void get_keyfile_path(char *pathname, int pathname_len, uint64_t unique_id);
+void create_keyfile(uint64_t unique_id);
+void clean_keyfile(uint64_t unique_id);
 
 #if defined(__cplusplus)
 }

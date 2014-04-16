@@ -266,6 +266,7 @@ AC_DEFUN([CHOOSE_SEC],[
         AC_SUBST(GCRYPT_LIBS)
         AC_SUBST(MUNGE_CFLAGS)
         AC_SUBST(MUNGE_LIBS)
+        AC_SUBST(MUNGE_DYN_LIB)
         if test "x$MUNGE" == "xtrue"; then
            AC_MSG_NOTICE([Enabling munge for security authentication])        
            AC_DEFINE([MUNGE], [1], [Use munge for authentication])

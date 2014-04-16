@@ -13,5 +13,7 @@ LT_INIT
 m4_include([../../m4/lx_detect_bluegene.m4])
 m4_include([../../configure.common.ac])
 
+AC_SUBST([LIBSPINDLE_LIB_VERSION],[`$srcdir/../../LIB_VERSION libspindle`])
+
 AC_OUTPUT
 

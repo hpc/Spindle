@@ -22,12 +22,12 @@ endif
 
 libspindle_client_socket_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_socket_la_LDFLAGS = -shared
+libspindle_client_socket_la_LDFLAGS = -shared -avoid-version
 
 libspindle_client_pipe_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_pipe_la_LIBADD = $(top_builddir)/client_comlib/libclient_pipe.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_pipe_la_LDFLAGS = -shared
+libspindle_client_pipe_la_LDFLAGS = -shared -avoid-version
 
 libspindle_client_biter_la_SOURCES = $(BASE_SOURCES) $(ARCH_SOURCES)
 libspindle_client_biter_la_LIBADD = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/logging/libspindlelogc.la
-libspindle_client_biter_la_LDFLAGS = -shared
+libspindle_client_biter_la_LDFLAGS = -shared -avoid-version

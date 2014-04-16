@@ -17,7 +17,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(PARSEARGS_H_)
 #define PARSEARGS_H_
 
+#include "spindle_launch.h"
 #include <string>
+
+void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 
 unsigned long parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
@@ -27,9 +30,9 @@ std::string getLocation(int number);
 std::string getPythonPrefixes();
 std::string getHostbin();
 int getStartupType();
-bool isLoggingEnabled();
 int getLauncher();
-bool hideFDs();
+unique_id_t get_unique_id();
+
 int getAppArgs(int *argc, char ***argv);
 
 #endif

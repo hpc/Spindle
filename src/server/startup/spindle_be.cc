@@ -19,6 +19,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "parseloc.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_api.h"
+#include "keyfile.h"
+#include "handshake.h"
+#include "ldcs_cobo.h"
 
 #include <cstdlib>
 #include <cassert>
@@ -61,10 +64,56 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    return 0;    
 }
 
-int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int (*post_setup)(spindle_args_t *))
+static void initSecurity(int security_type, uint64_t unique_id)
+{
+   int result;
+   handshake_protocol_t handshake;
+   switch (security_type) {
+      case OPT_SEC_MUNGE:
+         debug_printf("Initializing BE with munge-based security\n");
+         handshake.mechanism = hs_munge;
+         break;
+      case OPT_SEC_KEYFILE: {
+         char *path;
+         int len;
+         debug_printf("Initializing BE with keyfile-based security\n");
+         len = MAX_PATH_LEN+1;
+         path = (char *) malloc(len);
+         get_keyfile_path(path, len, unique_id);
+         handshake.mechanism = hs_key_in_file;
+         handshake.data.key_in_file.key_filepath = path;
+         handshake.data.key_in_file.key_length_bytes = KEY_SIZE_BYTES;
+         break;
+      }
+      case OPT_SEC_KEYLMON: {
+         debug_printf("Initializing BE with launchmon-based security\n");
+         handshake.mechanism = hs_explicit_key;
+         err_printf("Error, launchmon based keys not yet implemented\n");
+         exit(-1);
+         break;
+      }
+      case OPT_SEC_NULL:
+         handshake.mechanism = hs_none;
+         debug_printf("Initializing BE with NULL security\n");
+         break;
+   }
+
+   result = initialize_handshake_security(&handshake);
+   if (result == -1) {
+      err_printf("Could not initialize security\n");
+      exit(-1);
+   }
+}
+
+int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
+                 int (*post_setup)(spindle_args_t *))
 {
    int result;
    spindle_args_t args;
+
+   LOGGING_INIT(const_cast<char *>("Server"));
+
+   initSecurity(security_type, unique_id);
 
    /* Setup network and share setup data */
    debug_printf3("spindleRunBE setting up network and receiving setup data\n");
@@ -111,6 +160,10 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
       err_printf("Error in ldcs_audit_server_process\n");
       return -1;
    }
+
+
+   if (args.startup_type == startup_external)   
+      LOGGING_FINI;
 
    return 0;
 }

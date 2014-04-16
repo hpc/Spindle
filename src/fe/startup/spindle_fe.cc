@@ -18,12 +18,25 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "spindle_launch.h"
 #include "fe_comm.h"
+#include "parseargs.h"
+#include "keyfile.h"
+#include "config.h"
+#include "spindle_debug.h"
+#include "ldcs_cobo.h"
 
 #include <string>
 #include <cassert>
-
+#include <pwd.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/time.h>
+
+#if defined(USAGE_LOGGING_FILE)
+static const char *logging_file = USAGE_LOGGING_FILE;
+#else
+static const char *logging_file = NULL;
+#endif
+static const char spindle_bootstrap[] = LIBEXECDIR "/spindle_bootstrap";
 
 using namespace std;
 
@@ -71,11 +84,143 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    return 0;
 }
 
+static void logUser()
+{
+   /* Collect username */
+   char *username = NULL;
+   if (getenv("USER")) {
+      username = getenv("USER");
+   }
+   if (!username) {
+      struct passwd *pw = getpwuid(getuid());
+      if (pw) {
+         username = pw->pw_name;
+      }
+   }
+   if (!username) {
+      username = getlogin();
+   }
+   if (!username) {
+      err_printf("Could not get username for logging\n");
+   }
+      
+   /* Collect time */
+   struct timeval tv;
+   gettimeofday(&tv, NULL);
+   struct tm *lt = localtime(& tv.tv_sec);
+   char time_str[256];
+   time_str[0] = '\0';
+   strftime(time_str, sizeof(time_str), "%c", lt);
+   time_str[255] = '\0';
+   
+   /* Collect version */
+   const char *version = VERSION;
+
+   /* Collect hostname */
+   char hostname[256];
+   hostname[0] = '\0';
+   gethostname(hostname, sizeof(hostname));
+   hostname[255] = '\0';
+
+   string log_message = string(username) + " ran Spindle v" + version + 
+                        " at " + time_str + " on " + hostname;
+   debug_printf("Logging usage: %s\n", log_message.c_str());
+
+   FILE *f = fopen(logging_file, "a");
+   if (!f) {
+      err_printf("Could not open logging file %s\n", logging_file);
+      return;
+   }
+   fprintf(f, "%s\n", log_message.c_str());
+   fclose(f);
+}
+
+static void setupSecurity(spindle_args_t *params)
+{
+   handshake_protocol_t handshake;
+   int result;
+   /* Setup security */
+   switch (OPT_GET_SEC(params->opts)) {
+      case OPT_SEC_MUNGE:
+         debug_printf("Initializing FE with munge-based security\n");
+         handshake.mechanism = hs_munge;
+         break;
+      case OPT_SEC_KEYFILE: {
+         char *path;
+         int len;
+         debug_printf("Initializing FE with keyfile-based security\n");
+         create_keyfile(params->unique_id);
+         len = MAX_PATH_LEN+1;
+         path = (char *) malloc(len);
+         get_keyfile_path(path, len, params->unique_id);
+         handshake.mechanism = hs_key_in_file;
+         handshake.data.key_in_file.key_filepath = path;
+         handshake.data.key_in_file.key_length_bytes = KEY_SIZE_BYTES;
+         break;
+      }
+      case OPT_SEC_KEYLMON:
+         debug_printf("Initializing BE with launchmon-based security\n");
+         handshake.mechanism = hs_explicit_key;
+         fprintf(stderr, "Error, launchmon based keys not yet implemented\n");
+         exit(-1);
+         break;
+      case OPT_SEC_NULL:
+         debug_printf("Initializing BE with NULL security\n");
+         handshake.mechanism = hs_none;
+         break;
+   }
+   result = initialize_handshake_security(&handshake);
+   if (result == -1) {
+      err_printf("Could not initialize security\n");
+      exit(-1);
+   }
+}
+
+int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spindle_argv)
+{
+   char number_s[32];
+   char opt_s[32];
+
+   snprintf(number_s, sizeof(number_s), "%u", params->number);
+   snprintf(opt_s, sizeof(opt_s), "%u", params->opts);
+   
+   *spindle_argv = (char **) malloc(sizeof(char*) * 5);
+   (*spindle_argv)[0] = strdup(spindle_bootstrap);
+   (*spindle_argv)[1] = strdup(params->location);
+   (*spindle_argv)[2] = strdup(number_s);
+   (*spindle_argv)[3] = strdup(opt_s);
+   (*spindle_argv)[4] = NULL;
+   *spindle_argc = 4;
+
+   return 0;
+}
+
+void fillInSpindleArgsFE(spindle_args_t *params)
+{
+   LOGGING_INIT(const_cast<char *>("FE"));
+
+   //parseCommandLine will fill in the params.  Call it 
+   // with a fake, empty command line to get defaults.
+   char *fake_argv[3];
+   fake_argv[0] = const_cast<char *>("spindle");
+   fake_argv[1] = const_cast<char *>("launcher");
+   fake_argv[2] = NULL;
+   parseCommandLine(2, fake_argv, params);
+
+   params->use_launcher = unknown_launcher;
+   params->startup_type = startup_external;
+}
+
 static void *md_data_ptr;
 
 int spindleInitFE(const char **hosts, spindle_args_t *params)
 {
    debug_printf("Called spindleInitFE\n");
+
+   if (params->opts & OPT_LOGUSAGE)
+      logUser();
+
+   setupSecurity(params);
 
    /* Create preload message before initializing network to detect errors */
    ldcs_message_t *preload_msg = NULL;
@@ -120,8 +265,16 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    return 0;   
 }
 
-int spindleCloseFE()
+int spindleCloseFE(spindle_args_t *params)
 {
+   if (OPT_GET_SEC(params->opts) == OPT_SEC_KEYFILE) {
+      clean_keyfile(params->unique_id);
+   }
+
    ldcs_audit_server_fe_md_close(md_data_ptr);
+
+   if (params->startup_type == startup_external)
+      LOGGING_FINI;
+
    return 0;
 }

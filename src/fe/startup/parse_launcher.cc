@@ -296,7 +296,10 @@ void ModifyArgv::modifyCmdLine()
          snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str());
          new_argv[n++] = bg_env;
 #else
-         new_argv[n++] = strdup(spindle_bootstrap);
+         char **a_argv;
+         int a_argc;
+         getApplicationArgsFE(params, &a_argc, &a_argv);
+         new_argv[n++] = a_argv[0];
          if (params->startup_type == startup_hostbin) {
             new_argv[n++] = strdup("-daemon_args");
             new_argv[n++] = strdup(daemon_argc_str);
@@ -304,9 +307,8 @@ void ModifyArgv::modifyCmdLine()
                new_argv[n++] = strdup(daemon_argv[k]);
             }
          }
-         new_argv[n++] = strdup(location.c_str());
-         new_argv[n++] = strdup(number.c_str());
-         new_argv[n++] = strdup(options.c_str());
+         for (int i = 1; i < a_argc; i++) 
+            new_argv[n++] = a_argv[i];
          (void) default_libstr; //Not needed on linux
 #endif
       }

@@ -595,5 +595,8 @@ int startHostbinFE(string hostbin_exe,
 
    proc_manager.waitForResult();
    assert(proc_manager.launcherDone());
+
+   spindleCloseFE(params);
+
    return proc_manager.launcherResult();
 }

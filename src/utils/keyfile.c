@@ -33,16 +33,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 extern char *parse_location(char *loc);
-void get_keyfile_path(char *pathname, int pathname_len, int number)
+void get_keyfile_path(char *pathname, int pathname_len, uint64_t unique_id)
 {
 #if defined(KEYFILE)
-   debug_printf("Turning pathname %s and number %d to key file location\n",
-                SEC_KEYDIR, number);
+   debug_printf("Turning pathname %s and unique_id %lu to key file location\n",
+                SEC_KEYDIR, (unsigned long) unique_id);
 
    char *demangled_loc = parse_location(SEC_KEYDIR);
    if (demangled_loc == NULL)
       abort();
-   snprintf(pathname, pathname_len, "%s/spindle_key.%d.%d", demangled_loc, getuid(), number);
+   snprintf(pathname, pathname_len, "%s/spindle_key.%d.%lu", demangled_loc, getuid(), (unsigned long) number);
    pathname[pathname_len-1] = '\0';
 #else
    assert(0 && "Tried to use keyfile when not compiled with keyfile.");
@@ -76,7 +76,7 @@ void create_key(unsigned char *buffer, int key_size_bytes)
    close(rand_fd);
 }
 
-void create_keyfile(int number)
+void create_keyfile(uint64_t unique_id)
 {
    char path[MAX_PATH_LEN+1];
    int key_fd, result;
@@ -87,7 +87,7 @@ void create_keyfile(int number)
 
    create_key(key, sizeof(key));
    
-   get_keyfile_path(path, sizeof(path), number);
+   get_keyfile_path(path, sizeof(path), unique_id);
    
    last_slash = strrchr(path, '/');
    *last_slash = '\0';
@@ -116,7 +116,7 @@ void create_keyfile(int number)
       if (result <= 0) {
          fprintf(stderr, "Failed to write key to %s: %s\n", path, strerror(errno));
          close(key_fd);
-         clean_keyfile(number);
+         clean_keyfile(unique_id);
          exit(-1);
       }
       bytes_written += result;
@@ -124,7 +124,7 @@ void create_keyfile(int number)
    
    result = close(key_fd);
    if (result == -1) {
-      clean_keyfile(number);
+      clean_keyfile(unique_id);
       fprintf(stderr, "Failed to close key file %s: %s\n", path, strerror(errno));
       exit(-1);
    }
@@ -132,10 +132,10 @@ void create_keyfile(int number)
    debug_printf("Finished creating keyfile\n");
 }
 
-void clean_keyfile(int number)
+void clean_keyfile(uint64_t unique_id)
 {
    char path[MAX_PATH_LEN+1];
-   get_keyfile_path(path, sizeof(path), number);
+   get_keyfile_path(path, sizeof(path), unique_id);
    unlink(path);
    debug_printf("Cleaned keyfile %s\n", path);
 }

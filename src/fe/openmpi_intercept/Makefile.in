@@ -77,6 +77,10 @@ libompiintercept_la_OBJECTS = $(am_libompiintercept_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libompiintercept_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libompiintercept_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 libparseompi_la_LIBADD =
 am_libparseompi_la_OBJECTS = libparseompi_la-parse_openmpi.lo
 libparseompi_la_OBJECTS = $(am_libparseompi_la_OBJECTS)
@@ -180,6 +184,7 @@ LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_DYN_LIB = @MUNGE_DYN_LIB@
 MUNGE_LIBS = @MUNGE_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -198,6 +203,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SPINDLEFE_LIB_VERSION = @SPINDLEFE_LIB_VERSION@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -260,6 +266,7 @@ top_srcdir = @top_srcdir@
 pkglibexec_LTLIBRARIES = libompiintercept.la
 noinst_LTLIBRARIES = libparseompi.la
 libompiintercept_la_SOURCES = ompi_intercept.c
+libompiintercept_la_LDFLAGS = -shared -avoid-version
 libparseompi_la_SOURCES = parse_openmpi.cc
 AM_CPPFLAGS = -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/startup
 libparseompi_la_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\"
@@ -338,7 +345,7 @@ clean-pkglibexecLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libompiintercept.la: $(libompiintercept_la_OBJECTS) $(libompiintercept_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) -rpath $(pkglibexecdir) $(libompiintercept_la_OBJECTS) $(libompiintercept_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libompiintercept_la_LINK) -rpath $(pkglibexecdir) $(libompiintercept_la_OBJECTS) $(libompiintercept_la_LIBADD) $(LIBS)
 libparseompi.la: $(libparseompi_la_OBJECTS) $(libparseompi_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libparseompi_la_OBJECTS) $(libparseompi_la_LIBADD) $(LIBS)
 
