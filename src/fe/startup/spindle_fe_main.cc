@@ -151,26 +151,50 @@ static void setupLogging(int argc, char **argv)
    bare_printf("\n");
 }
 
+static unsigned int str_hash(const char *str)
+{
+   unsigned long hash = 5381;
+   int c;
+   while ((c = *str++))
+      hash = ((hash << 5) + hash) + c;
+   return (unsigned int) hash;
+}
+
 static unique_id_t get_unique_id()
 {
    static unique_id_t unique_id = 0;
    if (unique_id != 0)
       return unique_id;
 
+   /* This needs only needs to be unique between overlapping Spindle instances
+      actively running on the same node.  Grab 16-bit pid, 16-bits hostname hash,
+      32-bits randomness */
+      
+   uint16_t pid = (uint16_t) getpid();
+   
+   char hostname[256];
+   gethostname(hostname, sizeof(hostname));
+   hostname[sizeof(hostname)-1] = '\0';
+   uint16_t hostname_hash = (uint16_t) str_hash(hostname);
+
    int fd = open("/dev/urandom", O_RDONLY);
    if (fd == -1)
       fd = open("/dev/random", O_RDONLY);
    if (fd == -1) {
-      fprintf(stderr, "Error: Could not open /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
+      fprintf(stderr, "Error: Could not open /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");
       exit(-1);
    }
-      
-   ssize_t result = read(fd, &unique_id, sizeof(unique_id));
+   uint32_t random;
+   ssize_t result = read(fd, &random, sizeof(random));
    close(fd);
    if (result == -1) {
-      fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
+      fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");
       exit(EXIT_FAILURE);
    }
+
+   unique_id = (uint16_t) pid;
+   unique_id |= ((uint64_t) hostname_hash) << 16;
+   unique_id |= ((uint64_t) random) << 32;
 
    return unique_id;
 }
