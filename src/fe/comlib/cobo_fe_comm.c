@@ -24,7 +24,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdlib.h>
 
 int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int port, unsigned int num_ports,
-                                   unsigned int shared_secret, 
+                                   unique_id_t unique_id, 
                                    void **data  ) {
    int rc=0;
    int *portlist;
@@ -39,7 +39,7 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int p
    portlist[num_ports] = 0;
 
    debug_printf2("Opening with port %d - %d\n", portlist[0], portlist[num_ports-1]);
-   cobo_server_open(shared_secret, hostlist, numhosts, portlist, num_ports);
+   cobo_server_open(unique_id, hostlist, numhosts, portlist, num_ports);
    free(portlist);
 
    cobo_server_get_root_socket(&root_fd);

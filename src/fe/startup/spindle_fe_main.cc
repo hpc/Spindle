@@ -41,7 +41,7 @@ static void getAppCommandLine(int argc, char *argv[], int daemon_argc, char *dae
 static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args);
 static void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 static void logUser();
-static unsigned int get_shared_secret();
+static unique_id_t get_unique_id();
 static void setupSecurity(spindle_args_t *params);
 
 #if defined(USAGE_LOGGING_FILE)
@@ -131,7 +131,7 @@ static void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->port = getPort();
    args->num_ports = getNumPorts();
    args->opts = opts;
-   args->shared_secret = get_shared_secret();
+   args->unique_id = get_unique_id();
    args->use_launcher = getLauncher();
    args->startup_type = getStartupType();
    args->location = strdup(getLocation(args->number).c_str());
@@ -151,11 +151,11 @@ static void setupLogging(int argc, char **argv)
    bare_printf("\n");
 }
 
-static unsigned int get_shared_secret()
+static unique_id_t get_unique_id()
 {
-   static unsigned int shared_secret = 0;
-   if (shared_secret != 0)
-      return shared_secret;
+   static unique_id_t unique_id = 0;
+   if (unique_id != 0)
+      return unique_id;
 
    int fd = open("/dev/urandom", O_RDONLY);
    if (fd == -1)
@@ -165,14 +165,14 @@ static unsigned int get_shared_secret()
       exit(-1);
    }
       
-   int result = read(fd, &shared_secret, sizeof(shared_secret));
+   ssize_t result = read(fd, &unique_id, sizeof(unique_id));
    close(fd);
    if (result == -1) {
       fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for shared secret. Aborting Spindle\n");
       exit(EXIT_FAILURE);
    }
 
-   return shared_secret;
+   return unique_id;
 }
 
 
@@ -229,7 +229,7 @@ static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_
       char port_str[32], ss_str[32], port_num_str[32];
       snprintf(port_str, 32, "%d", args->port);
       snprintf(port_num_str, 32, "%d", args->num_ports);
-      snprintf(ss_str, 32, "%d", args->shared_secret);
+      snprintf(ss_str, 32, "%lu", args->unique_id);
       daemon_opts[i++] = strdup(port_str);
       daemon_opts[i++] = strdup(port_num_str);
       daemon_opts[i++] = strdup(ss_str);

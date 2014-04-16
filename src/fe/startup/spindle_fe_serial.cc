@@ -61,13 +61,13 @@ static int startDaemon(int /*daemon_argc*/, char *daemon_argv[], spindle_args_t 
       return 0;
    }
    else {
-      char port_s[32], num_ports_s[32], shared_secret_s[32];
+      char port_s[32], num_ports_s[32], unique_id_s[32];
       snprintf(port_s, 32, "%u", params->port);
       snprintf(num_ports_s, 32, "%u", params->num_ports);
-      snprintf(shared_secret_s, 32, "%u", params->shared_secret);
+      snprintf(unique_id_s, 32, "%lu", params->unique_id);
       setenv("SPINDLE_SERIAL_PORT", port_s, 1);
       setenv("SPINDLE_SERIAL_NUMPORTS", num_ports_s, 1);
-      setenv("SPINDLE_SERIAL_SHARED", shared_secret_s, 1);
+      setenv("SPINDLE_SERIAL_SHARED", unique_id_s, 1);
 
       execv(daemon_argv[0], daemon_argv);
       err_printf("Error exec'ing daemon %s\n", daemon_argv[0]);

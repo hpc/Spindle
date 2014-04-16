@@ -40,8 +40,8 @@ static int unpackfebe_cb(void* udatabuf,
    memcpy(&args->num_ports, buffer + pos, sizeof(args->num_ports));
    pos += sizeof(args->num_ports);
    
-   memcpy(&args->shared_secret, buffer + pos, sizeof(args->shared_secret));
-   pos += sizeof(args->shared_secret);
+   memcpy(&args->unique_id, buffer + pos, sizeof(args->unique_id));
+   pos += sizeof(args->unique_id);
 
    assert(pos == udatabuflen);
 
@@ -106,7 +106,7 @@ int startLaunchmonBE(int argc, char *argv[])
    struct {
       unsigned int port;
       unsigned int num_ports;
-      unsigned int shared_secret;
+      unique_id_t unique_id;
    } conn_info;
    lmon_rc_e rc;
    int result;
@@ -146,7 +146,7 @@ int startLaunchmonBE(int argc, char *argv[])
       return -1;
    } 
 
-   /* Recieve port and shared_secret via lmon. args is not fully 
+   /* Receive port and unique_id via lmon. args is not fully 
       filled in at this point */
    {
       spindle_args_t args;
@@ -158,7 +158,7 @@ int startLaunchmonBE(int argc, char *argv[])
       if (LMON_be_amIMaster() == LMON_YES) {
          conn_info.port = args.port;
          conn_info.num_ports = args.num_ports;
-         conn_info.shared_secret = args.shared_secret;
+         conn_info.unique_id = args.unique_id;
       }
    }
 
@@ -169,7 +169,7 @@ int startLaunchmonBE(int argc, char *argv[])
       return -1;
    }
    
-   result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.shared_secret, releaseApplication);
+   result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.unique_id, releaseApplication);
    if (result == -1) {
       err_printf("Failed in call to spindleInitBE\n");
       return -1;

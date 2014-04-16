@@ -50,7 +50,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->port, buf, pos);
    unpack_param(args->num_ports, buf, pos);
    unpack_param(args->opts, buf, pos);
-   unpack_param(args->shared_secret, buf, pos);
+   unpack_param(args->unique_id, buf, pos);
    unpack_param(args->use_launcher, buf, pos);
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->location, buf, pos);
@@ -61,7 +61,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    return 0;    
 }
 
-int spindleRunBE(unsigned int port, unsigned int num_ports, unsigned int shared_secret, int (*post_setup)(spindle_args_t *))
+int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int (*post_setup)(spindle_args_t *))
 {
    int result;
    spindle_args_t args;
@@ -70,14 +70,14 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unsigned int shared_
    debug_printf3("spindleRunBE setting up network and receiving setup data\n");
    void *setup_data;
    int setup_data_size;
-   result = ldcs_audit_server_network_setup(port, num_ports, shared_secret, &setup_data, &setup_data_size);
+   result = ldcs_audit_server_network_setup(port, num_ports, unique_id, &setup_data, &setup_data_size);
    if (result == -1) {
       err_printf("Error setting up network in spindleRunBE\n");
       return -1;
    }
    unpack_data(&args, setup_data, setup_data_size);
    free(setup_data);
-   assert(args.shared_secret == shared_secret);
+   assert(args.unique_id == unique_id);
    assert(args.port == port);
    
    

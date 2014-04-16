@@ -123,7 +123,8 @@ static int packfebe_cb(void *udata,
 {  
    spindle_args_t *args = (spindle_args_t *) udata;
 
-   *msgbuflen = sizeof(unsigned int) * 3;
+   *msgbuflen = sizeof(unsigned int) * 2;
+   *msgbuflen += sizeof(unique_id_t);
    assert(*msgbuflen < msgbufmax);
    
    char *buffer = (char *) msgbuf;
@@ -132,8 +133,8 @@ static int packfebe_cb(void *udata,
    pos += sizeof(args->port);
    memcpy(buffer + pos, &args->num_ports, sizeof(args->num_ports));
    pos += sizeof(args->num_ports);
-   memcpy(buffer + pos, &args->shared_secret, sizeof(args->shared_secret));
-   pos += sizeof(args->shared_secret);
+   memcpy(buffer + pos, &args->unique_id, sizeof(args->unique_id));
+   pos += sizeof(args->unique_id);
 
    assert(pos == *msgbuflen);
 

@@ -14,6 +14,7 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -88,7 +89,7 @@ static double cobo_connect_timelimit  = COBO_CONNECT_TIMELIMIT; /* seconds */
  * the sessionid will be provided by the user, it should be a random
  * number which associate processes with the same session */
 static unsigned int cobo_serviceid = 3059238577u;
-static unsigned int cobo_sessionid = 0;
+static uint64_t cobo_sessionid = 0;
 static unsigned int cobo_acceptid  = 2348104830u;
 
 /* number of ports and list of ports in the available port range */
@@ -847,7 +848,7 @@ static int cobo_open_tree()
         }
 
         /* read the session id */
-        unsigned int received_sessionid = 0;
+        uint64_t received_sessionid = 0;
         if (cobo_read_fd_w_timeout(cobo_parent_fd, &received_sessionid, sizeof(received_sessionid), reply_timeout) < 0) {
             debug_printf3("Receiving session id from new connection failed\n");
             close(cobo_parent_fd);
@@ -1405,7 +1406,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
 }
 
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
-int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, int* num_ranks)
+int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* num_ranks)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
     char *value;
@@ -1522,7 +1523,7 @@ int cobo_server_get_root_socket(int* fd)
 }
 
 /* given a hostlist and portlist where clients are running, open the tree and assign ranks to clients */
-int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports)
+int cobo_server_open(uint64_t sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports)
 {
     /* at this point, we know this process is the server, so set its rank */
     cobo_me = -2;

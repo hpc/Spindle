@@ -35,6 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "handshake.h"
 
 #define COBO_SUCCESS (0)
@@ -73,7 +74,7 @@ extern "C" {
  */
 
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
-int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, int *num_ranks);
+int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int *num_ranks);
 
 /* shut down the connections between tasks and free data structures */
 int cobo_close();
@@ -134,7 +135,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf);
  */
 
 /* given a hostlist and portlist where clients are running, open the tree and assign ranks to clients */
-int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports);
+int cobo_server_open(uint64_t sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports);
 
 /* shut down the tree connections (leaves processes running) */
 int cobo_server_close();

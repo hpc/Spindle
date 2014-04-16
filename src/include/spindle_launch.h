@@ -14,12 +14,15 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <stdint.h>
+
 #if !defined(SPINDLE_LAUNCH_H_)
 #define SPINDLE_LAUNCH_H_
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
 /* Bitfield values for opts parameter */
 #define OPT_COBO       (1 << 1)
 #define OPT_DEBUG      (1 << 2)
@@ -56,6 +59,8 @@ extern "C" {
 #define startup_lmon 1
 #define startup_hostbin 2
 
+typedef uint64_t unique_id_t;
+
 /* Parameters for configuring Spindle */
 typedef struct {
    /* A unique number that will be used to identify this spindle session */
@@ -70,9 +75,9 @@ typedef struct {
    /* A bitfield of the above OPT_* values */
    unsigned int opts;
 
-   /* A unique (and hopefully random) shared-secret number that all servers will need
+   /* A unique number that all servers will need
       to provide to join the Spindle network */
-   unsigned int shared_secret;
+   unique_id_t unique_id;
 
    /* The type of the MPI launcher */
    unsigned int use_launcher;
@@ -96,7 +101,7 @@ int spindleInitFE(const char **hosts, spindle_args_t *params);
 int spindleCloseFE();
 
 /* Runs the server process on a BE, returns when server is done */
-int spindleRunBE(unsigned int port, unsigned int num_ports, unsigned int shared_secret, int (*post_setup)(spindle_args_t *));
+int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int (*post_setup)(spindle_args_t *));
 
 /* Bitmask of values for the test_launchers parameter */
 #define TEST_PRESETUP 1<<0
