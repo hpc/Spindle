@@ -24,26 +24,41 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <cstdlib>
+
+static bool push_env;
+static char *environ_str = NULL;
 
 static int unpackfebe_cb(void* udatabuf, 
                          int udatabuflen, 
                          void* udata) 
 {
+   if (udata == (void *) &environ_str) {
+      environ_str = strdup((char *) udatabuf);
+      return 0;
+   }
+
    spindle_args_t *args = (spindle_args_t *) udata;
    
    char *buffer = (char *) udatabuf;
    int pos = 0;
+   unsigned int send_env;
 
    memcpy(&args->port, buffer + pos, sizeof(args->port));
    pos += sizeof(args->port);
 
    memcpy(&args->num_ports, buffer + pos, sizeof(args->num_ports));
    pos += sizeof(args->num_ports);
+
+   memcpy(&send_env, buffer + pos, sizeof(send_env));
+   pos += sizeof(send_env);
    
    memcpy(&args->unique_id, buffer + pos, sizeof(args->unique_id));
    pos += sizeof(args->unique_id);
 
    assert(pos == udatabuflen);
+
+   push_env = (send_env != 0);
 
    return 0;    
 }
@@ -101,11 +116,30 @@ int releaseApplication(spindle_args_t *) {
   return(rc);
 }
 
+void setenvFromLMON()
+{
+   assert(environ_str);
+   char *env;
+
+   for (env = strtok(environ_str, "\n"); env != NULL; env = strtok(NULL, "\n")) {
+      char *equals = strchr(env, '=');
+      char *env_name = env;
+      char *env_value = equals+1;
+      *equals = '\0';
+      setenv(env_name, env_value, 1);
+      *equals = '=';
+   }
+
+   char *cwd = getenv("PWD");
+   chdir(cwd);
+}
+
 int startLaunchmonBE(int argc, char *argv[], int security_type)
 {
    struct {
       unsigned int port;
       unsigned int num_ports;
+      unsigned int send_env;
       unique_id_t unique_id;
    } conn_info;
    lmon_rc_e rc;
@@ -159,15 +193,48 @@ int startLaunchmonBE(int argc, char *argv[], int security_type)
          conn_info.port = args.port;
          conn_info.num_ports = args.num_ports;
          conn_info.unique_id = args.unique_id;
+         conn_info.send_env = push_env ? 1 : 0;
       }
    }
 
-   /* Broadcast port/secret from master to all servers */
+   /* Broadcast port/uniqueid from master to all servers */
    rc = LMON_be_broadcast(&conn_info, sizeof(conn_info));
    if (rc != LMON_OK) {
       err_printf("Failed to broadcast connection info\n");
       return -1;
    }
+   push_env = (conn_info.send_env != 0);
+
+   /* Broadcast environment to all nodes if necessary (currently done
+      on BGQ). */
+   if (push_env) {
+      rc = LMON_be_recvUsrData(&environ_str);
+      if (rc != LMON_OK) {
+         err_printf("Failed to receive environ data from FE\n");
+         return -1;
+      }
+      size_t environ_size = environ_str ? strlen(environ_str)+1 : 0;
+      rc = LMON_be_broadcast(&environ_size, sizeof(environ_size));
+      if (rc != LMON_OK) {
+         err_printf("Failed to broadcast environ_size\n");
+         return -1;
+      }
+      assert(environ_size);
+      
+      if (!environ_str)
+         environ_str = (char *) malloc(environ_size);
+
+      rc = LMON_be_broadcast(environ_str, environ_size);
+      if (rc != LMON_OK) {
+         err_printf("Failed to broadcast environ\n");
+         return -1;
+      }
+
+      setenvFromLMON();
+      free(environ_str);
+      environ_str = NULL;
+   }
+   
    
    result = spindleRunBE(conn_info.port, conn_info.num_ports, conn_info.unique_id, security_type,
                          releaseApplication);

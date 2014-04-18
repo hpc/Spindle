@@ -215,7 +215,7 @@ BS = $(top_srcdir)/../biter
 libbiterc_la_SOURCES = $(BS)/biter_shm.c $(BS)/biterc.c \
 	$(BS)/client_queue.c $(BS)/demultiplex.c $(BS)/sheep.c \
 	$(am__append_2) $(am__append_3)
-AM_CPPFLAGS = -I$(BS) $(am__append_1)
+AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging $(am__append_1)
 all: all-am
 
 .SUFFIXES:

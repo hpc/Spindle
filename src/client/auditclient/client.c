@@ -56,6 +56,8 @@ static char debugging_name[32];
 static char old_cwd[MAX_PATH_LEN+1];
 static int rankinfo[4]={-1,-1,-1,-1};
 
+extern char *parse_location(char *loc);
+
 /* compare the pointer top the cookie not the cookie itself, it may be changed during runtime by audit library  */
 int use_ldcs = 1;
 static const char *libc_name = NULL;
@@ -106,6 +108,10 @@ static int init_server_connection()
    rankinfo_s = getenv("LDCS_RANKINFO");
    opts_s = getenv("LDCS_OPTIONS");
    opts = atoi(opts_s);
+
+   if (strchr(location, '$')) {
+      location = parse_location(location);
+   }
 
    if (!(opts & OPT_FOLLOWFORK)) {
       debug_printf("Disabling environment variables because we're not following forks\n");

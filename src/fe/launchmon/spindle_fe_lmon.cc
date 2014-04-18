@@ -35,6 +35,15 @@ using namespace std;
 #error Expected LAUNCHMON_BIN_DIR to be defined
 #endif
 
+#if defined(os_bluegene)
+#define PUSH_ENV_DEFAULT_VAL true
+#else
+#define PUSH_ENV_DEFAULT_VAL false
+#endif
+
+static bool push_env = PUSH_ENV_DEFAULT_VAL;
+extern char **environ;
+
 static void initLMONEnvironment()
 {
    if (!strlen(LAUNCHMON_BIN_DIR))
@@ -43,6 +52,9 @@ static void initLMONEnvironment()
    setenv("LMON_PREFIX", LAUNCHMON_BIN_DIR "/..", 0);
    setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
    setenv("LMON_NEWLAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/newlaunchmon", 0);
+#if defined(os_bluegene)
+   setenv("LMON_DONT_STOP_APP", "1", 1);
+#endif
 }
 
 static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
@@ -116,14 +128,44 @@ static int onLaunchmonStatusChange(int *pstatus) {
    return 0;
 }
 
+static int pack_environ(void *udata, 
+                        void *msgbuf, 
+                        int msgbufmax, 
+                        int *msgbuflen)
+{
+   size_t pos = 0;
+   char *buffer = (char *) msgbuf;
+
+   for (char **cur_env = (char **) udata; *cur_env != NULL; cur_env++) {
+      char *env = *cur_env;
+      size_t len = strlen(env);
+      assert(pos + len + 1 < msgbufmax);
+      
+      memcpy(buffer + pos, env, len);
+      pos += len;
+      
+      buffer[pos] = '\n';
+      pos += 1;
+   }
+   if (pos > 0)
+      buffer[pos-1] = '\0';
+
+   *msgbuflen = (int) pos;
+   return 0;
+}
+
 static int packfebe_cb(void *udata, 
                        void *msgbuf, 
                        int msgbufmax, 
                        int *msgbuflen)
 {  
-   spindle_args_t *args = (spindle_args_t *) udata;
+   if (udata == (void *) environ)
+      return pack_environ(udata, msgbuf, msgbufmax, msgbuflen);
 
-   *msgbuflen = sizeof(unsigned int) * 2;
+   spindle_args_t *args = (spindle_args_t *) udata;
+   unsigned int send_env = push_env ? 1 : 0;
+
+   *msgbuflen = sizeof(unsigned int) * 3;
    *msgbuflen += sizeof(unique_id_t);
    assert(*msgbuflen < msgbufmax);
    
@@ -133,6 +175,8 @@ static int packfebe_cb(void *udata,
    pos += sizeof(args->port);
    memcpy(buffer + pos, &args->num_ports, sizeof(args->num_ports));
    pos += sizeof(args->num_ports);
+   memcpy(buffer + pos, &send_env, sizeof(send_env));
+   pos += sizeof(send_env);
    memcpy(buffer + pos, &args->unique_id, sizeof(args->unique_id));
    pos += sizeof(args->unique_id);
 
@@ -187,6 +231,14 @@ int startLaunchmonFE(int app_argc, char *app_argv[],
    if (rc != LMON_OK) {
       err_printf("[LMON FE] Error sending user data to backends\n");
       return EXIT_FAILURE;
+   }
+
+   if (push_env) {
+      rc = LMON_fe_sendUsrDataBe(aSession, environ);
+      if (rc != LMON_OK) {
+         err_printf("[LMON FE] Error sending environment data to backends\n");
+         return EXIT_FAILURE;
+      }
    }
 
    const char **hosts = getProcessTable(aSession);

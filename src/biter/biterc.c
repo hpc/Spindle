@@ -32,6 +32,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "demultiplex.h"
 #include "ids.h"
 
+#include "spindle_debug.h"
+
 #if !defined(MAX_PATH_LEN)
 #define MAX_PATH_LEN 4096
 #endif
@@ -307,8 +309,10 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    unique_number = biterc_get_unique_number(&session->shared_header->max_rank,
                                             &session->shared_header->num_set_max_rank,
                                             session);
+   debug_printf3("biter unique_number = %d\n", unique_number);
 
    rank = biterc_get_rank(sessions - session);
+   debug_printf3("biter rank = %u\n", rank);
    
    snprintf(c2s_path, MAX_PATH_LEN+1, "%s/biter_c2s.%d", tmpdir, unique_number);
    c2s_path[MAX_PATH_LEN] = '\0';
@@ -319,7 +323,8 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    if (session->leader) {
       take_lock(&session->pipe_lock);
       pipe_lock_held = 1;
-
+      
+      debug_printf3("biter test path %s\n", c2s_path);
       while ((result = stat(c2s_path, &buf)) == -1 && errno == ENOENT)
          usleep(10000); //.01 sec
       if (result != 0) {
@@ -327,6 +332,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
          goto error;
       }
 
+      debug_printf3("biter test path %s\n", s2c_path);
       while ((result = stat(s2c_path, &buf)) == -1 && errno == ENOENT)
          usleep(10000); //.01 sec
       if (result != 0) {
@@ -337,6 +343,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
       session->shared_header->ready = 1;
    }
    else {
+      debug_printf3("biter non-master is waiting for ready\n");
       while (session->shared_header->ready == 0)
          usleep(10000); //.01 sec
 
@@ -344,12 +351,14 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
       pipe_lock_held = 1;
    }
 
+   debug_printf3("Biter init opening %s\n", c2s_path);
    c2s_fd = open(c2s_path, O_WRONLY);
    if (c2s_fd == -1) {
       biter_lasterror = "Unable to open client to server path";
       goto error;
    }
 
+   debug_printf3("Biter init opening %s\n", s2c_path);
    s2c_fd = open(s2c_path, O_RDONLY);
    if (s2c_fd == -1) {
       biter_lasterror = "Unable to open server to client path";
@@ -385,6 +394,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
       session->shared_header->ready = 2;
    }
    else {
+      debug_printf3("Waiting for all clients to finish connecting\n", c2s_path);
       while (session->shared_header->ready != 2) {
          usleep(10000); //.01 sec
       }
@@ -473,6 +483,7 @@ int release_write_lock(void *session)
 
 void set_last_error(const char *errstr)
 {
+   err_printf("biter error: %s\n", errstr);
    biter_lasterror = errstr;
 }
 

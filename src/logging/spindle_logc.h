@@ -33,7 +33,7 @@ extern void spindle_dump_on_error();
 
 #define debug_printf(format, ...)                                       \
    do {                                                                 \
-      if (spindle_debug_prints) {                                       \
+      if (spindle_debug_prints && spindle_debug_output_f) {             \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
                  spindle_debug_name, getpid(),                          \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
@@ -43,7 +43,7 @@ extern void spindle_dump_on_error();
 
 #define debug_printf2(format, ...)                                      \
    do {                                                                 \
-      if (spindle_debug_prints > 1) {                                   \
+      if (spindle_debug_prints > 1 && spindle_debug_output_f) {         \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
                  spindle_debug_name, getpid(),                          \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
@@ -53,7 +53,7 @@ extern void spindle_dump_on_error();
 
 #define debug_printf3(format, ...)                                      \
    do {                                                                 \
-      if (spindle_debug_prints > 2) {                                   \
+      if (spindle_debug_prints > 2 && spindle_debug_output_f) {         \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
                  spindle_debug_name, getpid(),                          \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
@@ -63,7 +63,7 @@ extern void spindle_dump_on_error();
 
 #define bare_printf(format, ...)                                        \
    do {                                                                 \
-      if (spindle_debug_prints) {                                       \
+      if (spindle_debug_prints && spindle_debug_output_f) {             \
          fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -71,7 +71,7 @@ extern void spindle_dump_on_error();
 
 #define bare_printf2(format, ...)                                       \
    do {                                                                 \
-      if (spindle_debug_prints > 1) {                                   \
+      if (spindle_debug_prints > 1 && spindle_debug_output_f) {         \
          fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -79,7 +79,7 @@ extern void spindle_dump_on_error();
 
 #define bare_printf3(format, ...)                                       \
    do {                                                                 \
-      if (spindle_debug_prints > 2) {                                   \
+      if (spindle_debug_prints > 2 && spindle_debug_output_f) {         \
          fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -87,7 +87,7 @@ extern void spindle_dump_on_error();
 
 #define err_printf(format, ...)                                         \
    do {                                                                 \
-      if (spindle_debug_prints) {                                       \
+      if (spindle_debug_prints && spindle_debug_output_f) {             \
          fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - ERROR: "      \
                  format, spindle_debug_name, getpid(),                  \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
@@ -98,7 +98,7 @@ extern void spindle_dump_on_error();
 
 #define test_printf(format, ...)                                        \
    do {                                                                 \
-      if (run_tests) {                                                  \
+      if (run_tests && spindle_test_output_f) {                         \
          fprintf(spindle_test_output_f, format,                         \
                     ## __VA_ARGS__);                                    \
          fflush(spindle_test_output_f);                                 \

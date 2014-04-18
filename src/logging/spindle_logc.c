@@ -15,6 +15,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include "spindle_logc.h"
+#include "config.h"
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -57,6 +58,8 @@ int run_tests;
 #define SPAWN_TIMEOUT 300
 #define CONNECT_TIMEOUT 100
 
+extern int spindle_mkdir(char *orig_path);
+
 int fileExists(char *name) 
 {
    struct stat buf;
@@ -65,6 +68,7 @@ int fileExists(char *name)
 
 void spawnLogDaemon(char *tempdir)
 {
+#if !defined(SPINDLECLIENT) || !defined(os_bluegene)
    int result = fork();
    if (result == 0) {
       result = fork();
@@ -98,6 +102,7 @@ void spawnLogDaemon(char *tempdir)
          waitpid(result, &status, 0);
       } while (!WIFEXITED(status));
    }
+#endif
 }
 
 int clearDaemon(char *tmpdir)
@@ -278,6 +283,10 @@ void init_spindle_debugging(char *name, int survive_exec)
       tempdir = getenv("TEMPDIR");
    if (!tempdir || !*tempdir)
       tempdir = "/tmp";
+   if (!fileExists(tempdir)) {
+      spindle_mkdir(tempdir);
+   }
+
    debug_location = log_level ? "./spindle_output" : NULL;
    test_location  = run_tests ? "./spindle_test" : NULL;
 

@@ -33,6 +33,7 @@ static char *cached_location;
 #define BITERC_SHM_SIZE 2*1024*1024
 int client_open_connection_biter(char* location, int number)
 {
+   debug_printf3("Calling biterc_newsession(%s, %lu)\n", location, (unsigned long) BITERC_SHM_SIZE);
    session = biterc_newsession(location, BITERC_SHM_SIZE);
    if (session == -1) {
       err_printf("Client failed to create connection: %s\n", biterc_lasterror_str());
@@ -117,9 +118,9 @@ static int client_recv_msg_biter(int connid, ldcs_message_t *msg, ldcs_read_bloc
 
    if (is_dynamic) {
       msg->data = (char *) spindle_malloc(msg->header.len);
+      assert(msg->data);
    }
 
-   debug_printf3("Reading %d bytes for payload from biter\n", msg->header.len);
    result = biterc_read(connid, msg->data, msg->header.len);
    return result;
 }
@@ -131,6 +132,6 @@ int client_recv_msg_static_biter(int fd, ldcs_message_t *msg, ldcs_read_block_t 
 
 int client_recv_msg_dynamic_biter(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
 {
-   return client_recv_msg_biter(fd, msg, block, 0);
+   return client_recv_msg_biter(fd, msg, block, 1);
 }
 

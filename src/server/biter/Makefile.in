@@ -231,7 +231,7 @@ noinst_LTLIBRARIES = libbiterd.la
 BS = $(top_srcdir)/../biter
 libbiterd_la_SOURCES = $(BS)/biterd.c $(BS)/server_queue.c \
 	$(BS)/demultiplex.c $(am__append_1) $(am__append_2)
-AM_CPPFLAGS = -I$(BS)
+AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging
 all: all-am
 
 .SUFFIXES:

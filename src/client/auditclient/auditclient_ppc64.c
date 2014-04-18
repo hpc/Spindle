@@ -17,13 +17,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "auditclient.h"
 
-static Elf64_Addr getTOCValue(struct link_map *map)
-{
-   //Get ELF Header
-   //Get TOC from e_entry
-
-   //Or is target a proper PPC64 indirect function pointer?
-}
+struct ppc64_funcptr_t {
+   Elf64_Addr fptr;
+   Elf64_Addr toc;
+};
 
 static Elf64_Addr doPermanentBinding(struct link_map *rmap,
                                      struct link_map *dmap,
@@ -34,6 +31,7 @@ static Elf64_Addr doPermanentBinding(struct link_map *rmap,
    Elf64_Rela *rel = NULL;
    Elf64_Addr *got_entry;
    Elf64_Addr base = rmap->l_addr;
+   struct ppc64_funcptr_t *func = (struct ppc64_funcptr_t *) target;
    for (; dynamic_section->d_tag != DT_NULL; dynamic_section++) {
       if (dynamic_section->d_tag == DT_JMPREL) {
          rel = ((Elf64_Rela *) dynamic_section->d_un.d_ptr) + plt_reloc_idx;
@@ -42,9 +40,10 @@ static Elf64_Addr doPermanentBinding(struct link_map *rmap,
    }
    if (!rel)
       return target;
+
    got_entry = (Elf64_Addr *) (rel->r_offset + base);
-   got_entry[0] = target;
-   got_entry[1] = ;
+   got_entry[0] = func->fptr;
+   got_entry[1] = func->toc;
    return target;
 }
 

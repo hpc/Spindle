@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "biterd.h"
 #include "demultiplex.h"
 #include "daemon_ids.h"
+#include "spindle_debug.h"
 
 static const char *biter_lasterror = NULL;
 
@@ -107,6 +108,7 @@ static int biterd_accept(int session_id)
 
 void set_last_error(const char *errstr)
 {
+   err_printf("biter error: %s\n", errstr);
    biter_lasterror = errstr;
 }
 

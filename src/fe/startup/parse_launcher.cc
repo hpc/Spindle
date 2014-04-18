@@ -290,7 +290,7 @@ void ModifyArgv::modifyCmdLine()
    for (; p < argc; p++) {
       if (p == parser->appExecutableAt()) {
 #if defined(os_bluegene)
-         string bg_env_str = parser->getLauncher()->getBGString();
+         string bg_env_str = parser->getParser()->getBGString();
          int str_len = bg_env_str.length() + options.length() + location.length() + number.length() + string(default_libstr).length() + 1;
          char *bg_env = (char *) malloc(str_len);
          snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str());
