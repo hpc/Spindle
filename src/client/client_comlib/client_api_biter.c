@@ -108,6 +108,11 @@ static int client_recv_msg_biter(int connid, ldcs_message_t *msg, ldcs_read_bloc
    debug_printf3("Reading %d bytes for header from biter\n", (int) sizeof(msg->header));
    result = biterc_read(connid, &msg->header, sizeof(msg->header));
    if (result == -1) {
+      err_printf("Error reading message header in biter client: %s\n", biterc_lasterror_str());
+      return -1;
+   }
+   if (result == 0) {
+      err_printf("EOF reading message header in biter client: %s\n", biterc_lasterror_str());
       return -1;
    }
    
@@ -121,7 +126,10 @@ static int client_recv_msg_biter(int connid, ldcs_message_t *msg, ldcs_read_bloc
       assert(msg->data);
    }
 
+   debug_printf3("Reading %d bytes for body from biter\n", (int) msg->header.len);
    result = biterc_read(connid, msg->data, msg->header.len);
+   if (result == -1)
+      err_printf("Error reading message body in biter client: %s\n", biterc_lasterror_str());
    return result;
 }
 

@@ -194,8 +194,8 @@ int biterd_newsession(const char *tmpdir, int cn_id)
       biterd_accept(session_id);
    }
    
-   if (session_id > max_session)
-      max_session = session_id;
+   if (session_id >= max_session)
+      max_session = session_id+1;
 
    return session_id;
 

@@ -149,7 +149,6 @@ int ldcs_listen() {
       for(c=0;c<ldcs_listen_data.item_table_size;c++) {
          if ( ldcs_listen_data.item_table[c].state == LDCS_LISTEN_STATUS_ACTIVE ) {
             fd = ldcs_listen_data.item_table[c].fd;
-            debug_printf3("add fd to FDSET %d\n",fd);
             FD_SET(fd, &rd);
             nfds = max(nfds, fd);  
          }
@@ -157,9 +156,7 @@ int ldcs_listen() {
     
       /* do select if sckets avail */
       if(nfds>0) {
-         debug_printf3("start select nfds=%d\n",nfds);
          r = select(nfds + 1, &rd, &wr, &er, NULL);
-         debug_printf3("after select r=%d\n",r);
       
          /* signal caught, do nothing */
          if (r == -1 && errno == EINTR) {
@@ -174,7 +171,7 @@ int ldcs_listen() {
             if ( ldcs_listen_data.item_table[c].state == LDCS_LISTEN_STATUS_ACTIVE ) {
                fd     = ldcs_listen_data.item_table[c].fd;
                if(FD_ISSET(fd, &rd)) {
-                  debug_printf3("calling callback for fd %d id=%d\n",fd, ldcs_listen_data.item_table[c].id);
+                  debug_printf3("Select returned data.  Calling callback for fd %d id=%d\n",fd, ldcs_listen_data.item_table[c].id);
                   int result = ldcs_listen_data.item_table[c].cb_func(ldcs_listen_data.item_table[c].fd,
                                                                       ldcs_listen_data.item_table[c].id,
                                                                       ldcs_listen_data.item_table[c].data);

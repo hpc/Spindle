@@ -71,7 +71,7 @@ int releaseApplication(spindle_args_t *) {
   int signum, i;
 
 #if defined(os_bluegene)
-  signum = 0;
+  return 0;
 #elif defined(os_linux)
   signum = SIGCONT;
 #else

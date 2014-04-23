@@ -250,6 +250,7 @@ int send_pid(int fd) {
    message.header.len = 16;
    message.data = buffer;
 
+   debug_printf3("Sending pid\n");
 
    COMM_LOCK;
 
@@ -266,6 +267,8 @@ int send_location(int fd, char *location) {
    message.header.type = LDCS_MSG_LOCATION;
    message.header.len = strlen(location)+1;
    message.data = location;
+
+   debug_printf3("Sending location\n");
 
    COMM_LOCK;
 

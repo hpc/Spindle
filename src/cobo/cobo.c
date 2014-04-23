@@ -220,14 +220,7 @@ static int cobo_write_fd_w_suppress(int fd, void* buf, int size, int suppress)
     char* offset = (char*) buf;
 
     while (n < size) {
-       debug_printf3("start to write(fd=%d,offset=%p,size=%d)\n",
-		   fd, offset, size-n
-		);
-
-	rc = write(fd, offset, size - n);
-
-	debug_printf3("after write(fd=%d,offset=%p,size=%d) rc=%d\n",
-                 fd, offset, size-n, rc);
+       rc = write(fd, offset, size - n);
 
 	if (rc < 0) {
 	    if(errno == EINTR || errno == EAGAIN) { continue; }
@@ -311,12 +304,8 @@ static int cobo_read_fd_w_timeout(int fd, void* buf, int size, int usecs)
             return -1;
         }
 
-	debug_printf3("start to read(fd=%d,offset=%p,size=%d)\n",
-		   fd, offset, size-n);
         /* poll returned that fd is ready for reading */
 	rc = read(fd, offset, size - n);
-	debug_printf3("after read(fd=%d,offset=%p,size=%d) rc=%d\n",
-		   fd, offset, size-n, rc);
 
 	if (rc < 0) {
 	    if(errno == EINTR || errno == EAGAIN) { continue; }
