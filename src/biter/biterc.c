@@ -394,7 +394,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
       session->shared_header->ready = 2;
    }
    else {
-      debug_printf3("Waiting for all clients to finish connecting\n", c2s_path);
+      debug_printf3("Waiting for all clients to finish connecting to %s\n", c2s_path);
       while (session->shared_header->ready != 2) {
          usleep(10000); //.01 sec
       }
@@ -507,6 +507,13 @@ const char *biterc_lasterror_str()
 int biterc_get_id(int biter_session)
 {
    return sessions[biter_session].id;
+}
+
+int biterc_is_client_fd(int biter_session, int fd)
+{
+   return ((sessions[biter_session].shm_fd == fd) ||
+           (sessions[biter_session].c2s_fd == fd) ||
+           (sessions[biter_session].s2c_fd == fd));
 }
 
 void set_polled_data(void *session, msg_header_t msg)

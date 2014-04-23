@@ -26,6 +26,7 @@ extern int biterc_read(int biter_session, void *buf, size_t size);
 extern int biterc_write(int biter_session, void *buf, size_t size);
 extern int biterc_get_id(int biter_session);
 extern unsigned int biterc_get_rank(int session_id);
+extern int biterc_is_client_fd(int biter_session, int fd);
 extern const char *biterc_lasterror_str();
 
 #if defined(__cplusplus)

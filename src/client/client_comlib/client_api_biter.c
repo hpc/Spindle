@@ -135,3 +135,7 @@ int client_recv_msg_dynamic_biter(int fd, ldcs_message_t *msg, ldcs_read_block_t
    return client_recv_msg_biter(fd, msg, block, 1);
 }
 
+int is_client_fd(int connid, int fd)
+{
+   return biterc_is_client_fd(session, fd);
+}
