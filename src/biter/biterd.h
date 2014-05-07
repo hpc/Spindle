@@ -32,6 +32,7 @@ extern int biterd_get_fd(int session_id);
 extern int biterd_get_aux_fd();
 extern int biterd_find_client_w_data(int session_id);
 extern int biterd_get_session_proc_w_aux_data(int *session, int *proc);
+extern int biterd_init_comms(const char *tmpdir);
 
 extern int biterd_get_rank(int compute_node_id, int client_id);
 

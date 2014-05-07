@@ -82,7 +82,6 @@ int ldcs_open_server_connections_biter(int fd, int nc, int *more_avail)
 
    if (cur_proc_in_cn == num_procs_in_cn) {
       cur_session++;
-      debug_printf3("Creating new biterd_session %d\n", cur_session+1);
       result = biterd_newsession(tmpdir, cur_session);
       if (result == -1) {
          err_printf("Error creating new biterd session %d: %s", cur_session, biterd_lasterror_str());
@@ -92,10 +91,14 @@ int ldcs_open_server_connections_biter(int fd, int nc, int *more_avail)
       cur_proc_in_cn = 0;
       num_procs_in_cn = biterd_num_clients(cur_session);
       assert(num_procs_in_cn > 0);
+      debug_printf3("Created new biterd_session %d with fd %d\n", cur_session, biterd_get_fd(cur_session));
    }
 
 
    new_client = NEW_CLIENT_ID(cur_session, cur_proc_in_cn);
+   debug_printf3("Creating new client %d in session %d, client_id = %d\n",
+                 (int) cur_proc_in_cn, (int) cur_session, (int) new_client);
+                 
    if (session_proc_to_nc[cur_session] == NULL) {
       session_proc_to_nc[cur_session] = malloc(num_procs_in_cn * sizeof(*(session_proc_to_nc[cur_session])));
       for (i = 0; i < num_procs_in_cn; i++)
@@ -208,7 +211,7 @@ int ldcs_get_aux_fd_biter()
    return biterd_get_aux_fd();
 }
 
-int ldcs_socket_id_to_nc_biter(int id, int fd)
+int ldcs_socket_id_to_nc_biter(int id, int fd, ldcs_process_data_t *process_data)
 {
    int session, proc, result;
 
@@ -221,8 +224,11 @@ int ldcs_socket_id_to_nc_biter(int id, int fd)
       }
    }
    else {
-      session = CLIENT_ID_SESSION(id);
+      int connid = process_data->client_table[id].connid;
+      session = CLIENT_ID_SESSION(connid);
       proc = biterd_find_client_w_data(session);
+      debug_printf3("Decoded event on id %d/fd %d to session %d and proc %d\n",
+                    connid, fd, session, proc);
       if (proc == -1) {
          err_printf("Error finding client with data in session\n");
          return -1;

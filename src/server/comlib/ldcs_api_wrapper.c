@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "config.h"
 #include "ldcs_api.h"
+#include "ldcs_audit_server_process.h"
 
 #if !defined(COMM)
 #if defined(COMM_PIPES)
@@ -44,7 +45,7 @@ extern int RENAME(ldcs_send_msg) (int fd, ldcs_message_t *msg);
 extern int RENAME(ldcs_get_fd)(int fd);
 extern int RENAME(ldcs_get_aux_fd)();
 extern int RENAME(ldcs_recv_msg_static)(int connid, ldcs_message_t *msg, ldcs_read_block_t block);
-extern int RENAME(ldcs_socket_id_to_nc)(int id, int fd);
+extern int RENAME(ldcs_socket_id_to_nc)(int id, int fd, ldcs_process_data_t *process_data);
 
 int ldcs_create_server(char* location, int number)
 {
@@ -91,7 +92,7 @@ int ldcs_get_aux_fd()
    return RENAME(ldcs_get_aux_fd)();
 }
 
-int ldcs_socket_id_to_nc(int id, int fd)
+int ldcs_socket_id_to_nc(int id, int fd, ldcs_process_data_t *process_data)
 {
-   return RENAME(ldcs_socket_id_to_nc)(id, fd);
+   return RENAME(ldcs_socket_id_to_nc)(id, fd, process_data);
 }

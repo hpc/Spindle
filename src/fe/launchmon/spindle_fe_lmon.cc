@@ -139,7 +139,7 @@ static int pack_environ(void *udata,
    for (char **cur_env = (char **) udata; *cur_env != NULL; cur_env++) {
       char *env = *cur_env;
       size_t len = strlen(env);
-      assert(pos + len + 1 < msgbufmax);
+      assert(pos + len + 1 < (size_t) msgbufmax);
       
       memcpy(buffer + pos, env, len);
       pos += len;

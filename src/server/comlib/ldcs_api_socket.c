@@ -26,7 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "ldcs_api.h"
 #include "ldcs_api_socket.h"
-
+#include "ldcs_audit_server_process.h"
 
 /* ************************************************************** */
 /* FD list                                                        */
@@ -341,7 +341,7 @@ int ldcs_get_aux_fd_socket()
    return -1;
 }
 
-int ldcs_socket_id_to_nc_socket(int id, int fd)
+int ldcs_socket_id_to_nc_socket(int id, int fd, ldcs_process_data_t *process_data)
 {
    return id;
 }

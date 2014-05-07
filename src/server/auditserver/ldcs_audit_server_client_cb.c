@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_cache.h" 
 #define DISTCACHE 1
 
+extern int ldcs_socket_id_to_nc(int id, int fd, ldcs_process_data_t *process_data);
 
 int _ldcs_client_dump_info ( ldcs_process_data_t *ldcs_process_data );
 
@@ -46,7 +47,7 @@ int _ldcs_client_CB ( int fd, int id, void *data ) {
   int connid;
   int nc;
 
-  nc = ldcs_socket_id_to_nc(id, fd);
+  nc = ldcs_socket_id_to_nc(id, fd, ldcs_process_data);
   if (nc == -1) {
      debug_printf("Error from ldcs_socket_id_to_nc\n");
      return -1;

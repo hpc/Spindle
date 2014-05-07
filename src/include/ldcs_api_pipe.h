@@ -23,7 +23,7 @@ int ldcs_open_connection_pipe(char* location, int number);
 int ldcs_close_connection_pipe(int fd);
 int ldcs_create_server_pipe(char* location, int number);
 int ldcs_open_server_connection_pipe(int fd);
-int ldcs_open_server_connections_pipe(int fd, int *more_avail);
+int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail);
 int ldcs_close_server_connection_pipe(int fd);
 int ldcs_get_fd_pipe(int id);
 int ldcs_destroy_server_pipe(int fd);
@@ -39,8 +39,7 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block );
 
 typedef enum {
    LDCS_PIPE_FD_TYPE_SERVER,
-   LDCS_PIPE_FD_TYPE_CONN,
-   LDCS_CLIENT_STATUS_UNKNOWN
+   LDCS_PIPE_FD_TYPE_CONN
 } fd_list_entry_type_t;
 
 struct fdlist_entry_t
