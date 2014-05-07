@@ -64,19 +64,14 @@ static int unpackfebe_cb(void* udatabuf,
 }
 
 int releaseApplication(spindle_args_t *) {
+#if defined(os_linux)
   int rc=0;
   MPIR_PROCDESC_EXT *proctab;
   int proctab_size;
   lmon_rc_e lrc;
   int signum, i;
 
-#if defined(os_bluegene)
-  return 0;
-#elif defined(os_linux)
   signum = SIGCONT;
-#else
-#error Unknown OS
-#endif
 
   debug_printf("Sending SIGCONTs to each process to release debugger stops\n");
   lrc = LMON_be_getMyProctabSize(&proctab_size);
@@ -114,6 +109,11 @@ int releaseApplication(spindle_args_t *) {
   free (proctab);
 
   return(rc);
+#elif defined(os_bluegene)
+  return 0;
+#else
+#error Unknown OS
+#endif
 }
 
 void setenvFromLMON()

@@ -18,7 +18,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define IDS_H_
 
 int biterc_get_job_id();
-int biterc_get_unique_number(int *mrank, int *num_set, void *session);
 unsigned int biterc_get_rank();
 
 #endif

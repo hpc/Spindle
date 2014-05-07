@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "biter_shm.h"
 #include "demultiplex.h"
 #include "ids.h"
+#include "config.h"
 
 #include "spindle_debug.h"
 
@@ -60,7 +61,9 @@ typedef struct {
    int has_polled_data;
    int heap_blocked;
    int max_rank;
-   int num_set_max_rank;
+   int num_ranks;
+   int read_file;
+   int num_started;
    unsigned long locks[8];
 } header_t;
 
@@ -298,6 +301,114 @@ static int init_heap(biterc_session_t *session)
    return 0;
 }
 
+struct entries_t {
+   uint32_t max_rank;
+   uint32_t num_ranks;
+};
+
+static int read_rank_file(const char *tmpdir, void *shared_page)
+{
+   int timeout = 6000; /* 60 seconds */
+   int fd;
+   ssize_t result, bytes_read = 0;
+   char path[MAX_PATH_LEN+1];
+   struct stat buf;
+
+   snprintf(path, sizeof(path), "%s/rankFile", tmpdir);
+   path[MAX_PATH_LEN] = '\0';
+
+   /* Wait for file creation */
+   for (;;) {
+      result = stat(path, &buf);
+      if (result == -1) {
+         if (--timeout == 0) {
+            err_printf("Failed to stat %s before timeout\n", path);
+            return -1;
+         }
+         usleep(10000); /* .01 sec */
+         continue;
+      }
+      else
+         break;
+   }
+
+   assert(buf.st_size <= 2048); /*Max possible size: 256 nodes * 8 bytes */
+
+   /* Open file */
+   fd = open(path, O_RDONLY);
+   if (fd == -1) {
+      err_printf("Failed to open %s: %s\n", path, strerror(errno));
+      return -1;
+   }
+
+   /* Read file */
+   do {
+      result = read(fd, ((char *) shared_page) + bytes_read, buf.st_size - bytes_read);
+      if (result == -1) {
+         err_printf("Failed to read from %s: %s\n", path, strerror(errno));
+         close(fd);
+         return -1;
+      }
+      bytes_read += result;
+   } while (bytes_read < buf.st_size);
+   debug_printf3("Read %u bytes from rankfile\n", (unsigned int) bytes_read);
+      
+   close(fd);
+   
+   return buf.st_size / 8;
+}
+
+static int biterc_get_unique_number(biterc_session_t *session, const char *tmpdir, void *shared_page)
+{
+   int result, i, num_entries;
+   unsigned int myrank = biterc_get_rank(session - sessions);
+   struct entries_t *entries = (struct entries_t *) shared_page;
+   header_t *header = session->shared_header;
+
+   if (session->leader) {
+      debug_printf3("Leader reading rankfile\n");
+      header->read_file = read_rank_file(tmpdir, shared_page);
+      debug_printf3("Leader read rankfile\n");
+   }
+
+   MEMORY_BARRIER;
+
+   while (header->read_file == 0);
+   if (header->read_file == -1) {
+      err_printf("Leader process signaled error reading file.  Exiting\n");
+      return -1;
+   }
+
+   if (header->num_ranks == 0) {
+      num_entries = header->read_file;
+      for (i = 0; i < num_entries; i++, entries++) {
+         if (entries->max_rank == myrank) {
+            header->max_rank = myrank;
+            header->num_ranks = entries->num_ranks;
+            debug_printf3("Found myrank, %d, in rankfile.  num_ranks is %d\n", header->max_rank, header->num_ranks);            break;
+         }
+      }
+   }
+
+   MEMORY_BARRIER;
+
+   while (header->num_ranks == 0);
+
+   result = take_queue_lock(session);
+   if (result == -1)
+      return -1;
+
+   header->num_started++;
+
+   result = release_queue_lock(session);
+   if (result == -1)
+      return -1;
+
+   while (header->num_ranks != header->num_started);
+
+   return header->max_rank;
+}
+
 static int biter_connect(const char *tmpdir, biterc_session_t *session)
 {
    char c2s_path[MAX_PATH_LEN+1], s2c_path[MAX_PATH_LEN+1];
@@ -306,10 +417,12 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    struct stat buf;
    int unique_number;
 
-   unique_number = biterc_get_unique_number(&session->shared_header->max_rank,
-                                            &session->shared_header->num_set_max_rank,
-                                            session);
-   debug_printf3("biter unique_number = %d\n", unique_number);
+#if defined(os_bluegene)
+   unique_number = biterc_get_unique_number(session, tmpdir, session->shared_header+1);
+#else
+   unique_number = 0;
+   (void) biterc_get_unique_number;
+#endif
 
    rank = biterc_get_rank(sessions - session);
    debug_printf3("biter rank = %u\n", rank);
@@ -430,22 +543,27 @@ int biterc_newsession(const char *tmpdir, size_t shm_size)
    biter_session = biter_cur_session++;
    session = sessions + biter_session;
 
+   debug_printf3("Initializing biterc shm to %lu\n", (unsigned long) shm_size);
    result = init_shm(tmpdir, shm_size, session);
    if (result == -1)
       goto error;
 
+   debug_printf3("Initializing biterc locks\n");
    result = init_locks(session);
    if (result == -1)
       goto error;
 
+   debug_printf3("Setting up biterc ids\n");
    result = setup_ids(session);
    if (result == -1)
       goto error;
 
+   debug_printf3("Connecting biterc to daemon via %s\n", tmpdir);
    result = biter_connect(tmpdir, session);
    if (result == -1)
       goto error;
    
+   debug_printf3("Initializing biterc shared heap\n");
    result = init_heap(session);
    if (result == -1)
       goto error;

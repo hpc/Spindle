@@ -121,6 +121,8 @@ int biterd_newsession(const char *tmpdir, int cn_id)
 
    assert(sizeof(int) == sizeof(uint32_t)); //Fix FD_* macros if this fails on new platform
 
+   biterd_init_comms(tmpdir);
+
    if (cn_id > BITER_MAX_SESSIONS || cn_id > biterd_num_compute_nodes()) {
       biter_lasterror = "Out of biter session IDs";
       goto error;

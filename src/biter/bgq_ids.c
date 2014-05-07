@@ -19,6 +19,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spi/include/kernel/location.h"
 #include "spi/include/kernel/process.h"
 #include "ids.h"
+#include "spindle_debug.h"
 
 #define MEMORY_BARRIER __sync_synchronize()
 
@@ -38,42 +39,4 @@ int biterc_get_job_id()
 unsigned int biterc_get_rank(int session_id)
 {
    return Kernel_GetRank();
-}
-
-int biterc_get_unique_number(int *mrank, int *num_set, void *session)
-{
-   int result;
-   uint32_t num_procs, my_rank;
-   int queue_lock_held = 0;
-   volatile uint32_t *max_rank = (uint32_t *) mrank;
-   volatile int *num_set_max_rank = num_set;
-
-   num_procs = Kernel_ProcessCount();
-   my_rank = Kernel_GetRank();
-
-   result = take_queue_lock(session);
-   if (result == -1)
-      return -1;
-   queue_lock_held = 1;
-
-   if (*max_rank < my_rank)
-      *max_rank = my_rank;
-
-   MEMORY_BARRIER;
-
-   (*num_set_max_rank)++;
-
-   result = release_queue_lock(session);
-   if (result == -1)
-      goto error;
-   queue_lock_held = 0;
-
-   while (*num_set_max_rank < num_procs);
-
-   return (int) (*max_rank);
-   
-  error:
-   if (queue_lock_held)
-      release_queue_lock(session);
-   return -1;
 }

@@ -47,6 +47,14 @@ int _ldcs_client_CB ( int fd, int id, void *data ) {
   int nc;
 
   nc = ldcs_socket_id_to_nc(id, fd);
+  if (nc == -1) {
+     debug_printf("Error from ldcs_socket_id_to_nc\n");
+     return -1;
+  }
+  if (nc == -2) {
+     debug_printf3("ldcs_socket_id_to_nc returned non-fatal rc.  Dropping message\n");
+     return 0;
+  }
   connid = ldcs_process_data->client_table[nc].connid;
 
   debug_printf3("Receiving message from client %d on fd %d\n", nc, fd);

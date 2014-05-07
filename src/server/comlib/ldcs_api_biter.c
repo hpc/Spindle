@@ -44,6 +44,8 @@ int ldcs_create_server_biter(char* location, int num)
    int result;
    char a_byte = 'a';
 
+   biterd_init_comms(location);
+
    num_cns = biterd_num_compute_nodes();
    assert(num_cns > 0);
 
@@ -213,8 +215,9 @@ int ldcs_socket_id_to_nc_biter(int id, int fd)
    if (id == CLIENT_CB_AUX_FD) {
       result = biterd_get_session_proc_w_aux_data(&session, &proc);
       if (result == -1) {
-         err_printf("Error finding process with aux data\n");
-         return -1;
+         debug_printf3("Could not find process with aux data, likely already cleared\n");
+         /* -2 is non-fatal error return */
+         return -2;
       }
    }
    else {

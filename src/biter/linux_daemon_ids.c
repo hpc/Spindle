@@ -46,3 +46,8 @@ int biterd_register_rank(int session_id, uint32_t client_id, uint32_t rank)
 {
    return 0;
 }
+
+int biterd_init_comms(const char *tmpdir)
+{
+   return 0;
+}

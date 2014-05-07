@@ -21,6 +21,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#include "spindle_debug.h"
+#include "ldcs_api.h"
 
 #define MAX_CNS_PER_ION 256
 
@@ -44,6 +51,52 @@ static unsigned int max_ranks_per_cn;
 static unsigned int max_rank;
 
 #define RANK(X, Y) rank_table[X * max_ranks_per_cn + Y]
+
+static int write_rank_file(const char *tmpdir, socket_hash_t *socket_hash, unsigned int socket_hash_size)
+{
+   int fd;
+   unsigned int i;
+   char prepath[MAX_PATH_LEN+1];
+   char path[MAX_PATH_LEN+1];
+   ssize_t result;
+
+   /* Open rankFile.pre */
+   snprintf(prepath, MAX_PATH_LEN, "%s/rankFile.pre", tmpdir);
+   prepath[MAX_PATH_LEN] = '\0';
+   fd = open(prepath, O_CREAT|O_EXCL|O_WRONLY, 0600);
+   if (fd == -1) {
+      err_printf("Unable to create rankfile %s: %s\n", prepath, strerror(errno));
+      return -1;
+   }
+
+   /* Write the rank counts to rankFile.pre */
+   for (i = 0; i < socket_hash_size; i++) {
+      if (!socket_hash[i].socket_name)
+         continue;
+      result = write(fd, & socket_hash[i].max_rank, sizeof(socket_hash[i].max_rank));
+      if (result == -1) {
+         err_printf("Unable to write max_rank to %s: %s\n", prepath, strerror(errno));
+         return -1;
+      }
+      result = write(fd, & socket_hash[i].num_ranks, sizeof(socket_hash[i].num_ranks));
+      if (result == -1) {
+         err_printf("Unable to write num_ranks to %s: %s\n", prepath, strerror(errno));
+         return -1;
+      }
+   }
+   close(fd);
+
+   /* Move rankFile.pre to rankFile */
+   snprintf(path, MAX_PATH_LEN, "%s/rankFile", tmpdir);
+   prepath[MAX_PATH_LEN] = '\0';   
+   result = rename(prepath, path);
+   if (result == -1) {
+      err_printf("Unable to rename %s to %s\n", prepath, path);
+      return -1;
+   }
+
+   return 0;
+}
 
 static unsigned int str_hash(const char *str)
 {
@@ -80,7 +133,7 @@ static socket_hash_t *find_or_add_in_table(const char *socket_name, socket_hash_
    }
 }
 
-static int init_cns()
+int biterd_init_comms(const char *tmpdir)
 {
    static int ret_val = -1;
    int jobid, rank, i, j;
@@ -136,6 +189,9 @@ static int init_cns()
 
    closedir(dir);
 
+   result = write_rank_file(tmpdir, socket_hash, MAX_CNS_PER_ION);
+   if (result == -1)
+      return -1;
 
    cns = malloc(sizeof(cn_info_t) * num_cns);
    for (i = 0, j = 0; i < MAX_CNS_PER_ION; i++) {
@@ -158,35 +214,23 @@ static int init_cns()
 
 int biterd_num_compute_nodes()
 {
-   if (init_cns() == -1)
-      return -1;
-
    return num_cns;
 }
 
 int biterd_ranks_in_cn(int cn_id)
 {
-   if (init_cns() == -1)
-      return -1;
-
    assert(cn_id < num_cns);
    return cns[cn_id].num_ranks;
 }
 
 int biterd_unique_num_for_cn(int cn_id)
 {
-   if (init_cns() == -1)
-      return -1;
-
    assert(cn_id < num_cns);
    return cns[cn_id].max_rank;
 }
 
 int biterd_register_rank(int session_id, uint32_t client_id, uint32_t rank)
 {
-   if (init_cns() == -1)
-      return -1;
-
    assert(session_id >= 0 && session_id < num_cns);
    assert(client_id < cns[session_id].num_ranks);
    assert(rank <= cns[session_id].max_rank);
