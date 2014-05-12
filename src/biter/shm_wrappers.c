@@ -30,7 +30,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #if !defined(USE_GLIBC_SHM)
 
-int biter_shm_open(const char *name, int oflag, mode_t mode)
+int shm_open_wrapper(const char *name, int oflag, mode_t mode)
 {
    size_t name_size, dev_shm_size, new_name_size;
    char *new_name;
@@ -61,7 +61,7 @@ int biter_shm_open(const char *name, int oflag, mode_t mode)
    return fd;
 }
 
-int biter_shm_unlink(const char *name)
+int shm_unlink_wrapper(const char *name)
 {
    size_t name_size, dev_shm_size, new_name_size;
    char *new_name;
@@ -89,12 +89,12 @@ int biter_shm_unlink(const char *name)
 
 #else
 
-int biter_shm_open(const char *name, int oflag, mode_t mode)
+int shm_open_wrapper(const char *name, int oflag, mode_t mode)
 {
    return shm_open(name, oflag, mode);
 }
 
-int biter_shm_unlink(const char *name)
+int shm_unlink_wrapper(const char *name)
 {
    return shm_unlink(name);
 }

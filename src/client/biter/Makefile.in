@@ -51,18 +51,20 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libbiterc_la_LIBADD =
-am__libbiterc_la_SOURCES_DIST = $(BS)/biter_shm.c $(BS)/biterc.c \
-	$(BS)/client_queue.c $(BS)/demultiplex.c $(BS)/sheep.c \
-	$(BS)/bgq_ids.c $(BS)/linux_ids.c
+libbiterc_la_DEPENDENCIES = libsheep.la
+am__libbiterc_la_SOURCES_DIST = $(BS)/biterc.c $(BS)/client_queue.c \
+	$(BS)/demultiplex.c $(BS)/bgq_ids.c $(BS)/linux_ids.c
 @BGQ_BLD_TRUE@am__objects_1 = bgq_ids.lo
 @LINUX_BLD_TRUE@am__objects_2 = linux_ids.lo
-am_libbiterc_la_OBJECTS = biter_shm.lo biterc.lo client_queue.lo \
-	demultiplex.lo sheep.lo $(am__objects_1) $(am__objects_2)
+am_libbiterc_la_OBJECTS = biterc.lo client_queue.lo demultiplex.lo \
+	$(am__objects_1) $(am__objects_2)
 libbiterc_la_OBJECTS = $(am_libbiterc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libsheep_la_LIBADD =
+am_libsheep_la_OBJECTS = sheep.lo shmutil.lo shm_wrappers.lo
+libsheep_la_OBJECTS = $(am_libsheep_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -89,8 +91,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libbiterc_la_SOURCES)
-DIST_SOURCES = $(am__libbiterc_la_SOURCES_DIST)
+SOURCES = $(libbiterc_la_SOURCES) $(libsheep_la_SOURCES)
+DIST_SOURCES = $(am__libbiterc_la_SOURCES_DIST) $(libsheep_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -210,11 +212,12 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libbiterc.la
+noinst_LTLIBRARIES = libbiterc.la libsheep.la
 BS = $(top_srcdir)/../biter
-libbiterc_la_SOURCES = $(BS)/biter_shm.c $(BS)/biterc.c \
-	$(BS)/client_queue.c $(BS)/demultiplex.c $(BS)/sheep.c \
-	$(am__append_2) $(am__append_3)
+libbiterc_la_SOURCES = $(BS)/biterc.c $(BS)/client_queue.c \
+	$(BS)/demultiplex.c $(am__append_2) $(am__append_3)
+libbiterc_la_LIBADD = libsheep.la
+libsheep_la_SOURCES = $(BS)/sheep.c $(BS)/shmutil.c $(BS)/shm_wrappers.c
 AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging $(am__append_1)
 all: all-am
 
@@ -261,6 +264,8 @@ clean-noinstLTLIBRARIES:
 	done
 libbiterc.la: $(libbiterc_la_OBJECTS) $(libbiterc_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libbiterc_la_OBJECTS) $(libbiterc_la_LIBADD) $(LIBS)
+libsheep.la: $(libsheep_la_OBJECTS) $(libsheep_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libsheep_la_OBJECTS) $(libsheep_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -269,12 +274,13 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgq_ids.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biter_shm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biterc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client_queue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demultiplex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_ids.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sheep.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shm_wrappers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shmutil.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -300,14 +306,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-biter_shm.lo: $(BS)/biter_shm.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT biter_shm.lo -MD -MP -MF $(DEPDIR)/biter_shm.Tpo -c -o biter_shm.lo `test -f '$(BS)/biter_shm.c' || echo '$(srcdir)/'`$(BS)/biter_shm.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biter_shm.Tpo $(DEPDIR)/biter_shm.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/biter_shm.c' object='biter_shm.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o biter_shm.lo `test -f '$(BS)/biter_shm.c' || echo '$(srcdir)/'`$(BS)/biter_shm.c
-
 biterc.lo: $(BS)/biterc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT biterc.lo -MD -MP -MF $(DEPDIR)/biterc.Tpo -c -o biterc.lo `test -f '$(BS)/biterc.c' || echo '$(srcdir)/'`$(BS)/biterc.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biterc.Tpo $(DEPDIR)/biterc.Plo
@@ -332,14 +330,6 @@ demultiplex.lo: $(BS)/demultiplex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o demultiplex.lo `test -f '$(BS)/demultiplex.c' || echo '$(srcdir)/'`$(BS)/demultiplex.c
 
-sheep.lo: $(BS)/sheep.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sheep.lo -MD -MP -MF $(DEPDIR)/sheep.Tpo -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sheep.Tpo $(DEPDIR)/sheep.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/sheep.c' object='sheep.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
-
 bgq_ids.lo: $(BS)/bgq_ids.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bgq_ids.lo -MD -MP -MF $(DEPDIR)/bgq_ids.Tpo -c -o bgq_ids.lo `test -f '$(BS)/bgq_ids.c' || echo '$(srcdir)/'`$(BS)/bgq_ids.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bgq_ids.Tpo $(DEPDIR)/bgq_ids.Plo
@@ -355,6 +345,30 @@ linux_ids.lo: $(BS)/linux_ids.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/linux_ids.c' object='linux_ids.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o linux_ids.lo `test -f '$(BS)/linux_ids.c' || echo '$(srcdir)/'`$(BS)/linux_ids.c
+
+sheep.lo: $(BS)/sheep.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sheep.lo -MD -MP -MF $(DEPDIR)/sheep.Tpo -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sheep.Tpo $(DEPDIR)/sheep.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/sheep.c' object='sheep.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
+
+shmutil.lo: $(BS)/shmutil.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shmutil.lo -MD -MP -MF $(DEPDIR)/shmutil.Tpo -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shmutil.Tpo $(DEPDIR)/shmutil.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/shmutil.c' object='shmutil.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
+
+shm_wrappers.lo: $(BS)/shm_wrappers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shm_wrappers.lo -MD -MP -MF $(DEPDIR)/shm_wrappers.Tpo -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shm_wrappers.Tpo $(DEPDIR)/shm_wrappers.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/shm_wrappers.c' object='shm_wrappers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

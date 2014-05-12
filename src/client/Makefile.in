@@ -233,7 +233,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = logging biter client_comlib auditclient beboot spindle_api
+SUBDIRS = logging biter shm_cache client_comlib auditclient beboot spindle_api
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

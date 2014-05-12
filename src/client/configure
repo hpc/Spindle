@@ -3876,7 +3876,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile biter/Makefile client_comlib/Makefile auditclient/Makefile beboot/Makefile spindle_api/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile biter/Makefile shm_cache/Makefile client_comlib/Makefile auditclient/Makefile beboot/Makefile spindle_api/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -12562,6 +12562,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "logging/Makefile") CONFIG_FILES="$CONFIG_FILES logging/Makefile" ;;
     "biter/Makefile") CONFIG_FILES="$CONFIG_FILES biter/Makefile" ;;
+    "shm_cache/Makefile") CONFIG_FILES="$CONFIG_FILES shm_cache/Makefile" ;;
     "client_comlib/Makefile") CONFIG_FILES="$CONFIG_FILES client_comlib/Makefile" ;;
     "auditclient/Makefile") CONFIG_FILES="$CONFIG_FILES auditclient/Makefile" ;;
     "beboot/Makefile") CONFIG_FILES="$CONFIG_FILES beboot/Makefile" ;;

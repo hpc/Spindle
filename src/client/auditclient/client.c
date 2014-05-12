@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_heap.h"
 #include "client_api.h"
 #include "spindle_launch.h"
+#include "shmcache.h"
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"
@@ -150,6 +151,11 @@ static int init_server_connection()
    snprintf(debugging_name, 32, "Client.%d", rankinfo[0]);
    LOGGING_INIT(debugging_name);
 
+   opts |= OPT_SHMCACHE;
+   if (opts & OPT_SHMCACHE) {
+#warning Set size to config parameter
+      shmcache_init(location, number, 2*1024*1024, 0);
+   }
    sync_cwd();
 
    if (opts & OPT_RELOCPY)
@@ -292,6 +298,8 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
 
 char *client_library_load(const char *name)
 {
+   int result;
+   int found_library = 0;
    char *newname;
 
    check_for_fork();
@@ -312,19 +320,41 @@ char *client_library_load(const char *name)
    
    sync_cwd();
 
-   debug_printf2("Send library request to server: %s\n", name);
-   send_file_query(ldcsid, (char *) name, &newname);
-   debug_printf2("Recv library from server: %s\n", newname ? newname : "NONE");      
+   if (opts & OPT_SHMCACHE) {
+      debug_printf2("Looking up %s in shared cache\n", name);
+      result = shmcache_lookup_or_add(name, &newname);
+      if (result != -1) {
+         debug_printf2("Shared cache has mapping from %s to %s\n", name,
+                       (newname == in_progress) ? "[IN PROGRESS]" :
+                       (newname ? newname : "[NOT PRESENT]"));
+         found_library = 1;
+         if (newname == in_progress) {
+            debug_printf("Waiting for update to %s\n", name);
+            result = shmcache_waitfor_update(name, &newname);
+            if (result == -1) {
+               err_printf("Error waiting for update to shared cache\n");
+               found_library = 0;
+            }
+         }
+      }
+   }
 
+   if (!found_library) {
+      debug_printf2("Send library request to server: %s\n", name);
+      send_file_query(ldcsid, (char *) name, &newname);
+      debug_printf2("Recv library from server: %s\n", newname ? newname : "NONE");      
+      if (opts & OPT_SHMCACHE) 
+         shmcache_update(name, newname);
+   }
+ 
    if(!newname) {
       newname = concatStrings(NOT_FOUND_PREFIX, name);
-      debug_printf3("la_objsearch redirecting %s to %s\n", name, newname);
    }
    else {
-      debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
       patch_on_load_success(newname, name);
    }
 
+   debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
    test_log(newname);   
    return newname;
 }

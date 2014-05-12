@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
  **/
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #define SHEEP_NULL ((void *) sheep_base)
 #define IS_SHEEP_NULL(S) ((S)->val == 0)
@@ -42,13 +43,15 @@ typedef struct {
 } sheep_ptr_t;
 
 extern unsigned char *sheep_base;
-static void *sheep_ptr(sheep_ptr_t *p) { return (void *) ((((uint64_t) p->val) << 3) + sheep_base); }
-static sheep_ptr_t ptr_sheep(void *v) { sheep_ptr_t p; p.val = (((uint64_t) v) - ((uint64_t) sheep_base)) >> 3; return p; }
+static int  sheep_ptr_equals(sheep_ptr_t a, sheep_ptr_t b) { return a.val == b.val; }
+static void *sheep_ptr(sheep_ptr_t *p) { return (p->val == 0) ? NULL : (void *) ((((uint64_t) p->val) << 3) + sheep_base); }
+static sheep_ptr_t ptr_sheep(void *v) { sheep_ptr_t p; p.val = (v == NULL) ? 0 : (((uint64_t) v) - ((uint64_t) sheep_base)) >> 3; return p; }
 static void set_sheep_ptr(sheep_ptr_t *p, void *v) { *p = ptr_sheep(v); }
 
 extern void init_sheep(void *mem, size_t size, int use_first_fit);
 extern void *malloc_sheep(size_t size);
 extern void free_sheep(void *p);
+extern size_t sheep_alloc_size(size_t size);
 
 #ifdef __GNUC__
 #define UNUSED_ATTR __attribute__((unused))
@@ -56,7 +59,7 @@ extern void free_sheep(void *p);
 #define UNUSED_ATTR
 #endif
 static void unused_sheep_vars() UNUSED_ATTR;
-static void unused_sheep_vars() { (void) sheep_ptr; (void) ptr_sheep; (void) set_sheep_ptr; }
+static void unused_sheep_vars() { (void) sheep_ptr; (void) ptr_sheep; (void) set_sheep_ptr; (void) sheep_ptr_equals; }
 
 
 #endif

@@ -27,7 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int biter_shm_open(const char *name, int oflag, mode_t mode);
-int biter_shm_unlink(const char *name);
+int shm_open_wrapper(const char *name, int oflag, mode_t mode);
+int shm_unlink_wrapper(const char *name);
 
 #endif

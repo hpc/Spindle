@@ -16,8 +16,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,12 +26,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "biterc.h"
 #include "sheep.h"
-#include "biter_shm.h"
 #include "demultiplex.h"
 #include "ids.h"
 #include "config.h"
 
 #include "spindle_debug.h"
+#include "shmutil.h"
 
 #if !defined(MAX_PATH_LEN)
 #define MAX_PATH_LEN 4096
@@ -43,42 +41,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define BITER_MAX_SESSIONS 1
 #endif
 
-typedef struct {
-   volatile unsigned long *lock;
-   volatile unsigned long *held_by;
-   int id;
-   int ref_count;
-} lock_t;
-
-#define MEMORY_BARRIER __sync_synchronize()
-
-typedef struct {
-   volatile int cur_id;
-   volatile int ready;
-   int num_procs;
-   sheep_ptr_t msg_table_ptr;
-   msg_header_t polled_data;
-   int has_polled_data;
-   int heap_blocked;
-   int max_rank;
-   int num_ranks;
-   int read_file;
-   int num_started;
-   unsigned long locks[8];
-} header_t;
-
 typedef struct biterc_session {
-   char *shm_filename;
-   void *shm;
-   header_t *shared_header;
-   size_t shm_size;
+   shminfo_t *shm;
    lock_t pipe_lock;
-   lock_t mem_lock;
    lock_t queue_lock;
    lock_t write_lock;
-   int shm_fd;
-   int id;
-   int leader;
    int c2s_fd;
    int s2c_fd;
 } biterc_session_t;
@@ -90,183 +57,6 @@ static const char *biter_lasterror = NULL;
 
 extern int init_message(int num_procs, void *header_ptr, void *session);
 
-static int init_shm(const char *tmpdir, size_t shm_size, biterc_session_t *session)
-{
-   int fd = -1, result, path_len;
-   void *mem = NULL;
-   char *shm_file = NULL;
-   int leader = 1;
-   int unique_number = biterc_get_job_id();
-
-   path_len = strlen(tmpdir) + 32;
-   shm_file = (char *) malloc(path_len);
-   if (!shm_file) {
-      biter_lasterror = "Unable to allocate memory for file path";
-      goto error;
-   }
-
-   snprintf(shm_file, path_len, "/biter_shm.%d", unique_number);
-   shm_file[path_len-1] = '\0';
-
-   fd = biter_shm_open(shm_file, O_RDWR | O_CREAT | O_EXCL, 0600);
-   if (fd == -1 && errno == EEXIST) {
-      fd = biter_shm_open(shm_file, O_RDWR, 0600);
-      leader = 0;
-   }
-
-   if (fd == -1) {
-      biter_lasterror = "Could not open shared memory segment";
-      goto error;
-   }
-
-   result = ftruncate(fd, shm_size);
-   if (result == -1) {
-      biter_lasterror = "Could not ftruncate shared memory segment";
-      goto error;
-   }
-
-   mem = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-   if (mem == MAP_FAILED) {
-      biter_lasterror = "mmap of shared memory segment failed";
-      goto error;
-   }
-
-   session->shm_fd = fd;
-   session->shm = mem;
-   session->shm_filename = shm_file;
-   session->shm_size = shm_size;
-   session->shared_header = (header_t *) mem;
-   session->leader = leader;
-
-   return 0;
-
-  error:
-   
-   if (mem)
-      munmap(mem, shm_size);
-   if (fd != -1) {
-      close(fd);
-      biter_shm_unlink(shm_file);
-   }
-   if (shm_file)
-      free(shm_file);
-
-   return -1;
-}
-
-static int init_locks(biterc_session_t *session)
-{
-   session->pipe_lock.lock = session->shared_header->locks + 0;
-   session->pipe_lock.held_by = session->shared_header->locks + 1;
-   session->pipe_lock.id = -1;
-   session->queue_lock.lock = session->shared_header->locks + 2;
-   session->queue_lock.held_by = session->shared_header->locks + 3;
-   session->queue_lock.id = -1;
-   session->mem_lock.lock = session->shared_header->locks + 4;
-   session->mem_lock.held_by = session->shared_header->locks + 5;
-   session->mem_lock.id = -1;
-   session->write_lock.lock = session->shared_header->locks + 6;
-   session->write_lock.held_by = session->shared_header->locks + 7;
-   session->write_lock.id = -1;
-   return 0;
-}
-
-static int take_lock(lock_t *lock)
-{
-   unsigned long one = 1, result = 0;
-   unsigned long count = 0;
-
-   if (lock->id != -1 && *lock->lock == 1 && *lock->held_by == lock->id) {
-      lock->ref_count++;
-      return 0;
-   }
-
-   do {
-      while (*lock->lock == 1) {
-         count++;
-         if (count > 100000) {
-            usleep(10000); //.01 sec
-         }
-      }
-      result = __sync_lock_test_and_set(lock->lock, one);
-   } while (result == 1);
-
-   if (lock->id != -1) {
-      *lock->held_by = lock->id;
-      lock->ref_count = 1;
-   }
-
-   return 0;
-}
-
-static int test_lock(lock_t *lock) 
-{
-   unsigned long one = 1, result = 0;
-
-   if (lock->id != -1 && *lock->lock == 1 && *lock->held_by == lock->id) {
-      lock->ref_count++;
-      return 1;
-   }
-
-   if (*lock->lock == 1)
-      return 0;
-
-   result = __sync_lock_test_and_set(lock->lock, one);
-   if (result == 1)
-      return 0;
-
-   if (lock->id != -1) {
-      *lock->held_by = lock->id;
-      lock->ref_count = 1;
-   }
-
-   return 1;
-}
-
-static int release_lock(lock_t *lock)
-{
-   if (lock->id != -1 && *lock->held_by != lock->id) {
-      return -1;
-   }
-
-   if (lock->ref_count > 1) {
-      lock->ref_count--;
-      return 0;
-   }
-   lock->ref_count = 0;
-   *lock->held_by = -1;
-
-   MEMORY_BARRIER;
-
-   *lock->lock = 0;
-   return 0;
-}
-
-static int setup_ids(biterc_session_t *session)
-{
-   take_lock(&session->mem_lock);
-   session->id = session->shared_header->cur_id;
-   session->shared_header->cur_id++;
-   release_lock(&session->mem_lock);
-
-   session->pipe_lock.id = session->id;
-   session->queue_lock.id = session->id;
-   session->mem_lock.id = session->id;
-   session->write_lock.id = session->id;
-
-   return 0;
-}
-
-int take_heap_lock(void *session)
-{
-   return take_lock(& ((biterc_session_t *) session)->mem_lock);
-}
-
-int release_heap_lock(void *session)
-{
-   return release_lock(& ((biterc_session_t *) session)->mem_lock);
-}
-
 int take_queue_lock(void *session)
 {
    return take_lock(& ((biterc_session_t *) session)->queue_lock);
@@ -277,34 +67,39 @@ int release_queue_lock(void *session)
    return release_lock(& ((biterc_session_t *) session)->queue_lock);
 }
 
-static int init_heap(biterc_session_t *session)
-{
-   int result;
-   int pagesize = getpagesize();
-
-   result = take_heap_lock(session);
-   if (result == -1)
-      return -1;
-
-   init_sheep(((unsigned char *) session->shm) + pagesize, session->shm_size - pagesize, 0);
-
-   result = release_heap_lock(session);
-   if (result == -1)
-      return -1;
-
-
-   result = init_message(session->shared_header->num_procs, &session->shared_header->msg_table_ptr, session);
-   if (result == -1) {
-      return -1;
-   }
-
-   return 0;
-}
-
 struct entries_t {
    uint32_t max_rank;
    uint32_t num_ranks;
 };
+
+static int init_locks(biterc_session_t *session)
+{
+   shminfo_t *shm = session->shm;
+   biter_header_t *header = &shm->shared_header->biter;
+   session->pipe_lock.lock = header->locks + 0;
+   session->pipe_lock.held_by = header->locks + 1;
+   session->pipe_lock.id = -1;
+   session->queue_lock.lock = header->locks + 2;
+   session->queue_lock.held_by = header->locks + 3;
+   session->queue_lock.id = -1;
+   session->write_lock.lock = header->locks + 4;
+   session->write_lock.held_by = header->locks + 5;
+   session->write_lock.id = -1;
+   return init_heap_lock(shm);
+}
+
+static int setup_biter_ids(biterc_session_t *session)
+{
+   int result;
+   result = setup_ids(session->shm);
+   if (result == -1)
+      return -1;
+
+   session->pipe_lock.id = session->shm->id;
+   session->queue_lock.id = session->shm->id;
+   session->write_lock.id = session->shm->id;
+   return 0;
+}
 
 static int read_rank_file(const char *tmpdir, void *shared_page)
 {
@@ -363,50 +158,50 @@ static int biterc_get_unique_number(biterc_session_t *session, const char *tmpdi
    int result, i, num_entries;
    unsigned int myrank = biterc_get_rank(session - sessions);
    struct entries_t *entries = (struct entries_t *) shared_page;
-   header_t *header = session->shared_header;
+   header_t *header = session->shm->shared_header;
 
-   if (session->leader) {
+   if (session->shm->leader) {
       debug_printf3("Leader reading rankfile\n");
-      header->read_file = read_rank_file(tmpdir, shared_page);
+      header->biter.read_file = read_rank_file(tmpdir, shared_page);
       debug_printf3("Leader read rankfile\n");
    }
 
    MEMORY_BARRIER;
 
-   while (header->read_file == 0);
-   if (header->read_file == -1) {
+   while (header->biter.read_file == 0);
+   if (header->biter.read_file == -1) {
       err_printf("Leader process signaled error reading file.  Exiting\n");
       return -1;
    }
 
-   if (header->num_ranks == 0) {
-      num_entries = header->read_file;
+   if (header->biter.num_ranks == 0) {
+      num_entries = header->biter.read_file;
       for (i = 0; i < num_entries; i++, entries++) {
          if (entries->max_rank == myrank) {
-            header->max_rank = myrank;
-            header->num_ranks = entries->num_ranks;
-            debug_printf3("Found myrank, %d, in rankfile.  num_ranks is %d\n", header->max_rank, header->num_ranks);            break;
+            header->biter.max_rank = myrank;
+            header->biter.num_ranks = entries->num_ranks;
+            debug_printf3("Found myrank, %d, in rankfile.  num_ranks is %d\n", header->biter.max_rank, header->biter.num_ranks);            break;
          }
       }
    }
 
    MEMORY_BARRIER;
 
-   while (header->num_ranks == 0);
+   while (header->biter.num_ranks == 0);
 
    result = take_queue_lock(session);
    if (result == -1)
       return -1;
 
-   header->num_started++;
+   header->biter.num_started++;
 
    result = release_queue_lock(session);
    if (result == -1)
       return -1;
 
-   while (header->num_ranks != header->num_started);
+   while (header->biter.num_ranks != header->biter.num_started);
 
-   return header->max_rank;
+   return header->biter.max_rank;
 }
 
 static int biter_connect(const char *tmpdir, biterc_session_t *session)
@@ -416,6 +211,8 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    uint32_t local_id, all_connected, rank;
    struct stat buf;
    int unique_number;
+   shminfo_t *shm = session->shm;
+   biter_header_t *biter_header = & shm->shared_header->biter;
 
 #if defined(os_bluegene)
    unique_number = biterc_get_unique_number(session, tmpdir, session->shared_header+1);
@@ -431,9 +228,8 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    c2s_path[MAX_PATH_LEN] = '\0';
 
    snprintf(s2c_path, MAX_PATH_LEN+1, "%s/biter_s2c.%d", tmpdir, unique_number);
-   s2c_path[MAX_PATH_LEN] = '\0';
-
-   if (session->leader) {
+   s2c_path[MAX_PATH_LEN] = '\0'; 
+   if (shm->leader) {
       take_lock(&session->pipe_lock);
       pipe_lock_held = 1;
       
@@ -453,11 +249,11 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
          goto error;
       }
 
-      session->shared_header->ready = 1;
+      biter_header->ready = 1;
    }
    else {
       debug_printf3("biter non-master is waiting for ready\n");
-      while (session->shared_header->ready == 0)
+      while (biter_header->ready == 0)
          usleep(10000); //.01 sec
 
       take_lock(&session->pipe_lock);
@@ -478,7 +274,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
       goto error;
    }
 
-   local_id = (uint32_t) session->id;
+   local_id = (uint32_t) shm->id;
 
    result = write(c2s_fd, &local_id, sizeof(local_id));
    if (result == -1) {
@@ -502,13 +298,13 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    pipe_lock_held = 0;
 
    if (all_connected) {
-      session->shared_header->num_procs = all_connected;
+      biter_header->num_procs = all_connected;
       MEMORY_BARRIER;
-      session->shared_header->ready = 2;
+      biter_header->ready = 2;
    }
    else {
       debug_printf3("Waiting for all clients to finish connecting to %s\n", c2s_path);
-      while (session->shared_header->ready != 2) {
+      while (biter_header->ready != 2) {
          usleep(10000); //.01 sec
       }
    }
@@ -544,7 +340,7 @@ int biterc_newsession(const char *tmpdir, size_t shm_size)
    session = sessions + biter_session;
 
    debug_printf3("Initializing biterc shm to %lu\n", (unsigned long) shm_size);
-   result = init_shm(tmpdir, shm_size, session);
+   result = init_shm(tmpdir, shm_size, biterc_get_job_id(), &session->shm);
    if (result == -1)
       goto error;
 
@@ -554,7 +350,7 @@ int biterc_newsession(const char *tmpdir, size_t shm_size)
       goto error;
 
    debug_printf3("Setting up biterc ids\n");
-   result = setup_ids(session);
+   result = setup_biter_ids(session);
    if (result == -1)
       goto error;
 
@@ -564,9 +360,16 @@ int biterc_newsession(const char *tmpdir, size_t shm_size)
       goto error;
    
    debug_printf3("Initializing biterc shared heap\n");
-   result = init_heap(session);
+   result = init_heap(session->shm);
    if (result == -1)
       goto error;
+
+   debug_printf3("Initializing message system\n");   
+   result = init_message(session->shm->shared_header->biter.num_procs, 
+                         &session->shm->shared_header->biter.msg_table_ptr, session);
+   if (result == -1) {
+      return -1;
+   }
 
    return biter_session;
 
@@ -608,13 +411,13 @@ void set_last_error(const char *errstr)
 int biterc_read(int biter_session, void *buf, size_t size)
 {
    biterc_session_t *session = sessions + biter_session;
-   return demultiplex_read(session, session->s2c_fd, session->id, buf, size);
+   return demultiplex_read(session, session->s2c_fd, session->shm->id, buf, size);
 }
 
 int biterc_write(int biter_session, void *buf, size_t size)
 {
    biterc_session_t *session = sessions + biter_session;
-   return demultiplex_write(session, session->c2s_fd, session->id, buf, size);
+   return demultiplex_write(session, session->c2s_fd, session->shm->id, buf, size);
 }
 
 const char *biterc_lasterror_str()
@@ -624,12 +427,12 @@ const char *biterc_lasterror_str()
 
 int biterc_get_id(int biter_session)
 {
-   return sessions[biter_session].id;
+   return sessions[biter_session].shm->id;
 }
 
 int biterc_is_client_fd(int biter_session, int fd)
 {
-   return ((sessions[biter_session].shm_fd == fd) ||
+   return ((sessions[biter_session].shm->fd == fd) ||
            (sessions[biter_session].c2s_fd == fd) ||
            (sessions[biter_session].s2c_fd == fd));
 }
@@ -637,52 +440,59 @@ int biterc_is_client_fd(int biter_session, int fd)
 void set_polled_data(void *session, msg_header_t msg)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   assert(!s->shared_header->has_polled_data);
-   s->shared_header->polled_data = msg;
-   s->shared_header->has_polled_data = 1;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   assert(!header->has_polled_data);
+   header->polled_data = msg;
+   header->has_polled_data = 1;
 }
 
 void get_polled_data(void *session, msg_header_t *msg)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   assert(s->shared_header->has_polled_data);
-   *msg = s->shared_header->polled_data;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   assert(header->has_polled_data);
+   *msg = header->polled_data;
 }
 
 int has_polled_data(void *session)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   return s->shared_header->has_polled_data;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   return header->has_polled_data;
 }
 
 void clear_polled_data(void *session)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   s->shared_header->has_polled_data = 0;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   header->has_polled_data = 0;
 }
 
 void set_heap_blocked(void *session)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   s->shared_header->heap_blocked = 1;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   header->heap_blocked = 1;
 }
 
 void set_heap_unblocked(void *session)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   s->shared_header->heap_blocked = 0;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   header->heap_blocked = 0;
 }
 
 int is_heap_blocked(void *session)
 {
    biterc_session_t *s = (biterc_session_t *) session;
-   return s->shared_header->heap_blocked;
+   biter_header_t *header = &s->shm->shared_header->biter;
+   return header->heap_blocked;
 }
 
 int get_id(int session_id)
 {
    biterc_session_t *session = sessions + session_id;
-   return session->id;  
+   return session->shm->id;
 }
 
 int is_client()

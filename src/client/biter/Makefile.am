@@ -1,8 +1,12 @@
-noinst_LTLIBRARIES = libbiterc.la
+noinst_LTLIBRARIES = libbiterc.la libsheep.la
 
 BS=$(top_srcdir)/../biter
 
-libbiterc_la_SOURCES = $(BS)/biter_shm.c $(BS)/biterc.c $(BS)/client_queue.c $(BS)/demultiplex.c $(BS)/sheep.c
+libbiterc_la_SOURCES = $(BS)/biterc.c $(BS)/client_queue.c $(BS)/demultiplex.c
+libbiterc_la_LIBADD = libsheep.la
+
+libsheep_la_SOURCES = $(BS)/sheep.c $(BS)/shmutil.c $(BS)/shm_wrappers.c
+
 AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging
 
 if BGQ_BLD

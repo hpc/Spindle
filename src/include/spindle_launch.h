@@ -45,7 +45,8 @@ extern "C" {
 #define OPT_NOHIDE     (1 << 13)
 #define OPT_REMAPEXEC  (1 << 14)
 #define OPT_LOGUSAGE   (1 << 15)
-#define OPT_SEC        ((1 << 16) | (1 << 17))
+#define OPT_SHMCACHE   (1 << 16)
+#define OPT_SEC        ((1 << 17) | (1 << 18))
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 16)
 #define OPT_GET_SEC(OPT) ((OPT >> 16) & 3)

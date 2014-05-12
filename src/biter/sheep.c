@@ -256,6 +256,16 @@ void free_sheep(void *p)
    } while (changed_something);
 }
 
+size_t sheep_alloc_size(size_t size)
+{
+   size_t alloc_size;
+   alloc_size = ALIGN8(size);
+   if (!alloc_size)
+      alloc_size = 8;
+   alloc_size += sizeof(block_prefix_t);
+   return alloc_size;
+}
+
 //#define UNIT_TESTS
 
 #if defined(UNIT_TESTS)
