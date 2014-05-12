@@ -36,6 +36,7 @@ using namespace std;
 #endif
 
 #define RELOCAOUT 'a'
+#define SHAREDCACHE_SIZE 'b'
 #define COBO 'c'
 #define DEBUG 'd'
 #define PRELOAD 'e'
@@ -103,6 +104,14 @@ static char *hostbin_path = default_hostbin_path;
 static char *hostbin_path = NULL;
 #endif
 
+#if defined(os_bluegene)
+#define SHM_DEFAULT_SIZE 2048
+#define SHM_MIN_SIZE 4
+#else
+#define SHM_DEFAULT_SIZE 0
+#define SHM_MIN_SIZE 0
+#endif
+
 static unsigned long enabled_opts = 0;
 static unsigned long disabled_opts = 0;
 
@@ -114,6 +123,7 @@ static bool hide_fd = true;
 static int sec_model = -1;
 static int launcher = 0;
 static int startup_type = 0;
+static int shm_cache_size = SHM_DEFAULT_SIZE;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -197,6 +207,8 @@ struct argp_option options[] = {
      "Run serial jobs instead of MPI job", GROUP_LAUNCHER },
    { NULL, 0, NULL, 0,
      "Misc options", GROUP_MISC },
+   { "shmcache-size", SHAREDCACHE_SIZE, "size", 0,
+     "Size of client shared memory cache in kilobytes, which can be used to improve performance if multiple processes are running on each node.  Default: " STR(SHM_DEFAULT_SIZE), GROUP_MISC },
    { "python-prefix", PYTHONPREFIX, "path", 0,
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
    { "debug", DEBUG, YESNO, 0,
@@ -300,6 +312,18 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       return 0;
    }
+   else if (entry->key == SHAREDCACHE_SIZE) {
+      shm_cache_size = atoi(arg);
+      if (shm_cache_size < SHM_MIN_SIZE)
+         shm_cache_size = SHM_MIN_SIZE;
+      if (shm_cache_size % 4 != 0) {
+         argp_error(state, "shmcache-size argument must be a multiple of 4");
+      }
+      if (shm_cache_size < 8) {
+         argp_error(state, "shmcache-size argument must be at least 8 if non-zero");
+      }
+      return 0;
+   }
    else if (entry->key == LOCATION) {
       spindle_location = arg;
       return 0;
@@ -391,6 +415,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       /* Set any misc options */
       opts |= all_misc_opts & ~disabled_opts & (enabled_opts | default_misc_opts);
       opts |= logging_enabled ? OPT_LOGUSAGE : 0;
+      opts |= shm_cache_size > 0 ? OPT_SHMCACHE : 0;
 
       return 0;
    }
@@ -510,6 +535,11 @@ unsigned int getNumPorts()
    return num_ports;
 }
 
+int getShmCacheSize() 
+{
+   return shm_cache_size;
+}
+
 static unsigned int str_hash(const char *str)
 {
    unsigned long hash = 5381;
@@ -569,9 +599,11 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->unique_id = get_unique_id();
    args->use_launcher = getLauncher();
    args->startup_type = getStartupType();
+   args->shm_cache_size = getShmCacheSize();
    args->location = strdup(getLocation(args->number).c_str());
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
 
    debug_printf("Spindle options bitmask: %u\n", opts);
 }
+

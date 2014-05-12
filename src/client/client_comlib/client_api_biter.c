@@ -29,12 +29,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 static int session = -1;
 static char *cached_location;
 
-#warning Move BITERC_SHM_SIZE to config parameter
-#define BITERC_SHM_SIZE 2*1024*1024
+extern unsigned int shm_cachesize;
+
 int client_open_connection_biter(char* location, int number)
 {
-   debug_printf3("Calling biterc_newsession(%s, %lu)\n", location, (unsigned long) BITERC_SHM_SIZE);
-   session = biterc_newsession(location, BITERC_SHM_SIZE);
+   debug_printf3("Calling biterc_newsession(%s, %lu)\n", location, (unsigned long) shm_cachesize);
+   session = biterc_newsession(location, shm_cachesize);
    if (session == -1) {
       err_printf("Client failed to create connection: %s\n", biterc_lasterror_str());
    }

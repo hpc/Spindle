@@ -280,6 +280,10 @@ void ModifyArgv::modifyCmdLine()
    char daemon_argc_str[32];
    snprintf(daemon_argc_str, 32, "%u", daemon_argc);
 
+   char shm_cache_size_str[32];
+   snprintf(shm_cache_size_str, 32, "%u", params->shm_cache_size);
+   string shmcache_size(shm_cache_size_str);
+
    int new_argv_size = argc + 7 + daemon_argc;
    new_argv = (char **) malloc(sizeof(char *) * new_argv_size);
    
@@ -291,9 +295,9 @@ void ModifyArgv::modifyCmdLine()
       if (p == parser->appExecutableAt()) {
 #if defined(os_bluegene)
          string bg_env_str = parser->getParser()->getBGString();
-         int str_len = bg_env_str.length() + options.length() + location.length() + number.length() + string(default_libstr).length() + 1;
+         int str_len = bg_env_str.length() + options.length() + location.length() + number.length() + shmcache_size.length() + string(default_libstr).length() + 1;
          char *bg_env = (char *) malloc(str_len);
-         snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str());
+         snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str(), shm_cache_size.c_str());
          new_argv[n++] = bg_env;
 #else
          char **a_argv;

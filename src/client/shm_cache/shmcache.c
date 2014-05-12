@@ -365,6 +365,7 @@ static int init_cache(size_t hlimit)
 {
    void *newhash;
 
+   if (heap_limit == 0)
    hash = &shminfo->shared_header->shmcache.hash;
    lru_head = &shminfo->shared_header->shmcache.lru_head;
    lru_end = &shminfo->shared_header->shmcache.hash;
@@ -373,12 +374,19 @@ static int init_cache(size_t hlimit)
 
    hash_error = ptr_sheep(((unsigned char *) shminfo->mem) + shminfo->size);
    in_progress = sheep_ptr(&hash_error);
+
+   if (!hlimit) {
+      debug_printf("No shm cache space allocated.  Disabling shmcache\n");
+      *hash = hash_error;
+      return 0;
+   }
    
    if (IS_SHEEP_NULL(hash)) {
       take_writer_lock();
       if (IS_SHEEP_NULL(hash)) {
          newhash = malloc_sheep_cache(sizeof(struct entry_t) * HASH_SIZE);
          if (!newhash) {
+            debug_printf("Not enough shm space to allocate hash table.  Disabling shmcache\n");
             *hash = hash_error;
             release_writer_lock();
             return 0;
@@ -461,7 +469,7 @@ int shmcache_init(const char *tmpdir, int unique_number, size_t shm_size, size_t
 
 int shmcache_post_fork()
 {
-   #warning TODO Implement shmcache_post_fork
+   update_shm_id(shminfo);
    return 0;
 }
 

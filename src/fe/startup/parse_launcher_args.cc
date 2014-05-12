@@ -125,7 +125,7 @@ static cmdoption_t openmpi_options[] = {
    { "-xml-file", NULL,              FL_OPTIONAL_DASH | FL_PARAM },
    { "-xterm", NULL,                 FL_OPTIONAL_DASH | FL_PARAM }
 };
-static const char *openmpi_bg_env_str = "-x LD_AUDIT=%s -x LDCS_LOCATION=%s -x LDCS_NUMBER=%s -x LDCS_OPTIONS=%s";
+static const char *openmpi_bg_env_str = "-x LD_AUDIT=%s -x LDCS_LOCATION=%s -x LDCS_NUMBER=%s -x LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 static const unsigned int openmpi_size = (sizeof(openmpi_options) / sizeof(cmdoption_t));
 
 static cmdoption_t srun_options[] = {
@@ -216,7 +216,7 @@ static cmdoption_t srun_options[] = {
    { NULL,   "--usage",              0 },
    { "-V",   "--version",            0 }
 };
-static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s";
+static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 static const unsigned int srun_size (sizeof(srun_options) / sizeof(cmdoption_t));
 
 static cmdoption_t wreckrun_options[] = {

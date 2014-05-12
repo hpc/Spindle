@@ -31,6 +31,7 @@ std::string getPythonPrefixes();
 std::string getHostbin();
 int getStartupType();
 int getLauncher();
+int getShmCacheSize();
 unique_id_t get_unique_id();
 
 int getAppArgs(int *argc, char ***argv);

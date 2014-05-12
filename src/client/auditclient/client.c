@@ -46,6 +46,8 @@ static errno_location_t app_errno_location;
 
 unsigned long opts;
 int ldcsid = -1;
+unsigned int shm_cachesize;
+static unsigned int shm_cache_limit;
 
 static int intercept_open;
 static int intercept_exec;
@@ -93,7 +95,7 @@ static void spindle_test_log_msg(char *buffer)
 
 static int init_server_connection()
 {
-   char *location, *connection, *rankinfo_s, *opts_s;
+   char *location, *connection, *rankinfo_s, *opts_s, *cachesize_s;
    int number;
 
    debug_printf("Initializing connection to server\n");
@@ -108,7 +110,9 @@ static int init_server_connection()
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
    opts_s = getenv("LDCS_OPTIONS");
+   cachesize_s = getenv("LDCS_CACHESIZE");
    opts = atoi(opts_s);
+   shm_cachesize = atoi(cachesize_s) * 1024;
 
    if (strchr(location, '$')) {
       location = parse_location(location);
@@ -122,6 +126,16 @@ static int init_server_connection()
       unsetenv("LDCS_CONNECTION");
       unsetenv("LDCS_RANKINFO");
       unsetenv("LDCS_OPTIONS");
+   }
+
+   if (opts & OPT_SHMCACHE) {
+      assert(shm_cachesize);
+#if defined(os_bluegene)
+      shm_cache_limit = shm_cachesize > 512 ? shm_cachesize - 512 : 0;
+#else
+      shm_cache_limit = shm_cachesize;
+#endif
+      shmcache_init(location, number, shm_cachesize, shm_cache_limit);
    }
 
    if (connection) {
@@ -151,11 +165,6 @@ static int init_server_connection()
    snprintf(debugging_name, 32, "Client.%d", rankinfo[0]);
    LOGGING_INIT(debugging_name);
 
-   opts |= OPT_SHMCACHE;
-   if (opts & OPT_SHMCACHE) {
-#warning Set size to config parameter
-      shmcache_init(location, number, 2*1024*1024, 0);
-   }
    sync_cwd();
 
    if (opts & OPT_RELOCPY)

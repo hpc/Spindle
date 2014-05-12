@@ -234,3 +234,11 @@ int release_heap_lock(shminfo_t *shminfo)
    return release_lock(&shminfo->mem_lock);
 }
 
+void update_shm_id(shminfo_t *shminfo)
+{
+   shminfo->id = -1;
+   take_lock(&shminfo->mem_lock);
+   shminfo->id = shminfo->shared_header->base.cur_id++;
+   release_lock(&shminfo->mem_lock);
+   shminfo->leader = 0;
+}

@@ -60,7 +60,7 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 6;
+   buffer_size = sizeof(unsigned int) * 7;
    buffer_size += sizeof(unique_id_t);
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
@@ -75,6 +75,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->unique_id, buf, pos);
    pack_param(args->use_launcher, buf, pos);
    pack_param(args->startup_type, buf, pos);
+   pack_param(args->shm_cache_size, buf, pos);
    pack_param(args->location, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);
@@ -180,17 +181,20 @@ int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spin
 {
    char number_s[32];
    char opt_s[32];
+   char cachesize_s[32];
 
    snprintf(number_s, sizeof(number_s), "%u", params->number);
    snprintf(opt_s, sizeof(opt_s), "%u", params->opts);
+   snprintf(cachesize_s, sizeof(cachesize_s), "%u", params->shm_cache_size);
    
-   *spindle_argv = (char **) malloc(sizeof(char*) * 5);
+   *spindle_argv = (char **) malloc(sizeof(char*) * 6);
    (*spindle_argv)[0] = strdup(spindle_bootstrap);
    (*spindle_argv)[1] = strdup(params->location);
    (*spindle_argv)[2] = strdup(number_s);
    (*spindle_argv)[3] = strdup(opt_s);
-   (*spindle_argv)[4] = NULL;
-   *spindle_argc = 4;
+   (*spindle_argv)[4] = strdup(cachesize_s);
+   (*spindle_argv)[5] = NULL;
+   *spindle_argc = 5;
 
    return 0;
 }

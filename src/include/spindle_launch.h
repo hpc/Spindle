@@ -48,8 +48,8 @@ extern "C" {
 #define OPT_SHMCACHE   (1 << 16)
 #define OPT_SEC        ((1 << 17) | (1 << 18))
 
-#define OPT_SET_SEC(OPT, X) OPT |= (X << 16)
-#define OPT_GET_SEC(OPT) ((OPT >> 16) & 3)
+#define OPT_SET_SEC(OPT, X) OPT |= (X << 17)
+#define OPT_GET_SEC(OPT) ((OPT >> 17) & 3)
 #define OPT_SEC_MUNGE 0
 #define OPT_SEC_KEYLMON 1
 #define OPT_SEC_KEYFILE 2
@@ -94,6 +94,9 @@ typedef struct {
 
    /* The mechanism used to start Spindle daemons */
    unsigned int startup_type;
+
+   /* Size of client shared memory cache */
+   unsigned int shm_cache_size;
 
    /* The local-disk location where Spindle will store its cache */
    char *location;

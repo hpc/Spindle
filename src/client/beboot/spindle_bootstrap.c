@@ -43,12 +43,14 @@ char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 int ldcsid;
 static int rankinfo[4]={-1,-1,-1,-1};
 static int number;
+static unsigned int cachesize;
 static char *location, *number_s;
 static char **cmdline;
 static char *executable;
 static char *client_lib;
 static char *opts_s;
 static char **daemon_args;
+static char *cachesize_s;
 
 unsigned long opts;
 
@@ -98,12 +100,13 @@ static void setup_environment()
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    setenv("LDCS_CONNECTION", connection_str, 1);
    setenv("LDCS_OPTIONS", opts_s, 1);
+   setenv("LDCS_CACHESIZE", cachesize_s, 1);
 }
 
 static int parse_cmdline(int argc, char *argv[])
 {
    int i, daemon_arg_count;
-   if (argc < 4)
+   if (argc < 5)
       return -1;
    
    i = 1;
@@ -122,6 +125,8 @@ static int parse_cmdline(int argc, char *argv[])
    number = atoi(number_s);
    opts_s = argv[i++];
    opts = atoi(opts_s);
+   cachesize_s = argv[i++];
+   cachesize = atoi(cachesize_s);
    cmdline = argv + i;
    assert(i < argc);
 
