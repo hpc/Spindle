@@ -305,10 +305,153 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
       return symvalue;
 }
 
-char *client_library_load(const char *name)
+static int read_stat(char *localname, struct stat *buf)
+{
+   int result, bytes_read, fd;
+   int size;
+   char *buffer;
+
+   fd = open(localname, O_RDONLY);
+   if (fd == -1) {
+      err_printf("Failed to open %s for reading: %s\n", localname, strerror(errno));
+      return -1;
+   }
+
+   bytes_read = 0;
+   buffer = (char *) buf;
+   size = sizeof(struct stat);
+
+   while (bytes_read != size) {
+      result = read(fd, buffer + bytes_read, size - bytes_read);
+      if (result <= 0) {
+         if (errno == EAGAIN || errno == EINTR)
+            continue;
+         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
+         close(fd);
+         return -1;
+      }
+      bytes_read += result;
+   }
+   close(fd);
+   return 0;
+}
+
+static int fetch_from_cache(const char *name, char **newname)
 {
    int result;
-   int found_library = 0;
+   result = shmcache_lookup_or_add(name, newname);
+   if (result == -1)
+      return 0;
+
+   debug_printf2("Shared cache has mapping from %s to %s\n", name,
+                 (*newname == in_progress) ? "[IN PROGRESS]" :
+                 (*newname ? *newname : "[NOT PRESENT]"));
+   if (*newname == in_progress) {
+      debug_printf("Waiting for update to %s\n", name);
+      result = shmcache_waitfor_update(name, newname);
+      if (result == -1) {
+         err_printf("Error waiting for update to shared cache\n");
+         return 0;
+      }
+   }
+   return 1;
+}
+
+int get_existance_test(int fd, const char *path, int *exists)
+{
+   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
+   int found_file, result;
+   char cache_name[MAX_PATH_LEN+2];
+   char *exist_str;
+
+   if (use_cache) {
+      debug_printf2("Looking up file existance for %s in shared cache\n", path);
+      snprintf(cache_name, sizeof(cache_name), "&%s", path);
+      cache_name[sizeof(cache_name)-1] = '\0';
+      found_file = fetch_from_cache(cache_name, &exist_str);
+      if (found_file == 0) {
+         *exists = (exist_str[0] == 'y');
+         return 0;
+      }
+   }
+
+   result = send_existance_test(fd, (char *) path, exists);
+   if (result == -1)
+      return -1;
+
+   if (use_cache) {
+      exist_str = *exists ? "y" : NULL;
+      shmcache_update(cache_name, exist_str);
+   }
+   return 0;
+}
+
+int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf)
+{
+   int result;
+   char buffer[MAX_PATH_LEN+1];
+   char cache_name[MAX_PATH_LEN+3];
+   char *newpath;
+   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
+   int found_file = 0;
+
+   if (use_cache) {
+      debug_printf2("Looking up %sstat for %s in shared cache\n", is_lstat ? "l" : "", path);
+      snprintf(cache_name, sizeof(cache_name), "%s%s", is_lstat ? "**" : "*", path);
+      cache_name[sizeof(cache_name)-1] = '\0';
+      found_file = fetch_from_cache(cache_name, &newpath);
+   }
+
+   if (!found_file) {
+      result = send_stat_request(fd, (char *) path, is_lstat, buffer);
+      if (result == -1) {
+         *exists = 0;
+         return -1;
+      }
+      newpath = buffer[0] != '\0' ? buffer : NULL;
+
+      if (use_cache) 
+         shmcache_update(cache_name, newpath);
+   }
+   
+   if (newpath == NULL) {
+      *exists = 0;
+      return 0;
+   }
+   *exists = 1;
+
+   result = read_stat(newpath, buf);
+   if (result == -1) {
+      err_printf("Failed to read stat info for %s from %s\n", path, newpath);
+      *exists = 0;
+      return -1;
+   }
+   return 0;
+}
+
+int get_relocated_file(int fd, const char *name, char** newname)
+{
+   int found_file = 0;
+   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
+
+   if (use_cache) {
+      debug_printf2("Looking up %s in shared cache\n", name);
+      found_file = fetch_from_cache(name, newname);
+   }
+
+   if (!found_file) {
+      debug_printf2("Send file request to server: %s\n", name);
+      send_file_query(fd, (char *) name, newname);
+      debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");      
+      if (use_cache)
+         shmcache_update(name, *newname);
+   }
+
+   return 0;
+}
+
+char *client_library_load(const char *name)
+{
    char *newname;
 
    check_for_fork();
@@ -329,32 +472,7 @@ char *client_library_load(const char *name)
    
    sync_cwd();
 
-   if (opts & OPT_SHMCACHE) {
-      debug_printf2("Looking up %s in shared cache\n", name);
-      result = shmcache_lookup_or_add(name, &newname);
-      if (result != -1) {
-         debug_printf2("Shared cache has mapping from %s to %s\n", name,
-                       (newname == in_progress) ? "[IN PROGRESS]" :
-                       (newname ? newname : "[NOT PRESENT]"));
-         found_library = 1;
-         if (newname == in_progress) {
-            debug_printf("Waiting for update to %s\n", name);
-            result = shmcache_waitfor_update(name, &newname);
-            if (result == -1) {
-               err_printf("Error waiting for update to shared cache\n");
-               found_library = 0;
-            }
-         }
-      }
-   }
-
-   if (!found_library) {
-      debug_printf2("Send library request to server: %s\n", name);
-      send_file_query(ldcsid, (char *) name, &newname);
-      debug_printf2("Recv library from server: %s\n", newname ? newname : "NONE");      
-      if (opts & OPT_SHMCACHE) 
-         shmcache_update(name, newname);
-   }
+   get_relocated_file(ldcsid, name, &newname);
  
    if(!newname) {
       newname = concatStrings(NOT_FOUND_PREFIX, name);

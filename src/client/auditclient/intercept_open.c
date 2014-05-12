@@ -45,6 +45,7 @@ static int do_check_file(const char *path, char **newpath) {
    char *myname, *newname;
   
    myname=(char *) path;
+   debug_printf2("Open operation requesting file: %s\n", path);
 
    check_for_fork();
    if (ldcsid < 0 || !use_ldcs) {
@@ -53,9 +54,7 @@ static int do_check_file(const char *path, char **newpath) {
    }
    sync_cwd();
 
-   debug_printf2("Open operation requesting file: %s\n", path);
-   send_file_query(ldcsid, myname, &newname);
-   debug_printf("Open file request returned %s -> %s\n", path, newname ? newname : "NULL");
+   get_relocated_file(ldcsid, myname, &newname);
 
    if (newname != NULL) {
       *newpath=newname;
@@ -189,7 +188,7 @@ FILE *fopen_worker(const char *path, const char *mode, int is_64)
       /* The file is being exclusively created.  Short-circuit error return
          if it exists */
       debug_printf("Testing for existance before exclusive open of %s\n", path);
-      result = send_existance_test(ldcsid, (char *) path, &exists);
+      result = get_existance_test(ldcsid, path, &exists);
       if (result == -1 || !exists) {
          debug_printf3("File %s does not exist, allowing exclusive open\n", path);
          return call_orig_fopen(path, mode, is_64);

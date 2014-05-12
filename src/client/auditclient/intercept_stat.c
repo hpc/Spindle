@@ -59,7 +59,7 @@ int handle_stat(const char *path, struct stat *buf, int flags)
       return ORIG_STAT;
    }
 
-   result = send_stat_request(ldcsid, (char *) path, flags & IS_LSTAT, &exists, buf);
+   result = get_stat_result(ldcsid, path, flags & IS_LSTAT, &exists, buf);
    if (result == -1) {
       /* Spindle level error */
       debug_printf3("Allowing original stat on %s\n", path);

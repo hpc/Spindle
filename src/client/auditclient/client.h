@@ -69,6 +69,10 @@ int open_worker(const char *path, int oflag, mode_t mode, int is_64);
 FILE *fopen_worker(const char *path, const char *mode, int is_64);
 void remap_executable();
 
+int get_relocated_file(int fd, const char *name, char** newname);
+int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf);
+int get_existance_test(int fd, const char *path, int *exists);
+
 /**
  * Tracking python prefixes
  **/

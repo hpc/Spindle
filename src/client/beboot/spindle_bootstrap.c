@@ -231,6 +231,11 @@ static void get_clientlib()
    }
 }
 
+int get_relocated_file(int fd, const char *name, char** newname)
+{
+   return send_file_query(fd, (char *) name, newname);
+}
+
 /**
  * Realize takes the 'realpath' of a non-existant location.
  * If later directories in the path don't exist, it'll cut them

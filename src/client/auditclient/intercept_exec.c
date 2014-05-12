@@ -91,7 +91,7 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
 
    sync_cwd();
    debug_printf2("Exec operation requesting file: %s\n", filepath);
-   send_file_query(ldcsid, (char *) filepath, &newname);
+   get_relocated_file(ldcsid, (char *) filepath, &newname);
    debug_printf("Exec file request returned %s -> %s\n", filepath, newname ? newname : "NULL");
 
    return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);

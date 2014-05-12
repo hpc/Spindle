@@ -83,50 +83,15 @@ int send_file_query(int fd, char* path, char** newpath) {
    return result;
 }
 
-static int read_stat(char *localname, struct stat *buf)
+int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
 {
-   int result, bytes_read, fd;
-   int size;
-   char *buffer;
-
-   fd = open(localname, O_RDONLY);
-   if (fd == -1) {
-      err_printf("Failed to open %s for reading: %s\n", localname, strerror(errno));
-      return -1;
-   }
-
-   bytes_read = 0;
-   buffer = (char *) buf;
-   size = sizeof(struct stat);
-
-   while (bytes_read != size) {
-      result = read(fd, buffer + bytes_read, size - bytes_read);
-      if (result <= 0) {
-         if (errno == EAGAIN || errno == EINTR)
-            continue;
-         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
-         close(fd);
-         return -1;
-      }
-      bytes_read += result;
-   }
-   close(fd);
-   return 0;
-}
-
-int send_stat_request(int fd, char *path, int is_lstat, int *exists, struct stat *buf)
-{
-   char buffer[MAX_PATH_LEN+1];
    int path_len = strlen(path) + (is_lstat ? 0 : 1) + 1;
-   int result;
-   char *localname;
    ldcs_message_t message;
+   char buffer[MAX_PATH_LEN+1];
 
-   buffer[MAX_PATH_LEN] = '\0';
 
    if (path_len >= MAX_PATH_LEN+1) {
       err_printf("stat path of %s is too long for Spindle\n", path);
-      *exists = 0;
       return -1;
    }
 
@@ -136,7 +101,7 @@ int send_stat_request(int fd, char *path, int is_lstat, int *exists, struct stat
    /* Setup packet */
    message.header.type = LDCS_MSG_STAT_QUERY;
    message.header.len = path_len;
-   message.data = buffer;
+   message.data = newpath;
    
    COMM_LOCK;
 
@@ -155,19 +120,11 @@ int send_stat_request(int fd, char *path, int is_lstat, int *exists, struct stat
    }
    if (message.header.len == 0) {
       debug_printf3("stat of file %s says file doesn't exist\n", path);
-      *exists = 0;
+      *newpath = '\0';
       return 0;
    }
 
-   localname = (char *) message.data;
-   result = read_stat(localname, buf);
-   if (result == -1) {
-      err_printf("Failed to read stat info for %s from %s\n", path, localname);
-      *exists = 0;
-      return -1;
-   }
 
-   *exists = 1;
    return 0;
 }
 

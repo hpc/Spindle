@@ -33,7 +33,7 @@ int send_location(int fd, char *location);
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize);
 int send_end(int fd);
 int send_existance_test(int fd, char *path, int *exists);
-int send_stat_request(int fd, char *path, int islstat, int *exists, struct stat *buf);
+int send_stat_request(int fd, char *path, int islstat, char *result);
 int get_python_prefix(int fd, char **prefix);
 
 /* client */

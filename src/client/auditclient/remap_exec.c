@@ -126,7 +126,7 @@ static int openRelocatedExec(int ldcsid)
    
    debug_printf2("Exec remapping requesting relocation of file %s\n",
                  orig_exec);
-   send_file_query(ldcsid, orig_exec, &reloc_exec);
+   get_relocated_file(ldcsid, orig_exec, &reloc_exec);
    debug_printf2("Exec remapping returned %s -> %s\n", orig_exec, reloc_exec);
 
    fd = open(reloc_exec, O_RDWR);
