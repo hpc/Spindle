@@ -357,6 +357,20 @@ static int fetch_from_cache(const char *name, char **newname)
    return 1;
 }
 
+static void get_cache_name(const char *path, char *prefix, char *result)
+{
+   char cwd[MAX_PATH_LEN+1];
+
+   if (path[0] != '/') {
+      getcwd(cwd, MAX_PATH_LEN+1);
+      cwd[MAX_PATH_LEN] = '\0';
+      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s/%s", prefix, cwd, path);
+   }
+   else {
+      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s", prefix, path);
+   }
+}
+
 int get_existance_test(int fd, const char *path, int *exists)
 {
    int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
@@ -366,7 +380,7 @@ int get_existance_test(int fd, const char *path, int *exists)
 
    if (use_cache) {
       debug_printf2("Looking up file existance for %s in shared cache\n", path);
-      snprintf(cache_name, sizeof(cache_name), "&%s", path);
+      get_cache_name(path, "&", cache_name);
       cache_name[sizeof(cache_name)-1] = '\0';
       found_file = fetch_from_cache(cache_name, &exist_str);
       if (found_file == 0) {
@@ -397,7 +411,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
 
    if (use_cache) {
       debug_printf2("Looking up %sstat for %s in shared cache\n", is_lstat ? "l" : "", path);
-      snprintf(cache_name, sizeof(cache_name), "%s%s", is_lstat ? "**" : "*", path);
+      get_cache_name(path, is_lstat ? "**" : "*", cache_name);
       cache_name[sizeof(cache_name)-1] = '\0';
       found_file = fetch_from_cache(cache_name, &newpath);
    }
@@ -433,10 +447,13 @@ int get_relocated_file(int fd, const char *name, char** newname)
 {
    int found_file = 0;
    int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
+   char cache_name[MAX_PATH_LEN+1];
 
    if (use_cache) {
       debug_printf2("Looking up %s in shared cache\n", name);
-      found_file = fetch_from_cache(name, newname);
+      get_cache_name(name, "", cache_name);
+      cache_name[sizeof(cache_name)-1] = '\0';
+      found_file = fetch_from_cache(cache_name, newname);
    }
 
    if (!found_file) {
@@ -444,7 +461,7 @@ int get_relocated_file(int fd, const char *name, char** newname)
       send_file_query(fd, (char *) name, newname);
       debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");      
       if (use_cache)
-         shmcache_update(name, *newname);
+         shmcache_update(cache_name, *newname);
    }
 
    return 0;
