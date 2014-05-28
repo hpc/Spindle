@@ -35,13 +35,14 @@ char *in_progress;
 
 #define HASH_SIZE 1024
 
-static sheep_ptr_t *hash;
+static sheep_ptr_t *hash_ptr;
 static sheep_ptr_t *lru_head;
 static sheep_ptr_t *lru_end;
 static sheep_ptr_t hash_error;
 static size_t heap_limit = 0;
 static size_t *heap_used = 0;
 static lock_t cache_lock;
+static sheep_ptr_t *table;
 
 static shminfo_t *shminfo = NULL;
 
@@ -107,6 +108,7 @@ static void *malloc_sheep_cache(size_t size)
       newalloc = malloc_sheep(size);
       if (newalloc)
          break;
+      debug_printf3("shmcache allocation of size %lu failed, cleaning up older entries\n", size);
       if (clean_oldest_entry() == -1) {
          /* A completely cleaned heap does not have enough space */
          release_sheep_lock();
@@ -164,9 +166,15 @@ static void mark_recently_used(struct entry_t *entry, int have_write_lock)
 
    entry->lru_next = *lru_head;
    entry->lru_prev = ptr_sheep(SHEEP_NULL);
-   
-   *lru_head = ptr_sheep(entry);
 
+   if (!IS_SHEEP_NULL(lru_head)) {
+      nentry = (struct entry_t *) sheep_ptr(lru_head);
+      nentry->lru_prev = ptr_sheep(entry);
+   }
+   *lru_head = ptr_sheep(entry);
+   if (IS_SHEEP_NULL(lru_end)) {
+      set_sheep_ptr(lru_end, entry);
+   }
    if (!have_write_lock)
       downgrade_to_readlock();
 }
@@ -174,22 +182,31 @@ static void mark_recently_used(struct entry_t *entry, int have_write_lock)
 static int clean_oldest_entry()
 {
    sheep_ptr_t pentry, i;
-   struct entry_t *entry, *prev_hash_entry;;
+   struct entry_t *entry, *prev_hash_entry;
+   char *lresult;
 
+   debug_printf3("Cleaning oldest entries from shmcache for more space\n");
    if (IS_SHEEP_NULL(lru_end))
       return -1;
    entry = (struct entry_t *) sheep_ptr(lru_end);
 
+   if (sheep_ptr(&entry->result) == in_progress) {
+      err_printf("Tried to delete in_progress shmcache entry\n");
+      return -1;
+   }
    pentry = entry->lru_prev;
 
    prev_hash_entry = NULL;
-   for (i = hash[entry->hash_key]; sheep_ptr(&i) != (void*) entry; i = prev_hash_entry->hash_next)
+   lresult = (char *) sheep_ptr(&entry->libname);
+   debug_printf3("Cleaning entry %s -> %s\n", ((char *) sheep_ptr(&entry->libname)) ? : "[NULL]", 
+                 lresult == NULL ? "[NULL]" : (lresult == in_progress ? "[IN PROGRESS]" : lresult));
+   for (i = table[entry->hash_key]; sheep_ptr(&i) != (void*) entry; i = prev_hash_entry->hash_next)
       prev_hash_entry = (struct entry_t *) sheep_ptr(&i);
 
    if (prev_hash_entry)
       prev_hash_entry->hash_next = entry->hash_next;
    else
-      hash[entry->hash_key] = ptr_sheep(SHEEP_NULL);
+      table[entry->hash_key] = ptr_sheep(SHEEP_NULL);
 
    free_sheep_str((char *) sheep_ptr(& entry->libname));
    if (!IS_SHEEP_NULL(&entry->result)) {
@@ -211,11 +228,11 @@ static int clean_oldest_entry()
 
 static unsigned int str_hash(const char *str)
 {
-   unsigned long hash = 5381;
+   unsigned long hashv = 5381;
    int c;
    while ((c = *str++))
-      hash = ((hash << 5) + hash) + c;
-   return hash % HASH_SIZE;
+      hashv = ((hashv << 5) + hashv) + c;
+   return hashv % HASH_SIZE;
 }
 
 static int shmcache_lookup_worker(const char *libname, char **result, int have_write_lock, struct entry_t **oentry)
@@ -228,7 +245,7 @@ static int shmcache_lookup_worker(const char *libname, char **result, int have_w
 
    debug_printf3("Looking up %s in shmcache\n", libname);
    key = str_hash(libname);
-   for (p = hash[key]; !IS_SHEEP_NULL(&p); p = entry->hash_next) {
+   for (p = table[key]; !IS_SHEEP_NULL(&p); p = entry->hash_next) {
       entry = (struct entry_t *) sheep_ptr(&p);
       if (entry->hash_key != key)
          continue;
@@ -285,8 +302,10 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
                  mapped_name == in_progress ? "[IN PROGRESS]" : (mapped_name ? : "[NULL]"));
    if (update) {
       result = shmcache_lookup_worker(libname, &lookup_result, 1, &entry);
-      if (result == -1)
+      if (result == -1) {
+         err_printf("Could not find shmcache entry for %s while updating\n", libname);
          return -1;
+      }
       if (sheep_ptr(&entry->result) != in_progress && !IS_SHEEP_NULL(&entry->result))
          free_sheep_str(sheep_ptr(&entry->result));
       if (mapped_name) {
@@ -297,6 +316,7 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
             entry->libname = ptr_sheep(SHEEP_NULL);
             entry->result = ptr_sheep(SHEEP_NULL);
             entry->hash_key = 0;
+            err_printf("Could not free space in cache for updated entry for %s\n", libname);
             return -1;
          }
          strncpy(mappedname_str, mapped_name, mappedname_len);
@@ -306,6 +326,7 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
       }
 
       entry->result = ptr_sheep(mappedname_str);
+      debug_printf3("Successfully updated shmcache entry %s\n", libname);
       return 0;
    }
 
@@ -335,9 +356,10 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
    entry->libname = ptr_sheep(libname_str);
    entry->result = mappedname_str ? ptr_sheep(mappedname_str) : ptr_sheep(SHEEP_NULL);
    entry->hash_key = str_hash(libname);
-   entry->hash_next = hash[entry->hash_key];
-   hash[entry->hash_key] = ptr_sheep(entry);
+   entry->hash_next = table[entry->hash_key];
+   table[entry->hash_key] = ptr_sheep(entry);
    mark_recently_used(entry, 1);
+   debug_printf3("Successfully created shmcache entry %s\n", libname);
    return 0;
 }
 
@@ -366,9 +388,9 @@ static int init_cache(size_t hlimit)
    void *newhash;
 
    if (heap_limit == 0)
-   hash = &shminfo->shared_header->shmcache.hash;
+   hash_ptr = &shminfo->shared_header->shmcache.hash;
    lru_head = &shminfo->shared_header->shmcache.lru_head;
-   lru_end = &shminfo->shared_header->shmcache.hash;
+   lru_end = &shminfo->shared_header->shmcache.lru_end;
    heap_limit = hlimit;
    heap_used = &shminfo->shared_header->shmcache.heap_used;
 
@@ -377,25 +399,28 @@ static int init_cache(size_t hlimit)
 
    if (!hlimit) {
       debug_printf("No shm cache space allocated.  Disabling shmcache\n");
-      *hash = hash_error;
+      *hash_ptr = hash_error;
+      table = NULL;
       return 0;
    }
    
-   if (IS_SHEEP_NULL(hash)) {
+   if (IS_SHEEP_NULL(hash_ptr)) {
       take_writer_lock();
-      if (IS_SHEEP_NULL(hash)) {
-         newhash = malloc_sheep_cache(sizeof(struct entry_t) * HASH_SIZE);
+      if (IS_SHEEP_NULL(hash_ptr)) {
+         newhash = malloc_sheep_cache(sizeof(sheep_ptr) * HASH_SIZE);
          if (!newhash) {
             debug_printf("Not enough shm space to allocate hash table.  Disabling shmcache\n");
-            *hash = hash_error;
+            *hash_ptr = hash_error;
+            table = NULL;
             release_writer_lock();
             return 0;
          }
-         memset(newhash, 0, sizeof(struct entry_t) * HASH_SIZE);
-         *hash = ptr_sheep(newhash);
+         memset(newhash, 0, sizeof(sheep_ptr) * HASH_SIZE);
+         *hash_ptr = ptr_sheep(newhash);
       }
       release_writer_lock();
    }
+   table = sheep_ptr(hash_ptr);
 
    return 0;
 }
@@ -403,7 +428,7 @@ static int init_cache(size_t hlimit)
 int shmcache_lookup_or_add(const char *libname, char **result)
 {
    int iresult;
-   if (sheep_ptr_equals(*hash, hash_error))
+   if (!table)
       return -1;
 
    take_reader_lock();
@@ -420,7 +445,7 @@ int shmcache_lookup_or_add(const char *libname, char **result)
 int shmcache_add(const char *libname, const char *mapped_name)
 {
    int result;
-   if (sheep_ptr_equals(*hash, hash_error))
+   if (!table)
       return 0;
 
    take_writer_lock();
@@ -432,7 +457,7 @@ int shmcache_add(const char *libname, const char *mapped_name)
 int shmcache_update(const char *libname, const char *mapped_name)
 {
    int result;
-   if (sheep_ptr_equals(*hash, hash_error))
+   if (!table)
       return 0;
 
    take_writer_lock();
@@ -477,7 +502,7 @@ int shmcache_waitfor_update(const char *libname, char **result)
 {
    int iresult;
    struct entry_t *entry;
-   if (sheep_ptr_equals(*hash, hash_error))
+   if (!table)
       return -1;
 
    take_reader_lock();
