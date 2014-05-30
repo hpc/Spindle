@@ -33,8 +33,8 @@ unsigned int la_version(unsigned int version)
    int result = client_init();
    if (result == -1)
       return 0;
-
-   debug_printf3("la_version(): %d\n", version);   
+   debug_printf("la_version function is loaded at %p\n", la_version);
+   debug_printf3("la_version(): %d\n", version);
    return 1;
 }
 

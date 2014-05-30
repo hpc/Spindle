@@ -357,6 +357,7 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
    entry->result = mappedname_str ? ptr_sheep(mappedname_str) : ptr_sheep(SHEEP_NULL);
    entry->hash_key = str_hash(libname);
    entry->hash_next = table[entry->hash_key];
+   entry->lru_next.val = entry->lru_prev.val = 0;
    table[entry->hash_key] = ptr_sheep(entry);
    mark_recently_used(entry, 1);
    debug_printf3("Successfully created shmcache entry %s\n", libname);
