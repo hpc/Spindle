@@ -193,6 +193,11 @@ static int biterc_get_unique_number(biterc_session_t *session, const char *tmpdi
    if (result == -1)
       return -1;
 
+   if (header->biter.num_started+1 == header->biter.num_ranks) {
+      debug_printf3("Last CN to read entries, clearing shared page\n");
+      memset(shared_page, 0, num_entries * sizeof(struct entries_t));
+   }
+
    header->biter.num_started++;
 
    result = release_queue_lock(session);
@@ -215,7 +220,7 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    biter_header_t *biter_header = & shm->shared_header->biter;
 
 #if defined(os_bluegene)
-   unique_number = biterc_get_unique_number(session, tmpdir, session->shared_header+1);
+   unique_number = biterc_get_unique_number(session, tmpdir, shm->shared_header+1);
 #else
    unique_number = 0;
    (void) biterc_get_unique_number;

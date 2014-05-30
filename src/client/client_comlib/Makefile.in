@@ -48,7 +48,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libclient_biter_la_LIBADD =
+libclient_biter_la_DEPENDENCIES = $(top_builddir)/biter/libbiterc.la
 am__objects_1 = libclient_biter_la-client_api.lo \
 	libclient_biter_la-client_heap.lo \
 	libclient_biter_la-client_wrappers.lo
@@ -230,6 +230,7 @@ libclient_pipe_la_SOURCES = client_api_pipe.c $(BASE_SRCS)
 libclient_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=socket
 libclient_socket_la_SOURCES = client_api_socket.c $(BASE_SRCS)
 libclient_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=biter -I$(top_srcdir)/../biter
+libclient_biter_la_LIBADD = $(top_builddir)/biter/libbiterc.la
 libclient_biter_la_SOURCES = client_api_biter.c $(BASE_SRCS)
 all: all-am
 

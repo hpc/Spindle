@@ -177,8 +177,8 @@ int init_heap_lock(shminfo_t *shminfo)
       return 0;
    initialized = 1;
 
-   shminfo->mem_lock.lock = shminfo->shared_header->base.locks + 4;
-   shminfo->mem_lock.held_by = shminfo->shared_header->base.locks + 5;
+   shminfo->mem_lock.lock = shminfo->shared_header->base.locks + 0;
+   shminfo->mem_lock.held_by = shminfo->shared_header->base.locks + 1;
    shminfo->mem_lock.id = -1;
    return 0;
 }

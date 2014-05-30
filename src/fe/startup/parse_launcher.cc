@@ -297,7 +297,7 @@ void ModifyArgv::modifyCmdLine()
          string bg_env_str = parser->getParser()->getBGString();
          int str_len = bg_env_str.length() + options.length() + location.length() + number.length() + shmcache_size.length() + string(default_libstr).length() + 1;
          char *bg_env = (char *) malloc(str_len);
-         snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str(), shm_cache_size.c_str());
+         snprintf(bg_env, str_len, bg_env_str.c_str(), default_libstr, location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
          new_argv[n++] = bg_env;
 #else
          char **a_argv;

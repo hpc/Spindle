@@ -14,4 +14,5 @@ libclient_socket_la_SOURCES = client_api_socket.c $(BASE_SRCS)
 
 noinst_LTLIBRARIES += libclient_biter.la
 libclient_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -DCOMM=biter -I$(top_srcdir)/../biter
+libclient_biter_la_LIBADD = $(top_builddir)/biter/libbiterc.la
 libclient_biter_la_SOURCES = client_api_biter.c $(BASE_SRCS)

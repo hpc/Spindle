@@ -41,6 +41,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 
 int ldcsid;
+unsigned int shm_cachesize;
+
 static int rankinfo[4]={-1,-1,-1,-1};
 static int number;
 static unsigned int cachesize;

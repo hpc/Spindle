@@ -48,7 +48,8 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libshmcache_la_DEPENDENCIES = $(top_builddir)/biter/libsheep.la
+@BITER_FALSE@libshmcache_la_DEPENDENCIES =  \
+@BITER_FALSE@	$(top_builddir)/biter/libsheep.la
 am_libshmcache_la_OBJECTS = shmcache.lo
 libshmcache_la_OBJECTS = $(am_libshmcache_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -203,7 +204,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libshmcache.la
 libshmcache_la_SOURCES = shmcache.c
-libshmcache_la_LIBADD = $(top_builddir)/biter/libsheep.la
+@BITER_FALSE@libshmcache_la_LIBADD = $(top_builddir)/biter/libsheep.la
 AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/shm_cache -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib
 all: all-am
 

@@ -388,6 +388,8 @@ static int init_cache(size_t hlimit)
    void *newhash;
 
    if (heap_limit == 0)
+      return 0;
+
    hash_ptr = &shminfo->shared_header->shmcache.hash;
    lru_head = &shminfo->shared_header->shmcache.lru_head;
    lru_end = &shminfo->shared_header->shmcache.lru_end;
