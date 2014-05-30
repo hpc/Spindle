@@ -387,7 +387,7 @@ static int init_cache(size_t hlimit)
 {
    void *newhash;
 
-   if (heap_limit == 0)
+   if (hlimit == 0)
       return 0;
 
    hash_ptr = &shminfo->shared_header->shmcache.hash;
@@ -409,7 +409,7 @@ static int init_cache(size_t hlimit)
    if (IS_SHEEP_NULL(hash_ptr)) {
       take_writer_lock();
       if (IS_SHEEP_NULL(hash_ptr)) {
-         newhash = malloc_sheep_cache(sizeof(sheep_ptr) * HASH_SIZE);
+         newhash = malloc_sheep_cache(sizeof(sheep_ptr_t) * HASH_SIZE);
          if (!newhash) {
             debug_printf("Not enough shm space to allocate hash table.  Disabling shmcache\n");
             *hash_ptr = hash_error;
@@ -417,7 +417,7 @@ static int init_cache(size_t hlimit)
             release_writer_lock();
             return 0;
          }
-         memset(newhash, 0, sizeof(sheep_ptr) * HASH_SIZE);
+         memset(newhash, 0, sizeof(sheep_ptr_t) * HASH_SIZE);
          *hash_ptr = ptr_sheep(newhash);
       }
       release_writer_lock();
@@ -472,25 +472,37 @@ int shmcache_init(const char *tmpdir, int unique_number, size_t shm_size, size_t
 {
    int result;
    result = init_shm(tmpdir, shm_size, unique_number, &shminfo);
-   if (result == -1)
+   if (result == -1) {
+      err_printf("Error initializing shared memory\n");
       return -1;
+   }
 
    result = init_cache_locks();
-   if (result == -1)
+   if (result == -1) {
+      err_printf("Error from init_cache_locks\n");
       return -1;
+   }
 
    result = setup_cache_ids();
-   if (result == -1)
+   if (result == -1) {
+      err_printf("Error from setup_cache_ids\n");
       return -1;
+   }
 
    result = init_heap(shminfo);
-   if (result == -1)
+   if (result == -1) {
+      err_printf("Error from init_heap\n");
       return -1;
+   }
 
    result = init_cache(hlimit);
-   if (result == -1)
+   if (result == -1) {
+      err_printf("Error from init_cache\n");
       return -1;
+   }
 
+   debug_printf2("Successfully initialized shmcache to size %lu with limit %lu\n",
+                 shm_size, hlimit);
    return 0;
 }
 

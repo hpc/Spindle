@@ -131,7 +131,7 @@ static int init_server_connection()
    if (opts & OPT_SHMCACHE) {
       assert(shm_cachesize);
 #if defined(os_bluegene)
-      shm_cache_limit = shm_cachesize > 512 ? shm_cachesize - 512 : 0;
+      shm_cache_limit = shm_cachesize > 512*1024 ? shm_cachesize - 512*1024 : 0;
 #else
       shm_cache_limit = shm_cachesize;
 #endif
@@ -499,8 +499,8 @@ char *client_library_load(const char *name)
    }
 
    debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
-   test_log(newname);   
-   return newname;
+   test_log(newname);
+   return strdup(newname);
 }
 
 python_path_t *pythonprefixes = NULL;
