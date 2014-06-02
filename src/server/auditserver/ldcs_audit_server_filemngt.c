@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
+#include "config.h"
 
 char *_ldcs_audit_server_tmpdir;
 
@@ -176,6 +177,7 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
  **/
 int ldcs_audit_server_filemngt_clean()
 {
+#if !defined(USE_CLEANUP_PROC)
    DIR *tmpdir;
    struct dirent *dp;
    char path[MAX_PATH_LEN];
@@ -207,6 +209,7 @@ int ldcs_audit_server_filemngt_clean()
 
    closedir(tmpdir);
    rmdir(_ldcs_audit_server_tmpdir);
+#endif
    return 0;
 }
 

@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "ldcs_api.h"
 #include "config.h"
+#include "cleanup_proc.h"
 
 static void setupLogging();
 static int parseCommandLine(int argc, char *argv[]);
@@ -53,6 +54,8 @@ int main(int argc, char *argv[])
       bare_printf("%s ", argv[i]);
    }
    bare_printf("\n");
+
+   init_cleanup_proc();
 
    result = parseCommandLine(argc, argv);
    if (result == -1) {

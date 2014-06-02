@@ -30,7 +30,7 @@ libspindlebe_la_LDFLAGS = -version-info $(SPINDLEBE_LIB_VERSION)
 
 spindle_be_LDFLAGS = -static
 spindle_be_CPPFLAGS = $(CORE_CPPFLAGS)
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc $(CORE_SOURCES)
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc cleanup_proc.cc $(CORE_SOURCES)
 spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS)
 
 if LINK_LIBSTDCXX_STATIC

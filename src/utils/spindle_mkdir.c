@@ -22,6 +22,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "ldcs_api.h"
 #include "spindle_debug.h"
+#include "config.h"
+
+#if defined(USE_CLEANUP_PROC)
+extern void add_cleanup_dir(const char *dir);
+#endif
 
 static int checkdir(char *path)
 {
@@ -87,8 +92,10 @@ int spindle_mkdir(char *orig_path)
          if (result == -1) {
             error = errno;
             if (error == ENOENT) {
+#if defined(USE_CLEANUP_PROC)
+               add_cleanup_dir(path);
+#endif
                do_mkdir = 1;
-               sleep(1);
             }
             else {
                err_printf("spindle_mkdir failed to stat path component %s: %s\n",
@@ -99,8 +106,7 @@ int spindle_mkdir(char *orig_path)
          if (!S_ISDIR(buf.st_mode) && !S_ISLNK(buf.st_mode)) {
             err_printf("spindle_mkdir failed because path component %s is not a directory or symlink\n",
                          path);
-            return -1;
-            
+            return -1;            
          }
       }
       
