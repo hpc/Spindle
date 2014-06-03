@@ -359,6 +359,8 @@ bool LauncherParser::parseCustomArg(int /*argc*/, char** /*argv*/, int /*arg_pos
  **/
 bool LauncherParser::includeArg(int argc, char **argv, int pos)
 {
+   if (argv[pos][0] == '\0')
+      return false;
    return true;
 }
 
@@ -618,7 +620,9 @@ bool MarkerParser::isExecutable(int argc, char **argv, int pos, const std::set<s
 
 bool MarkerParser::includeArg(int argc, char **argv, int pos)
 {
-   return (strcmp(argv[pos], "spindlemarker") != 0);
+   if (strcmp(argv[pos], "spindlemarker") == 0)
+      return false;
+   return LauncherParser::includeArg(argc, argv, pos);
 }
 
 void initParsers(int parsers_enabled, set<LauncherParser *> &all_parsers)
