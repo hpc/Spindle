@@ -1,9 +1,18 @@
 #!/bin/sh
 
+if [ x$SLURM_CPUS_ON_NODE = x ] ; then
+export SLURM_CPUS_ON_NODE=1
+fi
+
 if [ x$SPINDLE_TEST_ARGS = x ] ; then
 ((PROCS=$SLURM_NNODES*$SLURM_CPUS_ON_NODE))
 else
 PROCS=$SPINDLE_TEST_ARGS
 fi
 export PROCS
-$SPINDLE $SPINDLE_OPTS srun -n $PROCS $*
+
+if test "x$SPINDLE_BGQ_LD_PRELOAD" == "xtrue"; then
+PRELOAD_ARGS="--runjob-opts=--envs LD_PRELOAD=$LIBRARY_LIST"
+fi
+
+$SPINDLE $SPINDLE_OPTS srun "$PRELOAD_ARGS" -n $PROCS $*

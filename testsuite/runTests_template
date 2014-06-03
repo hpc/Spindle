@@ -1,6 +1,8 @@
 #!/bin/sh
 
 export SPINDLE_TEST_ARGS="$@"
+export SPINDLE_BLUEGENE="BLUEGENE_TEST"
+
 ./run_driver --dependency --push
 ./run_driver --dlopen --push
 ./run_driver --dlreopen --push
@@ -15,19 +17,23 @@ export SPINDLE_TEST_ARGS="$@"
 ./run_driver --partial --pull
 ./run_driver --ldpreload --pull
 
+if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --dependency --fork
 ./run_driver --dlopen --fork
 ./run_driver --dlreopen --fork
 ./run_driver --reorder --fork
 ./run_driver --partial --fork
 ./run_driver --ldpreload --fork
+fi
 
+if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --dependency --forkexec
 ./run_driver --dlopen --forkexec
 ./run_driver --dlreopen --forkexec
 ./run_driver --reorder --forkexec
 ./run_driver --partial --forkexec
 ./run_driver --ldpreload --forkexec
+fi
 
 ./run_driver --dependency --chdir
 ./run_driver --dlopen --chdir

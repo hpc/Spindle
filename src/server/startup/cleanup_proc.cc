@@ -131,8 +131,12 @@ void CleanupProc::rmRecursive(string path)
 
    if (result == -1)
       return;
-   else if (!(buf.st_mode & S_IFDIR)) {
-      unlink(path.c_str());
+   else if ((buf.st_mode & S_IFLNK) || (!(buf.st_mode & S_IFDIR))) {
+      result = unlink(path.c_str());
+      if (result == -1) {
+         //Something's wrong, we shouldn't fail to unlink.  Stop deleting.
+         _exit(0);
+      }
       return;
    }
    else {
@@ -141,6 +145,8 @@ void CleanupProc::rmRecursive(string path)
          return;
       struct dirent *dp;
       while ((dp = readdir(dir))) {
+         if ((strcmp(dp->d_name, ".") == 0) || (strcmp(dp->d_name, "..") == 0))
+            continue;
          string newpath = path + string("/") + dp->d_name;
          rmRecursive(newpath);
       }

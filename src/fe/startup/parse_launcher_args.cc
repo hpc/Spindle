@@ -217,6 +217,8 @@ static cmdoption_t srun_options[] = {
    { "-V",   "--version",            0 }
 };
 static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
+static const char *srun_bg_env_bare_str = "%s --envs LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
+
 static const unsigned int srun_size (sizeof(srun_options) / sizeof(cmdoption_t));
 
 static cmdoption_t wreckrun_options[] = {
@@ -357,6 +359,15 @@ bool LauncherParser::parseCustomArg(int /*argc*/, char** /*argv*/, int /*arg_pos
  **/
 bool LauncherParser::includeArg(int argc, char **argv, int pos)
 {
+   return true;
+}
+
+bool LauncherParser::addBGEnvStr(int &pos, char **new_argv, string format, string default_libstring, string location, string number, string options, string shmcache_size)
+{
+   int str_len = format.length() + options.length() + location.length() + number.length() + shmcache_size.length() + default_libstring.length() + 1;
+   char *bg_env = (char *) malloc(str_len);
+   snprintf(bg_env, str_len, format.c_str(), default_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
+   new_argv[pos++] = bg_env;
    return true;
 }
 
@@ -502,6 +513,31 @@ string LauncherParser::getBGString() const
 int LauncherParser::getCode() const
 {
    return code;
+}
+
+SRunParser::SRunParser(cmdoption_t *options, size_t options_size, string bg_string, string name_, int code_) :
+   LauncherParser(options, options_size, bg_string, name_, code_)
+{
+}
+
+SRunParser::~SRunParser()
+{
+}
+
+bool SRunParser::addBGEnvStr(int &pos, char **new_argv, string format, string default_libstring, string location, string number, string options, string shmcache_size)
+{
+   for (int i = 0; i < pos; i++) {
+      if (strstr(new_argv[i], "--runjob-opts=") == new_argv[i]) {
+         int newlen = strlen(new_argv[i]) + strlen(srun_bg_env_bare_str) + default_libstring.length() + location.length() + number.length() + options.length() + shmcache_size.length() + 1;
+         char *newstr = (char *) malloc(newlen);
+         snprintf(newstr, newlen, srun_bg_env_bare_str, new_argv[i], default_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
+         free(new_argv[i]);
+         new_argv[i] = newstr;
+         return true;
+      }
+   }
+
+   return LauncherParser::addBGEnvStr(pos, new_argv, format, default_libstring, location, number, options, shmcache_size);
 }
 
 SerialParser::SerialParser(cmdoption_t *options, size_t options_size, string bg_string, string name_, int code_) :

@@ -1,4 +1,4 @@
-AC_INIT([spindle], m4_esyscmd([tr -d '\n' < VERSION]), m4_esyscmd([tr -d '\n' < BUG_EMAIL]))
+AC_INIT([spindle], m4_esyscmd([tr -d '\n' < VERSION]), m4_esyscmd([tr -d '\n' < BUG_EMAIL])) 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_SYSTEM
@@ -30,7 +30,11 @@ AC_SUBST(TESTRM)
 
 #MPI detection
 m4_include([m4/lx_find_mpi.m4])
+AC_LANG_PUSH(C)
 LX_FIND_MPI
+AC_LANG(C++)
+LX_FIND_MPI
+AC_LANG_POP
 
 AC_ARG_VAR([BE_CC], [CC for back end])
 AC_ARG_VAR([BE_CFLAGS], [CFLAGS back end])
