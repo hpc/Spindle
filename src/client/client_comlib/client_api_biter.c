@@ -54,12 +54,12 @@ int client_close_connection_biter(int connid)
 
 int client_register_connection_biter(char *connection_str)
 {
-   assert(0 && "No fork or exec support with biter");
+   return 0;
 }
 
 char *client_get_connection_string_biter(int fd)
 {
-   assert(0 && "No fork or exec support with biter");
+   return NULL;
 }
 
 int client_send_msg_biter(int connid, ldcs_message_t *msg)

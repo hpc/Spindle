@@ -94,13 +94,13 @@ static void setup_environment()
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
 
    char *connection_str = client_get_connection_string(ldcsid);
-   assert(connection_str);
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
-   setenv("LDCS_CONNECTION", connection_str, 1);
+   if (connection_str)
+      setenv("LDCS_CONNECTION", connection_str, 1);
    setenv("LDCS_OPTIONS", opts_s, 1);
    setenv("LDCS_CACHESIZE", cachesize_s, 1);
 }
@@ -209,6 +209,10 @@ static void adjust_script()
    char **new_cmdline;
    char *new_executable;
 
+   if (!(opts & OPT_RELOCAOUT)) {
+      return;
+   }
+
    if (!executable)
       return;
 
@@ -222,6 +226,11 @@ static void adjust_script()
 
 static void get_clientlib()
 {
+   if (!(opts & OPT_RELOCAOUT)) {
+      client_lib = default_libstr;
+      return;
+   }
+
    send_file_query(ldcsid, default_libstr, &client_lib);
    if (client_lib == NULL) {
       client_lib = default_libstr;
@@ -311,10 +320,12 @@ int main(int argc, char *argv[])
       launch_daemon(location);
    }
    
-   result = establish_connection();
-   if (result == -1) {
-      err_printf("spindle_bootstrap failed to connect to daemons\n");
-      return -1;
+   if (opts & OPT_RELOCAOUT) {
+      result = establish_connection();
+      if (result == -1) {
+         err_printf("spindle_bootstrap failed to connect to daemons\n");
+         return -1;
+      }
    }
 
    get_executable();
