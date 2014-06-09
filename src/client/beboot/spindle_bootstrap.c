@@ -250,6 +250,7 @@ static char *realize(char *path)
    char *origpath, *cur_slash = NULL, *trailing;
    struct stat buf;
    char newpath[MAX_PATH_LEN+1];
+   int lastpos;
    newpath[MAX_PATH_LEN] = '\0';
 
    origpath = strdup(path);
@@ -278,6 +279,10 @@ static char *realize(char *path)
    strncat(newpath, trailing, MAX_PATH_LEN);
    newpath[MAX_PATH_LEN] = '\0';
    free(origpath);
+
+   lastpos = strlen(newpath)-1;
+   if (lastpos >= 0 && newpath[lastpos] == '/')
+      newpath[lastpos] = '\0';
 
    debug_printf2("Realized %s to %s\n", path, newpath);
    return strdup(newpath);

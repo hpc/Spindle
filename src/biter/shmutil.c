@@ -26,6 +26,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "shmutil.h"
 #include "sheep.h"
 
+extern char *spindle_strdup(const char *s);
+extern void *spindle_malloc(size_t s);
+extern void spindle_free(void *p);
 int take_lock(lock_t *lock)
 {
    unsigned long one = 1, result = 0;
@@ -116,7 +119,7 @@ int init_shm(const char *tmpdir, size_t shm_size, int unique_number, shminfo_t *
    initialized = 1;
 
    path_len = strlen(tmpdir) + 32;
-   shm_file = (char *) malloc(path_len);
+   shm_file = (char *) spindle_malloc(path_len);
    if (!shm_file) {
       goto error;
    }
@@ -164,7 +167,7 @@ int init_shm(const char *tmpdir, size_t shm_size, int unique_number, shminfo_t *
       shm_unlink_wrapper(shm_file);
    }
    if (shm_file)
-      free(shm_file);
+      spindle_free(shm_file);
 
    cached_retval = -1;
    return -1;

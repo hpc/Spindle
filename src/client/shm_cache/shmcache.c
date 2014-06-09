@@ -14,6 +14,7 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "ldcs_api.h"
 #include "shmcache.h"
 #include "sheep.h"
 #include "client_heap.h"
@@ -34,6 +35,8 @@ struct entry_t {
 char *in_progress;
 
 #define HASH_SIZE 1024
+
+static char return_name[MAX_PATH_LEN+1];
 
 static sheep_ptr_t *hash_ptr;
 static sheep_ptr_t *lru_head;
@@ -241,7 +244,6 @@ static int shmcache_lookup_worker(const char *libname, char **result, int have_w
    struct entry_t *entry;
    sheep_ptr_t p;
    char *ent_result;
-   size_t result_len;
 
    debug_printf3("Looking up %s in shmcache\n", libname);
    key = str_hash(libname);
@@ -281,9 +283,7 @@ static int shmcache_lookup_worker(const char *libname, char **result, int have_w
    }
    else {
       debug_printf3("Found %s in shmcache with mapping to %s\n", libname, ent_result);
-      result_len = strlen(ent_result) + 1;
-      *result = (char *) spindle_malloc(result_len);
-      strncpy(*result, ent_result, result_len);
+      *result = ent_result;
    }
 
    return 0;
@@ -431,16 +431,27 @@ static int init_cache(size_t hlimit)
 int shmcache_lookup_or_add(const char *libname, char **result)
 {
    int iresult;
+   char *strresult = NULL;
    if (!table)
       return -1;
-
    take_reader_lock();
-   iresult = shmcache_lookup_worker(libname, result, 0, NULL);
+   iresult = shmcache_lookup_worker(libname, &strresult, 0, NULL);
    if (iresult == -1) {
       upgrade_to_writelock();
       shmcache_add_worker(libname, in_progress, 0);
       downgrade_to_readlock();
    }
+
+   if (strresult == in_progress)
+      *result = in_progress;
+   else if (strresult) {
+      *result = strncpy(return_name, strresult, sizeof(return_name));
+      return_name[sizeof(return_name)-1] = '\0';
+   }
+   else {
+      *result = NULL;
+   }
+                        
    release_reader_lock();
    return iresult;
 }
@@ -516,6 +527,7 @@ int shmcache_post_fork()
 int shmcache_waitfor_update(const char *libname, char **result)
 {
    int iresult;
+   char *sresult;
    struct entry_t *entry;
    if (!table)
       return -1;
@@ -528,7 +540,14 @@ int shmcache_waitfor_update(const char *libname, char **result)
 
    debug_printf3("Blocking until %s is updated in shmcache\n", libname);
    while (sheep_ptr(&entry->result) == in_progress);
-   *result = sheep_ptr(&entry->result);
 
+   sresult = sheep_ptr(&entry->result);
+   
+   if (sresult == NULL)
+      *result = NULL;
+   else {
+      *result = strncpy(return_name, (char *) sheep_ptr(&entry->result), sizeof(return_name));
+      return_name[sizeof(return_name)-1] = '\0';
+   }
    return 0;
 }

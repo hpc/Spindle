@@ -339,21 +339,25 @@ static int read_stat(char *localname, struct stat *buf)
 static int fetch_from_cache(const char *name, char **newname)
 {
    int result;
-   result = shmcache_lookup_or_add(name, newname);
+   char *result_name;
+   result = shmcache_lookup_or_add(name, &result_name);
    if (result == -1)
       return 0;
 
-   debug_printf2("Shared cache has mapping from %s to %s\n", name,
-                 (*newname == in_progress) ? "[IN PROGRESS]" :
-                 (*newname ? *newname : "[NOT PRESENT]"));
-   if (*newname == in_progress) {
+   debug_printf2("Shared cache has mapping from %s (%p) to %s (%p)\n", name, name,
+                 (result_name == in_progress) ? "[IN PROGRESS]" :
+                 (result_name ? result_name : "[NOT PRESENT]"),
+                 result_name);
+   if (result_name == in_progress) {
       debug_printf("Waiting for update to %s\n", name);
-      result = shmcache_waitfor_update(name, newname);
+      result = shmcache_waitfor_update(name, &result_name);
       if (result == -1) {
          err_printf("Error waiting for update to shared cache\n");
          return 0;
       }
    }
+   
+   *newname = result_name ? spindle_strdup(result_name) : NULL;
    return 1;
 }
 
@@ -500,7 +504,7 @@ char *client_library_load(const char *name)
 
    debug_printf("la_objsearch redirecting %s to %s\n", name, newname);
    test_log(newname);
-   return strdup(newname);
+   return newname;
 }
 
 python_path_t *pythonprefixes = NULL;
