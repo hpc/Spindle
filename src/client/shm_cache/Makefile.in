@@ -205,7 +205,7 @@ top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libshmcache.la
 libshmcache_la_SOURCES = shmcache.c
 @BITER_FALSE@libshmcache_la_LIBADD = $(top_builddir)/biter/libsheep.la
-AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/shm_cache -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib
+AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/shm_cache -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include
 all: all-am
 
 .SUFFIXES:
