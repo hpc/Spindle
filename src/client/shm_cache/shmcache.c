@@ -29,6 +29,7 @@ struct entry_t {
    sheep_ptr_t lru_next;
    sheep_ptr_t lru_prev;
    unsigned int hash_key;
+   unsigned int pending_count;
    sheep_ptr_t hash_next;
 };
 
@@ -194,7 +195,11 @@ static int clean_oldest_entry()
    entry = (struct entry_t *) sheep_ptr(lru_end);
 
    if (sheep_ptr(&entry->result) == in_progress) {
-      err_printf("Tried to delete in_progress shmcache entry\n");
+      debug_printf("Tried to delete in_progress shmcache entry.  Not cleaning\n");
+      return -1;
+   }
+   if (entry->pending_count) {
+      debug_printf("Tried to delete pending shmcache entry.  Not cleaning\n");
       return -1;
    }
    pentry = entry->lru_prev;
@@ -358,6 +363,7 @@ static int shmcache_add_worker(const char *libname, const char *mapped_name, int
    entry->hash_key = str_hash(libname);
    entry->hash_next = table[entry->hash_key];
    entry->lru_next.val = entry->lru_prev.val = 0;
+   entry->pending_count = 0;
    table[entry->hash_key] = ptr_sheep(entry);
    mark_recently_used(entry, 1);
    debug_printf3("Successfully created shmcache entry %s\n", libname);
@@ -527,6 +533,7 @@ int shmcache_post_fork()
 int shmcache_waitfor_update(const char *libname, char **result)
 {
    int iresult;
+   int set_pending_count = 0;
    char *sresult;
    struct entry_t *entry;
    if (!table)
@@ -534,9 +541,17 @@ int shmcache_waitfor_update(const char *libname, char **result)
 
    take_reader_lock();
    iresult = shmcache_lookup_worker(libname, result, 0, &entry);
-   release_reader_lock();
-   if (iresult == -1)
+   if (iresult == -1) {
+      release_reader_lock();
       return -1;
+   }
+   if (sheep_ptr(&entry->result) == in_progress) {
+      upgrade_to_writelock();
+      entry->pending_count++;
+      downgrade_to_readlock();
+      set_pending_count = 1;
+   }
+   release_reader_lock();
 
    debug_printf3("Blocking until %s is updated in shmcache\n", libname);
    while (sheep_ptr(&entry->result) == in_progress);
@@ -549,5 +564,12 @@ int shmcache_waitfor_update(const char *libname, char **result)
       *result = strncpy(return_name, (char *) sheep_ptr(&entry->result), sizeof(return_name));
       return_name[sizeof(return_name)-1] = '\0';
    }
+   
+   if (set_pending_count) {
+      take_writer_lock();
+      entry->pending_count--;
+      release_writer_lock();
+   }
+
    return 0;
 }

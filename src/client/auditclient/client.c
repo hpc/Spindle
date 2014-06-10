@@ -130,7 +130,7 @@ static int init_server_connection()
 
    if (opts & OPT_SHMCACHE) {
       assert(shm_cachesize);
-#if defined(os_bluegene)
+#if defined(COMM_BITER)
       shm_cache_limit = shm_cachesize > 512*1024 ? shm_cachesize - 512*1024 : 0;
 #else
       shm_cache_limit = shm_cachesize;
@@ -352,7 +352,7 @@ static int fetch_from_cache(const char *name, char **newname)
       debug_printf("Waiting for update to %s\n", name);
       result = shmcache_waitfor_update(name, &result_name);
       if (result == -1) {
-         err_printf("Error waiting for update to shared cache\n");
+         debug_printf("Entry for %s deleted while waiting for update\n", name);
          return 0;
       }
    }
@@ -387,7 +387,7 @@ int get_existance_test(int fd, const char *path, int *exists)
       get_cache_name(path, "&", cache_name);
       cache_name[sizeof(cache_name)-1] = '\0';
       found_file = fetch_from_cache(cache_name, &exist_str);
-      if (found_file == 0) {
+      if (found_file) {
          *exists = (exist_str[0] == 'y');
          return 0;
       }
@@ -398,7 +398,7 @@ int get_existance_test(int fd, const char *path, int *exists)
       return -1;
 
    if (use_cache) {
-      exist_str = *exists ? "y" : NULL;
+      exist_str = *exists ? "y" : "n";
       shmcache_update(cache_name, exist_str);
    }
    return 0;
