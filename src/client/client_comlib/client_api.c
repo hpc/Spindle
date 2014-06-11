@@ -87,8 +87,6 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
 {
    int path_len = strlen(path) + (is_lstat ? 0 : 1) + 1;
    ldcs_message_t message;
-   char buffer[MAX_PATH_LEN+1];
-
 
    if (path_len >= MAX_PATH_LEN+1) {
       err_printf("stat path of %s is too long for Spindle\n", path);
@@ -96,7 +94,7 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
    }
 
    /* Regular stats are sent with a preceeding '*', lstats are not */
-   snprintf(buffer, MAX_PATH_LEN+1, "%s%s", is_lstat ? "" : "*", path);
+   snprintf(newpath, MAX_PATH_LEN+1, "%s%s", is_lstat ? "" : "*", path);
    
    /* Setup packet */
    message.header.type = LDCS_MSG_STAT_QUERY;
@@ -123,7 +121,6 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
       *newpath = '\0';
       return 0;
    }
-
 
    return 0;
 }
