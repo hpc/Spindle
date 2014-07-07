@@ -187,7 +187,6 @@ static int clean_oldest_entry()
 {
    sheep_ptr_t pentry, i;
    struct entry_t *entry, *prev_hash_entry;
-   char *lresult;
 
    debug_printf3("Cleaning oldest entries from shmcache for more space\n");
    if (IS_SHEEP_NULL(lru_end))
@@ -205,9 +204,11 @@ static int clean_oldest_entry()
    pentry = entry->lru_prev;
 
    prev_hash_entry = NULL;
-   lresult = (char *) sheep_ptr(&entry->libname);
-   debug_printf3("Cleaning entry %s -> %s\n", ((char *) sheep_ptr(&entry->libname)) ? : "[NULL]", 
-                 lresult == NULL ? "[NULL]" : (lresult == in_progress ? "[IN PROGRESS]" : lresult));
+   debug_printf3("Cleaning entry %s -> %s\n",
+                 ((char *) sheep_ptr(&entry->libname)) ? : "[NULL]", 
+                 (((char *) sheep_ptr(&entry->result)) ? 
+                  (((char *) sheep_ptr(&entry->result)) == in_progress ? "[IN PROGRESS]" : ((char *) sheep_ptr(&entry->result))) :
+                  "[NULL]"));
    for (i = table[entry->hash_key]; sheep_ptr(&i) != (void*) entry; i = prev_hash_entry->hash_next)
       prev_hash_entry = (struct entry_t *) sheep_ptr(&i);
 
