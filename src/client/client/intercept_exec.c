@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "ldcs_api.h"
 #include "client.h"
@@ -31,9 +32,15 @@
 #include "should_intercept.h"
 #include "exec_util.h"
 
-static int (*orig_execv)(const char *path, char *const argv[]);
-static int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
-static int (*orig_execvp)(const char *file, char *const argv[]);
+#define INTERCEPT_EXEC
+#if defined(INSTR_LIB)
+#include "sym_alias.h"
+#endif
+
+int (*orig_execv)(const char *path, char *const argv[]);
+int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
+int (*orig_execvp)(const char *file, char *const argv[]);
+pid_t (*orig_fork)();
 
 static int prep_exec(const char *filepath, char **argv,
                      char *newname, char *newpath, int newpath_size,
@@ -173,7 +180,7 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
 
 
 
-static int execl_wrapper(const char *path, const char *arg0, ...)
+int execl_wrapper(const char *path, const char *arg0, ...)
 {
    int error, result;
    char newpath[MAX_PATH_LEN+1];
@@ -184,7 +191,10 @@ static int execl_wrapper(const char *path, const char *arg0, ...)
 
    find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execl redirection of %s to %s\n", path, newpath);
-   result = execv(newpath, new_argv ? new_argv : argv);
+   if (orig_execv)
+      result = orig_execv(newpath, new_argv ? new_argv : argv);
+   else
+      result = execv(newpath, new_argv ? new_argv : argv);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -193,7 +203,7 @@ static int execl_wrapper(const char *path, const char *arg0, ...)
    return result;
 }
 
-static int execv_wrapper(const char *path, char *const argv[])
+int execv_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
@@ -213,7 +223,7 @@ static int execv_wrapper(const char *path, char *const argv[])
 
 }
 
-static int execle_wrapper(const char *path, const char *arg0, ...)
+int execle_wrapper(const char *path, const char *arg0, ...)
 {
    int error, result;
    char **envp;
@@ -225,7 +235,10 @@ static int execle_wrapper(const char *path, const char *arg0, ...)
    debug_printf2("Intercepted execle on %s\n", path);
    find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execle redirection of %s to %s\n", path, newpath);
-   result = execve(newpath, new_argv ? new_argv : argv, envp);
+   if (orig_execve)
+      result = orig_execve(newpath, new_argv ? new_argv : argv, envp);
+   else
+      result = execve(newpath, new_argv ? new_argv : argv, envp);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -234,7 +247,7 @@ static int execle_wrapper(const char *path, const char *arg0, ...)
    return result;
 }
 
-static int execve_wrapper(const char *path, char *const argv[], char *const envp[])
+int execve_wrapper(const char *path, char *const argv[], char *const envp[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
@@ -251,7 +264,7 @@ static int execve_wrapper(const char *path, char *const argv[], char *const envp
    return result;
 }
 
-static int execlp_wrapper(const char *path, const char *arg0, ...)
+int execlp_wrapper(const char *path, const char *arg0, ...)
 {
    int error, result;
    char newpath[MAX_PATH_LEN+1];
@@ -260,7 +273,10 @@ static int execlp_wrapper(const char *path, const char *arg0, ...)
    debug_printf2("Intercepted execlp on %s\n", path);
    find_exec_pathsearch(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
    debug_printf("execlp redirection of %s to %s\n", path, newpath);
-   result = execv(newpath, new_argv ? new_argv : argv);
+   if (orig_execv)
+      result = orig_execv(newpath, new_argv ? new_argv : argv);
+   else
+      result = execv(newpath, new_argv ? new_argv : argv);
    error = errno;
 
    VARARG_TO_ARGV_CLEANUP;
@@ -269,7 +285,7 @@ static int execlp_wrapper(const char *path, const char *arg0, ...)
    return result;
 }
 
-static int execvp_wrapper(const char *path, char *const argv[])
+int execvp_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
@@ -286,50 +302,13 @@ static int execvp_wrapper(const char *path, char *const argv[])
    return result;
 }
 
-ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "execl") == 0) {
-      return (ElfX_Addr) execl_wrapper;
-   }
-   else if (strcmp(symname, "execv") == 0) {
-      if (!orig_execv)
-         orig_execv = (void *) value;
-      return (ElfX_Addr) execv_wrapper;
-   }
-   else if (strcmp(symname, "execle") == 0) {
-      return (ElfX_Addr) execle_wrapper;
-   }
-   else if (strcmp(symname, "execve") == 0) {
-      if (!orig_execve)
-         orig_execve = (void *) value;
-      return (ElfX_Addr) execve_wrapper;
-   }
-   else if (strcmp(symname, "execlp") == 0) {
-      return (ElfX_Addr) execlp_wrapper;
-   }
-   else if (strcmp(symname, "execvp") == 0) {
-      if (!orig_execvp)
-         orig_execvp = (void *) value;
-      return (ElfX_Addr) execvp_wrapper;
-   }
-   else
-      return (ElfX_Addr) value;
-}
-
 pid_t vfork_wrapper()
 {
    /* Spindle can't handle vforks */
    debug_printf("Translating vfork into fork\n");
-   return fork();
+   if (orig_fork)
+      return orig_fork();
+   else
+      return fork();
 }
 
-ElfX_Addr redirect_fork(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "vfork") == 0) {
-      return (ElfX_Addr) vfork_wrapper;
-   }
-   else {
-      debug_printf3("Not translating fork call %s\n", symname);
-      return (ElfX_Addr) value;
-   }
-}

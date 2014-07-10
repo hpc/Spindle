@@ -32,10 +32,16 @@
 #include "client_api.h"
 #include "should_intercept.h"
 
-static int (*orig_open)(const char *pathname, int flags, ...);
-static int (*orig_open64)(const char *pathname, int flags, ...);
-static FILE* (*orig_fopen)(const char *pathname, const char *mode);
-static FILE* (*orig_fopen64)(const char *pathname, const char *mode);
+#define INTERCEPT_OPEN
+#if defined(INSTR_LIB)
+#include "sym_alias.h"
+#endif
+
+int (*orig_open)(const char *pathname, int flags, ...);
+int (*orig_open64)(const char *pathname, int flags, ...);
+FILE* (*orig_fopen)(const char *pathname, const char *mode);
+FILE* (*orig_fopen64)(const char *pathname, const char *mode);
+int (*orig_close)(int fd);
 
 /* returns:
    0 if not existent
@@ -203,7 +209,7 @@ FILE *fopen_worker(const char *path, const char *mode, int is_64)
    return NULL;
 }
 
-static int rtcache_open(const char *path, int oflag, ...)
+int rtcache_open(const char *path, int oflag, ...)
 {
    va_list argp;
    mode_t mode = (mode_t) 0;
@@ -218,7 +224,7 @@ static int rtcache_open(const char *path, int oflag, ...)
    return open_worker(path, oflag, mode, 0);
 }
 
-static int rtcache_open64(const char *path, int oflag, ...)
+int rtcache_open64(const char *path, int oflag, ...)
 {
    va_list argp;
    mode_t mode = (mode_t) 0;
@@ -233,19 +239,19 @@ static int rtcache_open64(const char *path, int oflag, ...)
    return open_worker(path, oflag, mode, 1);
 }
 
-static FILE *rtcache_fopen(const char *path, const char *mode)
+FILE *rtcache_fopen(const char *path, const char *mode)
 {
    debug_printf3("potential fopen redirection of %s\n", path);
    return fopen_worker(path, mode, 0);
 }
 
-static FILE *rtcache_fopen64(const char *path, const char *mode)
+FILE *rtcache_fopen64(const char *path, const char *mode)
 {
    debug_printf3("potential fopen64 redirection of %s\n", path);
    return fopen_worker(path, mode, 1);
 }
 
-static int rtcache_close(int fd)
+int rtcache_close(int fd)
 {
    /* Don't let applications (looking at you, tcsh) close our FDs */
    check_for_fork();
@@ -254,39 +260,6 @@ static int rtcache_close(int fd)
       set_errno(EBADF);
       return -1;
    }
-   return close(fd);
+   return orig_close(fd);
 }
 
-ElfX_Addr redirect_open(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "open") == 0) {
-      if (!orig_open)
-         orig_open = (void *) value;
-      return (ElfX_Addr) rtcache_open;
-   }
-   else if (strcmp(symname, "open64") == 0) {
-      if (!orig_open64)
-         orig_open64 = (void *) value;
-      return (ElfX_Addr) rtcache_open64;
-   }
-   else if (strcmp(symname, "fopen") == 0) {
-      if (!orig_fopen)
-         orig_fopen = (void *) value;
-      return (ElfX_Addr) rtcache_fopen;
-   }
-   else if (strcmp(symname, "fopen64") == 0) {
-      if (!orig_fopen64)
-         orig_fopen64 = (void *) value;
-      return (ElfX_Addr) rtcache_fopen64;
-   }
-   else
-      return (ElfX_Addr) value;
-}
-
-ElfX_Addr redirect_close(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "close") == 0) {
-      return (ElfX_Addr) rtcache_close;
-   }
-   return value;
-}

@@ -24,13 +24,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 #include <string.h>
 
-
 #include "client.h"
 #include "client_heap.h"
 #include "spindle_debug.h"
 #include "config.h"
-
-static FILE* (*orig_spindle_fopen)(const char *pathname, const char *mode);
 
 #if !defined(TLS)
 #define TLS
@@ -38,7 +35,12 @@ static FILE* (*orig_spindle_fopen)(const char *pathname, const char *mode);
 static TLS int intercept_api_enabled = 0;
 static TLS int under_spindle_call = 0;
 
-static int int_spindle_open(const char *pathname, int flags, ...)
+#define INTERCEPT_SPINDLEAPI
+#if defined(INSTR_LIB)
+#include "sym_alias.h"
+#endif
+
+int int_spindle_open(const char *pathname, int flags, ...)
 {
    va_list argp;
    mode_t mode = (mode_t) 0;
@@ -57,7 +59,7 @@ static int int_spindle_open(const char *pathname, int flags, ...)
    return result;
 }
 
-static FILE *int_spindle_fopen(const char *path, const char *opts)
+FILE *int_spindle_fopen(const char *path, const char *opts)
 {
    FILE *result;
    under_spindle_call++;
@@ -66,7 +68,7 @@ static FILE *int_spindle_fopen(const char *path, const char *opts)
    return result;
 }
 
-static int int_spindle_stat(const char *path, struct stat *buf)
+int int_spindle_stat(const char *path, struct stat *buf)
 {
    int result;
    debug_printf("User called spindle_stat(%s, %p)\n", path, buf);
@@ -79,7 +81,7 @@ static int int_spindle_stat(const char *path, struct stat *buf)
    return stat(path, buf);
 }
 
-static int int_spindle_lstat(const char *path, struct stat *buf)
+int int_spindle_lstat(const char *path, struct stat *buf)
 {
    debug_printf("User called spindle_lstat(%s, %p)\n", path, buf);
 
@@ -91,22 +93,22 @@ static int int_spindle_lstat(const char *path, struct stat *buf)
    return lstat(path, buf);
 }
 
-static int int_spindle_is_present()
+int int_spindle_is_present()
 {
    return 1;
 }
 
-static void int_spindle_enable()
+void int_spindle_enable()
 {
    intercept_api_enabled++;
 }
 
-static void int_spindle_disable()
+void int_spindle_disable()
 {
    intercept_api_enabled--;
 }
 
-static int int_spindle_is_enabled()
+int int_spindle_is_enabled()
 {
    return (intercept_api_enabled > 0);
 }
@@ -115,36 +117,3 @@ int relocate_spindleapi()
 {
    return intercept_api_enabled > 0 || under_spindle_call;
 }
-
-ElfX_Addr redirect_spindleapi(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "spindle_enable") == 0) {
-      return (ElfX_Addr) int_spindle_enable;
-   }
-   else if (strcmp(symname, "spindle_disable") == 0) {
-      return (ElfX_Addr) int_spindle_disable;
-   }
-   else if (strcmp(symname, "spindle_is_enabled") == 0) {
-      return (ElfX_Addr) int_spindle_is_enabled;
-   }
-   else if (strcmp(symname, "spindle_is_present") == 0) {
-      return (ElfX_Addr) int_spindle_is_present;
-   }
-   else if (strcmp(symname, "spindle_open") == 0) {
-      return (ElfX_Addr) int_spindle_open;
-   }
-   else if (strcmp(symname, "spindle_stat") == 0) {
-      return (ElfX_Addr) int_spindle_stat;
-   }
-   else if (strcmp(symname, "spindle_lstat") == 0) {
-      return (ElfX_Addr) int_spindle_lstat;
-   }
-   else if (strcmp(symname, "spindle_fopen") == 0) {
-      orig_spindle_fopen = (void *) value;
-      return (ElfX_Addr) int_spindle_fopen;
-   }
-   else {
-      return value;
-   }
-}
-

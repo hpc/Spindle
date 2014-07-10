@@ -35,10 +35,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BGQ_BLD_TRUE@am__append_1 = -I/bgsys/drivers/ppcfloor/comm/lib/gnu -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/comm/sys/include -I/bgsys/drivers/ppcfloor/spi/include -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
-@BGQ_BLD_TRUE@am__append_2 = $(BS)/bgq_ids.c
-@LINUX_BLD_TRUE@am__append_3 = $(BS)/linux_ids.c
-subdir = biter
+@SOCKETS_TRUE@am__append_1 = libspindle_instr_socket.la
+@PIPES_TRUE@am__append_2 = libspindle_instr_pipe.la
+@BITER_TRUE@am__append_3 = libspindle_instr_biter.la
+subdir = instrclient
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
@@ -50,21 +50,66 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-LTLIBRARIES = $(noinst_LTLIBRARIES)
-libbiterc_la_DEPENDENCIES = libsheep.la
-am__libbiterc_la_SOURCES_DIST = $(BS)/biterc.c $(BS)/client_queue.c \
-	$(BS)/demultiplex.c $(BS)/bgq_ids.c $(BS)/linux_ids.c
-@BGQ_BLD_TRUE@am__objects_1 = bgq_ids.lo
-@LINUX_BLD_TRUE@am__objects_2 = linux_ids.lo
-am_libbiterc_la_OBJECTS = biterc.lo client_queue.lo demultiplex.lo \
-	$(am__objects_1) $(am__objects_2)
-libbiterc_la_OBJECTS = $(am_libbiterc_la_OBJECTS)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__installdirs = "$(DESTDIR)$(pkglibexecdir)"
+LTLIBRARIES = $(pkglibexec_LTLIBRARIES)
+libspindle_instr_biter_la_DEPENDENCIES =  \
+	$(top_builddir)/client/libspindlec_biter.la $(INSTRLIB)
+am__objects_1 = intercept.lo
+am_libspindle_instr_biter_la_OBJECTS = $(am__objects_1)
+libspindle_instr_biter_la_OBJECTS =  \
+	$(am_libspindle_instr_biter_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-libsheep_la_LIBADD =
-am_libsheep_la_OBJECTS = sheep.lo shmutil.lo shm_wrappers.lo
-libsheep_la_OBJECTS = $(am_libsheep_la_OBJECTS)
+libspindle_instr_biter_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libspindle_instr_biter_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@BITER_TRUE@am_libspindle_instr_biter_la_rpath = -rpath \
+@BITER_TRUE@	$(pkglibexecdir)
+libspindle_instr_pipe_la_DEPENDENCIES =  \
+	$(top_builddir)/client/libspindlec_pipe.la $(INSTRLIB)
+am_libspindle_instr_pipe_la_OBJECTS = $(am__objects_1)
+libspindle_instr_pipe_la_OBJECTS =  \
+	$(am_libspindle_instr_pipe_la_OBJECTS)
+libspindle_instr_pipe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libspindle_instr_pipe_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@PIPES_TRUE@am_libspindle_instr_pipe_la_rpath = -rpath \
+@PIPES_TRUE@	$(pkglibexecdir)
+libspindle_instr_socket_la_DEPENDENCIES =  \
+	$(top_builddir)/client/libspindlec_socket.la $(INSTRLIB)
+am_libspindle_instr_socket_la_OBJECTS = $(am__objects_1)
+libspindle_instr_socket_la_OBJECTS =  \
+	$(am_libspindle_instr_socket_la_OBJECTS)
+libspindle_instr_socket_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libspindle_instr_socket_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@SOCKETS_TRUE@am_libspindle_instr_socket_la_rpath = -rpath \
+@SOCKETS_TRUE@	$(pkglibexecdir)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -91,8 +136,12 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libbiterc_la_SOURCES) $(libsheep_la_SOURCES)
-DIST_SOURCES = $(am__libbiterc_la_SOURCES_DIST) $(libsheep_la_SOURCES)
+SOURCES = $(libspindle_instr_biter_la_SOURCES) \
+	$(libspindle_instr_pipe_la_SOURCES) \
+	$(libspindle_instr_socket_la_SOURCES)
+DIST_SOURCES = $(libspindle_instr_biter_la_SOURCES) \
+	$(libspindle_instr_pipe_la_SOURCES) \
+	$(libspindle_instr_socket_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -212,14 +261,21 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libbiterc.la libsheep.la
-BS = $(top_srcdir)/../biter
-libbiterc_la_SOURCES = $(BS)/biterc.c $(BS)/client_queue.c \
-	$(BS)/demultiplex.c $(am__append_2) $(am__append_3)
-libbiterc_la_LIBADD = libsheep.la
-libsheep_la_SOURCES = $(BS)/sheep.c $(BS)/shmutil.c $(BS)/shm_wrappers.c
-AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging $(am__append_1)
+pkglibexec_LTLIBRARIES = $(am__append_1) $(am__append_2) \
+	$(am__append_3)
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib
+BASE_SRCS = intercept.c
+INSTRLIB = $(top_builddir)/client/libspindle_instr.la
 AM_CFLAGS = -fvisibility=hidden
+libspindle_instr_socket_la_SOURCES = $(BASE_SRCS)
+libspindle_instr_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(INSTRLIB)
+libspindle_instr_socket_la_LDFLAGS = -shared -avoid-version
+libspindle_instr_pipe_la_SOURCES = $(BASE_SRCS)
+libspindle_instr_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(INSTRLIB)
+libspindle_instr_pipe_la_LDFLAGS = -shared -avoid-version
+libspindle_instr_biter_la_SOURCES = $(BASE_SRCS)
+libspindle_instr_biter_la_LIBADD = $(top_builddir)/client/libspindlec_biter.la $(INSTRLIB)
+libspindle_instr_biter_la_LDFLAGS = -shared -avoid-version
 all: all-am
 
 .SUFFIXES:
@@ -233,9 +289,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign biter/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign instrclient/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign biter/Makefile
+	  $(AUTOMAKE) --foreign instrclient/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -254,19 +310,43 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+install-pkglibexecLTLIBRARIES: $(pkglibexec_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(pkglibexecdir)" || $(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)"
+	@list='$(pkglibexec_LTLIBRARIES)'; test -n "$(pkglibexecdir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(pkglibexecdir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(pkglibexecdir)"; \
+	}
 
-clean-noinstLTLIBRARIES:
-	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
-	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+uninstall-pkglibexecLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkglibexec_LTLIBRARIES)'; test -n "$(pkglibexecdir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(pkglibexecdir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(pkglibexecdir)/$$f"; \
+	done
+
+clean-pkglibexecLTLIBRARIES:
+	-test -z "$(pkglibexec_LTLIBRARIES)" || rm -f $(pkglibexec_LTLIBRARIES)
+	@list='$(pkglibexec_LTLIBRARIES)'; for p in $$list; do \
 	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
 	  test "$$dir" != "$$p" || dir=.; \
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libbiterc.la: $(libbiterc_la_OBJECTS) $(libbiterc_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libbiterc_la_OBJECTS) $(libbiterc_la_LIBADD) $(LIBS)
-libsheep.la: $(libsheep_la_OBJECTS) $(libsheep_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libsheep_la_OBJECTS) $(libsheep_la_LIBADD) $(LIBS)
+libspindle_instr_biter.la: $(libspindle_instr_biter_la_OBJECTS) $(libspindle_instr_biter_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspindle_instr_biter_la_LINK) $(am_libspindle_instr_biter_la_rpath) $(libspindle_instr_biter_la_OBJECTS) $(libspindle_instr_biter_la_LIBADD) $(LIBS)
+libspindle_instr_pipe.la: $(libspindle_instr_pipe_la_OBJECTS) $(libspindle_instr_pipe_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspindle_instr_pipe_la_LINK) $(am_libspindle_instr_pipe_la_rpath) $(libspindle_instr_pipe_la_OBJECTS) $(libspindle_instr_pipe_la_LIBADD) $(LIBS)
+libspindle_instr_socket.la: $(libspindle_instr_socket_la_OBJECTS) $(libspindle_instr_socket_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspindle_instr_socket_la_LINK) $(am_libspindle_instr_socket_la_rpath) $(libspindle_instr_socket_la_OBJECTS) $(libspindle_instr_socket_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -274,14 +354,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgq_ids.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biterc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client_queue.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demultiplex.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_ids.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sheep.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shm_wrappers.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shmutil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -306,70 +379,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-biterc.lo: $(BS)/biterc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT biterc.lo -MD -MP -MF $(DEPDIR)/biterc.Tpo -c -o biterc.lo `test -f '$(BS)/biterc.c' || echo '$(srcdir)/'`$(BS)/biterc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biterc.Tpo $(DEPDIR)/biterc.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/biterc.c' object='biterc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o biterc.lo `test -f '$(BS)/biterc.c' || echo '$(srcdir)/'`$(BS)/biterc.c
-
-client_queue.lo: $(BS)/client_queue.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT client_queue.lo -MD -MP -MF $(DEPDIR)/client_queue.Tpo -c -o client_queue.lo `test -f '$(BS)/client_queue.c' || echo '$(srcdir)/'`$(BS)/client_queue.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/client_queue.Tpo $(DEPDIR)/client_queue.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/client_queue.c' object='client_queue.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o client_queue.lo `test -f '$(BS)/client_queue.c' || echo '$(srcdir)/'`$(BS)/client_queue.c
-
-demultiplex.lo: $(BS)/demultiplex.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT demultiplex.lo -MD -MP -MF $(DEPDIR)/demultiplex.Tpo -c -o demultiplex.lo `test -f '$(BS)/demultiplex.c' || echo '$(srcdir)/'`$(BS)/demultiplex.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/demultiplex.Tpo $(DEPDIR)/demultiplex.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/demultiplex.c' object='demultiplex.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o demultiplex.lo `test -f '$(BS)/demultiplex.c' || echo '$(srcdir)/'`$(BS)/demultiplex.c
-
-bgq_ids.lo: $(BS)/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bgq_ids.lo -MD -MP -MF $(DEPDIR)/bgq_ids.Tpo -c -o bgq_ids.lo `test -f '$(BS)/bgq_ids.c' || echo '$(srcdir)/'`$(BS)/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bgq_ids.Tpo $(DEPDIR)/bgq_ids.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/bgq_ids.c' object='bgq_ids.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bgq_ids.lo `test -f '$(BS)/bgq_ids.c' || echo '$(srcdir)/'`$(BS)/bgq_ids.c
-
-linux_ids.lo: $(BS)/linux_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT linux_ids.lo -MD -MP -MF $(DEPDIR)/linux_ids.Tpo -c -o linux_ids.lo `test -f '$(BS)/linux_ids.c' || echo '$(srcdir)/'`$(BS)/linux_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/linux_ids.Tpo $(DEPDIR)/linux_ids.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/linux_ids.c' object='linux_ids.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o linux_ids.lo `test -f '$(BS)/linux_ids.c' || echo '$(srcdir)/'`$(BS)/linux_ids.c
-
-sheep.lo: $(BS)/sheep.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sheep.lo -MD -MP -MF $(DEPDIR)/sheep.Tpo -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sheep.Tpo $(DEPDIR)/sheep.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/sheep.c' object='sheep.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
-
-shmutil.lo: $(BS)/shmutil.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shmutil.lo -MD -MP -MF $(DEPDIR)/shmutil.Tpo -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shmutil.Tpo $(DEPDIR)/shmutil.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/shmutil.c' object='shmutil.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
-
-shm_wrappers.lo: $(BS)/shm_wrappers.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shm_wrappers.lo -MD -MP -MF $(DEPDIR)/shm_wrappers.Tpo -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shm_wrappers.Tpo $(DEPDIR)/shm_wrappers.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(BS)/shm_wrappers.c' object='shm_wrappers.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -463,6 +472,9 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES)
 installdirs:
+	for dir in "$(DESTDIR)$(pkglibexecdir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -490,7 +502,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+clean-am: clean-generic clean-libtool clean-pkglibexecLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -517,7 +529,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-pkglibexecLTLIBRARIES
 
 install-html: install-html-am
 
@@ -557,22 +569,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-pkglibexecLTLIBRARIES
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
+	clean-libtool clean-pkglibexecLTLIBRARIES ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am
+	install-pdf install-pdf-am install-pkglibexecLTLIBRARIES \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-pkglibexecLTLIBRARIES
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

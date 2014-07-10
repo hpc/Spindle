@@ -30,17 +30,6 @@ extern int ldcsid;
 typedef unsigned long ElfX_Addr;
 
 /**
- * Used by by client_call_binding to redirect interesting
- * calls to our wrapper functions.
- **/
-ElfX_Addr redirect_open(const char *symname, ElfX_Addr value);
-ElfX_Addr redirect_exec(const char *symname, ElfX_Addr value);
-ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value);
-ElfX_Addr redirect_close(const char *symname, ElfX_Addr value);
-ElfX_Addr redirect_fork(const char *symname, ElfX_Addr value);
-ElfX_Addr redirect_spindleapi(const char *symname, ElfX_Addr value);
-
-/**
  * These functions are called by the audit hooks to do the major
  * pieces of work.
  **/
@@ -86,5 +75,17 @@ void parse_python_prefixes(int fd);
 void test_log(const char *name);
 
 extern unsigned long opts;
+
+extern int intercept_open;
+extern int intercept_exec;
+extern int intercept_stat;
+extern int intercept_close;
+extern int intercept_fork;
+void spindle_test_log_msg(char *buffer);
+
+/* ERRNO_NAME currently refers to a glibc internal symbol. */
+#define ERRNO_NAME "__errno_location"
+typedef int *(*errno_location_t)(void);
+extern errno_location_t app_errno_location;
 
 #endif

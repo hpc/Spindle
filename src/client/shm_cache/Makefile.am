@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libshmcache.la
 
+AM_CFLAGS = -fvisibility=hidden
+
 libshmcache_la_SOURCES = shmcache.c
 if BITER
 else

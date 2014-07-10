@@ -26,15 +26,20 @@
 #include "client_api.h"
 #include "should_intercept.h"
 
-static int (*orig_stat)(const char *path, struct stat *buf);
-static int (*orig_lstat)(const char *path, struct stat *buf);
-static int (*orig_xstat)(int vers, const char *path, struct stat *buf);
-static int (*orig_lxstat)(int vers, const char *path, struct stat *buf);
-static int (*orig_xstat64)(int vers, const char *path, struct stat *buf);
-static int (*orig_lxstat64)(int vers, const char *path, struct stat *buf);
-static int (*orig_fstat)(int fd, struct stat *buf);
-static int (*orig_fxstat)(int vers, int fd, struct stat *buf);
-static int (*orig_fxstat64)(int vers, int fd, struct stat *buf);
+#define INTERCEPT_STAT
+#if defined(INSTR_LIB)
+#include "sym_alias.h"
+#endif
+
+int (*orig_stat)(const char *path, struct stat *buf);
+int (*orig_lstat)(const char *path, struct stat *buf);
+int (*orig_xstat)(int vers, const char *path, struct stat *buf);
+int (*orig_lxstat)(int vers, const char *path, struct stat *buf);
+int (*orig_xstat64)(int vers, const char *path, struct stat *buf);
+int (*orig_lxstat64)(int vers, const char *path, struct stat *buf);
+int (*orig_fstat)(int fd, struct stat *buf);
+int (*orig_fxstat)(int vers, int fd, struct stat *buf);
+int (*orig_fxstat64)(int vers, int fd, struct stat *buf);
 
 int handle_stat(const char *path, struct stat *buf, int flags)
 {
@@ -76,7 +81,7 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    return 0;
 }
 
-int handle_fstat(int fd)
+static int handle_fstat(int fd)
 {
    if (fd_filter(fd) == ERR_CALL) {
       debug_printf("fstat hiding fd %d from application\n", fd);
@@ -87,7 +92,7 @@ int handle_fstat(int fd)
    return ORIG_STAT;
 }
 
-static int spindle_stat(const char *path, struct stat *buf)
+int rtcache_stat(const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, 0);
    if (result != ORIG_STAT)
@@ -95,7 +100,7 @@ static int spindle_stat(const char *path, struct stat *buf)
    return orig_stat(path, buf);
 }
 
-static int spindle_lstat(const char *path, struct stat *buf)
+int rtcache_lstat(const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, IS_LSTAT);
    if (result != ORIG_STAT)
@@ -103,7 +108,7 @@ static int spindle_lstat(const char *path, struct stat *buf)
    return orig_lstat(path, buf);
 }
 
-static int spindle_xstat(int vers, const char *path, struct stat *buf)
+int rtcache_xstat(int vers, const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, IS_XSTAT);
    if (result != ORIG_STAT)
@@ -111,7 +116,7 @@ static int spindle_xstat(int vers, const char *path, struct stat *buf)
    return orig_xstat(vers, path, buf);
 }
 
-static int spindle_xstat64(int vers, const char *path, struct stat *buf)
+int rtcache_xstat64(int vers, const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, IS_XSTAT | IS_64);
    if (result != ORIG_STAT)
@@ -119,7 +124,7 @@ static int spindle_xstat64(int vers, const char *path, struct stat *buf)
    return orig_xstat64(vers, path, buf);
 }
 
-static int spindle_lxstat(int vers, const char *path, struct stat *buf)
+int rtcache_lxstat(int vers, const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, IS_LSTAT | IS_XSTAT);
    if (result != ORIG_STAT)
@@ -127,7 +132,7 @@ static int spindle_lxstat(int vers, const char *path, struct stat *buf)
    return orig_lxstat(vers, path, buf);
 }
 
-static int spindle_lxstat64(int vers, const char *path, struct stat *buf)
+int rtcache_lxstat64(int vers, const char *path, struct stat *buf)
 {
    int result = handle_stat(path, buf, IS_LSTAT | IS_XSTAT | IS_64);
    if (result != ORIG_STAT)
@@ -135,7 +140,7 @@ static int spindle_lxstat64(int vers, const char *path, struct stat *buf)
    return orig_lxstat64(vers, path, buf);
 }
 
-static int spindle_fstat(int fd, struct stat *buf)
+int rtcache_fstat(int fd, struct stat *buf)
 {
    int result = handle_fstat(fd);
    if (result != ORIG_STAT)
@@ -143,7 +148,7 @@ static int spindle_fstat(int fd, struct stat *buf)
    return orig_fstat(fd, buf);
 }
 
-static int spindle_fxstat(int vers, int fd, struct stat *buf)
+int rtcache_fxstat(int vers, int fd, struct stat *buf)
 {
    int result = handle_fstat(fd);
    if (result != ORIG_STAT)
@@ -151,7 +156,7 @@ static int spindle_fxstat(int vers, int fd, struct stat *buf)
    return orig_fxstat(vers, fd, buf);
 }
 
-static int spindle_fxstat64(int vers, int fd, struct stat *buf)
+int rtcache_fxstat64(int vers, int fd, struct stat *buf)
 {
    int result = handle_fstat(fd);
    if (result != ORIG_STAT)
@@ -159,56 +164,3 @@ static int spindle_fxstat64(int vers, int fd, struct stat *buf)
    return orig_fxstat64(vers, fd, buf);
 }
 
-ElfX_Addr redirect_stat(const char *symname, ElfX_Addr value)
-{
-   if (strcmp(symname, "stat") == 0) {
-      if (!orig_stat)
-         orig_stat = (void *) value;
-      return (ElfX_Addr) spindle_stat;
-   }
-   else if (strcmp(symname, "lstat") == 0) {
-      if (!orig_lstat) 
-         orig_lstat = (void *) value;
-      return (ElfX_Addr) spindle_lstat;
-   }
-   /* glibc internal names */
-   else if (strcmp(symname, "__xstat") == 0) {
-      if (!orig_xstat)
-         orig_xstat = (void *) value;
-      return (ElfX_Addr) spindle_xstat;
-   }
-   else if (strcmp(symname, "__xstat64") == 0) {
-      if (!orig_xstat64)
-         orig_xstat64 = (void *) value;
-      return (ElfX_Addr) spindle_xstat64;
-   }
-   else if (strcmp(symname, "__lxstat") == 0) {
-      if (!orig_lxstat)
-         orig_lxstat = (void *) value;
-      return (ElfX_Addr) spindle_lxstat;
-   }
-   else if (strcmp(symname, "__lxstat64") == 0) {
-      if (!orig_lxstat64)
-         orig_lxstat64 = (void *) value;
-      return (ElfX_Addr) spindle_lxstat64;
-   }
-   else if (strcmp(symname, "fstat") == 0) {
-      if (!orig_fstat)
-         orig_fstat = (void *) value;
-      return (ElfX_Addr) spindle_fstat;
-   }
-   else if (strcmp(symname, "__fxstat") == 0) {
-      if (!orig_fxstat)
-         orig_fxstat = (void *) value;
-      return (ElfX_Addr) spindle_fxstat;
-   }
-   else if (strcmp(symname, "__fxstat64") == 0) {
-      if (!orig_fxstat64)
-         orig_fxstat64 = (void *) value;
-      return (ElfX_Addr) spindle_fxstat64;
-   }
-   else {
-      debug_printf3("Skipped relocation of stat call %s\n", symname);
-      return (ElfX_Addr) value;
-   }
-}

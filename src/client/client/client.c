@@ -39,21 +39,18 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "shmcache.h"
 
-/* ERRNO_NAME currently refers to a glibc internal symbol. */
-#define ERRNO_NAME "__errno_location"
-typedef int *(*errno_location_t)(void);
-static errno_location_t app_errno_location;
+errno_location_t app_errno_location;
 
 unsigned long opts;
 int ldcsid = -1;
 unsigned int shm_cachesize;
 static unsigned int shm_cache_limit;
 
-static int intercept_open;
-static int intercept_exec;
-static int intercept_stat;
-static int intercept_close;
-static int intercept_fork;
+int intercept_open;
+int intercept_exec;
+int intercept_stat;
+int intercept_close;
+int intercept_fork;
 static char debugging_name[32];
 
 static char old_cwd[MAX_PATH_LEN+1];
@@ -88,7 +85,7 @@ static void find_libc_name()
    dl_iterate_phdr(find_libc_iterator, NULL);
 }
 
-static void spindle_test_log_msg(char *buffer)
+void spindle_test_log_msg(char *buffer)
 {
    test_printf("%s", buffer);
 }
@@ -278,31 +275,6 @@ int client_done()
    send_end(ldcsid);
    client_close_connection(ldcsid);
    return 0;
-}
-
-ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
-{
-   if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
-      return (Elf64_Addr) spindle_test_log_msg;
-   else if (strncmp("spindle_", symname, 8) == 0)
-      return redirect_spindleapi(symname, symvalue);
-   else if (intercept_open && strstr(symname, "open"))
-      return redirect_open(symname, symvalue);
-   else if (intercept_exec && strstr(symname, "exec")) 
-      return redirect_exec(symname, symvalue);
-   else if (intercept_stat && strstr(symname, "stat"))
-      return redirect_stat(symname, symvalue);
-   else if (intercept_close && strcmp(symname, "close") == 0)
-      return redirect_close(symname, symvalue);
-   else if (intercept_fork && strstr(symname, "fork"))
-      return redirect_fork(symname, symvalue);
-
-   else if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
-      app_errno_location = (errno_location_t) symvalue;
-      return symvalue;
-   }
-   else
-      return symvalue;
 }
 
 static int read_stat(char *localname, struct stat *buf)

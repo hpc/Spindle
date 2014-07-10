@@ -21,8 +21,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <elf.h>
 #include <link.h>
+#include "client.h"
 
 struct link_map *get_linkmap_from_cookie(uintptr_t *cookie);
 void patch_on_linkactivity(struct link_map *lmap);
+ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue);
 
 #endif
