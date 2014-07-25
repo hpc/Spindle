@@ -14,31 +14,20 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "intercept.h"
-#include "client.h"
-#include "spindle_debug.h"
+#if !defined(SUBAUDIT_H_)
+#define SUBAUDIT_H_
 
-#include <string.h>
-#include <elf.h>
+int lookup_calloc_got();
+void update_calloc_got();
 
-ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
-{
-   struct spindle_binding_t *binding;
+void *spindle_calloc(size_t nmemb, size_t size);
+int protect_range(void *address, unsigned long size, int prot);
 
-   if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
-      return (Elf64_Addr) spindle_test_log_msg;
-   if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
-      app_errno_location = (errno_location_t) symvalue;
-      return symvalue;
-   }
+void add_library_to_plt_update_list(struct link_map *lmap);
+int update_plt_bindings();
+void init_plt_binding_func(signed int binding_offset_);
 
-   binding = lookup_in_binding_hash(symname);
-   if (!binding)
-      return symvalue;
+int lookup_libc_symbols();
+void add_library_to_calloc_list(struct link_map *lmap);
 
-   if (*binding->libc_func == NULL)
-      *binding->libc_func = (void *) symvalue;
-   
-   return (ElfX_Addr) binding->spindle_func;
-}
-
+#endif

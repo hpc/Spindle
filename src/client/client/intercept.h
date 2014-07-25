@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdint.h>
 
 extern int (*orig_stat)(const char *path, struct stat *buf);
 extern int (*orig_lstat)(const char *path, struct stat *buf);
@@ -74,5 +75,16 @@ int int_spindle_is_present();
 void int_spindle_enable();
 void int_spindle_disable();
 int int_spindle_is_enabled();
+
+
+struct spindle_binding_t {
+   const char *name;
+   void **libc_func;
+   void *spindle_func;   
+};
+
+void init_bindings_hash();
+struct spindle_binding_t *lookup_in_binding_hash(const char *name);
+struct spindle_binding_t *get_bindings();
 
 #endif

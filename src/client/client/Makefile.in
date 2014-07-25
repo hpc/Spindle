@@ -55,7 +55,8 @@ libspindle_audit_la_LIBADD =
 am__objects_1 = libspindle_audit_la-intercept_open.lo \
 	libspindle_audit_la-intercept_exec.lo \
 	libspindle_audit_la-intercept_stat.lo \
-	libspindle_audit_la-intercept_spindleapi.lo
+	libspindle_audit_la-intercept_spindleapi.lo \
+	libspindle_audit_la-intercept.lo
 am_libspindle_audit_la_OBJECTS = $(am__objects_1)
 libspindle_audit_la_OBJECTS = $(am_libspindle_audit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -65,7 +66,8 @@ libspindle_instr_la_LIBADD =
 am__objects_2 = libspindle_instr_la-intercept_open.lo \
 	libspindle_instr_la-intercept_exec.lo \
 	libspindle_instr_la-intercept_stat.lo \
-	libspindle_instr_la-intercept_spindleapi.lo
+	libspindle_instr_la-intercept_spindleapi.lo \
+	libspindle_instr_la-intercept.lo
 am_libspindle_instr_la_OBJECTS = $(am__objects_2)
 libspindle_instr_la_OBJECTS = $(am_libspindle_instr_la_OBJECTS)
 libspindlec_biter_la_DEPENDENCIES =  \
@@ -248,7 +250,7 @@ noinst_LTLIBRARIES = libspindle_audit.la libspindle_instr.la \
 	$(am__append_1) $(am__append_2) $(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache
-INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c
+INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c intercept.c
 BASE_SRCS = client.c should_intercept.c exec_util.c remap_exec.c $(top_srcdir)/../utils/parseloc.c
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindlelogc.la $(top_builddir)/shm_cache/libshmcache.la
@@ -322,10 +324,12 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exec_util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_exec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_open.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_spindleapi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_stat.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_instr_la-intercept.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_instr_la-intercept_exec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_instr_la-intercept_open.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_instr_la-intercept_spindleapi.Plo@am__quote@
@@ -390,6 +394,14 @@ libspindle_audit_la-intercept_spindleapi.lo: intercept_spindleapi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_audit_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindle_audit_la-intercept_spindleapi.lo `test -f 'intercept_spindleapi.c' || echo '$(srcdir)/'`intercept_spindleapi.c
 
+libspindle_audit_la-intercept.lo: intercept.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_audit_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindle_audit_la-intercept.lo -MD -MP -MF $(DEPDIR)/libspindle_audit_la-intercept.Tpo -c -o libspindle_audit_la-intercept.lo `test -f 'intercept.c' || echo '$(srcdir)/'`intercept.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindle_audit_la-intercept.Tpo $(DEPDIR)/libspindle_audit_la-intercept.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intercept.c' object='libspindle_audit_la-intercept.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_audit_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindle_audit_la-intercept.lo `test -f 'intercept.c' || echo '$(srcdir)/'`intercept.c
+
 libspindle_instr_la-intercept_open.lo: intercept_open.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_instr_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindle_instr_la-intercept_open.lo -MD -MP -MF $(DEPDIR)/libspindle_instr_la-intercept_open.Tpo -c -o libspindle_instr_la-intercept_open.lo `test -f 'intercept_open.c' || echo '$(srcdir)/'`intercept_open.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindle_instr_la-intercept_open.Tpo $(DEPDIR)/libspindle_instr_la-intercept_open.Plo
@@ -421,6 +433,14 @@ libspindle_instr_la-intercept_spindleapi.lo: intercept_spindleapi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intercept_spindleapi.c' object='libspindle_instr_la-intercept_spindleapi.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_instr_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindle_instr_la-intercept_spindleapi.lo `test -f 'intercept_spindleapi.c' || echo '$(srcdir)/'`intercept_spindleapi.c
+
+libspindle_instr_la-intercept.lo: intercept.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_instr_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindle_instr_la-intercept.lo -MD -MP -MF $(DEPDIR)/libspindle_instr_la-intercept.Tpo -c -o libspindle_instr_la-intercept.lo `test -f 'intercept.c' || echo '$(srcdir)/'`intercept.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindle_instr_la-intercept.Tpo $(DEPDIR)/libspindle_instr_la-intercept.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intercept.c' object='libspindle_instr_la-intercept.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindle_instr_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindle_instr_la-intercept.lo `test -f 'intercept.c' || echo '$(srcdir)/'`intercept.c
 
 parseloc.lo: $(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parseloc.lo -MD -MP -MF $(DEPDIR)/parseloc.Tpo -c -o parseloc.lo `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c

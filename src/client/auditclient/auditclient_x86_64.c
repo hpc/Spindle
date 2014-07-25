@@ -17,6 +17,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "auditclient.h"
 #include <stdlib.h>
 
+Elf64_Addr la_x86_64_gnu_pltenter(Elf64_Sym *sym, unsigned int ndx,
+                                  uintptr_t *refcook, uintptr_t *defcook,
+                                  La_x86_64_regs *regs, unsigned int *flags,
+                                  const char *symname, long int *framesizep) AUDIT_EXPORT;
+
+
 static Elf64_Addr doPermanentBinding(struct link_map *map,
                                      unsigned long plt_reloc_idx,
                                      Elf64_Addr target)

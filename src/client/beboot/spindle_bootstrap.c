@@ -56,9 +56,9 @@ static char *cachesize_s;
 
 unsigned long opts;
 
-char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
-char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
-char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
+char libstr_socket[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
+char libstr_pipe[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
+char libstr_biter[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
 
 #if defined(COMM_SOCKET)
 static char *default_libstr = libstr_socket;

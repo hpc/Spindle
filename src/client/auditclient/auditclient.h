@@ -27,4 +27,6 @@ struct link_map *get_linkmap_from_cookie(uintptr_t *cookie);
 void patch_on_linkactivity(struct link_map *lmap);
 ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue);
 
+#define AUDIT_EXPORT __attribute__((__visibility__("default")))
+
 #endif
