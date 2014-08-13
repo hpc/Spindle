@@ -34,6 +34,8 @@ int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *
 int send_end(int fd);
 int send_existance_test(int fd, char *path, int *exists);
 int send_stat_request(int fd, char *path, int islstat, char *result);
+int send_ldso_info_request(int fd, char *ldso_path, ldso_info_t *result);
+
 int get_python_prefix(int fd, char **prefix);
 
 /* client */

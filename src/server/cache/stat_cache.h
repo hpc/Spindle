@@ -19,8 +19,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 int init_stat_cache();
 
-/* localname can be NULL if file doesn't exist */
-void add_stat_cache(char *pathname, char *localname);
-int lookup_stat_cache(char *pathname, char **localname);
+/* data can be NULL if file doesn't exist */
+void add_stat_cache(char *pathname, char *data);
+int lookup_stat_cache(char *pathname, char **data);
 
 #endif

@@ -233,6 +233,32 @@ int send_location(int fd, char *location) {
    return 0;
 }
 
+int send_ldso_info_request(int fd, char *ldso_path, ldso_info_t *result)
+{
+   ldcs_message_t message;
+   char buffer[MAX_PATH_LEN+1];
+
+   message.header.type = LDCS_MSG_LOADER_DATA_REQ;
+   message.header.len = strlen(ldso_path)+2;
+   message.data = buffer;
+   buffer[0] = '$';
+   strncpy(buffer+1, ldso_path, MAX_PATH_LEN-1);
+   buffer[MAX_PATH_LEN] = '\0';
+   
+   COMM_LOCK;
+   client_send_msg(fd, &message);
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_LOADER_DATA_RESP) {
+      err_printf("Got unexpected message after ldso req: %d\n", (int) message.header.type);
+      assert(0);
+   }
+
+   memcpy(result, message.data, sizeof(*result));
+   return 0;
+}
+
 int get_python_prefix(int fd, char **prefix)
 {
    ldcs_message_t message;

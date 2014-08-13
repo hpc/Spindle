@@ -18,6 +18,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define LDCS_API_H
 
 #include "spindle_debug.h"
+#include <stdint.h>
 
 /* messages structure */
 typedef enum {
@@ -44,6 +45,10 @@ typedef enum {
    LDCS_MSG_FILE_DATA_PART,
    LDCS_MSG_PYTHONPREFIX_REQ,
    LDCS_MSG_PYTHONPREFIX_RESP,
+   LDCS_MSG_LOADER_DATA_REQ,
+   LDCS_MSG_LOADER_DATA_RESP,
+   LDCS_MSG_LOADER_DATA_NET_REQ,
+   LDCS_MSG_LOADER_DATA_NET_RESP,
    LDCS_MSG_MD_HOSTINFO,
    LDCS_MSG_MD_HOSTLIST,
    LDCS_MSG_MD_BOOTSTRAP,
@@ -129,6 +134,10 @@ double ldcs_get_time();
 
 /* Force exit */
 void mark_exit();
+
+typedef struct {
+   int64_t binding_offset;
+} ldso_info_t;
 
 #define MAX_PATH_LEN 4096
 #define MAX_NAME_LEN 255

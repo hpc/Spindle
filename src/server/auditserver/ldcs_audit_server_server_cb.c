@@ -57,6 +57,7 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       ldcs_process_data->client_table[nc].query_open   = 0;
       ldcs_process_data->client_table[nc].existance_query = 0;
       ldcs_process_data->client_table[nc].is_stat      = 0;
+      ldcs_process_data->client_table[nc].is_loader    = 0;      
       ldcs_process_data->client_table[nc].lrank        = ldcs_process_data->client_counter;
       ldcs_process_data->client_table[nc].query_localpath = NULL;
       ldcs_process_data->client_table_used++;

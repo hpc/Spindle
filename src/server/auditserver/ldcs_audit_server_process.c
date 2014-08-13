@@ -104,8 +104,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.opts = args->opts;
    ldcs_process_data.pending_requests = new_requestor_list();
    ldcs_process_data.completed_requests = new_requestor_list();
-   ldcs_process_data.pending_stat_requests = new_requestor_list();
-   ldcs_process_data.completed_stat_requests = new_requestor_list();
+   ldcs_process_data.pending_metadata_requests = new_requestor_list();
+   ldcs_process_data.completed_metadata_requests = new_requestor_list();
 
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");

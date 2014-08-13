@@ -88,6 +88,7 @@ struct ldcs_client_struct
   int                  query_open;
   int                  existance_query;
   int                  is_stat;
+  int                  is_loader;
   char                 query_filename[MAX_PATH_LEN];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN];  /* path to file in global fs (dirname+filename) */
@@ -117,8 +118,8 @@ struct ldcs_process_data_struct
   unsigned int opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
-  requestor_list_t pending_stat_requests;
-  requestor_list_t completed_stat_requests;
+  requestor_list_t pending_metadata_requests;
+  requestor_list_t completed_metadata_requests;
 
   /* multi daemon support */
   int md_rank;

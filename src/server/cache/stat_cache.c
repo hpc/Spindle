@@ -24,7 +24,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 typedef struct stat_entry_t
 {
    char *pathname;
-   char *localname;
+   char *data;
    unsigned int hash_value;
    struct stat_entry_t *next;
 } stat_entry_t;
@@ -44,26 +44,25 @@ int init_stat_cache()
    return 0;
 }
 
-void add_stat_cache(char *pathname, char *localname)
+void add_stat_cache(char *pathname, char *data)
 {
    unsigned int key;
    stat_entry_t *newentry;
 
-   debug_printf3("Adding stat cache entry %s = %s\n",
-                 pathname, localname ? localname : "NULL");
+   debug_printf3("Adding stat cache entry %s = %s\n", pathname);
 
    key = hashkey(pathname) % STAT_TABLE_SIZE;
 
    newentry = (stat_entry_t *) malloc(sizeof(stat_entry_t));
    newentry->pathname = strdup(pathname);
-   newentry->localname = localname;
+   newentry->data = data;
    newentry->hash_value = key;
    newentry->next = stat_table[key];
 
    stat_table[key] = newentry;
 }
 
-int lookup_stat_cache(char *pathname, char **localname)
+int lookup_stat_cache(char *pathname, char **data)
 {
    unsigned int key;
    stat_entry_t *entry;
@@ -73,7 +72,7 @@ int lookup_stat_cache(char *pathname, char **localname)
 
    for (;;) {      
       if (!entry) {
-         *localname = NULL;
+         *data = NULL;
          debug_printf3("Looked up stat cache entry %s, not cached\n", pathname);
          return -1;
       }
@@ -81,9 +80,8 @@ int lookup_stat_cache(char *pathname, char **localname)
          entry = entry->next;
          continue;
       }
-      *localname = entry->localname;
-      debug_printf3("Looked up stat entry %s = %s\n",
-                    pathname, *localname ? *localname : "NULL");
+      *data = entry->data;
+      debug_printf3("Looked up stat entry %s\n");
       return 0;
    }
 }

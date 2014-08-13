@@ -57,11 +57,11 @@ typedef enum {
 } handle_file_result_t;
 
 typedef enum {
-   REQUEST_STAT,
-   STAT_FILE,
-   REPORT_STAT,
-   STAT_IN_PROGRESS
-} handle_stat_result_t;
+   REQUEST_METADATA,
+   METADATA_FILE,
+   REPORT_METADATA,
+   METADATA_IN_PROGRESS
+} handle_metadata_result_t;
 
 typedef enum {
    preload_broadcast,
@@ -73,6 +73,11 @@ typedef enum {
    exists,
    not_exists
 } exist_t;
+
+typedef enum {
+   metadata_stat,
+   metadata_loader
+} metadata_t;
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -116,7 +121,7 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
 static int handle_exit_broadcast(ldcs_process_data_t *procdata);
 static int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
                                    void *secondary_data, size_t secondary_size, int force_broadcast,
-                                   int is_stat);
+                                   int is_metadata);
 static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_preload_done(ldcs_process_data_t *procdata);
 static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *filename);
@@ -126,15 +131,17 @@ static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc,
 static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf);
-static int handle_stat_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, broadcast_t bcast);
-static int handle_cache_stat(ldcs_process_data_t *procdata, char *pathname, int file_exists, 
+static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, broadcast_t bcast);
+static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, 
                              struct stat *buf, char **localname);
-static int handle_broadcast_stat(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf);
+static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf);
 static int handle_stat_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer);
-static int handle_client_stat(ldcs_process_data_t *procdata, int nc);
-static int handle_client_stat_result(ldcs_process_data_t *procdata, int nc);
-static int handle_stat_request(ldcs_process_data_t *procdata, char *pathname, node_peer_t from);
-static int handle_stat_request_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer);
+static int handle_client_metadata(ldcs_process_data_t *procdata, int nc);
+static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc);
+static int handle_client_stat_result(ldcs_process_data_t *procdata, ldcs_client_t *client);
+static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, node_peer_t from);
+static int handle_metadata_request_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer);
+static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype);
 static int handle_load_and_broadcast_stat(ldcs_process_data_t *procdata, char *pathname);
 static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata);
 static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
@@ -228,14 +235,20 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    char file[MAX_PATH_LEN];
    char dir[MAX_PATH_LEN];
    int is_stat;
-   int is_stared;
+   int is_loader, is_special_char;
+   char special_char[2];
 
    file[0] = '\0'; dir[0] = '\0';
    pathname = msg->data;
    is_stat = (msg->header.type == LDCS_MSG_STAT_QUERY);
-   is_stared = (pathname[0] == '*');
-   if (is_stared)
+   is_loader = (msg->header.type == LDCS_MSG_LOADER_DATA_REQ);
+
+   is_special_char = (pathname[0] == '*' || pathname[0] == '$');
+   if (is_special_char) {
+      special_char[0] = pathname[0];
+      special_char[1] = '\0';
       pathname++;
+   }
 
    parseFilenameNoAlloc(pathname, file, dir, MAX_PATH_LEN);
 
@@ -248,14 +261,16 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    strncpy(client->query_filename, file, MAX_PATH_LEN);
    strncpy(client->query_dirname, dir, MAX_PATH_LEN);
    snprintf(client->query_globalpath, MAX_PATH_LEN, "%s%s/%s", 
-            is_stared ? "*" : "",
+            is_special_char ? special_char : "",
             client->query_dirname, client->query_filename);
    client->query_localpath = NULL;
    
    client->query_open = 1;
    client->is_stat = is_stat;
+   client->is_loader = is_loader;
    
-   debug_printf2("Server recvd query %s for %s.  Dir = %s, File = %s\n", 
+   debug_printf2("Server recvd query %s%s for %s.  Dir = %s, File = %s\n", 
+                 is_loader ? "loader " : "",
                  is_stat ? "stat" : "exact path",
                  client->query_globalpath, client->query_dirname, client->query_filename);
    return handle_client_progress(procdata, nc);
@@ -355,8 +370,8 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
       return 0;
    if (client->existance_query)
       return handle_fileexist_test(procdata, nc);
-   if (client->is_stat)
-      return handle_client_stat(procdata, nc);
+   if (client->is_stat || client->is_loader)
+      return handle_client_metadata(procdata, nc);
 
    result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
                               client->query_dirname, &client->query_localpath);
@@ -714,14 +729,14 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    char buffer_out[MAX_PATH_LEN+1];
    ldcs_client_t *client = procdata->client_table + nc;
 
-   out_msg.header.type = LDCS_MSG_FILE_QUERY_ANSWER;
-   out_msg.data = buffer_out;
    connid = client->connid;
 
    /* send answer only to active client not to pseudo client */
    if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
       return 0;
-   
+
+   out_msg.header.type = LDCS_MSG_FILE_QUERY_ANSWER;
+   out_msg.data = buffer_out;   
    strncpy(out_msg.data, client->query_localpath, MAX_PATH_LEN+1);
    out_msg.header.len = strlen(client->query_localpath) + 1;
 
@@ -843,51 +858,60 @@ static int handle_request_directory(ldcs_process_data_t *procdata, node_peer_t f
 /**
  * We've receieved a request for stat data from a client.  Decide what to do with it
  **/
-static handle_stat_result_t handle_howto_stat(ldcs_process_data_t *procdata, char *pathname)
+static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procdata, char *pathname)
 {
    char *localname;
    int result, responsible;
 
    result = lookup_stat_cache(pathname, &localname);
    if (result != -1)
-      return REPORT_STAT;
+      return REPORT_METADATA;
 
    responsible = ldcs_audit_server_md_is_responsible(procdata, pathname);
    if (responsible)
-      return STAT_FILE;
+      return METADATA_FILE;
 
-   if (been_requested(procdata->pending_stat_requests, pathname)) {
-      return STAT_IN_PROGRESS;
+   if (been_requested(procdata->pending_metadata_requests, pathname)) {
+      return METADATA_IN_PROGRESS;
    }
       
-   return REQUEST_STAT;
+   return REQUEST_METADATA;
 }
 
-static int handle_client_stat(ldcs_process_data_t *procdata, int nc)
+static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
 {
-   handle_stat_result_t stat_result;
+   handle_metadata_result_t stat_result;
    ldcs_client_t *client = procdata->client_table + nc;
    char *pathname = client->query_globalpath;
    int broadcast_result, client_result;
+   metadata_t mdtype;
+   
+   if (client->is_stat)
+      mdtype = metadata_stat;
+   else if (client->is_loader)
+      mdtype = metadata_loader;
+   else
+      assert(0);
+      
 
-   stat_result = handle_howto_stat(procdata, pathname);
+   stat_result = handle_howto_metadata(procdata, pathname);
    switch (stat_result) {
-      case REQUEST_STAT:
-         return handle_stat_request(procdata, pathname, NODE_PEER_CLIENT);
-      case STAT_FILE:
-         add_requestor(procdata->pending_stat_requests, pathname, NODE_PEER_CLIENT);
-         broadcast_result = handle_stat_and_broadcast_file(procdata, pathname, request_broadcast);
-         client_result = handle_client_stat_result(procdata, nc);
+      case REQUEST_METADATA:
+         return handle_metadata_request(procdata, pathname, mdtype, NODE_PEER_CLIENT);
+      case METADATA_FILE:
+         add_requestor(procdata->pending_metadata_requests, pathname, NODE_PEER_CLIENT);
+         broadcast_result = handle_metadata_and_broadcast_file(procdata, pathname, mdtype, request_broadcast);
+         client_result = handle_client_metadata_result(procdata, nc);
          if (broadcast_result == -1 || client_result == -1)
             return -1;
          return 0;
-      case REPORT_STAT:
-         return handle_client_stat_result(procdata, nc);
-      case STAT_IN_PROGRESS:
-         add_requestor(procdata->pending_stat_requests, pathname, NODE_PEER_CLIENT);
+      case REPORT_METADATA:
+         return handle_client_metadata_result(procdata, nc);
+      case METADATA_IN_PROGRESS:
+         add_requestor(procdata->pending_metadata_requests, pathname, NODE_PEER_CLIENT);
          return 0;
    }
-   err_printf("Unexpected result from handle_howto_stat: %d\n", (int) stat_result);
+   err_printf("Unexpected result from handle_howto_metadata: %d\n", (int) stat_result);
    assert(0);
    return -1;   
 }
@@ -1115,8 +1139,8 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    int result, global_result = 0;
    static int have_done_broadcast = 0;
 
-   requestor_list_t pending_reqs = !is_stat ? procdata->pending_requests : procdata->pending_stat_requests;
-   requestor_list_t completed_reqs = !is_stat ? procdata->completed_requests : procdata->completed_stat_requests;
+   requestor_list_t pending_reqs = !is_stat ? procdata->pending_requests : procdata->pending_metadata_requests;
+   requestor_list_t completed_reqs = !is_stat ? procdata->completed_requests : procdata->completed_metadata_requests;
 
    if (have_done_broadcast) {
       /* Test whether this file has already been broadcast to all */
@@ -1184,6 +1208,7 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
       case LDCS_MSG_FILE_QUERY:
       case LDCS_MSG_FILE_QUERY_EXACT_PATH:
       case LDCS_MSG_STAT_QUERY:
+      case LDCS_MSG_LOADER_DATA_REQ:
          return handle_client_file_request(procdata, nc, msg);
       case LDCS_MSG_EXISTS_QUERY:
          return handle_client_fileexist_msg(procdata, nc, msg);
@@ -1223,7 +1248,12 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_STAT_NET_RESULT:
          return handle_stat_recv(procdata, msg, peer);
       case LDCS_MSG_STAT_NET_REQUEST:
-         return handle_stat_request_recv(procdata, msg, peer);
+         return handle_metadata_request_recv(procdata, msg, metadata_stat, peer);
+      case LDCS_MSG_LOADER_DATA_NET_REQ:
+         return handle_metadata_request_recv(procdata, msg, metadata_loader, peer);
+      case LDCS_MSG_LOADER_DATA_NET_RESP:
+#warning implement here
+         return 0;
       case LDCS_MSG_EXIT_READY:
          return handle_exit_ready_msg(procdata, msg);
       case LDCS_MSG_EXIT_CANCEL:
@@ -1512,7 +1542,7 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
 /**
  * Stats a file and put into file cache.  Distribute on network if necessary
  **/
-static int handle_stat_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, broadcast_t bcast)
+static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, broadcast_t bcast)
 {
    char *localname;
    int result;
@@ -1520,18 +1550,25 @@ static int handle_stat_and_broadcast_file(ldcs_process_data_t *procdata, char *p
 
    debug_printf2("Stating and broadcasting file %s\n", pathname);
    
-   result = handle_stat_file(procdata, pathname, &localname, &buf);
-   if (result == -1) {
-      err_printf("Error stat'ing file %s\n", pathname);
-      return -1;
+   if (mdtype == metadata_stat) {
+      result = handle_stat_file(procdata, pathname, &localname, &buf);
+      if (result == -1) {
+         err_printf("Error stat'ing file %s\n", pathname);
+         return -1;
+      }
    }
+   else if (mdtype == metadata_loader) {
+#warning TODO: get loader metadata
+   }
+   else 
+      assert(0);
 
    /* distribute file data */
    if (bcast == suppress_broadcast) {
       return 0;
    }
 
-   result = handle_broadcast_stat(procdata, pathname, localname != NULL, &buf);
+   result = handle_broadcast_metadata(procdata, pathname, localname != NULL, &buf);
    if (result == -1) {
       err_printf("Error broadcasting stat data for %s\n", pathname);
       return -1;
@@ -1564,13 +1601,13 @@ static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char 
    procdata->server_stat.libread.bytes += file_exists ? sizeof(struct stat) : 0;
    procdata->server_stat.libread.time += (ldcs_get_time() - starttime);
    
-   return handle_cache_stat(procdata, pathname, file_exists, buf, localname);
+   return handle_cache_metadata(procdata, pathname, file_exists, buf, localname);
 }
 
 /**
  * Puts the results of a stat into the cache
  **/
-static int handle_cache_stat(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf, char **localname)
+static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf, char **localname)
 {
    double starttime;
    int result;
@@ -1605,7 +1642,7 @@ static int handle_cache_stat(ldcs_process_data_t *procdata, char *pathname, int 
 /**
  * Distributes stat contents onto the network
  **/
-static int handle_broadcast_stat(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf)
+static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf)
 {
    char *packet_buffer = NULL;
    size_t packet_size;
@@ -1683,13 +1720,13 @@ static int handle_stat_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
                  file_exists ? "file exists" : "nonexistant file");
 
    /* Cache the stat results */
-   result = handle_cache_stat(procdata, pathname, file_exists, &buf, &localpath);
+   result = handle_cache_metadata(procdata, pathname, file_exists, &buf, &localpath);
    if (result == -1) {
       err_printf("Error caching stat results for %s\n", pathname);
       return -1;
    }
  
-   result = handle_broadcast_stat(procdata, pathname, file_exists, &buf);
+   result = handle_broadcast_metadata(procdata, pathname, file_exists, &buf);
    if (result == -1) {
       err_printf("Error broadcast stat results for %s\n", pathname);
       return -1;
@@ -1698,22 +1735,33 @@ static int handle_stat_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    return handle_progress(procdata);
 }
 
+static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc)
+{
+   ldcs_client_t *client;
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   assert(client->query_open || client->is_stat);
+
+   if (client->is_stat) {
+      debug_printf2("Sending stat result to client %d\n", nc);
+      return handle_client_stat_result(procdata, client);
+   }
+   else {
+#warning implement here
+      return 0;
+   }
+}
+
 /**
  * We have an answer to a stat request (file doesn't exist or stat data).  Send
  * results to client.
  **/
-static int handle_client_stat_result(ldcs_process_data_t *procdata, int nc)
+static int handle_client_stat_result(ldcs_process_data_t *procdata, ldcs_client_t *client)
 {
    char *localpath;
-   ldcs_client_t *client;
    int result, connid;
    ldcs_message_t msg;
 
-   debug_printf2("Sending stat result to client %d\n", nc);
-
-   assert(nc != -1);
-   client = procdata->client_table + nc;
-   assert(client->query_open && client->is_stat);
    connid = client->connid;
    if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
       return 0;
@@ -1739,24 +1787,28 @@ static int handle_client_stat_result(ldcs_process_data_t *procdata, int nc)
 }
 
 /**
- * Send a request for a stat up the network
+ * Send a request for a metadata up the network
  **/
-static int handle_stat_request(ldcs_process_data_t *procdata, char *pathname, node_peer_t from)
+static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, node_peer_t from)
 {
    ldcs_message_t msg;
    int pathlen;
 
-   if (been_requested(procdata->pending_stat_requests, pathname)) {
-      debug_printf2("Stat %s has already been requested.  Not resending request\n", pathname);
+   if (been_requested(procdata->pending_metadata_requests, pathname)) {
+      debug_printf2("Metadata %s has already been requested.  Not resending request\n", pathname);
       return 0;
    }
-   debug_printf2("Request stat of %s from up the network\n", pathname);
+   debug_printf2("Request metadata of %s from up the network\n", pathname);
 
-   add_requestor(procdata->pending_stat_requests, pathname, from);
+   add_requestor(procdata->pending_metadata_requests, pathname, from);
    
    pathlen = strlen(pathname) + 1;
    
-   msg.header.type = LDCS_MSG_STAT_NET_REQUEST;
+   if (mdtype == metadata_stat)
+      msg.header.type = LDCS_MSG_STAT_NET_REQUEST;
+   else
+      msg.header.type = LDCS_MSG_LOADER_DATA_NET_REQ;
+
    msg.header.len = pathlen;
    msg.data = pathname;
 
@@ -1764,11 +1816,11 @@ static int handle_stat_request(ldcs_process_data_t *procdata, char *pathname, no
 }
 
 /**
- * We have received a stat request from the network. Decide how to handle it.
+ * We have received a metadata request from the network. Decide how to handle it.
  **/
-static int handle_stat_request_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer)
+static int handle_metadata_request_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer)
 {
-   handle_stat_result_t stat_result;
+   handle_metadata_result_t stat_result;
    char *pathname;
 
    /* Decode packet */
@@ -1776,25 +1828,35 @@ static int handle_stat_request_recv(ldcs_process_data_t *procdata, ldcs_message_
    assert(strlen(pathname)+1 == msg->header.len);
 
    /* Handle packet */
-   stat_result = handle_howto_stat(procdata, pathname);
+   stat_result = handle_howto_metadata(procdata, pathname);
    switch (stat_result) {
-      case REQUEST_STAT:
-         return handle_stat_request(procdata, pathname, peer);
-      case STAT_FILE:
-         add_requestor(procdata->pending_stat_requests, pathname, peer);
-         return handle_stat_and_broadcast_file(procdata, pathname, request_broadcast);
-      case REPORT_STAT:
-         add_requestor(procdata->pending_stat_requests, pathname, peer);
-         return handle_load_and_broadcast_stat(procdata, pathname);
-      case STAT_IN_PROGRESS:
-         add_requestor(procdata->pending_stat_requests, pathname, peer);
+      case REQUEST_METADATA:
+         return handle_metadata_request(procdata, pathname, mdtype, peer);
+      case METADATA_FILE:
+         add_requestor(procdata->pending_metadata_requests, pathname, peer);
+         return handle_metadata_and_broadcast_file(procdata, pathname, mdtype, request_broadcast);
+      case REPORT_METADATA:
+         add_requestor(procdata->pending_metadata_requests, pathname, peer);
+         return handle_load_and_broadcast_metadata(procdata, pathname, mdtype);
+      case METADATA_IN_PROGRESS:
+         add_requestor(procdata->pending_metadata_requests, pathname, peer);
          return 0;
    }
-   err_printf("Unexpected result from handle_howto_stat: %d\n", (int) stat_result);
+   err_printf("Unexpected result from handle_howto_metadata: %d\n", (int) stat_result);
    assert(0);
    return -1;
 }
 
+static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype)
+{
+   if (mdtype == metadata_stat)
+      return handle_load_and_broadcast_stat(procdata, pathname);
+   else if (mdtype == metadata_loader)
+#warning implement here
+      return -1;
+   else
+      assert(0);
+}
 /**
  * Load a cache'd stat result from the local file system and broadcast it.
  **/
@@ -1819,7 +1881,7 @@ static int handle_load_and_broadcast_stat(ldcs_process_data_t *procdata, char *p
       }
    }
    
-   result = handle_broadcast_stat(procdata, pathname, localpath != NULL, &buf);
+   result = handle_broadcast_metadata(procdata, pathname, localpath != NULL, &buf);
    if (result == -1) {
       err_printf("Failure broadcast stat results for %s\n", pathname);
       return -1;
