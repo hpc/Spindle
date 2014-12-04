@@ -26,7 +26,7 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
    struct spindle_binding_t *binding;
 
    if (run_tests && strcmp(symname, "spindle_test_log_msg") == 0)
-      return (Elf64_Addr) spindle_test_log_msg;
+      return (Elf64_Addr) int_spindle_test_log_msg;
    if (!app_errno_location && strcmp(symname, ERRNO_NAME) == 0) {
       app_errno_location = (errno_location_t) symvalue;
       return symvalue;

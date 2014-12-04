@@ -19,42 +19,44 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <string.h>
 #include "intercept.h"
+#include "client.h"
 
 struct spindle_binding_t spindle_bindings[] = {
-   { "", NULL, NULL }, 
-   { "open", (void **) &orig_open, (void *) rtcache_open },
-   { "open64", (void **) &orig_open64, (void *) rtcache_open64 },
-   { "fopen", (void **) &orig_fopen, (void *) rtcache_fopen },
-   { "fopen64", (void **) &orig_fopen64, (void *) rtcache_fopen64 },
-   { "close", (void **) &orig_close, (void *) rtcache_close },
-   { "stat", (void **) &orig_stat, (void *) rtcache_stat },
-   { "lstat", (void **) &orig_lstat, (void *) rtcache_lstat },
-   { "__xstat", (void **) &orig_xstat, (void *) rtcache_xstat },
-   { "__xstat64", (void **) &orig_xstat64, (void *) rtcache_xstat64 },
-   { "__lxstat", (void **) &orig_lxstat, (void *) rtcache_lxstat },
-   { "__lxstat64", (void **) &orig_lxstat64, (void *) rtcache_lxstat64 },
-   { "fstat", (void **) &orig_fstat, (void *) rtcache_fstat },
-   { "__fxstat", (void **) &orig_fxstat, (void *) rtcache_fxstat },
-   { "__fxstat64", (void **) &orig_fxstat64, (void *) rtcache_fxstat64 },
-   { "execl", (void **) NULL, (void *) execl_wrapper },
-   { "execv", (void **) &orig_execv, (void *) execv_wrapper },
-   { "execle", (void **) NULL, (void *) execle_wrapper },
-   { "execve", (void **) &orig_execve, (void *) execve_wrapper },
-   { "execlp", (void **) NULL, (void *) execlp_wrapper },
-   { "execvp", (void **) &orig_execvp, (void *) execvp_wrapper },
-   { "vfork", (void **) NULL, (void *) vfork_wrapper },
-   { "spindle_enable", NULL, (void *) int_spindle_enable },
-   { "spindle_disable", NULL, (void *) int_spindle_disable },
-   { "spindle_is_enabled", NULL, (void *) int_spindle_is_enabled },
-   { "spindle_is_present", NULL, (void *) int_spindle_is_present },
-   { "spindle_open", NULL, (void *) int_spindle_open },
-   { "spindle_stat", NULL, (void *) int_spindle_stat },
-   { "spindle_lstat", NULL, (void *) int_spindle_lstat },
-   { "spindle_fopen", NULL, (void *) int_spindle_fopen },
-   { NULL, NULL, NULL }
+   { "", NULL, "", NULL }, 
+   { "open", (void **) &orig_open, "rtcache_open", (void *) rtcache_open },
+   { "open64", (void **) &orig_open64, "rtcache_open64", (void *) rtcache_open64 },
+   { "fopen", (void **) &orig_fopen, "rtcache_fopen", (void *) rtcache_fopen },
+   { "fopen64", (void **) &orig_fopen64, "rtcache_fopen64", (void *) rtcache_fopen64 },
+   { "close", (void **) &orig_close, "rtcache_close", (void *) rtcache_close },
+   { "stat", (void **) &orig_stat, "rtcache_stat", (void *) rtcache_stat },
+   { "lstat", (void **) &orig_lstat, "rtcache_lstat", (void *) rtcache_lstat },
+   { "__xstat", (void **) &orig_xstat, "rtcache_xstat", (void *) rtcache_xstat },
+   { "__xstat64", (void **) &orig_xstat64, "rtcache_xstat64", (void *) rtcache_xstat64 },
+   { "__lxstat", (void **) &orig_lxstat, "rtcache_lxstat", (void *) rtcache_lxstat },
+   { "__lxstat64", (void **) &orig_lxstat64, "rtcache_lxstat64", (void *) rtcache_lxstat64 },
+   { "fstat", (void **) &orig_fstat, "rtcache_fstat", (void *) rtcache_fstat },
+   { "__fxstat", (void **) &orig_fxstat, "rtcache_fxstat", (void *) rtcache_fxstat },
+   { "__fxstat64", (void **) &orig_fxstat64, "rtcache_fxstat64", (void *) rtcache_fxstat64 },
+   { "execl", (void **) NULL, "execl_wrapper", (void *) execl_wrapper },
+   { "execv", (void **) &orig_execv, "execv_wrapper", (void *) execv_wrapper },
+   { "execle", (void **) NULL, "execle_wrapper", (void *) execle_wrapper },
+   { "execve", (void **) &orig_execve, "execve_wrapper", (void *) execve_wrapper },
+   { "execlp", (void **) NULL, "execlp_wrapper", (void *) execlp_wrapper },
+   { "execvp", (void **) &orig_execvp, "execvp_wrapper", (void *) execvp_wrapper },
+   { "vfork", (void **) NULL, "vfork_wrapper", (void *) vfork_wrapper },
+   { "spindle_enable", NULL, "int_spindle_enable", (void *) int_spindle_enable },
+   { "spindle_disable", NULL, "int_spindle_disable", (void *) int_spindle_disable },
+   { "spindle_is_enabled", NULL, "int_spindle_is_enabled", (void *) int_spindle_is_enabled },
+   { "spindle_is_present", NULL, "int_spindle_is_present", (void *) int_spindle_is_present },
+   { "spindle_open", NULL, "int_spindle_open", (void *) int_spindle_open },
+   { "spindle_stat", NULL, "int_spindle_stat", (void *) int_spindle_stat },
+   { "spindle_lstat", NULL, "int_spindle_lstat", (void *) int_spindle_lstat },
+   { "spindle_fopen", NULL, "int_spindle_fopen", (void *) int_spindle_fopen },
+   { "spindle_test_log_msg", NULL, "int_spindle_test_log_msg", (void *) int_spindle_test_log_msg },
+   { NULL, NULL, NULL, NULL }
 };
 
-#define MAX_BINDING_STR_SIZE 19
+#define MAX_BINDING_STR_SIZE 20
 #define HASH_TABLE_SIZE 128
 
 static int binding_hash_table[HASH_TABLE_SIZE];

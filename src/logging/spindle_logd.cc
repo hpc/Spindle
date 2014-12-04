@@ -666,7 +666,6 @@ void registerCrashHandlers()
    signal(SIGTERM, on_sig);
 }
 
-static volatile int here = 0;
 int main(int argc, char *argv[])
 {
    registerCrashHandlers();

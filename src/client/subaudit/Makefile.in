@@ -111,6 +111,13 @@ libspindle_subaudit_socket_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(libspindle_subaudit_socket_la_LDFLAGS) $(LDFLAGS) -o $@
 @SOCKETS_TRUE@am_libspindle_subaudit_socket_la_rpath = -rpath \
 @SOCKETS_TRUE@	$(pkglibexecdir)
+libspindleint_la_LIBADD =
+am_libspindleint_la_OBJECTS = preloadlib.lo
+libspindleint_la_OBJECTS = $(am_libspindleint_la_OBJECTS)
+libspindleint_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libspindleint_la_LDFLAGS) $(LDFLAGS) \
+	-o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -139,10 +146,12 @@ am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libspindle_subaudit_biter_la_SOURCES) \
 	$(libspindle_subaudit_pipe_la_SOURCES) \
-	$(libspindle_subaudit_socket_la_SOURCES)
+	$(libspindle_subaudit_socket_la_SOURCES) \
+	$(libspindleint_la_SOURCES)
 DIST_SOURCES = $(libspindle_subaudit_biter_la_SOURCES) \
 	$(libspindle_subaudit_pipe_la_SOURCES) \
-	$(libspindle_subaudit_socket_la_SOURCES)
+	$(libspindle_subaudit_socket_la_SOURCES) \
+	$(libspindleint_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -262,12 +271,14 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglibexec_LTLIBRARIES = $(am__append_1) $(am__append_2) \
-	$(am__append_3)
+pkglibexec_LTLIBRARIES = libspindleint.la $(am__append_1) \
+	$(am__append_2) $(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient
 BASE_SRCS = subaudit.c lookup_libc.c intercept_malloc.c update_pltbind.c ../auditclient/auditclient_common.c ../auditclient/patch_linkmap.c
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
+libspindleint_la_SOURCES = preloadlib.c
+libspindleint_la_LDFLAGS = -shared -avoid-version
 libspindle_subaudit_socket_la_SOURCES = $(BASE_SRCS)
 libspindle_subaudit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)
 libspindle_subaudit_socket_la_LDFLAGS = -shared -avoid-version
@@ -348,6 +359,8 @@ libspindle_subaudit_pipe.la: $(libspindle_subaudit_pipe_la_OBJECTS) $(libspindle
 	$(AM_V_CCLD)$(libspindle_subaudit_pipe_la_LINK) $(am_libspindle_subaudit_pipe_la_rpath) $(libspindle_subaudit_pipe_la_OBJECTS) $(libspindle_subaudit_pipe_la_LIBADD) $(LIBS)
 libspindle_subaudit_socket.la: $(libspindle_subaudit_socket_la_OBJECTS) $(libspindle_subaudit_socket_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libspindle_subaudit_socket_la_LINK) $(am_libspindle_subaudit_socket_la_rpath) $(libspindle_subaudit_socket_la_OBJECTS) $(libspindle_subaudit_socket_la_LIBADD) $(LIBS)
+libspindleint.la: $(libspindleint_la_OBJECTS) $(libspindleint_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspindleint_la_LINK) -rpath $(pkglibexecdir) $(libspindleint_la_OBJECTS) $(libspindleint_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -359,6 +372,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercept_malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lookup_libc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/patch_linkmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/preloadlib.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subaudit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update_pltbind.Plo@am__quote@
 

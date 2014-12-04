@@ -31,6 +31,7 @@
 #include "client_api.h"
 #include "should_intercept.h"
 #include "exec_util.h"
+#include "handle_vararg.h"
 
 #define INTERCEPT_EXEC
 #if defined(INSTR_LIB)
@@ -132,53 +133,6 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
    return result;
 }
-
-#define ARGV_MAX 1024
-#define VARARG_TO_ARGV                                                  \
-   char *initial_argv[ARGV_MAX];                                        \
-   char **argv = initial_argv, **newp;                                  \
-   char **new_argv = NULL;                                              \
-   va_list arglist;                                                     \
-   int cur = 0;                                                         \
-   int size = ARGV_MAX;                                                 \
-                                                                        \
-   va_start(arglist, arg0);                                             \
-                                                                        \
-   argv[cur] = (char *) arg0;                                           \
-   while (argv[cur++] != NULL) {                                        \
-      if (cur >= size) {                                                \
-         size *= 2;                                                     \
-         if (argv == initial_argv) {                                    \
-            argv = (char **) spindle_malloc(sizeof(char *) * size);     \
-            if (!argv) {                                                \
-               errno = ENOMEM;                                          \
-               return -1;                                               \
-            }                                                           \
-            memcpy(argv, initial_argv, ARGV_MAX*sizeof(char*));         \
-         }                                                              \
-         else {                                                         \
-            newp = (char **) spindle_realloc(argv, sizeof(char *) * size); \
-            if (!newp) {                                                \
-               spindle_free(argv);                                      \
-               errno = ENOMEM;                                          \
-               return -1;                                               \
-            }                                                           \
-         }                                                              \
-      }                                                                 \
-                                                                        \
-      argv[cur] = va_arg(arglist, char *);                              \
-   }                                                                    \
-    
-#define VARARG_TO_ARGV_CLEANUP                                       \
-   va_end(arglist);                                                  \
-   if (argv != initial_argv) {                                       \
-      spindle_free(argv);                                            \
-   }                                                                 \
-   if (new_argv) {                                                   \
-      spindle_free(new_argv);                                        \
-   }
-
-
 
 int execl_wrapper(const char *path, const char *arg0, ...)
 {

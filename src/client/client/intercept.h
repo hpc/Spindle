@@ -75,12 +75,13 @@ int int_spindle_is_present();
 void int_spindle_enable();
 void int_spindle_disable();
 int int_spindle_is_enabled();
-
+void int_spindle_test_log_msg(char *buffer);
 
 struct spindle_binding_t {
    const char *name;
    void **libc_func;
-   void *spindle_func;   
+   const char *spindle_name;
+   void *spindle_func;
 };
 
 void init_bindings_hash();

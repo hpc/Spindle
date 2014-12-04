@@ -21,18 +21,28 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_debug.h"
 #include "subaudit.h"
+#include "client.h"
+#include "intercept.h"
 
 unsigned int spindle_la_version(unsigned int version)
 {
    int result;
+   int binding_offset = 0;
 
    result = lookup_calloc_got();
    if (result == -1)
       return 0;
    update_calloc_got();
 
-#warning Fix PLT binding magic constant   
-   init_plt_binding_func(-112);
+   result = get_ldso_metadata(&binding_offset);
+   if (result == -1) {
+      err_printf("Unable to lookup binding offset\n");
+      return -1;
+   }
+   debug_printf3("Updating subaudit bindings with offset %d\n", binding_offset);
+   init_plt_binding_func(binding_offset);
+
+   init_bindings_hash();
 
    return 1;
 }

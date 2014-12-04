@@ -18,6 +18,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <link.h>
 #include <elf.h>
 #include <sys/mman.h>
+#include <stdlib.h>
 
 #include "subaudit.h"
 #include "config.h"
@@ -33,6 +34,15 @@ static void *dl_runtime_resolve_ptr;
 
 #if defined(arch_x86_64)
 #define GOT_resolve_offset 16
+typedef Elf64_Addr funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
+#elif defined(arch_ppc64)
+#define GOT_resolve_offset 0
+typedef struct {
+   Elf64_Addr func;
+   Elf64_Addr toc;   
+} *funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((funcptr_t) TO) = *((funcptr_t) FROM)
 #else
 #error Unknown architecture
 #endif
@@ -44,7 +54,6 @@ void init_plt_binding_func(signed int binding_offset_)
    dl_runtime_resolve_ptr = NULL;
 }
 
-
 #define UPDATE_ERR -1
 #define UPDATE_AGAIN -2
 #define UPDATE_DONE -3
@@ -54,7 +63,7 @@ static int update_plt_binding_func(struct link_map *lmap)
    ElfW(Addr) got = 0;
    ElfW(Dyn) *dynsec, *dentry;
    void **ldso_ptr;
-   const char *name = lmap->l_name && lmap->l_name[0] ? lmap->l_name : "[NO NAME]";
+   const char *name = (lmap->l_name && lmap->l_name[0]) ? lmap->l_name : "[NO NAME]";
       
    dynsec = (ElfW(Dyn) *) lmap->l_ld;
    if (!dynsec) {
@@ -73,9 +82,11 @@ static int update_plt_binding_func(struct link_map *lmap)
       return UPDATE_ERR;
    }
 
+   debug_printf3("Have GOT for %s at 0x%lx, for binding function update to 0x%lx\n", 
+                name, got - lmap->l_addr, got+GOT_resolve_offset);
    ldso_ptr = ((void **) (got+GOT_resolve_offset));
    if (*ldso_ptr == NULL) {
-      debug_printf("Entry %s does not yet have an fixed-up GOT.  Postponing update.\n", name);
+      debug_printf3("Entry %s does not yet have a fixed-up GOT at %p.  Will retry update.\n", name, ldso_ptr);
       return UPDATE_AGAIN;
    }
 
@@ -123,23 +134,57 @@ static int redirect_interceptions(struct link_map *lmap)
    struct spindle_binding_t *binding;
    void **addr;
 
-#define LOOKUP_IN_HASH(SYM, NAME, OFFSET) {             \
-      binding = lookup_in_binding_hash(NAME);           \
-      if (binding) {                                    \
-         addr = (void **) (OFFSET + lmap->l_addr);      \
-         *addr = binding->spindle_func;                 \
-      }                                                 \
+#define LOOKUP_IN_HASH(SYM, NAME, OFFSET) {                             \
+      binding = lookup_in_binding_hash(NAME);                           \
+      if (binding) {                                                    \
+         addr = (void **) (OFFSET + lmap->l_addr);                      \
+         ASSIGN_FPTR(addr, binding->spindle_func);                      \
+      }                                                                 \
    }
-   
+
    FOR_EACH_PLTREL(lmap, LOOKUP_IN_HASH);
    
    return 0;
 }
-   
+
+static int redirect_libspindleint_interceptions(struct link_map *lmap)
+{
+   struct spindle_binding_t *binding, *base;
+   void **addr;
+
+   base = get_bindings();
+   if (!lmap->l_name || !strstr(lmap->l_name, "libspindleint.so")) {
+      return 0;
+   }
+
+   debug_printf2("Remapping internal symbols in %s to point to spindle implementations\n", lmap->l_name);
+
+#define LOOKUP_IN_INT_HASH(SYM, NAME, OFFSET) {                   \
+      if (SYM->st_shndx != SHN_UNDEF)                             \
+         continue;                                                \
+      for (binding = base; binding->name != NULL; binding++) {    \
+         if (strcmp(binding->spindle_name, NAME) == 0) {          \
+            debug_printf3("Mapping %s in library %s to %s\n", NAME, lmap->l_name, binding->name); \
+            addr = (void **) (OFFSET + lmap->l_addr);             \
+            ASSIGN_FPTR(addr, binding->spindle_func);             \
+            break;                                                \
+         }                                                        \
+      }                                                           \
+   }
+
+   FOR_EACH_PLTREL(lmap, LOOKUP_IN_INT_HASH);
+
+   return 0;
+}
+
+extern struct link_map *get_ldso();   
 void add_library_to_plt_update_list(struct link_map *lmap)
 {
-   if (!lmap->l_name || strstr(lmap->l_name, "/ld.") || strstr(lmap->l_name, "/ld-"))
+   if (!lmap->l_name)
       return;
+   if (lmap == get_ldso())
+      return;
+
    grow_update_list();
    update_list[update_list_cur++] = lmap;
 }
@@ -148,6 +193,18 @@ int update_plt_bindings()
 {
    unsigned int i, j = 0;
    int result, ret = 0;
+   char *ld_preload;
+   static enum {
+      spindleint_unset,
+      spindleint_none,
+      spindleint_present
+   } has_spindleint = spindleint_unset;
+
+   if (has_spindleint == spindleint_unset) {
+      ld_preload = getenv("LD_PRELOAD");
+      has_spindleint = ld_preload && strstr(ld_preload, "libspindleint.so") ? spindleint_present : spindleint_unset;
+   }
+
 
    for (i = 0; i < update_list_cur; i++) {
       result = update_plt_binding_func(update_list[i]);
@@ -162,8 +219,11 @@ int update_plt_bindings()
       else if (result == UPDATE_DONE) {
          continue;
       }
-
-      redirect_interceptions(update_list[i]);
+      
+      if (has_spindleint == spindleint_none)
+         redirect_interceptions(update_list[i]);
+      else if (has_spindleint == spindleint_present)
+         redirect_libspindleint_interceptions(update_list[i]);
    }
 
    if (j != 0) {

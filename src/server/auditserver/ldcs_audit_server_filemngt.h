@@ -40,5 +40,9 @@ size_t filemngt_get_file_size(char *pathname);
 int filemngt_stat(char *pathname, struct stat *buf);
 int filemngt_write_stat(char *localname, struct stat *buf);
 int filemngt_read_stat(char *localname, struct stat *buf);
+int filemngt_write_ldsometadata(char *localname, ldso_info_t *ldsoinfo);
+int filemngt_read_ldsometadata(char *localname, ldso_info_t *ldsoinfo);
+
+int filemngt_get_ldso_metadata(char *pathname, ldso_info_t *ldsoinfo);
 
 #endif

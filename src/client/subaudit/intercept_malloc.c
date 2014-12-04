@@ -40,6 +40,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "parse_plt.h"
 #include "config.h"
 #include "client_heap.h"
+#include "client.h"
 
 typedef void *(*malloc_fptr)(size_t);
 typedef void *(*calloc_fptr)(size_t, size_t);
@@ -53,19 +54,29 @@ static unsigned int pltrelsz_size = 0, pltrelsz_cur = 0;
 
 #if defined(arch_x86_64)
 #define LDSO_EXTRA_CALLOC_SZ 32
+#elif defined(arch_ppc64)
+#define LDSO_EXTRA_CALLOC_SZ 32
 #else
 #error Unknown architecture
 #endif
 
 static void rm_from_pltrelsz_list(unsigned int idx);
 
-static struct link_map *get_ldso()
+struct link_map *get_ldso()
 {
-   struct link_map *result;
+   static struct link_map *result = 0;
+   if (result)
+      return result;
+
+   char *interp_name = find_interp_name();
    for (result = _r_debug.r_map; result != NULL; result = result->l_next) {
-      if (result->l_name && strstr(result->l_name, "/ld")) {
+      if (result->l_name && (interp_name == result->l_name ||  strcmp(result->l_name, interp_name) == 0)) {
          return result;
       }
+   }
+   for (result = _r_debug.r_map; result != NULL; result = result->l_next) {
+      if (result->l_name && strstr(result->l_name, "/ld"))
+         return result;
    }
    return NULL;
 }
@@ -99,14 +110,15 @@ void *spindle_ldso_calloc(size_t nmemb, size_t size)
    if (nmemb == LDSO_EXTRA_CALLOC_SZ && size >= nmemb) {
       for (i = 0; i < pltrelsz_cur; i++) {
          if (pltrelsz_list[i] == size) {
-            rm_from_pltrelsz_list(i);
             debug_printf3("Dropping ld.so calloc(%lu, %lu)\n", nmemb, size);
+            rm_from_pltrelsz_list(i);
+            update_plt_bindings();
             return (void *) 0x1;
          }
       }
    }
 
-   void *result = malloc(nmemb * size);
+   void *result = spindle_malloc(nmemb * size);
    memset(result, 0, nmemb * size);
    return result;
 }
@@ -122,7 +134,12 @@ void update_calloc_got()
                  calloc_got, *calloc_got);
    protect_range(calloc_got, sizeof(ElfW(Addr)), PROT_READ | PROT_WRITE);
    orig_calloc = *calloc_got;
+#if defined(arch_ppc64)
+   ((unsigned long *) calloc_got)[0] = ((unsigned long *) spindle_ldso_calloc)[0];
+   ((unsigned long *) calloc_got)[1] = ((unsigned long *) spindle_ldso_calloc)[1];
+#else
    *calloc_got = spindle_ldso_calloc;
+#endif
 }
 
 static void grow_pltrelsz_list()
@@ -135,7 +152,7 @@ static void grow_pltrelsz_list()
    }
 
    pltrelsz_size *= 2;
-   pltrelsz_list = spindle_realloc(pltrelsz_list, pltrelsz_size);
+   pltrelsz_list = spindle_realloc(pltrelsz_list, sizeof(*pltrelsz_list) * pltrelsz_size);
 }
 
 static void rm_from_pltrelsz_list(unsigned int idx)
@@ -162,11 +179,17 @@ static unsigned int get_pltrelsz(struct link_map *lmap)
 void add_library_to_calloc_list(struct link_map *lmap)
 {
    unsigned int pltrelsz;
-   if (!pltrelsz_list || pltrelsz_cur == pltrelsz_size)
+
+   if (!pltrelsz_list || pltrelsz_cur == pltrelsz_size) {
       grow_pltrelsz_list();
+   }
 
    pltrelsz = get_pltrelsz(lmap);
+
+   debug_printf3("Adding library %s to calloc drop list with size %u\n", lmap->l_name ? : "[NULL]", pltrelsz);
+
    if (pltrelsz)
       pltrelsz_list[pltrelsz_cur++] = pltrelsz;
+
 }
 

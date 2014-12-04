@@ -21,22 +21,28 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 extern "C" {
 #endif
 
+#if defined(SPINDLE_INTERNAL_BUILD)
+#define SPINDLE_EXPORT __attribute__((__visibility__("default")))
+#else
+#define SPINDLE_EXPORT
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
 
-int spindle_is_present();
+int spindle_is_present() SPINDLE_EXPORT;
 
 /**
  * These calls will perform IO operations through Spindle, if present,
  * and forward on to regular IO calls if Spindle is not present.
  * The open calls will only forward to Spindle if opening read-only.
  **/
-int spindle_open(const char *pathname, int flags, ...);
-int spindle_stat(const char *path, struct stat *buf);
-int spindle_lstat(const char *path, struct stat *buf);
-FILE *spindle_fopen(const char *path, const char *mode);
+int spindle_open(const char *pathname, int flags, ...) SPINDLE_EXPORT;
+int spindle_stat(const char *path, struct stat *buf) SPINDLE_EXPORT;
+int spindle_lstat(const char *path, struct stat *buf) SPINDLE_EXPORT;
+FILE *spindle_fopen(const char *path, const char *mode) SPINDLE_EXPORT;
 
 /**
  * If spindle is enabled through this API, then all open and stat calls
@@ -49,14 +55,14 @@ FILE *spindle_fopen(const char *path, const char *mode);
  * Spindle enabling/disabling counts are tracked per-thread (if Spindle was built
  * with TLS support).
  **/
-void enable_spindle();
-void disable_spindle();
-int is_spindle_enabled();
+void enable_spindle() SPINDLE_EXPORT;
+void disable_spindle() SPINDLE_EXPORT;
+int is_spindle_enabled() SPINDLE_EXPORT;
 
 /**
  * is_spindle_present returns true if the application was started under Spindle
  **/
-int is_spindle_present();
+int is_spindle_present() SPINDLE_EXPORT;
 
 #if defined(__cplusplus)
 }

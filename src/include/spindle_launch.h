@@ -23,7 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 extern "C" {
 #endif
 
-#if defined(SPINDLEFE) || defined(SPINDLEBE)
+#if defined(SPINDLEFE) || defined(SPINDLEBE) || defined(SPINDLE_DO_EXPORT)
 #define SPINDLE_EXPORT __attribute__((visibility ("default")))
 #else
 #define SPINDLE_EXPORT
@@ -47,6 +47,7 @@ extern "C" {
 #define OPT_LOGUSAGE   (1 << 15)
 #define OPT_SHMCACHE   (1 << 16)
 #define OPT_SEC        ((1 << 17) | (1 << 18))
+#define OPT_SUBAUDIT   (1 << 19)
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 17)
 #define OPT_GET_SEC(OPT) ((OPT >> 17) & 3)

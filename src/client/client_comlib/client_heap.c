@@ -84,7 +84,7 @@ void *spindle_realloc(void *orig, size_t size)
 {
    void *result;
    HEAP_LOCK;
-   result = spindle_realloc(orig, size);
+   result = realloc(orig, size);
    HEAP_UNLOCK;
    return result;
 }

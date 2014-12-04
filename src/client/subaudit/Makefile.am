@@ -1,4 +1,4 @@
-pkglibexec_LTLIBRARIES = 
+pkglibexec_LTLIBRARIES = libspindleint.la
 
 if SOCKETS
 pkglibexec_LTLIBRARIES += libspindle_subaudit_socket.la
@@ -17,6 +17,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcd
 BASE_SRCS = subaudit.c lookup_libc.c intercept_malloc.c update_pltbind.c ../auditclient/auditclient_common.c ../auditclient/patch_linkmap.c
 
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
+
+libspindleint_la_SOURCES = preloadlib.c
+libspindleint_la_LDFLAGS = -shared -avoid-version
 
 libspindle_subaudit_socket_la_SOURCES = $(BASE_SRCS)
 libspindle_subaudit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)

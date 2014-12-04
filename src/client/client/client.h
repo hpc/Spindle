@@ -57,11 +57,12 @@ int handle_stat(const char *path, struct stat *buf, int flags);
 int open_worker(const char *path, int oflag, mode_t mode, int is_64);
 FILE *fopen_worker(const char *path, const char *mode, int is_64);
 void remap_executable();
+int get_ldso_metadata(signed int *binding_offset);
+
 
 int get_relocated_file(int fd, const char *name, char** newname);
 int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf);
 int get_existance_test(int fd, const char *path, int *exists);
-
 /**
  * Tracking python prefixes
  **/
@@ -81,11 +82,14 @@ extern int intercept_exec;
 extern int intercept_stat;
 extern int intercept_close;
 extern int intercept_fork;
-void spindle_test_log_msg(char *buffer);
+extern void int_spindle_test_log_msg(char *buffer);
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"
 typedef int *(*errno_location_t)(void);
 extern errno_location_t app_errno_location;
+
+char *find_libc_name();
+char *find_interp_name();
 
 #endif

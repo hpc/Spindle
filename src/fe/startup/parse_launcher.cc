@@ -39,17 +39,23 @@ extern bool setOpenMPIInterceptEnv(string launcher_rel);
 /**
  * Setup library locations, which come from autoconf
  **/
-static const char spindle_bootstrap[] = LIBEXECDIR "/spindle_bootstrap";
-static const char libstr_socket[] = LIBEXECDIR "/libspindle_client_socket.so";
-static const char libstr_pipe[] = LIBEXECDIR "/libspindle_client_pipe.so";
-static const char libstr_biter[] = LIBEXECDIR "/libspindle_client_biter.so";
+char libstr_socket_subaudit[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
+char libstr_pipe_subaudit[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
+char libstr_biter_subaudit[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
+
+char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
+char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
+char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
 
 #if defined(COMM_SOCKET)
-static const char *default_libstr = libstr_socket;
+static char *default_audit_libstr = libstr_socket_audit;
+static char *default_subaudit_libstr = libstr_socket_subaudit;
 #elif defined(COMM_PIPES)
-static const char *default_libstr = libstr_pipe;
+static char *default_audit_libstr = libstr_pipe_audit;
+static char *default_subaudit_libstr = libstr_pipe_subaudit;
 #elif defined(COMM_BITER)
-static const char *default_libstr = libstr_biter;
+static char *default_audit_libstr = libstr_biter_audit;
+static char *default_subaudit_libstr = libstr_biter_subaudit;
 #else
 #error Unknown connection type
 #endif
@@ -283,6 +289,8 @@ void ModifyArgv::modifyCmdLine()
    char shm_cache_size_str[32];
    snprintf(shm_cache_size_str, 32, "%u", params->shm_cache_size);
    string shmcache_size(shm_cache_size_str);
+
+   const char *default_libstr = params->opts & OPT_SUBAUDIT ? default_subaudit_libstr : default_audit_libstr;
 
    int new_argv_size = argc + 7 + daemon_argc;
    new_argv = (char **) malloc(sizeof(char *) * new_argv_size);

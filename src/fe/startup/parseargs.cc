@@ -42,6 +42,7 @@ using namespace std;
 #define PRELOAD 'e'
 #define FOLLOWFORK 'f'
 #define HIDE 'h'
+#define AUDITTYPE 'k'
 #define RELOCSO 'l'
 #define NOCLEAN 'n'
 #define LOCATION 'o'
@@ -81,6 +82,8 @@ using namespace std;
 #else
 #error No security model available
 #endif
+
+#define DEFAULT_USE_SUBAUDIT 1
 
 static const char *YESNO = "yes|no";
 
@@ -124,10 +127,17 @@ static int sec_model = -1;
 static int launcher = 0;
 static int startup_type = 0;
 static int shm_cache_size = SHM_DEFAULT_SIZE;
+static int use_subaudit = DEFAULT_USE_SUBAUDIT;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
 static char *user_python_prefixes = NULL;
+
+#if DEFAULT_USE_SUBAUDIT == 1
+#define DEFAULT_USE_SUBAUDIT_STR "subaudit"
+#else
+#define DEFAULT_USE_SUBAUDIT_STR "audit"
+#endif
 
 #if defined(USAGE_LOGGING_FILE)
 #define DEFAULT_LOGGING_ENABLED true
@@ -207,6 +217,8 @@ struct argp_option options[] = {
      "Run serial jobs instead of MPI job", GROUP_LAUNCHER },
    { NULL, 0, NULL, 0,
      "Misc options", GROUP_MISC },
+   { "audit-type", AUDITTYPE, "subaudit|audit", 0,
+     "Use the new-style subaudit interface for intercepting ld.so, or the old-style audit interface.  The subaudit option reduces memory overhead, but is more complex.  Default is " DEFAULT_USE_SUBAUDIT_STR ".", GROUP_MISC },
    { "shmcache-size", SHAREDCACHE_SIZE, "size", 0,
      "Size of client shared memory cache in kilobytes, which can be used to improve performance if multiple processes are running on each node.  Default: " STR(SHM_DEFAULT_SIZE), GROUP_MISC },
    { "python-prefix", PYTHONPREFIX, "path", 0,
@@ -223,11 +235,11 @@ struct argp_option options[] = {
    { "location", LOCATION, "directory", 0,
      "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk.  Default: " SPINDLE_LOC, GROUP_MISC },
    { "noclean", NOCLEAN, YESNO, 0,
-     "Don't remove local file cache after execution.  Default: no (removes the cache)\n", GROUP_MISC },
+     "Don't remove local file cache after execution.  Default: no (removes the cache)", GROUP_MISC },
    { "disable-logging", DISABLE_LOGGING, NULL, DISABLE_LOGGING_FLAGS,
      "Disable usage logging for this invocation of Spindle", GROUP_MISC },
    { "no-hide", HIDE, NULL, 0,
-     "Don't hide spindle file descriptors from application\n", GROUP_MISC },
+     "Don't hide spindle file descriptors from application", GROUP_MISC },
    {0}
 };
 
@@ -324,6 +336,18 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       return 0;
    }
+   else if (entry->key == AUDITTYPE) {
+      if (strcmp(arg, "subaudit") == 0) {
+         use_subaudit = 1;
+      }
+      else if (strcmp(arg, "audit") == 0) {
+         use_subaudit = 0;
+      }
+      else {
+         argp_error(state, "audit-type argument must be 'audit' or 'subaudit'");
+      }
+      return 0;
+   }
    else if (entry->key == LOCATION) {
       spindle_location = arg;
       return 0;
@@ -414,6 +438,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 
       /* Set any misc options */
       opts |= all_misc_opts & ~disabled_opts & (enabled_opts | default_misc_opts);
+      opts |= use_subaudit ? OPT_SUBAUDIT : 0;
       opts |= logging_enabled ? OPT_LOGUSAGE : 0;
       opts |= shm_cache_size > 0 ? OPT_SHMCACHE : 0;
 

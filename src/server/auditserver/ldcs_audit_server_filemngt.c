@@ -27,6 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <elf.h>
 
 #include "ldcs_api.h"
 #include "ldcs_cache.h"
@@ -34,6 +35,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
 #include "config.h"
+
+#if !defined(LIBEXECDIR)
+#error LIBEXECDIR must be defined
+#endif
 
 char *_ldcs_audit_server_tmpdir;
 
@@ -78,6 +83,8 @@ char *filemngt_calc_localname(char *global_name)
       if (*s == '/')
          *s = '_';
       if (*s == '*') 
+         *s = '_';
+      if (*s == '$')
          *s = '_';
    }
 
@@ -325,11 +332,9 @@ int filemngt_stat(char *pathname, struct stat *buf)
    return result;
 }
 
-int filemngt_write_stat(char *localname, struct stat *buf)
+static int filemngt_write_buffer(char *localname, char *buffer, size_t size)
 {
    int result, bytes_written, fd;
-   int size;
-   char *buffer;
 
    fd = creat(localname, 0600);
    if (fd == -1) {
@@ -338,8 +343,6 @@ int filemngt_write_stat(char *localname, struct stat *buf)
    }
 
    bytes_written = 0;
-   buffer = (char *) buf;
-   size = sizeof(struct stat);
 
    while (bytes_written != size) {
       result = write(fd, buffer + bytes_written, size - bytes_written);
@@ -356,11 +359,20 @@ int filemngt_write_stat(char *localname, struct stat *buf)
    return 0;
 }
 
-int filemngt_read_stat(char *localname, struct stat *buf)
+int filemngt_write_stat(char *localname, struct stat *buf)
+{
+   return filemngt_write_buffer(localname, (char *) buf, sizeof(*buf));
+}
+
+int filemngt_write_ldsometadata(char *localname, ldso_info_t *ldsoinfo)
+{
+   return filemngt_write_buffer(localname, (char *) ldsoinfo, sizeof(*ldsoinfo));
+}
+
+
+static int filemngt_read_buffer(char *localname, char *buffer, size_t size)
 {
    int result, bytes_read, fd;
-   int size;
-   char *buffer;
 
    fd = open(localname, O_RDONLY);
    if (fd == -1) {
@@ -369,8 +381,6 @@ int filemngt_read_stat(char *localname, struct stat *buf)
    }
 
    bytes_read = 0;
-   buffer = (char *) buf;
-   size = sizeof(struct stat);
 
    while (bytes_read != size) {
       result = read(fd, buffer + bytes_read, size - bytes_read);
@@ -386,3 +396,224 @@ int filemngt_read_stat(char *localname, struct stat *buf)
    close(fd);
    return 0;
 }
+
+int filemngt_read_ldsometadata(char *localname, ldso_info_t *ldsoinfo)
+{
+   return filemngt_read_buffer(localname, (char *) ldsoinfo, sizeof(*ldsoinfo));
+}
+
+int filemngt_read_stat(char *localname, struct stat *buf)
+{
+   return filemngt_read_buffer(localname, (char *) buf, sizeof(*buf));
+}
+
+#if defined(arch_x86_64)
+#define PROFILE_FUNC_NAME "_dl_runtime_profile"
+#define GET_ADDR_FROM_SYMVALUE(X) (X)
+#elif defined(arch_ppc64)
+#define PROFILE_FUNC_NAME "_dl_profile_resolve"
+#define GET_ADDR_FROM_SYMVALUE(X) (*((unsigned long *) (X+base)))
+#else
+#error Unknown architecture
+#endif
+
+#define filemngt_ldso_elfx(filemngt_ldso_elfX, ElfX_Ehdr, ElfX_Shdr, ElfX_Sym, ElfX_Off, ElfX_Phdr) \
+static int filemngt_ldso_elfX(unsigned char *base, ldso_info_t *ldsoinfo) \
+{                                                                       \
+   ElfX_Ehdr *ehdr;                                                     \
+   ElfX_Shdr *shdr, *sec, *name_sec;                                    \
+   ElfX_Sym *syms, *cur;                                                \
+   ElfX_Off mem_offset, file_offset;                                    \
+   ElfX_Phdr *phdrs, *phdr;                                             \
+   unsigned int i, j, k, num_shdrs, num_syms, num_phdrs;                \
+   int match_resolve, match_profile;                                    \
+   char *names, *name;                                                  \
+   unsigned long resolve_offset = 0, profile_offset = 0;                \
+                                                                        \
+   ehdr = (ElfX_Ehdr *) base;                                           \
+   shdr = (ElfX_Shdr *) (base + ehdr->e_shoff);                         \
+   num_shdrs = ehdr->e_shnum;                                           \
+   num_phdrs = ehdr->e_phnum;                                           \
+   phdrs = (ElfX_Phdr *) (base + ehdr->e_phoff);                        \
+                                                                        \
+   for (i = 0; i < num_shdrs; i++) {                                    \
+      sec = shdr + i;                                                   \
+      if (sec->sh_type != SHT_SYMTAB && sec->sh_type != SHT_DYNSYM)     \
+         continue;                                                      \
+                                                                        \
+      name_sec = shdr + sec->sh_link;                                   \
+      names = (char *) (base + name_sec->sh_offset);                    \
+                                                                        \
+      syms = (ElfX_Sym *) (base + sec->sh_offset);                      \
+      num_syms = sec->sh_size / sizeof(*syms);                          \
+                                                                        \
+      for (j = 0; j < num_syms; j++) {                                  \
+         cur = syms + j;                                                \
+         name = names + cur->st_name;                                   \
+                                                                        \
+         match_resolve = (strcmp(name, "_dl_runtime_resolve") == 0);    \
+         match_profile = (strcmp(name, PROFILE_FUNC_NAME) == 0);        \
+                                                                        \
+         if (!match_resolve && !match_profile)                          \
+            continue;                                                   \
+                                                                        \
+         file_offset = 0;                                               \
+         mem_offset = cur->st_value;                                    \
+         for (k = 0; k < num_phdrs; k++) {                              \
+            phdr = phdrs + k;                                           \
+            if (phdr->p_type != PT_LOAD)                                \
+               continue;                                                \
+            if (mem_offset >= phdr->p_vaddr && mem_offset < phdr->p_vaddr + phdr->p_memsz) { \
+               file_offset = (mem_offset - phdr->p_vaddr) + phdr->p_offset; \
+               break;                                                   \
+            }                                                           \
+         }                                                              \
+         if (file_offset == 0) {                                        \
+            err_printf("Error translating memory offset to file offset in ld.so symbol lookup\n"); \
+            return -1;                                                  \
+         }                                                              \
+                                                                        \
+         if (match_resolve)                                             \
+            resolve_offset = GET_ADDR_FROM_SYMVALUE(file_offset);       \
+         else if (match_profile)                                        \
+            profile_offset = GET_ADDR_FROM_SYMVALUE(file_offset);       \
+                                                                        \
+         if (resolve_offset && profile_offset)                          \
+            break;                                                      \
+      }                                                                 \
+      if (resolve_offset && profile_offset)                             \
+         break;                                                         \
+   }                                                                    \
+                                                                        \
+   if (!resolve_offset) {                                               \
+      err_printf("Could not find symbol _dl_runtime_resolve in dynamic linker\n"); \
+      return -1;                                                        \
+   }                                                                    \
+                                                                        \
+   if (!profile_offset) {                                               \
+      err_printf("Could not find symbol _dl_runtime_profile in dynamic linker\n"); \
+      return -1;                                                        \
+   }                                                                    \
+                                                                        \
+   ldsoinfo->binding_offset = (signed long) (resolve_offset - profile_offset); \
+   return 0;                                                            \
+}
+
+filemngt_ldso_elfx(filemngt_ldso_elf32, Elf32_Ehdr, Elf32_Shdr, Elf32_Sym, Elf32_Off, Elf32_Phdr)
+filemngt_ldso_elfx(filemngt_ldso_elf64, Elf64_Ehdr, Elf64_Shdr, Elf64_Sym, Elf64_Off, Elf64_Phdr)
+
+static int ldso_metadata_sym(char *pathname, ldso_info_t *ldsoinfo)
+{
+   int fd = -1, result, error, ret = -1;
+   size_t ldso_size;
+   struct stat buf;
+   void *map_result = MAP_FAILED;
+   char *elf_ident;
+
+   fd = open(pathname, O_RDONLY);
+   if (fd == -1) {
+      error = errno;
+      err_printf("Error opening linker path %s for metadata: %s\n", pathname, strerror(error));
+      goto done;
+   }
+
+   result = fstat(fd, &buf);
+   if (result == -1) {
+      error = errno;
+      err_printf("Error stating linker path %s for metadata: %s\n", pathname, strerror(error));
+      goto done;
+   }
+   ldso_size = buf.st_size;
+
+   map_result = mmap(NULL, ldso_size, PROT_READ, MAP_PRIVATE, fd, 0);
+   if (map_result == MAP_FAILED) {
+      error = errno;
+      err_printf("Error mmaping linker for %s: %s\n", pathname, strerror(error));
+      goto done;
+   }
+
+   elf_ident = (char *) map_result;
+   if (strncmp(ELFMAG, elf_ident, SELFMAG) != 0) {
+      err_printf("Error, linker %s was not an elf file\n", pathname);
+      goto done;
+   }
+
+   if (elf_ident[EI_CLASS] == ELFCLASS32) {
+      filemngt_ldso_elf32(map_result, ldsoinfo);
+   }
+   else if (elf_ident[EI_CLASS] == ELFCLASS64) {
+      filemngt_ldso_elf64(map_result, ldsoinfo);      
+   }
+   else {
+      err_printf("Error, linker %s had invalid elf class %d\n", pathname, (int) elf_ident[EI_CLASS]);
+      goto done;
+   }
+   
+   
+   ret = 0;
+  done:
+
+   if (fd != -1)
+      close(fd);
+   if (map_result != MAP_FAILED)
+      munmap(map_result, ldso_size);
+   return ret;
+}
+
+#if !defined(os_bgq)
+static int ldso_metadata_run(char *pathname, ldso_info_t *ldsoinfo)
+{
+   FILE *f;
+   char *cmdline;
+   unsigned int cmdline_size;
+   int error, result;
+   unsigned long resolve_offset, profile_offset;
+
+   cmdline_size = 2 * (strlen(pathname) + strlen(LIBEXECDIR) + strlen("/print_ldso_entry") + 2) + 1;
+   cmdline = (char *) malloc(cmdline_size);
+
+   debug_printf3("Running '%s' to get ldso offsets\n", cmdline);
+   snprintf(cmdline, cmdline_size, "%s %s %s %s", 
+            pathname, LIBEXECDIR "/print_ldso_entry",
+            pathname, LIBEXECDIR "/print_ldso_entry");
+   f = popen(cmdline, "r");
+   if (f == NULL) {
+      error = errno;
+      err_printf("Failed to run '%s' to get loader offets: %s\n", cmdline, strerror(error));
+      free(cmdline);
+      return -1;
+   }
+   free(cmdline);
+
+   result = fscanf(f, "%lu\n%lu\n", &resolve_offset, &profile_offset);
+   pclose(f);
+   if (result != 2) {
+      err_printf("Failed to read offsets from print_ldso_entry\n");
+      return -1;
+   }
+
+   ldsoinfo->binding_offset = (signed long) (resolve_offset - profile_offset);
+   return 0;
+}
+#endif
+
+int filemngt_get_ldso_metadata(char *pathname, ldso_info_t *ldsoinfo)
+{
+   int result;
+
+   debug_printf("Looking up symbol names in linker %s\n", pathname);
+   result = ldso_metadata_sym(pathname, ldsoinfo);
+   if (result == 0)
+      return 0;
+
+#if !defined(os_bgq)
+   debug_printf("Getting symbol offsets of %s from invoking print_ldso_entry\n", pathname);
+   result = ldso_metadata_run(pathname, ldsoinfo);
+   if (result == 0)
+      return 0;
+#endif
+
+   err_printf("Could not find any mechanism for fetching ldso metadata of %s\n", pathname);
+   return -1;
+}
+

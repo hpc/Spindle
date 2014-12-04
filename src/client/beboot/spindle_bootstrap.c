@@ -39,6 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #error Expected to be built with libdir defined
 #endif
 char spindle_daemon[] = LIBEXECDIR "/spindle_be";
+char spindle_interceptlib[] = LIBEXECDIR "/libspindleint.so";
 
 int ldcsid;
 unsigned int shm_cachesize;
@@ -56,16 +57,23 @@ static char *cachesize_s;
 
 unsigned long opts;
 
-char libstr_socket[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
-char libstr_pipe[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
-char libstr_biter[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
+char libstr_socket_subaudit[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
+char libstr_pipe_subaudit[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
+char libstr_biter_subaudit[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
+
+char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
+char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
+char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
 
 #if defined(COMM_SOCKET)
-static char *default_libstr = libstr_socket;
+static char *default_audit_libstr = libstr_socket_audit;
+static char *default_subaudit_libstr = libstr_socket_subaudit;
 #elif defined(COMM_PIPES)
-static char *default_libstr = libstr_pipe;
+static char *default_audit_libstr = libstr_pipe_audit;
+static char *default_subaudit_libstr = libstr_pipe_subaudit;
 #elif defined(COMM_BITER)
-static char *default_libstr = libstr_biter;
+static char *default_audit_libstr = libstr_biter_audit;
+static char *default_subaudit_libstr = libstr_biter_subaudit;
 #else
 #error Unknown connection type
 #endif
@@ -103,6 +111,24 @@ static void setup_environment()
       setenv("LDCS_CONNECTION", connection_str, 1);
    setenv("LDCS_OPTIONS", opts_s, 1);
    setenv("LDCS_CACHESIZE", cachesize_s, 1);
+   if (opts & OPT_SUBAUDIT) {
+      char *preload_str = spindle_interceptlib;
+      char *preload_env = getenv("LD_PRELOAD");
+      char *preload;
+      if (preload_env) {
+         size_t len = strlen(preload_env) + strlen(preload_str) + 2;
+         preload = malloc(len);
+         snprintf(preload, len, "%s %s", preload_str, preload_env);
+      }
+      else {
+         preload = preload_str;
+      }
+      setenv("LD_PRELOAD", preload, 1);
+      
+      if (preload_env) {
+         free(preload);
+      }
+   }  
 }
 
 static int parse_cmdline(int argc, char *argv[])
@@ -226,6 +252,8 @@ static void adjust_script()
 
 static void get_clientlib()
 {
+   char *default_libstr = (opts & OPT_SUBAUDIT) ? default_subaudit_libstr : default_audit_libstr;
+
    if (!(opts & OPT_RELOCAOUT)) {
       client_lib = default_libstr;
       return;

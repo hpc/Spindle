@@ -49,7 +49,7 @@ void add_stat_cache(char *pathname, char *data)
    unsigned int key;
    stat_entry_t *newentry;
 
-   debug_printf3("Adding stat cache entry %s = %s\n", pathname);
+   debug_printf3("Adding stat cache entry %s = %s\n", pathname, data ? : "NULL");
 
    key = hashkey(pathname) % STAT_TABLE_SIZE;
 
@@ -81,7 +81,7 @@ int lookup_stat_cache(char *pathname, char **data)
          continue;
       }
       *data = entry->data;
-      debug_printf3("Looked up stat entry %s\n");
+      debug_printf3("Looked up stat entry %s\n", pathname);
       return 0;
    }
 }

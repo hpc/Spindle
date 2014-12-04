@@ -233,7 +233,7 @@ int send_location(int fd, char *location) {
    return 0;
 }
 
-int send_ldso_info_request(int fd, char *ldso_path, ldso_info_t *result)
+int send_ldso_info_request(int fd, const char *ldso_path, char *result_path)
 {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
@@ -247,6 +247,7 @@ int send_ldso_info_request(int fd, char *ldso_path, ldso_info_t *result)
    
    COMM_LOCK;
    client_send_msg(fd, &message);
+   message.data = result_path;
    client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
    COMM_UNLOCK;
 
@@ -254,8 +255,6 @@ int send_ldso_info_request(int fd, char *ldso_path, ldso_info_t *result)
       err_printf("Got unexpected message after ldso req: %d\n", (int) message.header.type);
       assert(0);
    }
-
-   memcpy(result, message.data, sizeof(*result));
    return 0;
 }
 

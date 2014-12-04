@@ -61,6 +61,7 @@ extern char *parse_location(char *loc);
 /* compare the pointer top the cookie not the cookie itself, it may be changed during runtime by audit library  */
 int use_ldcs = 1;
 static const char *libc_name = NULL;
+static const char *interp_name = NULL;
 
 static char *concatStrings(const char *str1, const char *str2) 
 {
@@ -70,22 +71,54 @@ static char *concatStrings(const char *str1, const char *str2)
    return buffer;
 }
 
-static int find_libc_iterator(struct dl_phdr_info *lib,
+static int find_libs_iterator(struct dl_phdr_info *lib,
                               size_t size, void *data)
 {
-   if (strstr(lib->dlpi_name, "libc"))
+   if (!libc_name && (strstr(lib->dlpi_name, "libc.") || strstr(lib->dlpi_name, "libc-"))) {
       libc_name = lib->dlpi_name;
+   }
+   else if (!interp_name) {
+      const ElfW(Phdr) *phdrs = lib->dlpi_phdr;
+      unsigned long r_brk = _r_debug.r_brk;
+      unsigned int phdrs_size = lib->dlpi_phnum, i;
+
+      if (!phdrs) {
+         /* ld.so bug?  Seeing NULL PHDRS for dynamic linker entry. */
+         interp_name = lib->dlpi_name;
+      } 
+      else {
+         for (i = 0; i < phdrs_size; i++) {
+            if (phdrs[i].p_type == PT_LOAD) {
+               unsigned long base = phdrs[i].p_vaddr + lib->dlpi_addr;
+               if (base <= r_brk && r_brk < base + phdrs[i].p_memsz) {
+                  interp_name = lib->dlpi_name;
+                  break;
+               }
+            }
+         }
+      }
+   }
+
    return 0;
 }
 
-static void find_libc_name()
+char *find_libc_name()
 {
    if (libc_name)
-      return;
-   dl_iterate_phdr(find_libc_iterator, NULL);
+      return (char *) libc_name;
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   return (char *) libc_name;
 }
 
-void spindle_test_log_msg(char *buffer)
+char *find_interp_name()
+{
+   if (interp_name)
+      return (char *) interp_name;
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   return (char *) interp_name;
+}
+
+void int_spindle_test_log_msg(char *buffer)
 {
    test_printf("%s", buffer);
 }
@@ -277,11 +310,9 @@ int client_done()
    return 0;
 }
 
-static int read_stat(char *localname, struct stat *buf)
+static int read_buffer(char *localname, char *buffer, int size)
 {
    int result, bytes_read, fd;
-   int size;
-   char *buffer;
 
    fd = open(localname, O_RDONLY);
    if (fd == -1) {
@@ -290,8 +321,6 @@ static int read_stat(char *localname, struct stat *buf)
    }
 
    bytes_read = 0;
-   buffer = (char *) buf;
-   size = sizeof(struct stat);
 
    while (bytes_read != size) {
       result = read(fd, buffer + bytes_read, size - bytes_read);
@@ -306,6 +335,16 @@ static int read_stat(char *localname, struct stat *buf)
    }
    close(fd);
    return 0;
+}
+
+static int read_stat(char *localname, struct stat *buf)
+{
+   return read_buffer(localname, (char *) buf, sizeof(*buf));
+}
+
+static int read_ldso_metadata(char *localname, ldso_info_t *ldsoinfo)
+{
+   return read_buffer(localname, (char *) ldsoinfo, sizeof(*ldsoinfo));
 }
 
 static int fetch_from_cache(const char *name, char **newname)
@@ -512,4 +551,22 @@ void parse_python_prefixes(int fd)
 
    for (i = 0; pythonprefixes[i].path != NULL; i++)
       debug_printf3("Python path # %d = %s\n", i, pythonprefixes[i].path);
+}
+
+int get_ldso_metadata(signed int *binding_offset)
+{
+   ldso_info_t info;
+   int result;
+   char filename[MAX_PATH_LEN+1];
+
+   find_interp_name();
+   debug_printf2("Requesting interpreter metadata for %s\n", interp_name);
+   result = send_ldso_info_request(ldcsid, interp_name, filename);
+   if (result == -1)
+      return -1;
+
+   read_ldso_metadata(filename, &info);
+
+   *binding_offset = info.binding_offset;
+   return 0;
 }
