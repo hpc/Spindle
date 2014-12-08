@@ -47,6 +47,7 @@ char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
 char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
 char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
 
+char libstr_intercept_lib[] = LIBEXECDIR "/libspindleint.so";
 #if defined(COMM_SOCKET)
 static char *default_audit_libstr = libstr_socket_audit;
 static char *default_subaudit_libstr = libstr_socket_subaudit;
@@ -291,6 +292,7 @@ void ModifyArgv::modifyCmdLine()
    string shmcache_size(shm_cache_size_str);
 
    const char *default_libstr = params->opts & OPT_SUBAUDIT ? default_subaudit_libstr : default_audit_libstr;
+   const char *intercept_libstr = params->opts & OPT_SUBAUDIT ? libstr_intercept_lib : NULL;
 
    int new_argv_size = argc + 7 + daemon_argc;
    new_argv = (char **) malloc(sizeof(char *) * new_argv_size);
@@ -303,7 +305,7 @@ void ModifyArgv::modifyCmdLine()
       if (p == parser->appExecutableAt()) {
 #if defined(os_bluegene)
          string bg_env_str = parser->getParser()->getBGString();
-         parser->getParser()->addBGEnvStr(n, new_argv, bg_env_str, default_libstr, location, number, options, shmcache_size);
+         parser->getParser()->addBGEnvStr(n, new_argv, bg_env_str, default_libstr, intercept_libstr, location, number, options, shmcache_size);
 #else
          char **a_argv;
          int a_argc;
@@ -318,7 +320,7 @@ void ModifyArgv::modifyCmdLine()
          }
          for (int i = 1; i < a_argc; i++) 
             new_argv[n++] = a_argv[i];
-         (void) default_libstr; //Not needed on linux
+         (void) default_libstr; (void) intercept_libstr; //Not needed on linux
 #endif
       }
       if (!parser->getParser()->includeArg(argc, argv, p))

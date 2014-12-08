@@ -75,7 +75,7 @@ public:
    virtual bool isExecutable(int argc, char **argv, int pos, const std::set<std::string> &exedirs) const;
    virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;
    virtual bool includeArg(int argc, char **argv, int pos);
-   virtual bool addBGEnvStr(int &pos, char **new_argv, std::string format, std::string default_libstring, std::string location, std::string number, std::string options, std::string shmcache_size);
+   virtual bool addBGEnvStr(int &pos, char **new_argv, std::string format, std::string default_libstring, std::string intercept_libstr, std::string location, std::string number, std::string options, std::string shmcache_size);
    cmdoption_t *getArg(int argc, char **argv, int pos) const;
    bool getArgOptions(int argc, char **argv, int arg_pos, cmdoption_t *opt,
                       std::vector<std::string> &argOptions, int &inc_argc) const;
@@ -92,7 +92,7 @@ class SRunParser : public LauncherParser
   public:
    SRunParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_);
    virtual ~SRunParser();
-   virtual bool addBGEnvStr(int &pos, char **new_argv, std::string format, std::string default_libstring, std::string location, std::string number, std::string options, std::string shmcache_size);
+   virtual bool addBGEnvStr(int &pos, char **new_argv, std::string format, std::string default_libstring, std::string intercept_libstring, std::string location, std::string number, std::string options, std::string shmcache_size);
 };
 
 typedef LauncherParser WreckRunParser;
