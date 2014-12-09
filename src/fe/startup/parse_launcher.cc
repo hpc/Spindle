@@ -292,7 +292,7 @@ void ModifyArgv::modifyCmdLine()
    string shmcache_size(shm_cache_size_str);
 
    const char *default_libstr = params->opts & OPT_SUBAUDIT ? default_subaudit_libstr : default_audit_libstr;
-   const char *intercept_libstr = params->opts & OPT_SUBAUDIT ? libstr_intercept_lib : NULL;
+   const char *intercept_libstr = params->opts & OPT_SUBAUDIT ? libstr_intercept_lib : "";
 
    int new_argv_size = argc + 7 + daemon_argc;
    new_argv = (char **) malloc(sizeof(char *) * new_argv_size);

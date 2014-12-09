@@ -217,8 +217,10 @@ static cmdoption_t srun_options[] = {
    { "-V",   "--version",            0 }
 };
 static const char *srun_bg_env_str = "--runjob-opts=--envs LD_AUDIT=%s LD_PRELOAD=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
+static const char *srun_bg_env_str_nopreload = "--runjob-opts=--envs LD_AUDIT=%s%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 static const char *srun_bg_env_bare_str = "%s --envs LD_AUDIT=%s LD_PRELOAD=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 static const char *srun_bg_env_bare_str_preload = "%sLD_PRELOAD=%s:%s LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
+static const char *srun_bg_env_bare_str_nopreload = "%s LD_AUDIT=%s LDCS_LOCATION=%s LDCS_NUMBER=%s LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 
 static const unsigned int srun_size (sizeof(srun_options) / sizeof(cmdoption_t));
 
@@ -527,30 +529,44 @@ SRunParser::~SRunParser()
 {
 }
 
-bool SRunParser::addBGEnvStr(int &pos, char **new_argv, string format, string default_libstring, string intercept_libstring, string location, string number, string options, string shmcache_size)
+bool SRunParser::addBGEnvStr(int &pos, char **new_argv, string, string default_libstring, string intercept_libstring, string location, string number, string options, string shmcache_size)
 {
+   bool is_subaudit = atoi(options.c_str()) & OPT_SUBAUDIT;
    for (int i = 0; i < pos; i++) {
-      if (strstr(new_argv[i], "--runjob-opts=") == new_argv[i]) {
-         int newlen = strlen(new_argv[i]) + strlen(srun_bg_env_bare_str_preload) + default_libstring.length() + intercept_libstring.length() + location.length() + number.length() + options.length() + shmcache_size.length() + 1;
-         char *newstr = (char *) malloc(newlen);
-         char *ld_preload_begin = strstr(new_argv[i], "LD_PRELOAD=");
-         if (ld_preload_begin) {
-            //Already have LD_PRELOAD.  Add to LD_PRELOAD and runjob_opts
-            char *origstr = new_argv[i];
-            *ld_preload_begin = '\0';
-            char *envval = strchr(ld_preload_begin + 1, '=') + 1;
-            snprintf(newstr, newlen, srun_bg_env_bare_str_preload, origstr, intercept_libstring.c_str(), envval, default_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
-         }
-         else {
-            //No LD_PRELOAD.  Add to existing runjob_opts
-            snprintf(newstr, newlen, srun_bg_env_bare_str, new_argv[i], default_libstring.c_str(), intercept_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
-         }
-         free(new_argv[i]);
-         new_argv[i] = newstr;
-         return true;
+      if (strstr(new_argv[i], "--runjob-opts=") != new_argv[i])
+         continue;
+      
+      int newlen = strlen(new_argv[i]) + strlen(srun_bg_env_bare_str_preload) + default_libstring.length() + 
+         intercept_libstring.length() + location.length() + number.length() + options.length() + 
+         shmcache_size.length() + 1;
+      char *newstr = (char *) malloc(newlen);
+      char *ld_preload_begin = strstr(new_argv[i], "LD_PRELOAD=");
+
+      if (!is_subaudit) {
+         snprintf(newstr, newlen, srun_bg_env_bare_str_nopreload, new_argv[i], default_libstring.c_str(),
+                  location.c_str(), number.c_str(), options.c_str(), shmcache_size.c_str());
       }
+      else if (ld_preload_begin) {
+         //Already have LD_PRELOAD.  Add to LD_PRELOAD and runjob_opts
+         char *origstr = new_argv[i];
+         *ld_preload_begin = '\0';
+         char *envval = strchr(ld_preload_begin + 1, '=') + 1;
+         snprintf(newstr, newlen, srun_bg_env_bare_str_preload, origstr, intercept_libstring.c_str(), 
+                  envval, default_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(), 
+                  shmcache_size.c_str());
+      }
+      else {
+         //No LD_PRELOAD.  Add to existing runjob_opts
+         snprintf(newstr, newlen, srun_bg_env_bare_str, new_argv[i], default_libstring.c_str(),
+                  intercept_libstring.c_str(), location.c_str(), number.c_str(), options.c_str(),
+                  shmcache_size.c_str());
+      }
+      free(new_argv[i]);
+      new_argv[i] = newstr;
+      return true;      
    }
 
+   string format = is_subaudit ? srun_bg_env_str : srun_bg_env_str_nopreload;
    return LauncherParser::addBGEnvStr(pos, new_argv, format, default_libstring, intercept_libstring, location, number, options, shmcache_size);
 }
 
