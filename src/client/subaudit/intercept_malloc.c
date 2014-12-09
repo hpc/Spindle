@@ -47,6 +47,9 @@ typedef void *(*calloc_fptr)(size_t, size_t);
 
 static calloc_fptr *calloc_got = NULL;
 static calloc_fptr orig_calloc = NULL;
+#if defined(arch_ppc64)
+static unsigned long orig_calloc_buffer[2];
+#endif
 
 static unsigned int *pltrelsz_list = NULL;
 static unsigned int pltrelsz_size = 0, pltrelsz_cur = 0;
@@ -106,6 +109,7 @@ int lookup_calloc_got()
 void *spindle_ldso_calloc(size_t nmemb, size_t size)
 {
    unsigned int i;
+   void *result;
 
    if (nmemb == LDSO_EXTRA_CALLOC_SZ && size >= nmemb) {
       for (i = 0; i < pltrelsz_cur; i++) {
@@ -118,8 +122,14 @@ void *spindle_ldso_calloc(size_t nmemb, size_t size)
       }
    }
 
-   void *result = spindle_malloc(nmemb * size);
-   memset(result, 0, nmemb * size);
+   if (orig_calloc && *orig_calloc) {
+      result = (*orig_calloc)(nmemb, size);
+   }
+   else {
+      result = spindle_malloc(nmemb * size);
+      memset(result, 0, nmemb * size);
+   }
+
    return result;
 }
 
@@ -127,17 +137,26 @@ void update_calloc_got()
 {
    if (!calloc_got)
       return;
+#if defined(arch_ppc64)
+   if (*calloc_got == *((void **) spindle_ldso_calloc))
+      return;
+#else
    if (*calloc_got == spindle_ldso_calloc)
       return;
+#endif
 
    debug_printf3("Updating calloc pointer in ld.so at %p to be our calloc.  Was pointing at %p\n",
                  calloc_got, *calloc_got);
    protect_range(calloc_got, sizeof(ElfW(Addr)), PROT_READ | PROT_WRITE);
-   orig_calloc = *calloc_got;
 #if defined(arch_ppc64)
+   orig_calloc_buffer[0] = ((unsigned long *) calloc_got)[0];
+   orig_calloc_buffer[1] = ((unsigned long *) calloc_got)[1];
+   *((void **) &orig_calloc) = (void *) orig_calloc_buffer;
+   
    ((unsigned long *) calloc_got)[0] = ((unsigned long *) spindle_ldso_calloc)[0];
    ((unsigned long *) calloc_got)[1] = ((unsigned long *) spindle_ldso_calloc)[1];
 #else
+   orig_calloc = *calloc_got;
    *calloc_got = spindle_ldso_calloc;
 #endif
 }
