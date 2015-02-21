@@ -14,13 +14,11 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* rtld-audit interface functions.  Other rtld-audit functions may be found
-   in platform files like auditclient_x86_64.c */
-
-
 #include "client.h"
 #include "auditclient.h"
 #include "ldcs_api.h"
+#include "spindle_launch.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,12 +26,32 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 static uintptr_t *firstcookie = NULL;
 static signed long cookie_shift = 0;
 
+static enum {
+   none,
+   auditv1,
+   subaudit
+} auditclient = none;
+
 unsigned int la_version(unsigned int version) AUDIT_EXPORT;
 char *la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag) AUDIT_EXPORT;
 unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie) AUDIT_EXPORT;
 void la_activity (uintptr_t *cookie, unsigned int flag) AUDIT_EXPORT;
 void la_preinit(uintptr_t *cookie) AUDIT_EXPORT;
 unsigned int la_objclose (uintptr_t *cookie) AUDIT_EXPORT;
+Elf64_Addr PLTENTER_NAME(Elf64_Sym *sym, unsigned int ndx,
+                         uintptr_t *refcook, uintptr_t *defcook,
+                         REGS_TYPE *regs, unsigned int *flags,
+                         const char *symname, long int *framesizep) AUDIT_EXPORT;
+
+
+static void determine_audit_version(unsigned int version)
+{
+   if (opts & OPT_SUBAUDIT) {
+      auditclient = subaudit;
+      return;
+   }
+   auditclient = auditv1;
+}
 
 extern unsigned int spindle_la_version(unsigned int version);
 unsigned int la_version(unsigned int version)
@@ -43,7 +61,14 @@ unsigned int la_version(unsigned int version)
       return 0;
    debug_printf("la_version function is loaded at %p\n", la_version);
    debug_printf3("la_version(): %d\n", version);
-   return spindle_la_version(version);
+   determine_audit_version(version);
+
+   switch (auditclient) {
+      case none: assert(0);
+      case auditv1: return auditv1_la_version(version);
+      case subaudit: return subaudit_la_version(version);
+   }
+   return -1;
 }
 
 char *la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
@@ -101,7 +126,12 @@ unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
       debug_printf3("Set cookie_shift to %ld\n", (unsigned long) shift);
    }
 
-   return spindle_la_objopen(map, lmid, cookie);
+   switch (auditclient) {
+      case none: assert(0);
+      case auditv1: return auditv1_la_objopen(map, lmid, cookie);
+      case subaudit: return subaudit_la_objopen(map, lmid, cookie);
+   }
+   return -1;
 }
 
 void spindle_la_activity (uintptr_t *cookie, unsigned int flag);
@@ -113,7 +143,11 @@ void la_activity (uintptr_t *cookie, unsigned int flag)
                  (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
                  "???");
 
-   spindle_la_activity(cookie, flag);
+   switch (auditclient) {
+      case none: assert(0);
+      case auditv1: auditv1_la_activity(cookie, flag); break;
+      case subaudit: subaudit_la_activity(cookie, flag); break;
+   }
    return;
 }
 
@@ -137,3 +171,20 @@ unsigned int la_objclose (uintptr_t *cookie)
   return 0;
 }
 
+Elf64_Addr PLTENTER_NAME(Elf64_Sym *sym, unsigned int ndx,
+                         uintptr_t *refcook, uintptr_t *defcook,
+                         REGS_TYPE *regs, unsigned int *flags,
+                         const char *symname, long int *framesizep)
+{
+   switch (auditclient) {
+      case none: 
+         assert(0);
+      case auditv1: 
+         return COMBINE_NAME(auditv1, PLTENTER_NAME)(sym, ndx, refcook, defcook, regs,
+                                                     flags, symname, framesizep);
+      case subaudit: 
+         return COMBINE_NAME(subaudit, PLTENTER_NAME)(sym, ndx, refcook, defcook, regs,
+                                                      flags, symname, framesizep);
+   }
+   return 0;
+}

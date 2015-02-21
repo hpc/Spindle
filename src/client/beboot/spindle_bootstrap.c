@@ -57,23 +57,16 @@ static char *cachesize_s;
 
 unsigned long opts;
 
-char libstr_socket_subaudit[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
-char libstr_pipe_subaudit[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
-char libstr_biter_subaudit[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
-
 char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
 char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
 char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
 
 #if defined(COMM_SOCKET)
 static char *default_audit_libstr = libstr_socket_audit;
-static char *default_subaudit_libstr = libstr_socket_subaudit;
 #elif defined(COMM_PIPES)
 static char *default_audit_libstr = libstr_pipe_audit;
-static char *default_subaudit_libstr = libstr_pipe_subaudit;
 #elif defined(COMM_BITER)
 static char *default_audit_libstr = libstr_biter_audit;
-static char *default_subaudit_libstr = libstr_biter_subaudit;
 #else
 #error Unknown connection type
 #endif
@@ -252,20 +245,18 @@ static void adjust_script()
 
 static void get_clientlib()
 {
-   char *default_libstr = (opts & OPT_SUBAUDIT) ? default_subaudit_libstr : default_audit_libstr;
-
    if (!(opts & OPT_RELOCAOUT)) {
-      client_lib = default_libstr;
+      client_lib = default_audit_libstr;
       return;
    }
 
-   send_file_query(ldcsid, default_libstr, &client_lib);
+   send_file_query(ldcsid, default_audit_libstr, &client_lib);
    if (client_lib == NULL) {
-      client_lib = default_libstr;
-      err_printf("Failed to relocate client library %s\n", default_libstr);
+      client_lib = default_audit_libstr;
+      err_printf("Failed to relocate client library %s\n", default_audit_libstr);
    }
    else {
-      debug_printf("Relocated client library %s to %s\n", default_libstr, client_lib);
+      debug_printf("Relocated client library %s to %s\n", default_audit_libstr, client_lib);
       chmod(client_lib, 0600);
    }
 }

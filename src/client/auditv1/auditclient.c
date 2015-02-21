@@ -25,22 +25,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdlib.h>
 #include <unistd.h>
 
-unsigned int spindle_la_version(unsigned int version)
+unsigned int auditv1_la_version(unsigned int version)
 {
    return 1;
 }
 
-void spindle_la_activity (uintptr_t *cookie, unsigned int flag)
+void auditv1_la_activity(uintptr_t *cookie, unsigned int flag)
 {
-   debug_printf3("la_activity(): cookie = %p; flag = %s\n", cookie,
-                 (flag == LA_ACT_CONSISTENT) ? "LA_ACT_CONSISTENT" :
-                 (flag == LA_ACT_ADD) ?        "LA_ACT_ADD" :
-                 (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
-                 "???");
    return;
 }
 
-unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
+unsigned int auditv1_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
    patch_on_linkactivity(map);
    return LA_FLG_BINDTO | LA_FLG_BINDFROM;

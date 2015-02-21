@@ -20,11 +20,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/mman.h>
 
 #include "spindle_debug.h"
+#include "auditclient.h"
 #include "subaudit.h"
 #include "client.h"
 #include "intercept.h"
 
-unsigned int spindle_la_version(unsigned int version)
+unsigned int subaudit_la_version(unsigned int version)
 {
    int result;
    int binding_offset = 0;
@@ -47,7 +48,7 @@ unsigned int spindle_la_version(unsigned int version)
    return 1;
 }
 
-void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
+void subaudit_la_activity(uintptr_t *cookie, unsigned int flag)
 {
    static int bound_libc_symbols = 0;
    int result;
@@ -62,7 +63,7 @@ void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
    update_plt_bindings();
 }
 
-unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
+unsigned int subaudit_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
    add_library_to_plt_update_list(map);
    add_library_to_calloc_list(map);
@@ -86,4 +87,13 @@ int protect_range(void *address, unsigned long size, int prot)
    }
 
    return mprotect((void *) start_page, end_page - start_page, prot);
+}
+
+Elf64_Addr COMBINE_NAME(subaudit, PLTENTER_NAME)(Elf64_Sym *sym, unsigned int ndx,
+                                                 uintptr_t *refcook, uintptr_t *defcook,
+                                                 REGS_TYPE *regs, unsigned int *flags,
+                                                 const char *symname, long int *framesizep)
+{
+   assert(0); //Should never be called in subaudit
+   return 0;
 }

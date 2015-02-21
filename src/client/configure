@@ -3879,7 +3879,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile biter/Makefile shm_cache/Makefile client_comlib/Makefile client/Makefile auditclient/Makefile subaudit/Makefile beboot/Makefile spindle_api/Makefile ldsolookup/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile biter/Makefile shm_cache/Makefile client_comlib/Makefile client/Makefile auditclient/Makefile subaudit/Makefile auditv1/Makefile beboot/Makefile spindle_api/Makefile ldsolookup/Makefile Makefile"
 
 case `pwd` in
   *\ * | *\	*)
@@ -12580,6 +12580,7 @@ do
     "client/Makefile") CONFIG_FILES="$CONFIG_FILES client/Makefile" ;;
     "auditclient/Makefile") CONFIG_FILES="$CONFIG_FILES auditclient/Makefile" ;;
     "subaudit/Makefile") CONFIG_FILES="$CONFIG_FILES subaudit/Makefile" ;;
+    "auditv1/Makefile") CONFIG_FILES="$CONFIG_FILES auditv1/Makefile" ;;
     "beboot/Makefile") CONFIG_FILES="$CONFIG_FILES beboot/Makefile" ;;
     "spindle_api/Makefile") CONFIG_FILES="$CONFIG_FILES spindle_api/Makefile" ;;
     "ldsolookup/Makefile") CONFIG_FILES="$CONFIG_FILES ldsolookup/Makefile" ;;

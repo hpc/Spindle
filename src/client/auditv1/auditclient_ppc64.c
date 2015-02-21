@@ -166,14 +166,14 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
    return target;
 }
 
-Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym,
-                                 unsigned int ndx,
-                                 uintptr_t *refcook,
-                                 uintptr_t *defcook,
-                                 La_ppc64_regs *regs,
-                                 unsigned int *flags,
-                                 const char *symname,
-                                 long int *framesizep)
+Elf64_Addr auditv1_ppc64_gnu_pltenter(Elf64_Sym *sym,
+                                      unsigned int ndx,
+                                      uintptr_t *refcook,
+                                      uintptr_t *defcook,
+                                      La_ppc64_regs *regs,
+                                      unsigned int *flags,
+                                      const char *symname,
+                                      long int *framesizep)
 {
    Elf64_Addr target;
    void *sp;
