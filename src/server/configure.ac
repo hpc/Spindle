@@ -76,6 +76,12 @@ if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
   fi
 fi
 
+if test "x$SPAWNNET_DIR" != "x"; then
+   CFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
+   CXXFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
+   LDFLAGS="$LDFLAGS -L$SPAWNNET_DIR/lib"
+fi
+
 if test "x$CLEANUP_PROC" == "xtrue"; then
   AC_DEFINE([USE_CLEANUP_PROC],[1],[Use a dedicated process to clean data files])
 fi

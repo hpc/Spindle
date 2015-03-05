@@ -1,5 +1,5 @@
 #noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
-noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
+noinst_LTLIBRARIES = libaudit_server_cobo.la libaudit_server_spawnnet.la libserverbase.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(pkglibexecdir)\"
 LDADD = $(top_builddir)/cache/libldcs_cache.la
@@ -9,8 +9,11 @@ libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_serve
 
 #libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
 libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
+libaudit_server_spawnnet_la_SOURCES = ldcs_audit_server_md_spawnnet.c
+libaudit_server_spawnnet_la_LIBADD = -lspawn
 
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/cobo/
 #libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
 libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la $(COD)/libldcs_cobo.la
+libaudit_server_cobo_la_LIBADD = $(LDADD) libserverbase.la
