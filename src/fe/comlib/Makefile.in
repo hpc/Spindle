@@ -35,6 +35,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@SPAWNNET_TRUE@am__append_1 = libfe_spawnnet.la
 subdir = comlib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,6 +56,11 @@ libfe_cobo_la_OBJECTS = $(am_libfe_cobo_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+libfe_spawnnet_la_LIBADD =
+am__libfe_spawnnet_la_SOURCES_DIST = spawnnet_fe_comm.c -lspawn
+@SPAWNNET_TRUE@am_libfe_spawnnet_la_OBJECTS = spawnnet_fe_comm.lo
+libfe_spawnnet_la_OBJECTS = $(am_libfe_spawnnet_la_OBJECTS)
+@SPAWNNET_TRUE@am_libfe_spawnnet_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -81,8 +87,9 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libfe_cobo_la_SOURCES)
-DIST_SOURCES = $(libfe_cobo_la_SOURCES)
+SOURCES = $(libfe_cobo_la_SOURCES) $(libfe_spawnnet_la_SOURCES)
+DIST_SOURCES = $(libfe_cobo_la_SOURCES) \
+	$(am__libfe_spawnnet_la_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -217,10 +224,11 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libfe_cobo.la
+noinst_LTLIBRARIES = libfe_cobo.la $(am__append_1)
 #noinst_LTLIBRARIES = libfe_msocket.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../cobo
 libfe_cobo_la_SOURCES = cobo_fe_comm.c
+@SPAWNNET_TRUE@libfe_spawnnet_la_SOURCES = spawnnet_fe_comm.c -lspawn
 all: all-am
 
 .SUFFIXES:
@@ -266,6 +274,8 @@ clean-noinstLTLIBRARIES:
 	done
 libfe_cobo.la: $(libfe_cobo_la_OBJECTS) $(libfe_cobo_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libfe_cobo_la_OBJECTS) $(libfe_cobo_la_LIBADD) $(LIBS)
+libfe_spawnnet.la: $(libfe_spawnnet_la_OBJECTS) $(libfe_spawnnet_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK) $(am_libfe_spawnnet_la_rpath) $(libfe_spawnnet_la_OBJECTS) $(libfe_spawnnet_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -274,6 +284,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo_fe_comm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawnnet_fe_comm.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -501,6 +512,7 @@ uninstall-am:
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am
+
 
 #libfe_msocket_la_SOURCES = msocket_fe_comm.c
 

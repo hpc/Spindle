@@ -16,6 +16,11 @@
 
 #include "ldcs_audit_server_md.h"
 
+int initialize_handshake_security(void *protocol)
+{
+   return -1;
+}
+
 int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_id_t unique_id, ldcs_process_data_t *data)
 {
   return -1;

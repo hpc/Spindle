@@ -24,6 +24,12 @@ CPPFLAGS="$CPPFLAGS -DSPINDLEFE"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 
+if test "x$SPAWNNET_DIR" != "x"; then
+   CFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
+   CXXFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
+   LDFLAGS="$LDFLAGS -L$SPAWNNET_DIR/lib"
+fi
+
 AC_SUBST([SPINDLEFE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlefe`])
 
 AC_OUTPUT

@@ -32,7 +32,7 @@ fi
 
 AC_ARG_WITH(spawnnet-dir,
             [AS_HELP_STRING([--with-spawnnet-dir=DIR],[Directory containing spawnnet /lib and /include directories])],
-	    [SPAWNNET_DIR=${withval}],)
+            [SPAWNNET_DIR=${withval}],)
 
 #Startup type
 AC_ARG_WITH(hostbin,

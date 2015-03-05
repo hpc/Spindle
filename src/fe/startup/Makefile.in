@@ -39,8 +39,9 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = spindle$(EXEEXT)
 @COBO_TRUE@am__append_1 = $(top_builddir)/comlib/libfe_cobo.la $(top_builddir)/cobo/libldcs_cobo.la
-@MSOCKET_TRUE@am__append_2 = $(top_builddir)/comlib/libfe_msocket.la
-@LMON_TRUE@am__append_3 = $(top_builddir)/launchmon/libfelmon.la
+@SPAWNNET_TRUE@am__append_2 = $(top_builddir)/comlib/libfe_spawnnet.la
+@MSOCKET_TRUE@am__append_3 = $(top_builddir)/comlib/libfe_msocket.la
+@LMON_TRUE@am__append_4 = $(top_builddir)/launchmon/libfelmon.la
 subdir = startup
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -81,8 +82,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindlelogc.la \
-	$(am__append_1) $(am__append_2) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 libspindlefe_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__objects_1 = libspindlefe_la-spindle_fe.lo \
 	libspindlefe_la-parseargs.lo libspindlefe_la-parse_preload.lo \
@@ -109,7 +110,7 @@ am_spindle_OBJECTS = spindle-spindle_fe_main.$(OBJEXT) \
 spindle_OBJECTS = $(am_spindle_OBJECTS)
 spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__append_3)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_4)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__depfiles_maybe = depfiles
@@ -295,7 +296,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging
 CORE_SOURCES = spindle_fe.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\"
 CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
-	$(am__append_2) $(MUNGE_DYN_LIB) $(GCRYPT_LIBS)
+	$(am__append_2) $(am__append_3) $(MUNGE_DYN_LIB) \
+	$(GCRYPT_LIBS)
 libspindlefe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
 libspindlefe_la_SOURCES = $(CORE_SOURCES)
 libspindlefe_la_LIBADD = $(CORE_LDADD)
@@ -304,7 +306,7 @@ spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE
 spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc $(CORE_SOURCES)
 spindle_LDADD = $(CORE_LDADD) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__append_3)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_4)
 all: all-am
 
 .SUFFIXES:

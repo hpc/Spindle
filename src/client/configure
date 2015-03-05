@@ -798,6 +798,8 @@ LINUX_BLD_FALSE
 LINUX_BLD_TRUE
 BGQ_BLD_FALSE
 BGQ_BLD_TRUE
+SPAWNNET_FALSE
+SPAWNNET_TRUE
 COBO_FALSE
 COBO_TRUE
 MSOCKET_FALSE
@@ -935,6 +937,7 @@ with_default_port
 with_default_num_ports
 with_localstorage
 enable_bluegene
+with_spawnnet_dir
 with_hostbin
 enable_pipes
 enable_socket
@@ -942,6 +945,7 @@ enable_shmem
 enable_biter
 enable_msocket
 enable_cobo
+enable_spawnnet
 with_python_prefix
 with_usage_logging
 enable_cleanup_process
@@ -1608,6 +1612,7 @@ Optional Features:
   --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
+  --enable-spawnnet       Use spawnnet for inter-server communication
   --enable-cleanup-process
                           Use a dedicated process to clean relocated files
   --enable-sec-munge      Enable munge for connection authentication
@@ -1629,6 +1634,8 @@ Optional Packages:
                           Number of TCP/IP ports to scan for Spindle server
                           communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
+  --with-spawnnet-dir=DIR Directory containing spawnnet /lib and /include
+                          directories
   --with-hostbin=EXE      Executable for returning host lists for jobs
   --with-python-prefix=STR
                           List of directories containing python installs
@@ -4500,13 +4507,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4503: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4510: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4506: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4513: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4509: output\"" >&5)
+  (eval echo "\"\$as_me:4516: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5712,7 +5719,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5715 "configure"' > conftest.$ac_ext
+  echo '#line 5722 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7565,11 +7572,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7568: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7575: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7572: \$? = $ac_status" >&5
+   echo "$as_me:7579: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7904,11 +7911,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7907: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7914: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7911: \$? = $ac_status" >&5
+   echo "$as_me:7918: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8009,11 +8016,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8012: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8019: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8016: \$? = $ac_status" >&5
+   echo "$as_me:8023: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8064,11 +8071,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8067: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8074: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8071: \$? = $ac_status" >&5
+   echo "$as_me:8078: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10867,7 +10874,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10870 "configure"
+#line 10877 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10963,7 +10970,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10966 "configure"
+#line 10973 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11298,6 +11305,13 @@ if test "x$OS_BUILD" == "x"; then
   OS_BUILD=linux
 fi
 
+
+# Check whether --with-spawnnet-dir was given.
+if test "${with_spawnnet_dir+set}" = set; then
+  withval=$with_spawnnet_dir; SPAWNNET_DIR=${withval}
+fi
+
+
 #Startup type
 
 # Check whether --with-hostbin was given.
@@ -11340,7 +11354,6 @@ if test "${enable_biter+set}" = set; then
 fi
 
 
-
 # Check whether --enable-msocket was given.
 if test "${enable_msocket+set}" = set; then
   enableval=$enable_msocket; SERVER_SERVER_COM=msocket;
@@ -11349,6 +11362,11 @@ fi
 # Check whether --enable-cobo was given.
 if test "${enable_cobo+set}" = set; then
   enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
+fi
+
+# Check whether --enable-spawnnet was given.
+if test "${enable_spawnnet+set}" = set; then
+  enableval=$enable_spawnnet; SERVER_SERVER_COM=spawnnet;
 fi
 
 
@@ -11400,6 +11418,14 @@ else
   COBO_FALSE=
 fi
 
+ if test x$SERVER_SERVER_COM == xspawnnet; then
+  SPAWNNET_TRUE=
+  SPAWNNET_FALSE='#'
+else
+  SPAWNNET_TRUE='#'
+  SPAWNNET_FALSE=
+fi
+
 
 if test "x$CLIENT_SERVER_COM" == "xpipes"; then
 
@@ -11433,6 +11459,13 @@ if test "x$SERVER_SERVER_COM" == "xcobo"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define COMM_COBO 1
+_ACEOF
+
+fi
+if test "x$SERVER_SERVER_COM" == "xspawnnet"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define COMM_SPAWNNET 1
 _ACEOF
 
 fi
@@ -11777,6 +11810,13 @@ if test -z "${COBO_TRUE}" && test -z "${COBO_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"COBO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"COBO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SPAWNNET_TRUE}" && test -z "${SPAWNNET_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"SPAWNNET\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"SPAWNNET\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

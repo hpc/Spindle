@@ -15,6 +15,9 @@
 /* Define if were using sockets for client/server communication */
 #undef COMM_SOCKET
 
+/* Define if were using spawnnet for server/server communication */
+#undef COMM_SPAWNNET
+
 /* Allow NULL encryption */
 #undef ENABLE_NULL_ENCRYPTION
 

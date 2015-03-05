@@ -39,12 +39,13 @@ target_triplet = @target@
 pkglibexec_PROGRAMS = spindle_be$(EXEEXT)
 @COBO_TRUE@am__append_1 = $(top_builddir)/auditserver/libaudit_server_cobo.la
 @MSOCKET_TRUE@am__append_2 = $(top_builddir)/auditserver/libaudit_server_msocket.la
-@SOCKETS_TRUE@am__append_3 = $(top_builddir)/comlib/libserver_socket.la
-@PIPES_TRUE@am__append_4 = $(top_builddir)/comlib/libserver_pipe.la
-@BITER_TRUE@am__append_5 = $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
-@LINK_LIBSTDCXX_STATIC_TRUE@am__append_6 = $(STATIC_LIBGCC_OPT) -L.
-@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__append_7 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt
-@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__append_8 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
+@SPAWNNET_TRUE@am__append_3 = $(top_builddir)/auditserver/libaudit_server_spawnnet.la
+@SOCKETS_TRUE@am__append_4 = $(top_builddir)/comlib/libserver_socket.la
+@PIPES_TRUE@am__append_5 = $(top_builddir)/comlib/libserver_pipe.la
+@BITER_TRUE@am__append_6 = $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
+@LINK_LIBSTDCXX_STATIC_TRUE@am__append_7 = $(STATIC_LIBGCC_OPT) -L.
+@LMON_DYNAMIC_TRUE@@LMON_TRUE@am__append_8 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt
+@LMON_DYNAMIC_FALSE@@LMON_TRUE@am__append_9 = $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
 subdir = startup
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,7 +84,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindlelogc.la \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5) $(am__DEPENDENCIES_1)
+	$(am__append_4) $(am__append_5) $(am__append_6) \
+	$(am__DEPENDENCIES_1)
 libspindlebe_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1)
 am__objects_1 = libspindlebe_la-spindle_be.lo \
@@ -304,16 +306,16 @@ CORE_SOURCES = spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
 CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
 	$(am__append_2) $(am__append_3) $(am__append_4) \
-	$(am__append_5) $(GCRYPT_LIBS)
+	$(am__append_5) $(am__append_6) $(GCRYPT_LIBS)
 libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB
 libspindlebe_la_SOURCES = $(CORE_SOURCES)
 libspindlebe_la_LIBADD = $(CORE_LDADD) $(MUNGE_DYN_LIB)
 libspindlebe_la_LDFLAGS = -version-info $(SPINDLEBE_LIB_VERSION)
-spindle_be_LDFLAGS = -static $(am__append_6)
+spindle_be_LDFLAGS = -static $(am__append_7)
 spindle_be_CPPFLAGS = $(CORE_CPPFLAGS)
 spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc cleanup_proc.cc $(CORE_SOURCES)
-spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS) $(am__append_7) \
-	$(am__append_8)
+spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS) $(am__append_8) \
+	$(am__append_9)
 @LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
 @LINK_LIBSTDCXX_STATIC_TRUE@BUILT_SOURCES = ./libstdc++.a
 all: $(BUILT_SOURCES)
