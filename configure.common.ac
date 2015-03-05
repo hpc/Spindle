@@ -30,6 +30,10 @@ if test "x$OS_BUILD" == "x"; then
   OS_BUILD=linux
 fi
 
+AC_ARG_WITH(spawnnet-dir,
+            [AS_HELP_STRING([--with-spawnnet-dir=DIR],[Directory containing spawnnet /lib and /include directories])],
+	    [SPAWNNET_DIR=${withval}],)
+
 #Startup type
 AC_ARG_WITH(hostbin,
             [AS_HELP_STRING([--with-hostbin=EXE],[Executable for returning host lists for jobs])],
@@ -57,13 +61,15 @@ AC_ARG_ENABLE(biter,
               [AS_HELP_STRING([--enable-biter],[Use biter for server/client communication])],
               [CLIENT_SERVER_COM=biter;],)
 
-
 AC_ARG_ENABLE(msocket,
               [AS_HELP_STRING([--enable-msocket],[Use msocket for inter-server communication])],
               [SERVER_SERVER_COM=msocket;],)
 AC_ARG_ENABLE(cobo,
               [AS_HELP_STRING([--enable-cobo],[Use msocket for inter-server communication])],
               [SERVER_SERVER_COM=cobo;],)
+AC_ARG_ENABLE(spawnnet,
+              [AS_HELP_STRING([--enable-spawnnet],[Use spawnnet for inter-server communication])],
+              [SERVER_SERVER_COM=spawnnet;],)
 
 AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
 AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
@@ -71,6 +77,7 @@ AM_CONDITIONAL([SHMEM], [test x$CLIENT_SERVER_COM == xshmem])
 AM_CONDITIONAL([BITER], [test x$CLIENT_SERVER_COM == xbiter])
 AM_CONDITIONAL([MSOCKET], [test x$SERVER_SERVER_COM == xmsocket])
 AM_CONDITIONAL([COBO], [test x$SERVER_SERVER_COM == xcobo])
+AM_CONDITIONAL([SPAWNNET], [test x$SERVER_SERVER_COM == xspawnnet])
 
 if test "x$CLIENT_SERVER_COM" == "xpipes"; then
   AC_DEFINE([COMM_PIPES],[1],[Define if were using pipes for client/server communication])
@@ -86,6 +93,9 @@ if test "x$SERVER_SERVER_COM" == "xmsocket"; then
 fi
 if test "x$SERVER_SERVER_COM" == "xcobo"; then
   AC_DEFINE([COMM_COBO],[1],[Define if were using cobo for server/server communication])
+fi
+if test "x$SERVER_SERVER_COM" == "xspawnnet"; then
+  AC_DEFINE([COMM_SPAWNNET],[1],[Define if were using spawnnet for server/server communication])
 fi
 
 AC_MSG_NOTICE([Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM])
