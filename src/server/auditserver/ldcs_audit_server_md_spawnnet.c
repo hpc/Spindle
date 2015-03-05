@@ -17,16 +17,79 @@
 #include "ldcs_audit_server_md.h"
 #include "spindle_debug.h"
 
+#include "spawn.h"
+
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <assert.h>
 
 static int waitfor_spawnnet();
 
 static int read_pipe;
 static int write_pipe;
 static pthread_t thrd;
+
+static size_t num_children;
+static spawn_net_channel **children;
+static spawn_net_channel *parent;
+
+static unsigned long rank;
+static unsigned long size;
+
+static int write_msg(spawn_net_channel *channel, ldcs_message_t *msg)
+{
+   int result;
+   result = spawn_net_write(channel, msg, sizeof(*msg));
+   if (result != 0) {
+      err_printf("Error writing spawnnet header\n");
+      return -1;
+   }
+
+   result = spawn_net_write(channel, msg->data, msg->header.len);
+   if (result != 0) {
+      err_printf("Error writing spawnnet body\n");
+      return -1;
+   }
+
+   return 0;
+}
+
+static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
+{
+   int result;
+   char *buffer = NULL;
+
+   result = spawn_net_read(channel, msg, sizeof(*msg));
+   if (result != 0)
+      return -1;
+
+   if (msg->header.type == LDCS_MSG_FILE_DATA || msg->header.type == LDCS_MSG_PRELOAD_FILE) {
+      /* Optimization.  Don't read file data into heap, as it could be
+         very large.  For these packets we'll postpone the network read
+         until we have the file's mmap ready, then read it straight
+         into that memory. */
+      msg->data = NULL;
+      return 0;
+   } 
+
+   if (msg->header.len) {
+      buffer = (char *) malloc(msg->header.len);
+      if (buffer == NULL) {
+         err_printf("Error allocating space for message from network of size %lu\n", (long) msg->header.len);
+         return -1;
+      }
+      result = spawn_net_read(channel, buffer, msg->header.len);
+      if (result != 0) {
+         free(buffer);
+         return -1;
+      }
+   }
+
+   msg->data = buffer;
+   return 0;
+}
 
 static void *select_thread(void *arg)
 {
@@ -56,11 +119,13 @@ static void clear_pipe()
    }
 }
 
+static spawn_net_channel *selected_peer = NULL;
 static int waitfor_spawnnet()
 {
    //TODO: Block on spawnnet's 'select' equivalent.  Return 0
    // when data available or any change.  Return -1 when done.
    // This is called on a thread.
+   //Set selected_peer to the channel with available data.
    return 0;
 }
 
@@ -69,13 +134,18 @@ static int on_data(int fd, int id, void *data)
    ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data;
    double starttime;
    int result;
+   ldcs_message_t msg;
+   node_peer_t peer;
 
    clear_pipe();
    starttime = ldcs_get_time();
 
-   ldcs_message_t msg;
-   node_peer_t peer;
-   //TODO: Read a message into msg.  Peer is who sent the packet
+   assert(selected_peer != NULL);
+   peer = (node_peer_t) selected_peer;
+   result = read_msg(selected_peer, &msg);
+   selected_peer = NULL;
+   if (result == -1)
+      return -1;
 
    result = handle_server_message(ldcs_process_data, peer, &msg);
 
@@ -96,7 +166,9 @@ int initialize_handshake_security(void *protocol)
 
 int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_id_t unique_id, ldcs_process_data_t *data)
 {
-  return -1;
+   //TODO: Initialize.  Set num_children, children array, parent.
+   // Set rank and size.
+   return -1;
 }
 
 int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *data )
@@ -125,63 +197,171 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *data )
 
 int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *data )
 {
-  return -1;
+   ldcs_listen_unregister_fd(read_pipe);
+   close(read_pipe);
+   close(write_pipe);
+   return 0;
 }
 
 int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data )
 {
-  return -1;
+   return 0;
 }
 
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *filename )
 {
-  return -1;
+   int result, i;
+   result = spawn_net_disconnect(&parent);
+   if (result != 0) {
+      err_printf("Error during spawn_net_disconnect\n");
+      return -1;
+   }
+   for (i = 0; i < num_children; i++) {
+      result = spawn_net_disconnect(children+i);
+      if (result != 0) {
+         err_printf("Error during spawn_net_disconnect\n");
+         return -1;
+      }
+   }
+      
+   return 0;
 }
 
 int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size)
 {
-  return -1;
+   size_t buffer_size;;
+   char *buffer = NULL;
+   spawn_net_channel *channel;
+   int result;
+   size_t cur_size;
+
+#warning Can we throw away bytes on a smaller scale than size?
+   buffer_size = size;
+
+   buffer = malloc(buffer_size);
+   while (size != 0) {
+      cur_size = (size < buffer_size) ? size : buffer_size;
+      result = spawn_net_read(channel, buffer, cur_size);
+      if (result != 0) {
+         err_printf("Error reading from spawn_net\n");
+         free(buffer);
+         return -1;
+      }
+      size -= cur_size;
+   }
+   free(buffer);
+   return -1;
 }
 
 int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, ldcs_message_t* msg)
 {
-  return -1;
+   int result;
+   if (rank == 0) {
+      return 0;
+   }
+   
+   result = write_msg(parent, msg);
+   if (result == -1) {
+      err_printf("Error writing message to parent through spawn_net\n");
+      return -1;
+   }
+
+   return 0;
 }
 
 int ldcs_audit_server_md_complete_msg_read(node_peer_t peer, ldcs_message_t *msg, void *mem, size_t size)
 {
-  return -1;
+   int result = 0;
+   spawn_net_channel *channel = (spawn_net_channel *) peer;
+   assert(msg->header.len >= size);
+   
+   result = spawn_net_read(channel, mem, size);
+   if (result != 0) {
+      err_printf("Error completing message read in spawn_net\n");
+      return -1;
+   }
+
+   return 0;
 }
 
 int ldcs_audit_server_md_recv_from_parent(ldcs_message_t *msg)
 {
-  return -1;
+   return read_msg(parent, msg);
 }
 
 int ldcs_audit_server_md_send(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg, node_peer_t peer)
 {
-  return -1;
+   spawn_net_channel *channel = (spawn_net_channel *) peer;
+   return write_msg(channel, msg);
 }
 
 int ldcs_audit_server_md_broadcast(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg)
 {
-  return -1;
+   int i, result;
+   for (i = 0; i < num_children; i++) {
+      result = write_msg(children[i], msg);
+      if (result == -1)
+         return -1;
+   }
+
+   return 0;
 }
 
-int ldcs_audit_server_md_send_noncontig(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg, 
+int ldcs_audit_server_md_send_noncontig(ldcs_process_data_t *ldcs_process_data,
+                                        ldcs_message_t *msg, 
                                         node_peer_t peer,
                                         void *secondary_data, size_t secondary_size)
 {
-  return -1;
+   spawn_net_channel *channel = (spawn_net_channel *) peer;
+   int result;
+
+   if (!secondary_size)
+      ldcs_audit_server_md_send(ldcs_process_data, msg, peer);
+
+   assert(msg->header.len >= secondary_size);
+   size_t initial_size = msg->header.len - secondary_size;
+   
+   //Send header
+   result = spawn_net_write(channel, msg, sizeof(*msg));
+   if (result != 0) {
+      err_printf("Error sending noncontig header\n");
+      return -1;
+   }
+
+   //Send body
+   if (initial_size) {
+      result = spawn_net_write(channel, msg->data, initial_size);
+      if (result != 0) {
+         err_printf("Error sending noncontig msg data\n");
+         return -1;
+      }
+   }
+   
+   //Send secondary
+   if (secondary_size) {
+      result = spawn_net_write(channel, secondary_data, secondary_size);
+      if (result != 0) {
+         err_printf("Error sending noncontig secondary\n");
+         return -1;
+      }
+   }
+
+   return 0;
 }
 
 int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg,
                                              void *secondary_data, size_t secondary_size)
 {
-  return -1;
+   int i;
+   int result;
+   for (i = 0; i < num_children; i++) {
+      node_peer_t peer = (node_peer_t) children[i];
+      result = ldcs_audit_server_md_send_noncontig(ldcs_process_data, msg, peer, secondary_data, secondary_size);
+   }
+   return 0;
 }
 
 int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
 {
-  return -1;
+   return num_children;
 }

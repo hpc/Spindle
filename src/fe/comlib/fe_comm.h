@@ -24,7 +24,8 @@ extern "C" {
 #include "ldcs_api.h"
 #include "spindle_launch.h"
 
-int ldcs_audit_server_fe_md_open(char **hostlist, int numhosts, unsigned int port, unsigned int num_ports,
+int ldcs_audit_server_fe_md_open(char **hostlist, int numhosts, unsigned int port,
+                                 unsigned int num_ports,
                                  unique_id_t unique_id, void **data);
 int ldcs_audit_server_fe_md_close(void *data);
 int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data);
