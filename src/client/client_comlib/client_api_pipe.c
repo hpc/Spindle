@@ -306,6 +306,9 @@ char *client_get_connection_string_pipe(int fd)
    int in_fd = fdlist_pipe[fd].in_fd;
    int out_fd = fdlist_pipe[fd].out_fd;
    
+   if (!in_name || !out_name)
+      return NULL;
+
    int slen = strlen(in_name) + strlen(out_name) + 64;
    char *str = (char *) spindle_malloc(slen);
    if (!str)

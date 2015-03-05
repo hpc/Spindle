@@ -45,15 +45,22 @@ void patch_on_linkactivity(struct link_map *lmap);
 ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue);
 
 unsigned int auditv1_la_version(unsigned int version);
+unsigned int auditv2_la_version(unsigned int version);
 unsigned int subaudit_la_version(unsigned int version);
 
-void subaudit_la_activity(uintptr_t *cookie, unsigned int flag);
 void auditv1_la_activity(uintptr_t *cookie, unsigned int flag);
+void auditv2_la_activity(uintptr_t *cookie, unsigned int flag);
+void subaudit_la_activity(uintptr_t *cookie, unsigned int flag);
 
-unsigned int subaudit_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie);
 unsigned int auditv1_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie);
+unsigned int auditv2_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie);
+unsigned int subaudit_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie);
 
 Elf64_Addr COMBINE_NAME(auditv1, PLTENTER_NAME)(Elf64_Sym *sym, unsigned int ndx,
+                                                uintptr_t *refcook, uintptr_t *defcook,
+                                                REGS_TYPE *regs, unsigned int *flags,
+                                                const char *symname, long int *framesizep);
+Elf64_Addr COMBINE_NAME(auditv2, PLTENTER_NAME)(Elf64_Sym *sym, unsigned int ndx,
                                                 uintptr_t *refcook, uintptr_t *defcook,
                                                 REGS_TYPE *regs, unsigned int *flags,
                                                 const char *symname, long int *framesizep);

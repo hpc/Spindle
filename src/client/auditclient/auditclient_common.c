@@ -29,6 +29,7 @@ static signed long cookie_shift = 0;
 static enum {
    none,
    auditv1,
+   auditv2,
    subaudit
 } auditclient = none;
 
@@ -46,14 +47,23 @@ Elf64_Addr PLTENTER_NAME(Elf64_Sym *sym, unsigned int ndx,
 
 static void determine_audit_version(unsigned int version)
 {
-   if (opts & OPT_SUBAUDIT) {
+   if (version >= 2) {
+      debug_printf("Selecting auditing client v2, version = %d\n", version);
+      auditclient = auditv2;
+      return;
+   }
+   else if (opts & OPT_SUBAUDIT) {
+      debug_printf("Selecting subaudit, version = %d\n", version);
       auditclient = subaudit;
       return;
    }
-   auditclient = auditv1;
+   else {
+      debug_printf("Selecting audit client v1, version = %d\n", version);
+      auditclient = auditv1;
+      return;
+   }
 }
 
-extern unsigned int spindle_la_version(unsigned int version);
 unsigned int la_version(unsigned int version)
 {
    int result = client_init();
@@ -66,6 +76,7 @@ unsigned int la_version(unsigned int version)
    switch (auditclient) {
       case none: assert(0);
       case auditv1: return auditv1_la_version(version);
+      case auditv2: return auditv2_la_version(version);
       case subaudit: return subaudit_la_version(version);
    }
    return -1;
@@ -91,7 +102,6 @@ char *la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
    return client_library_load(name);
 }
 
-extern unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie);
 unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
    signed long shift;
@@ -129,12 +139,12 @@ unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
    switch (auditclient) {
       case none: assert(0);
       case auditv1: return auditv1_la_objopen(map, lmid, cookie);
+      case auditv2: return auditv2_la_objopen(map, lmid, cookie);
       case subaudit: return subaudit_la_objopen(map, lmid, cookie);
    }
    return -1;
 }
 
-void spindle_la_activity (uintptr_t *cookie, unsigned int flag);
 void la_activity (uintptr_t *cookie, unsigned int flag)
 {
    debug_printf3("la_activity(): cookie = %p; flag = %s\n", cookie,
@@ -146,6 +156,7 @@ void la_activity (uintptr_t *cookie, unsigned int flag)
    switch (auditclient) {
       case none: assert(0);
       case auditv1: auditv1_la_activity(cookie, flag); break;
+      case auditv2: auditv2_la_activity(cookie, flag); break;
       case subaudit: subaudit_la_activity(cookie, flag); break;
    }
    return;
@@ -181,6 +192,9 @@ Elf64_Addr PLTENTER_NAME(Elf64_Sym *sym, unsigned int ndx,
          assert(0);
       case auditv1: 
          return COMBINE_NAME(auditv1, PLTENTER_NAME)(sym, ndx, refcook, defcook, regs,
+                                                     flags, symname, framesizep);
+      case auditv2:
+         return COMBINE_NAME(auditv2, PLTENTER_NAME)(sym, ndx, refcook, defcook, regs,
                                                      flags, symname, framesizep);
       case subaudit: 
          return COMBINE_NAME(subaudit, PLTENTER_NAME)(sym, ndx, refcook, defcook, regs,

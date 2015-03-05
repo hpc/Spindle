@@ -16,7 +16,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcd
 
 BASE_SRCS = auditclient_common.c patch_linkmap.c redirect.c
 
-AUDITLIBS = $(top_builddir)/client/libspindle_audit.la $(top_builddir)/subaudit/libsubaudit.la $(top_builddir)/auditv1/libauditv1.la
+AUDITLIBS = $(top_builddir)/client/libspindle_audit.la $(top_builddir)/subaudit/libsubaudit.la $(top_builddir)/auditv1/libauditv1.la $(top_builddir)/auditv2/libauditv2.la
 
 libspindle_audit_socket_la_SOURCES = $(BASE_SRCS)
 libspindle_audit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIBS)
