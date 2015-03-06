@@ -17,6 +17,7 @@
 #include "ldcs_audit_server_md.h"
 #include "spindle_debug.h"
 
+#include "pmi.h"   // use PMI to exchange spawnnet endpoint addresses
 #include "spawn.h"
 
 #include <unistd.h>
@@ -36,12 +37,13 @@ static int write_pipe;
 static int sockfd;
 static pthread_t thrd;
 
-static size_t num_children;
-static spawn_net_channel **children;
-static spawn_net_channel *parent;
+static size_t num_children = 0;
+static spawn_net_channel **children = NULL;
+static spawn_net_channel *parent = SPAWN_NET_CHANNEL_NULL;
+static lwgrp* group = NULL;
 
-static unsigned long rank;
-static unsigned long size;
+static int rank  = -1;
+static int ranks =  0;
 
 static int write_msg(spawn_net_channel *channel, ldcs_message_t *msg)
 {
@@ -52,10 +54,12 @@ static int write_msg(spawn_net_channel *channel, ldcs_message_t *msg)
       return -1;
    }
 
-   result = spawn_net_write(channel, msg->data, msg->header.len);
-   if (result != 0) {
-      err_printf("Error writing spawnnet body\n");
-      return -1;
+   if (msg->header.len) {
+       result = spawn_net_write(channel, msg->data, msg->header.len);
+       if (result != 0) {
+          err_printf("Error writing spawnnet body\n");
+          return -1;
+       }
    }
 
    return 0;
@@ -70,7 +74,9 @@ static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
    if (result != 0)
       return -1;
 
-   if (msg->header.type == LDCS_MSG_FILE_DATA || msg->header.type == LDCS_MSG_PRELOAD_FILE) {
+   if (msg->header.type == LDCS_MSG_FILE_DATA ||
+       msg->header.type == LDCS_MSG_PRELOAD_FILE)
+   {
       /* Optimization.  Don't read file data into heap, as it could be
          very large.  For these packets we'll postpone the network read
          until we have the file's mmap ready, then read it straight
@@ -88,6 +94,7 @@ static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
       result = spawn_net_read(channel, buffer, msg->header.len);
       if (result != 0) {
          free(buffer);
+         buffer = NULL;
          return -1;
       }
    }
@@ -176,6 +183,12 @@ static int waitfor_spawnnet()
    // when data available or any change.  Return -1 when done.
    // This is called on a thread.
    //Set selected_peer to the channel with available data.
+   int idx;
+   int rc = spawn_net_wait(0, NULL, num_children, children, &idx);
+   if (rc != 0) {
+      return -1;
+   }
+   selected_peer = children[idx];
    return 0;
 }
 
@@ -256,10 +269,314 @@ int initialize_handshake_security(void *protocol)
    return 0;
 }
 
+/* ring exchange to get left and right neighbors */
+/* buffers for a PMI key/value pair, allocated during init and
+ * freed in finalize */
+static int   pmi_kvs_len = 0;    /* max length of PMI kvs name */
+static int   pmi_key_len = 0;    /* max length of PMI key */
+static int   pmi_val_len = 0;    /* max length of PMI value */
+static char* pmi_kvs     = NULL; /* pointer to buffer for PMI KVS name */
+static char* pmi_key     = NULL; /* pointer to buffer for PMI key */
+static char* pmi_val     = NULL; /* pointer to buffer for PMI value */
+
+/* allocate key/value buffers to use with PMI calls */
+static int pmi_alloc()
+{
+   /* get kvs length */
+   int error = PMI_Get_name_length_max(&pmi_kvs_len);
+   if (error != PMI_SUCCESS) {
+      err_printf("Failed to get PMI KVS length.\n");
+      return -1;
+   }
+
+   /* TODO: check that this is safe */
+   /* add one for trailing NUL */
+   pmi_kvs_len++;
+
+   /* Allocate space for pmi key */
+   pmi_kvs = malloc(pmi_kvs_len);
+   if (pmi_kvs == NULL) {
+      err_printf("Failed to allocate PMI KVS buffer.\n");
+      return -1;
+   }
+
+   /* Get maximum length of PMI key */
+   error = PMI_KVS_Get_key_length_max(&pmi_key_len);
+   if (error != PMI_SUCCESS) {
+      err_printf("Failed to get PMI key length.\n");
+      return -1;
+   }
+
+   /* TODO: check that this is safe */
+   /* add one for trailing NUL */
+   pmi_key_len++;
+
+   /* Allocate space for pmi key */
+   pmi_key = malloc(pmi_key_len);
+   if (pmi_key == NULL) {
+      err_printf("Failed to allocate PMI key buffer.\n");
+      return -1;
+   }
+
+   /* Get maximum length of PMI value */
+   error = PMI_KVS_Get_value_length_max(&pmi_val_len);
+   if (error != PMI_SUCCESS) {
+      err_printf("Failed to get PMI value length.\n");
+      return -1;
+   }
+
+   /* TODO: check that this is safe */
+   /* add one for trailing NUL */
+   pmi_val_len++;
+
+   /* Allocate space for pmi value */
+   pmi_val = malloc(pmi_val_len);
+   if (pmi_val == NULL) {
+      err_printf("Failed to allocate PMI value buffer.\n");
+      return -1;
+   }
+
+   /* TODO: need to free memory in some cases? */
+   return 0;
+}
+
+/* free memory allocated for PMI key/value buffers */
+static void pmi_free()
+{
+   /* free kvs buffer */
+   if (pmi_kvs != NULL) {
+      MPIU_Free(pmi_kvs);
+      pmi_kvs     = NULL;
+      pmi_kvs_len = 0;
+   }
+
+   /* free key buffer */
+   if (pmi_key != NULL) {
+      MPIU_Free(pmi_key);
+      pmi_key     = NULL;
+      pmi_key_len = 0;
+   }
+
+   /* free value buffer */
+   if (pmi_val != NULL) {
+      MPIU_Free(pmi_val);
+      pmi_val     = NULL;
+      pmi_val_len = 0;
+   }
+}
+
+// this can be used with avalaunch but not SLURM
+static int pmix_ring(spawn_net_endpoint* ep, char* name, char* left, char* right)
+{
+   /* insert our endpoint id into PMI */
+   MPIU_Snprintf(pmi_val, pmi_val_len, "%s", name);
+
+   /* execute the ring exchange */
+   int ring_rank, ring_ranks;
+   if (PMIX_Ring(pmi_val, &ring_rank, &ring_ranks, left, right) != PMI_SUCCESS) {
+      err_printf("PMIX_Ring failed.\n");
+      return -1;
+   }
+
+   return 0;
+}
+
+static int pmi_ring(spawn_net_endpoint* ep, char* name, char* left, char* right)
+{
+   int rc;
+
+   /* insert our endpoint id into PMI */
+   snprintf(pmi_key, pmi_key_len, "%d", rank);
+   snprintf(pmi_val, pmi_val_len, "%s", name);
+   if (PMI_KVS_Put(pmi_kvs, pmi_key, pmi_val) != PMI_SUCCESS) {
+      err_printf("Failed to put PMI value.\n");
+      return -1;
+   }
+   if (PMI_KVS_Commit(pmi_kvs) != PMI_SUCCESS) {
+      err_printf("PMI commit failed.\n");
+      return -1;
+   }
+
+   /* wait until all procs commit their id */
+   rc = PMI_Barrier();
+   if (rc != PMI_SUCCESS) {
+      err_printf("PMI barrier failed.\n");
+      return -1;
+   }
+
+   /* get rank of left process */
+   int left_rank = rank - 1;
+   if (left_rank < 0) {
+      left_rank = ranks - 1;
+   }
+
+   /* get rank of right process */
+   int right_rank = rank + 1;
+   if (right_rank >= ranks) {
+      right_rank = 0;
+   }
+
+   /* lookup address of left rank */
+   snprintf(pmi_key, pmi_key_len, "%d", left_rank);
+   if (PMI_KVS_Get(pmi_kvs, pmi_key, left, pmi_val_len) != PMI_SUCCESS) {
+      err_printf("Failed to get left value from PMI.\n");
+      return -1;
+   }
+
+   /* lookup address of right rank */
+   snprintf(pmi_key, pmi_key_len, "%d", right_rank);
+   if (PMI_KVS_Get(pmi_kvs, pmi_key, right, pmi_val_len) != PMI_SUCCESS) {
+      err_printf("Failed to get right value from PMI.\n");
+      return -1;
+   }
+
+   return 0;
+}
+
 int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_id_t unique_id, ldcs_process_data_t *data)
 {
    //TODO: Initialize.  Set num_children, children array, parent.
-   // Set rank and size.
+   int rc;
+
+   // initialize PMI
+   int spawned;
+   if (PMI_Init(&spawned) != PMI_SUCCESS) {
+      err_printf("Failed to initialize PMI.\n");
+      return -1;
+   }
+
+   // get our rank and number of ranks
+//   int jobid;
+   if (PMI_Get_rank(&rank) != PMI_SUCCESS) {
+      err_printf("Failed to get rank from PMI.\n");
+      return -1;
+   }
+   if (PMI_Get_size(&ranks) != PMI_SUCCESS) {
+      err_printf("Failed to get size from PMI.\n");
+      return -1;
+   }
+// if (PMI_Get_appnum(&jobid) != PMI_SUCCESS) {
+//    err_printf("Failed to get jobid from PMI.\n");
+//    return -1;
+// }
+
+   // open endpoint
+   spawn_net_endpoint* ep = spawn_net_open(SPAWN_NET_TYPE_TCP);
+   if (ep == SPAWN_NET_ENDPOINT_NULL) {
+      err_printf("Failed to create spawn net endpoint.\n");
+      return -1;
+   }
+
+   // get endpoint name
+   char* name = spawn_net_endpoint_name(ep);
+   if (name == NULL) {
+      err_printf("Failed to get endpoint name.\n");
+      return -1;
+   }
+
+   // allocate buffers to put and get PMI values
+   rc = pmi_alloc();
+   if (rc != 0) {
+      err_printf("Failed to allocate PMI buffers.\n");
+      return -1;
+   }
+
+   // get names of left and right endpoints
+   char* left  = malloc(pmi_val_len);
+   char* right = malloc(pmi_val_len);
+   rc = pmi_ring(ep, name, left, right);
+   if (rc != 0) {
+      err_printf("Failed to exchange endpoint names with PMI.\n");
+      return -1;
+   }
+
+   // create group
+   group = lwgrp_create(ranks, rank, name, left, right, ep);
+   if (group == NULL) {
+      err_printf("Failed to create light-weight group.\n");
+      return -1;
+   }
+
+   // fee left and right names
+   free(left);
+   free(right);
+
+   // free pmi buffers
+   pmi_free();
+
+   // we can close our endpoint now
+   if (spawn_net_close(&ep) != 0) {
+      err_printf("Failed to close endpoint.\n");
+      return -1;
+   }
+
+   // TODO: normally, the lwgrp structure should be opaque
+   // but here we extract a binary tree from its values
+
+   // determine number of steps in binary tree = ceil(log_2(ranks))
+   int steps = 0; // number of exchanges needed to cover all ranks
+   int span  = 1; // number of processes we're spanning at current step
+   int count = 1; // number of ranks we're covering
+   while (ranks > count) {
+      steps++;
+      span <<= 1;
+      count += span;
+   }
+
+   // determine who our children are, we'll recursively divide full
+   // range into parts depending on our rank
+   num_children = 0;
+   int start = 0;     // start represents rank of root of current subtree
+   int end   = ranks; // end is one more than max rank in subtree
+   while (steps > 0) {
+      // if we're the root of the subtree, fill in our children
+      if (start == rank) {
+         // take next highest rank as first child
+         if ((rank + 1) < end) {
+            children[num_children] = group->list_right[0];
+            num_children++;
+         }
+         // as second child, take rank that is span hops away,
+         // we're careful not to double count first child if span is 1
+         if (span > 1 && (rank + span) < end) {
+            children[num_children] = group->list_right[steps];
+            num_children++;
+         }
+         break;
+      }
+
+      // divide current range in two at span point
+      int newstart, newend;
+      if (rank < start + span) {
+         // we're in the first half, update new root and end
+         newstart = start + 1;
+         newend   = start + span;
+         if (newstart == rank) {
+            // we are root in next step,
+            // so we know our parent now
+            parent = group->list_left[0];
+         }
+      } else {
+         // we're in the second half, update new root
+         // use same end
+         newstart = start + span;
+         newend   = end;
+         if (newstart == rank) {
+            // we are root in next step,
+            // so we know our parent now
+            parent = group->list_left[steps];
+         }
+      }
+      start = newstart;
+      end   = newend;
+
+      // move on to next iteration
+      span >>= 1;
+      steps--;
+   }
+
+   setup_fe_socket(port);
+
    return -1;
 }
 
@@ -300,11 +617,28 @@ int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *data )
 
 int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data )
 {
+   // TODO: close socket to FE?
+
+   // free children
+   if (children != NULL) {
+      free(children);
+   }
+
+   // close PMI
+   PMI_Finalize();
+
+   // free group
+   lwgrp_free(&group);
+
    return 0;
 }
 
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *filename )
 {
+#if 0
+// we shut down all of these connections in lwgrp_free
+// in ldcs_audit_server_md_desstroy
+
    int result, i;
    result = spawn_net_disconnect(&parent);
    if (result != 0) {
@@ -318,6 +652,7 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *filen
          return -1;
       }
    }
+#endif
       
    return 0;
 }
