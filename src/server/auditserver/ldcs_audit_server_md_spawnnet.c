@@ -522,7 +522,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
       count += span;
    }
 
-   // determine who are children are, we'll recursively divide full
+   // determine who our children are, we'll recursively divide full
    // range into parts depending on our rank
    num_children = 0;
    int start = 0;     // start represents rank of root of current subtree
@@ -535,13 +535,11 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
             children[num_children] = group->list_right[0];
             num_children++;
          }
-         // as second child, take rank that is span
-         // hops away
-         // be careful not to double count first child
-         // if span is 1
+         // as second child, take rank that is span hops away,
+         // we're careful not to double count first child if span is 1
          if (span > 1 && (rank + span) < end) {
-            num_children++;
             children[num_children] = group->list_right[steps];
+            num_children++;
          }
          break;
       }
@@ -554,7 +552,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
          newend   = start + span;
          if (newstart == rank) {
             // we are root in next step,
-            // so we have our parent now
+            // so we know our parent now
             parent = group->list_left[0];
          }
       } else {
@@ -564,7 +562,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
          newend   = end;
          if (newstart == rank) {
             // we are root in next step,
-            // so we have our parent now
+            // so we know our parent now
             parent = group->list_left[steps];
          }
       }
