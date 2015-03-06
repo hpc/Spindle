@@ -10,7 +10,8 @@ libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_serve
 #libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
 libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
 libaudit_server_spawnnet_la_SOURCES = ldcs_audit_server_md_spawnnet.c
-libaudit_server_spawnnet_la_LIBADD = $(LDADD) -lspawn libserverbase.la
+libaudit_server_spawnnet_la_LIBADD = $(LDADD) -lspawn -lpmi libserverbase.la
+libaudit_server_spawnnet_la_LDFLAGS = $SPAWNNET_RPATH_FLAGS
 
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/cobo/

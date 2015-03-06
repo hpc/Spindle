@@ -61,6 +61,10 @@ am_libaudit_server_spawnnet_la_OBJECTS =  \
 	ldcs_audit_server_md_spawnnet.lo
 libaudit_server_spawnnet_la_OBJECTS =  \
 	$(am_libaudit_server_spawnnet_la_OBJECTS)
+libaudit_server_spawnnet_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libaudit_server_spawnnet_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 libserverbase_la_LIBADD =
 am_libserverbase_la_OBJECTS = ldcs_audit_server_client_cb.lo \
 	ldcs_audit_server_server_cb.lo ldcs_audit_server_process.lo \
@@ -247,7 +251,8 @@ libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_serve
 #libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
 libaudit_server_cobo_la_SOURCES = ldcs_audit_server_md_cobo.c
 libaudit_server_spawnnet_la_SOURCES = ldcs_audit_server_md_spawnnet.c
-libaudit_server_spawnnet_la_LIBADD = $(LDADD) -lspawn libserverbase.la
+libaudit_server_spawnnet_la_LIBADD = $(LDADD) -lspawn -lpmi libserverbase.la
+libaudit_server_spawnnet_la_LDFLAGS = $SPAWNNET_RPATH_FLAGS
 LCD = $(top_builddir)/comlib
 COD = $(top_builddir)/cobo/
 #libaudit_server_msocket_la_LIBADD = $(LDADD) libserverbase.la
@@ -298,7 +303,7 @@ clean-noinstLTLIBRARIES:
 libaudit_server_cobo.la: $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libaudit_server_cobo_la_OBJECTS) $(libaudit_server_cobo_la_LIBADD) $(LIBS)
 libaudit_server_spawnnet.la: $(libaudit_server_spawnnet_la_OBJECTS) $(libaudit_server_spawnnet_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libaudit_server_spawnnet_la_OBJECTS) $(libaudit_server_spawnnet_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libaudit_server_spawnnet_la_LINK)  $(libaudit_server_spawnnet_la_OBJECTS) $(libaudit_server_spawnnet_la_LIBADD) $(LIBS)
 libserverbase.la: $(libserverbase_la_OBJECTS) $(libserverbase_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libserverbase_la_OBJECTS) $(libserverbase_la_LIBADD) $(LIBS)
 

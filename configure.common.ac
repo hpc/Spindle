@@ -34,6 +34,10 @@ AC_ARG_WITH(spawnnet-dir,
             [AS_HELP_STRING([--with-spawnnet-dir=DIR],[Directory containing spawnnet /lib and /include directories])],
             [SPAWNNET_DIR=${withval}],)
 
+AC_ARG_WITH(pmi-dir,
+            [AS_HELP_STRING([--with-pmi-dir=DIR],[Directory containing PMI /lib and /include directories])],
+            [PMI_DIR=${withval}],)
+
 #Startup type
 AC_ARG_WITH(hostbin,
             [AS_HELP_STRING([--with-hostbin=EXE],[Executable for returning host lists for jobs])],

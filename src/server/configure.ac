@@ -79,7 +79,13 @@ fi
 if test "x$SPAWNNET_DIR" != "x"; then
    CFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
    CXXFLAGS="$CFLAGS -I$SPAWNNET_DIR/include"
-   LDFLAGS="$LDFLAGS -L$SPAWNNET_DIR/lib"
+   LDFLAGS="$LDFLAGS -L$SPAWNNET_DIR/lib -Wl,-rpath,$SPAWNNET_DIR/lib"
+fi
+
+if test "x$PMI_DIR" != "x"; then
+   CFLAGS="$CFLAGS -I$PMI_DIR/include"
+   CXXFLAGS="$CFLAGS -I$PMI_DIR/include"
+   LDFLAGS="$LDFLAGS -L$PMI_DIR/lib -Wl,-rpath,$PMI_DIR/lib"
 fi
 
 if test "x$CLEANUP_PROC" == "xtrue"; then
