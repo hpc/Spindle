@@ -125,10 +125,11 @@ static int setup_fe_socket(int port)
    }
    
    struct sockaddr parent_addr;
+   memset(&parent_addr, 0, sizeof(parent_addr));
    socklen_t parent_len = sizeof(parent_addr);
-   sockfd = accept(sockfd, (struct sockaddr *) &parent_addr, &parent_len);
+   sockfd = accept(fd, (struct sockaddr *) &parent_addr, &parent_len);
    if (sockfd == -1) {
-      err_printf("Error listening socket\n");
+      err_printf("Error accepting socket\n: %s", strerror(errno));
       return -1;
    }
 

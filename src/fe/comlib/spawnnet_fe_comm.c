@@ -79,7 +79,8 @@ int ldcs_audit_server_fe_md_open(char **hostlist, int numhosts, unsigned int por
    }
 
    result = read(sock, &ack, sizeof(&ack));
-   return -1;
+
+   return 0;
 }
 
 int ldcs_audit_server_fe_md_close(void *data)
