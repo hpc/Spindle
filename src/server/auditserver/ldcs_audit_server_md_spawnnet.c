@@ -24,11 +24,16 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/ip.h>
+#include <netdb.h>
 
 static int waitfor_spawnnet();
 
 static int read_pipe;
 static int write_pipe;
+static int sockfd;
 static pthread_t thrd;
 
 static size_t num_children;
@@ -91,6 +96,50 @@ static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
    return 0;
 }
 
+static int setup_fe_socket(int port)
+{
+   int result, fd;
+   struct sockaddr_in sin;
+   
+   fd = socket(AF_INET, SOCK_STREAM, 0);
+   if (fd == -1) {
+      err_printf("Error creating socket\n");
+      return -1;
+   }
+
+   memset(&sin, 0, sizeof(sin));
+   sin.sin_family = AF_INET;
+   sin.sin_addr.s_addr = htonl(INADDR_ANY);
+   sin.sin_port = htons(port);
+   
+   result = bind(fd, (struct sockaddr *) &sin, sizeof(sin));
+   if (result == -1) {
+      err_printf("Error binding socket\n");
+      return -1;
+   }
+
+   result = listen(fd, 1);
+   if (result == -1) {
+      err_printf("Error listening socket\n");
+      return -1;
+   }
+   
+   struct sockaddr parent_addr;
+   socklen_t parent_len = sizeof(parent_addr);
+   sockfd = accept(sockfd, (struct sockaddr *) &parent_addr, &parent_len);
+   if (sockfd == -1) {
+      err_printf("Error listening socket\n");
+      return -1;
+   }
+
+   close(fd);
+   
+   int ack = 17;
+   write(sockfd, &ack, sizeof(ack));
+
+   return 0;
+}
+
 static void *select_thread(void *arg)
 {
    int result = 0;
@@ -126,6 +175,48 @@ static int waitfor_spawnnet()
    // when data available or any change.  Return -1 when done.
    // This is called on a thread.
    //Set selected_peer to the channel with available data.
+   return 0;
+}
+
+static int on_fe_data(int fd, int id, void *data)
+{
+   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data;
+   ldcs_message_t msg;
+   double starttime;
+
+   starttime = ldcs_get_time();
+
+   int result = read(sockfd, &msg, sizeof(msg));
+   if (result == -1) {
+      err_printf("Unable to read from fe socket\n");
+      return -1;
+   }
+
+   if (msg.header.len) {
+      msg.data = malloc(msg.header.len);
+      result = read(sockfd, msg.data, msg.header.len);
+      if (result == -1) {
+         err_printf("Unable to read from fe socket\n");
+         return -1;
+      }
+   }
+   else {
+      msg.data = NULL;
+   }
+
+   result = handle_server_message(ldcs_process_data, (node_peer_t) NULL, &msg);
+
+   ldcs_process_data->server_stat.md_cb.cnt++;
+   ldcs_process_data->server_stat.md_cb.time+=(ldcs_get_time() - starttime);
+
+   if (result == -1) {
+      err_printf("Unable to read from fe socket\n");
+      return -1;      
+   }
+
+   if (msg.data)
+      free(msg.data);
+
    return 0;
 }
 
@@ -191,15 +282,18 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *data )
    }
 
    ldcs_listen_register_fd(read_pipe, read_pipe, on_data, data);
-      
+
+   ldcs_listen_register_fd(sockfd, sockfd, on_fe_data, data);
    return 0;
 }
 
 int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *data )
 {
    ldcs_listen_unregister_fd(read_pipe);
+   ldcs_listen_unregister_fd(sockfd);
    close(read_pipe);
    close(write_pipe);
+   close(sockfd);
    return 0;
 }
 
