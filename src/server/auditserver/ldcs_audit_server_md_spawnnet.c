@@ -283,7 +283,7 @@ static char* pmi_val     = NULL; /* pointer to buffer for PMI value */
 static int pmi_alloc()
 {
    /* get kvs length */
-   int error = PMI_Get_name_length_max(&pmi_kvs_len);
+   int error = PMI_KVS_Get_name_length_max(&pmi_kvs_len);
    if (error != PMI_SUCCESS) {
       err_printf("Failed to get PMI KVS length.\n");
       return -1;
@@ -345,31 +345,32 @@ static void pmi_free()
 {
    /* free kvs buffer */
    if (pmi_kvs != NULL) {
-      MPIU_Free(pmi_kvs);
+      free(pmi_kvs);
       pmi_kvs     = NULL;
       pmi_kvs_len = 0;
    }
 
    /* free key buffer */
    if (pmi_key != NULL) {
-      MPIU_Free(pmi_key);
+      free(pmi_key);
       pmi_key     = NULL;
       pmi_key_len = 0;
    }
 
    /* free value buffer */
    if (pmi_val != NULL) {
-      MPIU_Free(pmi_val);
+      free(pmi_val);
       pmi_val     = NULL;
       pmi_val_len = 0;
    }
 }
 
+#ifdef HAVE_PMIX_RING
 // this can be used with avalaunch but not SLURM
 static int pmix_ring(spawn_net_endpoint* ep, char* name, char* left, char* right)
 {
    /* insert our endpoint id into PMI */
-   MPIU_Snprintf(pmi_val, pmi_val_len, "%s", name);
+   snprintf(pmi_val, pmi_val_len, "%s", name);
 
    /* execute the ring exchange */
    int ring_rank, ring_ranks;
@@ -380,8 +381,9 @@ static int pmix_ring(spawn_net_endpoint* ep, char* name, char* left, char* right
 
    return 0;
 }
+#endif
 
-static int pmi_ring(spawn_net_endpoint* ep, char* name, char* left, char* right)
+static int pmi_ring(spawn_net_endpoint* ep, const char* name, char* left, char* right)
 {
    int rc;
 
@@ -468,7 +470,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
    }
 
    // get endpoint name
-   char* name = spawn_net_endpoint_name(ep);
+   const char* name = spawn_net_name(ep);
    if (name == NULL) {
       err_printf("Failed to get endpoint name.\n");
       return -1;
