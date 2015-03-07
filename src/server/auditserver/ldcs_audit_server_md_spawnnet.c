@@ -69,6 +69,7 @@ static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
 {
    int result;
    char *buffer = NULL;
+   int i;
 
    result = spawn_net_read(channel, msg, sizeof(*msg));
    if (result != 0)
@@ -100,6 +101,7 @@ static int read_msg(spawn_net_channel *channel, ldcs_message_t *msg)
    }
 
    msg->data = buffer;
+
    return 0;
 }
 
@@ -148,6 +150,10 @@ static int setup_fe_socket(int port)
    return 0;
 }
 
+static pthread_cond_t pcond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t pmut = PTHREAD_MUTEX_INITIALIZER;
+static int thread_ready = 0;
+
 static void *select_thread(void *arg)
 {
    int result = 0;
@@ -163,17 +169,27 @@ static void *select_thread(void *arg)
          err_printf("Failed to write to write pipe: %s", strerror(errno));
          return NULL;
       }
+
+      pthread_mutex_lock(&pmut);
+      while (thread_ready == 0)
+         pthread_cond_wait(&pcond, &pmut);
+      thread_ready = 0;
+      pthread_mutex_unlock(&pmut);
    }
    return NULL;
 }
 
-static void clear_pipe()
+void clear_pipe()
 {
    char c;
    ssize_t result = read(read_pipe, &c, sizeof(c));
    if (result == -1) {
       err_printf("Failed to read from read pipe: %s", strerror(errno));
    }
+   pthread_mutex_lock(&pmut);
+   thread_ready = 1;
+   pthread_cond_signal(&pcond);
+   pthread_mutex_unlock(&pmut);
 }
 
 static spawn_net_channel *selected_peer = NULL;
@@ -184,11 +200,34 @@ static int waitfor_spawnnet()
    // This is called on a thread.
    //Set selected_peer to the channel with available data.
    int idx;
-   int rc = spawn_net_wait(0, NULL, num_children, children, &idx);
+   int rc = spawn_net_wait(0, NULL, rank == 0 ? num_children : num_children+1, (const spawn_net_channel **) children, &idx);
    if (rc != 0) {
       return -1;
    }
    selected_peer = children[idx];
+   return 0;
+}
+
+static int recv_msg_from_fe(ldcs_message_t *msg)
+{
+   int result = read(sockfd, msg, sizeof(*msg));
+   if (result == -1) {
+      err_printf("Unable to read from fe socket\n");
+      return -1;
+   }
+
+   if (msg->header.len) {
+      msg->data = malloc(msg->header.len);
+      result = read(sockfd, msg->data, msg->header.len);
+      if (result == -1) {
+         err_printf("Unable to read from fe socket\n");
+         return -1;
+      }
+   }
+   else {
+      msg->data = NULL;
+   }
+
    return 0;
 }
 
@@ -200,23 +239,9 @@ static int on_fe_data(int fd, int id, void *data)
 
    starttime = ldcs_get_time();
 
-   int result = read(sockfd, &msg, sizeof(msg));
-   if (result == -1) {
-      err_printf("Unable to read from fe socket\n");
+   int result = recv_msg_from_fe(&msg);
+   if (result == -1)
       return -1;
-   }
-
-   if (msg.header.len) {
-      msg.data = malloc(msg.header.len);
-      result = read(sockfd, msg.data, msg.header.len);
-      if (result == -1) {
-         err_printf("Unable to read from fe socket\n");
-         return -1;
-      }
-   }
-   else {
-      msg.data = NULL;
-   }
 
    result = handle_server_message(ldcs_process_data, (node_peer_t) NULL, &msg);
 
@@ -242,17 +267,19 @@ static int on_data(int fd, int id, void *data)
    ldcs_message_t msg;
    node_peer_t peer;
 
-   clear_pipe();
    starttime = ldcs_get_time();
 
    assert(selected_peer != NULL);
    peer = (node_peer_t) selected_peer;
+
    result = read_msg(selected_peer, &msg);
    selected_peer = NULL;
    if (result == -1)
       return -1;
 
    result = handle_server_message(ldcs_process_data, peer, &msg);
+
+   clear_pipe();
 
    ldcs_process_data->server_stat.md_cb.cnt++;
    ldcs_process_data->server_stat.md_cb.time+=(ldcs_get_time() - starttime);
@@ -297,6 +324,12 @@ static int pmi_alloc()
    pmi_kvs = malloc(pmi_kvs_len);
    if (pmi_kvs == NULL) {
       err_printf("Failed to allocate PMI KVS buffer.\n");
+      return -1;
+   }
+
+   error = PMI_KVS_Get_my_name(pmi_kvs, pmi_kvs_len);
+   if (error != PMI_SUCCESS) {
+      err_printf("Failed to get PMI kvs name.\n");
       return -1;
    }
 
@@ -441,6 +474,8 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
    int rc;
 
    // initialize PMI
+   debug_printf3("Starting PMI initialization\n");
+
    int spawned;
    if (PMI_Init(&spawned) != PMI_SUCCESS) {
       err_printf("Failed to initialize PMI.\n");
@@ -528,6 +563,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
    // determine who our children are, we'll recursively divide full
    // range into parts depending on our rank
    num_children = 0;
+   children = (spawn_net_channel **) malloc(3 * sizeof(spawn_net_channel *));
    int start = 0;     // start represents rank of root of current subtree
    int end   = ranks; // end is one more than max rank in subtree
    while (steps > 0) {
@@ -576,8 +612,10 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_
       span >>= 1;
       steps--;
    }
+   children[num_children] = parent;
 
-   setup_fe_socket(port);
+   if (rank == 0)
+      setup_fe_socket(port);
 
    return -1;
 }
@@ -603,7 +641,8 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *data )
 
    ldcs_listen_register_fd(read_pipe, read_pipe, on_data, data);
 
-   ldcs_listen_register_fd(sockfd, sockfd, on_fe_data, data);
+   if (rank == 0)
+      ldcs_listen_register_fd(sockfd, sockfd, on_fe_data, data);
    return 0;
 }
 
@@ -620,6 +659,7 @@ int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *data )
 int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data )
 {
    // TODO: close socket to FE?
+   pthread_cancel(thrd);
 
    // free children
    if (children != NULL) {
@@ -637,26 +677,7 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *data )
 
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *data, char *filename )
 {
-#if 0
-// we shut down all of these connections in lwgrp_free
-// in ldcs_audit_server_md_desstroy
-
-   int result, i;
-   result = spawn_net_disconnect(&parent);
-   if (result != 0) {
-      err_printf("Error during spawn_net_disconnect\n");
-      return -1;
-   }
-   for (i = 0; i < num_children; i++) {
-      result = spawn_net_disconnect(children+i);
-      if (result != 0) {
-         err_printf("Error during spawn_net_disconnect\n");
-         return -1;
-      }
-   }
-#endif
-      
-   return 0;
+   return (rank == 0);
 }
 
 int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size)
@@ -682,6 +703,7 @@ int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size)
       size -= cur_size;
    }
    free(buffer);
+
    return -1;
 }
 
@@ -689,6 +711,7 @@ int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, l
 {
    int result;
    if (rank == 0) {
+      err_printf("Tried to send message from root\n");
       return 0;
    }
    
@@ -718,6 +741,10 @@ int ldcs_audit_server_md_complete_msg_read(node_peer_t peer, ldcs_message_t *msg
 
 int ldcs_audit_server_md_recv_from_parent(ldcs_message_t *msg)
 {
+   if (rank == 0) {
+      return recv_msg_from_fe(msg);
+   }
+   
    return read_msg(parent, msg);
 }
 
