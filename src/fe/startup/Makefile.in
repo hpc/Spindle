@@ -294,8 +294,9 @@ include_HEADERS = $(top_srcdir)/../include/spindle_launch.h
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 CORE_SOURCES = spindle_fe.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\"
-CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
-	$(am__append_2) $(MUNGE_DYN_LIB) $(GCRYPT_LIBS)
+CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la -lpthread \
+	$(am__append_1) $(am__append_2) $(MUNGE_DYN_LIB) \
+	$(GCRYPT_LIBS)
 libspindlefe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
 libspindlefe_la_SOURCES = $(CORE_SOURCES)
 libspindlefe_la_LIBADD = $(CORE_LDADD)
