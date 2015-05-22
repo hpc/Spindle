@@ -101,7 +101,10 @@ static void setup_environment()
    char rankinfo_str[256];
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
 
-   char *connection_str = client_get_connection_string(ldcsid);
+   
+   char *connection_str = NULL;
+   if (opts & OPT_RELOCAOUT) 
+      connection_str = client_get_connection_string(ldcsid);
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
