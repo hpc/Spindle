@@ -47,23 +47,28 @@ unsigned int spindle_la_version(unsigned int version)
    return 1;
 }
 
-void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
+static void bind_to_libc()
 {
    static int bound_libc_symbols = 0;
    int result;
-
    if (!bound_libc_symbols) {
       result = lookup_libc_symbols();
       if (result == 0) {
          bound_libc_symbols = 1;
       }
    }
+}
+
+void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
+{
+   bind_to_libc();
    update_calloc_got();
    update_plt_bindings();
 }
 
 unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
+   bind_to_libc();
    add_library_to_plt_update_list(map);
    add_library_to_calloc_list(map);
    return 0;
