@@ -44,8 +44,9 @@ static const char libexec_dir[] = LIBEXEC "/";
 
 static sigset_t child_blocked_mask;
 static sigset_t child_unblocked_mask;
-static bool hit_sigchild = 0;
+static bool hit_sigchild = false;
 
+static bool exit_processed = false;
 static bool hostbin_exit_signal = false;
 static bool launcher_exit_signal = false;
 static bool exit_detected = false;
@@ -168,17 +169,17 @@ private:
    void handleProcessExit(bool &hostbin_exited, bool &launcher_exited)
    {
       pthread_mutex_lock(&exited_mut);
-      assert(!hostbin_exit_signal && !launcher_exit_signal);
+      assert(!exit_processed);
       exit_detected = true;
       pthread_cond_signal(&exited_cvar);
       pthread_mutex_unlock(&exited_mut);
       
       pthread_mutex_lock(&result_mut);
-      while (!hostbin_exit_signal && !launcher_exit_signal)
+      while (!exit_processed)
          pthread_cond_wait(&result_cvar, &result_mut);
       hostbin_exited = hostbin_exit_signal;
       launcher_exited = launcher_exit_signal;
-      hostbin_exit_signal = launcher_exit_signal = false;
+      hostbin_exit_signal = launcher_exit_signal = exit_processed = false;
       pthread_mutex_unlock(&result_mut);
    }
 
@@ -212,6 +213,7 @@ private:
          bool launcher_done = false, hostbin_done = false;
          fd_set read_set;
          int max_fd = 0;
+         int result;
          FD_ZERO(&read_set);
          
 #define ADD_FD(FD)                                                \
@@ -227,9 +229,11 @@ private:
 
          if (max_fd == 0)
             break;
+         
+         if (!hit_sigchild)
+            result = pselect(max_fd+1, &read_set, NULL, NULL, NULL, &child_unblocked_mask);
 
-         hit_sigchild = false;
-         int result = pselect(max_fd+1, &read_set, NULL, NULL, NULL, &child_unblocked_mask);
+         debug_printf("Hostbin returned from pselect.  result = %d. Hit sigchild = %d\n", result, (int) hit_sigchild);
          if (!hit_sigchild && result == -1) {
             perror("Error calling pselect");
             exit(-1);
@@ -255,6 +259,7 @@ private:
          }
          if (hit_sigchild) {
             handleProcessExit(hostbin_done, launcher_done);
+            hit_sigchild = false;
          }
          if (hostbin_done) {
             parseHostbinStdout(hostbin_result_pipe[RD], read_anything);
@@ -398,6 +403,7 @@ private:
    proc_result_t collectLauncherResult() {
       int status, result;
       result = waitpid(launcher_pid, &status, WNOHANG);
+                   
       if (result == 0) {
          return not_exited;
       }
@@ -482,7 +488,6 @@ public:
 
    bool waitForResult() {
       bool hb_exited = false, la_exited = false;
-      
       pthread_mutex_lock(&exited_mut);
       while (!exit_detected) 
          pthread_cond_wait(&exited_cvar, &exited_mut);
@@ -501,6 +506,7 @@ public:
       pthread_mutex_lock(&result_mut);
       hostbin_exit_signal = hb_exited;
       launcher_exit_signal = la_exited;
+      exit_processed = true;
       pthread_cond_signal(&result_cvar);
       pthread_mutex_unlock(&result_mut);
 
@@ -522,8 +528,6 @@ public:
    bool hostbinError() {
       return hostbin_result == proc_error;
    }
-
-   
 };
 
 static bool fileExists(string f)
@@ -546,8 +550,11 @@ int startHostbinFE(string hostbin_exe,
          hostbin_exe = fullpath;
    }
 
-   signal(SIGPIPE, SIG_IGN);
    signal(SIGCHLD, on_child);
+
+   proc_manager.runLauncher(app_argc, app_argv);
+
+   signal(SIGPIPE, SIG_IGN);
    pthread_sigmask(SIG_BLOCK, NULL, &child_blocked_mask);
    pthread_sigmask(SIG_BLOCK, NULL, &child_unblocked_mask);
    sigaddset(&child_blocked_mask, SIGCHLD);
@@ -558,23 +565,23 @@ int startHostbinFE(string hostbin_exe,
    pthread_cond_init(&result_cvar, NULL);
    pthread_mutex_init(&result_mut, NULL);
 
-
-   proc_manager.runLauncher(app_argc, app_argv);
    proc_manager.runHostbin(hostbin_exe);
 
    io_thread.run();
 
-   proc_manager.waitForResult();
+   while (!proc_manager.hostbinDone()) {
+      debug_printf3("Calling waitForResult for hostbin exit\n");
+      proc_manager.waitForResult();
 
-   if (proc_manager.launcherDone()) {
-      err_printf("Job launcher terminated prematurely\n");
-      return proc_manager.launcherResult();
+      if (proc_manager.launcherDone()) {
+         err_printf("Job launcher terminated prematurely\n");
+         return proc_manager.launcherResult();
+      }
+      if (proc_manager.hostbinError()) {
+         err_printf("Hostbin exited with an error code.  Exiting\n");
+         return -1;
+      }
    }
-   if (proc_manager.hostbinError()) {
-      err_printf("Hostbin exited with an error code.  Exiting\n");
-      return -1;
-   }
-   assert(proc_manager.hostbinDone());
    
    vector<string> &hostvec = io_thread.getHosts();
    if (hostvec.empty()) {
@@ -593,8 +600,10 @@ int startHostbinFE(string hostbin_exe,
       return -1;
    }
 
-   proc_manager.waitForResult();
-   assert(proc_manager.launcherDone());
+   while (!proc_manager.launcherDone()) {
+      debug_printf3("Calling waitForResult for launcher exit\n");
+      proc_manager.waitForResult();
+   }
 
    spindleCloseFE(params);
 
