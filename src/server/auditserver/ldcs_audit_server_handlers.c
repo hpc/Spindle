@@ -1967,6 +1967,11 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
    ldcs_message_t msg;
    debug_printf2("Checking if we need to send an exit ready message\n");
 
+   if (procdata->opts & OPT_PERSIST) {
+       debug_printf2("Bottom-up exit has been disabled\n");
+       return 0;
+   }
+
    if (procdata->sent_exit_ready) {
       debug_printf2("Already sent an exit message.  Not sending another\n");
       return 0;
