@@ -63,6 +63,7 @@ using namespace std;
 #define WRECK 272
 #define NOMPI 273
 #define HOSTBIN 274
+#define PERSIST 275
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -84,6 +85,7 @@ using namespace std;
 #endif
 
 #define DEFAULT_USE_SUBAUDIT 1
+#define DEFAULT_PERSIST 0
 
 static const char *YESNO = "yes|no";
 
@@ -91,13 +93,13 @@ static const unsigned long all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RE
                                             OPT_RELOCPY | OPT_FOLLOWFORK;
 static const unsigned long all_network_opts = OPT_COBO;
 static const unsigned long all_pushpull_opts = OPT_PUSH | OPT_PULL;
-static const unsigned long all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN;
+static const unsigned long all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST;
 
 static const unsigned long default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC | 
                                                 OPT_RELOCPY | OPT_FOLLOWFORK;
 static const unsigned long default_network_opts = OPT_COBO;
 static const unsigned long default_pushpull_opts = OPT_PUSH;
-static const unsigned long default_misc_opts = OPT_STRIP;
+static const unsigned long default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST);
 static const unsigned long default_sec = DEFAULT_SEC;
 
 #if defined(HOSTBIN_PATH)
@@ -128,6 +130,8 @@ static int launcher = 0;
 static int startup_type = 0;
 static int shm_cache_size = SHM_DEFAULT_SIZE;
 static int use_subaudit = DEFAULT_USE_SUBAUDIT;
+static const unsigned long persist = DEFAULT_PERSIST;
+
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -137,6 +141,12 @@ static char *user_python_prefixes = NULL;
 #define DEFAULT_USE_SUBAUDIT_STR "subaudit"
 #else
 #define DEFAULT_USE_SUBAUDIT_STR "audit"
+#endif
+
+#if DEFAULT_PERSIST == 1
+#define DEFAULT_PERSIST_STR "Yes"
+#else
+#define DEFAULT_PERSIST_STR "No"
 #endif
 
 #if defined(USAGE_LOGGING_FILE)
@@ -240,6 +250,8 @@ struct argp_option options[] = {
      "Disable usage logging for this invocation of Spindle", GROUP_MISC },
    { "no-hide", HIDE, NULL, 0,
      "Don't hide spindle file descriptors from application", GROUP_MISC },
+   { "persist", PERSIST, YESNO, 0,
+     "Allow spindle servers to persist after the last client job has exited. Default: " DEFAULT_PERSIST_STR, GROUP_MISC },
    {0}
 };
 
@@ -258,6 +270,7 @@ static int opt_key_to_code(int key)
       case RELOCEXEC: return OPT_RELOCEXEC;
       case RELOCPY: return OPT_RELOCPY;
       case NOCLEAN: return OPT_NOCLEAN;
+      case PERSIST: return OPT_PERSIST;
       default: return 0;
    }
 }
