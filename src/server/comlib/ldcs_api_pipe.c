@@ -114,6 +114,11 @@ int ldcs_create_server_pipe(char* location, int number) {
      _error("mkdir failed");
   }
 
+  char readypath[MAX_PATH_LEN];
+  snprintf(readypath, MAX_PATH_LEN, "%s/ready", staging_dir);
+  int readyfd = creat(readypath, 0000);
+  close(readyfd);
+
   /* FiFos will be created by client */
   /* -> setup notify to get new connections */
   fdlist_pipe[fd].type=LDCS_PIPE_FD_TYPE_SERVER;
@@ -124,11 +129,8 @@ int ldcs_create_server_pipe(char* location, int number) {
   fdlist_pipe[fd].path=staging_dir;
   fdlist_pipe[fd].in_fn=NULL;
   fdlist_pipe[fd].out_fn=NULL;
-  
-  char path[MAX_PATH_LEN];
-  snprintf(path, MAX_PATH_LEN, "%s/ready", staging_dir);
-  int readyfd = creat(path, 0600);
-  close(readyfd);
+
+  chmod(readypath, S_IRUSR | S_IWUSR);
 
   return(fd);
 }

@@ -211,8 +211,12 @@ int client_open_connection_pipe(char* location, int number)
    /* wait for directory (at most one minute) */
    stat_cnt = 0;
    snprintf(ready, MAX_PATH_LEN, "%s/spindle_comm/ready", location);
-   while ((stat(ready, &st) == -1) && (stat_cnt<600)) {
-      debug_printf3("waiting: location %s does not exists (after %d seconds)\n", location, stat_cnt/10);
+   memset(&st, 0, sizeof(st));
+   
+   while (((stat(ready, &st) == -1) || ((st.st_mode & (S_IRUSR | S_IWUSR)) == 0)) && 
+          (stat_cnt<600)) {
+      if (stat_cnt % 10 == 0)
+         debug_printf3("waiting: location %s does not exists (after %d seconds)\n", ready, stat_cnt/10);
       usleep(100000); /* .1 seconds */
       stat_cnt++;
    }
