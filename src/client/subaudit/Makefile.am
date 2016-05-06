@@ -1,13 +1,13 @@
-pkglibexec_LTLIBRARIES = libspindleint.la
+pkglib_LTLIBRARIES = libspindleint.la
 
 if SOCKETS
-pkglibexec_LTLIBRARIES += libspindle_subaudit_socket.la
+pkglib_LTLIBRARIES += libspindle_subaudit_socket.la
 endif
 if PIPES
-pkglibexec_LTLIBRARIES += libspindle_subaudit_pipe.la
+pkglib_LTLIBRARIES += libspindle_subaudit_pipe.la
 endif
 if BITER
-pkglibexec_LTLIBRARIES += libspindle_subaudit_biter.la
+pkglib_LTLIBRARIES += libspindle_subaudit_biter.la
 endif
 
 AM_CFLAGS = -fvisibility=hidden

@@ -54,14 +54,14 @@ if test "xHAVE_LMON" != "xfalse"; then
   AC_MSG_CHECKING([whether we can statically link launchmon])
   LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"
   LIBS="$LIBS $LAUNCHMON_STATIC_LIBS_TEST"
-  AC_LINK_IFELSE(AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();]),
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();])],
                  [LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST]
                  AC_MSG_RESULT([yes]),
                  [])
   if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
     if test "x$HAVE_MUNGE" == "xtrue"; then
       LIBS="$LIBS_HOLD $LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
-      AC_LINK_IFELSE(AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();]),
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([extern "C" { extern int LMON_be_init(); } ],[return LMON_be_init();])],
                      [LAUNCHMON_STATIC_LIBS="$LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"]
                       AC_MSG_RESULT([yes]),
                      [AC_MSG_RESULT([no])])

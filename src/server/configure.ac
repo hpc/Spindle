@@ -4,8 +4,10 @@ AC_CONFIG_AUX_DIR([../../scripts])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_SILENT_RULES([yes])
+AM_PROG_AR
 AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_CONFIG_FILES([logging/Makefile biter/Makefile cache/Makefile auditserver/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile startup/Makefile Makefile])
 LT_INIT

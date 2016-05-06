@@ -197,7 +197,7 @@ AC_DEFUN([LX_QUERY_MPI_COMPILER],
          LIBS=$OLD_LIBS
          CPPFLAGS=$OLD_CPPFLAGS
      else
-         Echo Unable to find suitable MPI Compiler. Try setting $1.
+         echo Unable to find suitable MPI Compiler. Try setting $1.
          have_$3_mpi='no'         
      fi
 ])

@@ -190,13 +190,13 @@ AC_DEFUN([CHOOSE_SEC],[
           HAVE_MUNGE="false"
           LIBS="$LIBS $MUNGE_LIBS"
           AC_MSG_CHECKING([whether we have dynamic libmunge])
-          AC_LINK_IFELSE(AC_LANG_PROGRAM([extern void munge_encode();],[munge_encode();]),
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([extern void munge_encode();],[munge_encode();])],
                          [HAVE_MUNGE="true";MUNGE_DYN_LIB=$MUNGE_LIBS;AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
           AC_MSG_CHECKING([wheter we have a static libmunge])
           MUNGE_STATIC_LIB=`$CC $MUNGE_LIBS --print-file-name=libmunge.a`
           if test -f $MUNGE_STATIC_LIB; then
             LIBS="$LIBS_HOLD $MUNGE_STATIC_LIB"
-            AC_LINK_IFELSE(AC_LANG_PROGRAM([extern int munge_encode();],[return munge_encode();]),
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([extern int munge_encode();],[return munge_encode();])],
                            [AC_MSG_RESULT([yes]); MUNGE_LIBS=$MUNGE_STATIC_LIB;HAVE_MUNGE="true"],
                            [AC_MSG_RESULT([no])])
           else
