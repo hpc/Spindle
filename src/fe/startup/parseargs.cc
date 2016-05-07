@@ -84,7 +84,12 @@ using namespace std;
 #error No security model available
 #endif
 
+#if defined(os_bluegene)
 #define DEFAULT_USE_SUBAUDIT 1
+#else
+#define DEFAULT_USE_SUBAUDIT 0
+#endif
+
 #define DEFAULT_PERSIST 0
 
 static const char *YESNO = "yes|no";
