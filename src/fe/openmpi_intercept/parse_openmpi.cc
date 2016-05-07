@@ -36,10 +36,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "parse_launcher.h"
 #include "config.h"
 
-#if !defined(LIBEXECDIR)
-#error Expected LIBEXECDIR to be defined
+#if !defined(PROGLIBDIR)
+#error Expected PROGLIBDIR to be defined
 #endif
-static const char openmpi_intercept_lib[] = LIBEXECDIR "/libompiintercept.so";
+static const char openmpi_intercept_lib[] = PROGLIBDIR "/libompiintercept.so";
 using namespace std;
 
 typedef unsigned long Address;

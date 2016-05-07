@@ -38,8 +38,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(LIBEXECDIR)
 #error Expected to be built with libdir defined
 #endif
+#if !defined(PROGLIBDIR)
+#error Expected to be built with proglib defined
+#endif
+
 char spindle_daemon[] = LIBEXECDIR "/spindle_be";
-char spindle_interceptlib[] = LIBEXECDIR "/libspindleint.so";
+char spindle_interceptlib[] = PROGLIBDIR "/libspindleint.so";
 
 int ldcsid;
 unsigned int shm_cachesize;
@@ -57,13 +61,13 @@ static char *cachesize_s;
 
 unsigned long opts;
 
-char libstr_socket_subaudit[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
-char libstr_pipe_subaudit[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
-char libstr_biter_subaudit[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
+char libstr_socket_subaudit[] = PROGLIBDIR "/libspindle_subaudit_socket.so";
+char libstr_pipe_subaudit[] = PROGLIBDIR "/libspindle_subaudit_pipe.so";
+char libstr_biter_subaudit[] = PROGLIBDIR "/libspindle_subaudit_biter.so";
 
-char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
-char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
-char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
+char libstr_socket_audit[] = PROGLIBDIR "/libspindle_audit_socket.so";
+char libstr_pipe_audit[] = PROGLIBDIR "/libspindle_audit_pipe.so";
+char libstr_biter_audit[] = PROGLIBDIR "/libspindle_audit_biter.so";
 
 #if defined(COMM_SOCKET)
 static char *default_audit_libstr = libstr_socket_audit;

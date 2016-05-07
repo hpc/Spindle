@@ -39,15 +39,18 @@ extern bool setOpenMPIInterceptEnv(string launcher_rel);
 /**
  * Setup library locations, which come from autoconf
  **/
-char libstr_socket_subaudit[] = LIBEXECDIR "/libspindle_subaudit_socket.so";
-char libstr_pipe_subaudit[] = LIBEXECDIR "/libspindle_subaudit_pipe.so";
-char libstr_biter_subaudit[] = LIBEXECDIR "/libspindle_subaudit_biter.so";
+#if !defined(PROGLIBDIR)
+#error Expected PROGLIBDIR defined
+#endif
+char libstr_socket_subaudit[] = PROGLIBDIR "/libspindle_subaudit_socket.so";
+char libstr_pipe_subaudit[] = PROGLIBDIR "/libspindle_subaudit_pipe.so";
+char libstr_biter_subaudit[] = PROGLIBDIR "/libspindle_subaudit_biter.so";
 
-char libstr_socket_audit[] = LIBEXECDIR "/libspindle_audit_socket.so";
-char libstr_pipe_audit[] = LIBEXECDIR "/libspindle_audit_pipe.so";
-char libstr_biter_audit[] = LIBEXECDIR "/libspindle_audit_biter.so";
+char libstr_socket_audit[] = PROGLIBDIR "/libspindle_audit_socket.so";
+char libstr_pipe_audit[] = PROGLIBDIR "/libspindle_audit_pipe.so";
+char libstr_biter_audit[] = PROGLIBDIR "/libspindle_audit_biter.so";
 
-char libstr_intercept_lib[] = LIBEXECDIR "/libspindleint.so";
+char libstr_intercept_lib[] = PROGLIBDIR "/libspindleint.so";
 #if defined(COMM_SOCKET)
 static char *default_audit_libstr = libstr_socket_audit;
 static char *default_subaudit_libstr = libstr_socket_subaudit;
