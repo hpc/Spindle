@@ -21,6 +21,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 #include <assert.h>
 #include <stdio.h>
+#include <elf.h>
+#include <link.h>
 
 #define NOT_FOUND_PREFIX "/__not_exists"
 
@@ -45,6 +47,12 @@ void set_errno(int newerrno);
 void patch_on_load_success(const char *rewritten_name, const char *orig_name);
 void sync_cwd();
 void check_for_fork();
+
+/**
+ * If Libc's GOT is read-only, reset the permissions to be writable.
+ * This happens on binaries with a GNU_RELRO Phdr.
+ **/
+void remove_libc_rogot();
 
 /**
  * Worker functions for intercepting open and stat calls
@@ -90,6 +98,12 @@ typedef int *(*errno_location_t)(void);
 extern errno_location_t app_errno_location;
 
 char *find_libc_name();
+ElfW(Addr) find_libc_loadoffset();
+const ElfW(Phdr) *find_libc_phdrs(int *num_phdrs);
+
+
 char *find_interp_name();
+ElfW(Addr) find_interp_loadoffset();
+const ElfW(Phdr) *find_interp_phdrs(int *num_phdrs);
 
 #endif

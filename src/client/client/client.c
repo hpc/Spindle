@@ -15,7 +15,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #define _GNU_SOURCE
-#define __USE_GNU
 
 #include <dirent.h>
 #include <unistd.h>
@@ -62,6 +61,9 @@ extern char *parse_location(char *loc);
 int use_ldcs = 1;
 static const char *libc_name = NULL;
 static const char *interp_name = NULL;
+static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
+static int num_libc_phdrs, num_interp_phdrs;
+ElfW(Addr) libc_loadoffset, interp_loadoffset;
 
 static char *concatStrings(const char *str1, const char *str2) 
 {
@@ -76,6 +78,9 @@ static int find_libs_iterator(struct dl_phdr_info *lib,
 {
    if (!libc_name && (strstr(lib->dlpi_name, "libc.") || strstr(lib->dlpi_name, "libc-"))) {
       libc_name = lib->dlpi_name;
+      libc_phdrs = lib->dlpi_phdr;
+      libc_loadoffset = lib->dlpi_addr;
+      num_libc_phdrs = (int) lib->dlpi_phnum;
    }
    else if (!interp_name) {
       const ElfW(Phdr) *phdrs = lib->dlpi_phdr;
@@ -97,6 +102,11 @@ static int find_libs_iterator(struct dl_phdr_info *lib,
             }
          }
       }
+      if (interp_name) {
+         num_interp_phdrs = phdrs_size;
+         interp_phdrs = phdrs;
+         interp_loadoffset = lib->dlpi_addr;
+      }
    }
 
    return 0;
@@ -110,12 +120,50 @@ char *find_libc_name()
    return (char *) libc_name;
 }
 
+const ElfW(Phdr) *find_libc_phdrs(int *num_phdrs)
+{
+   if (libc_phdrs) {
+      *num_phdrs = num_libc_phdrs;
+      return libc_phdrs;
+   }
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   *num_phdrs = num_libc_phdrs;
+   return libc_phdrs;
+}
+
+ElfW(Addr) find_libc_loadoffset()
+{
+   if (libc_phdrs)
+      return libc_loadoffset;
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   return libc_loadoffset;
+}
+
 char *find_interp_name()
 {
    if (interp_name)
       return (char *) interp_name;
    dl_iterate_phdr(find_libs_iterator, NULL);
    return (char *) interp_name;
+}
+
+const ElfW(Phdr) *find_interp_phdrs(int *num_phdrs)
+{
+   if (interp_name) {
+      *num_phdrs = num_interp_phdrs;
+      return interp_phdrs;
+   }
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   *num_phdrs = num_interp_phdrs;
+   return interp_phdrs;
+}
+
+ElfW(Addr) find_interp_loadoffset()
+{
+   if (interp_name)
+      return interp_loadoffset;
+   dl_iterate_phdr(find_libs_iterator, NULL);
+   return interp_loadoffset;
 }
 
 void int_spindle_test_log_msg(char *buffer)

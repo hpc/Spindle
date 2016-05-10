@@ -113,6 +113,9 @@ void la_activity (uintptr_t *cookie, unsigned int flag)
                  (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
                  "???");
 
+   if (flag == LA_ACT_CONSISTENT)
+      remove_libc_rogot();
+
    spindle_la_activity(cookie, flag);
    return;
 }
