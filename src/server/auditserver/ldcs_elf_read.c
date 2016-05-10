@@ -40,9 +40,13 @@ static int readUpTo(FILE *f, unsigned char *buffer, size_t *cur_pos, size_t new_
    return 0;
 }
 
+#if !defined PT_GNU_RELRO
+#define PT_GNU_RELRO 0x6474e552
+#endif
+
 #define ERR -1
 #define NOT_ELF -2
-static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size)
+static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size, int strip)
 {
    int result;
    size_t filesize = *size;
@@ -91,6 +95,20 @@ static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size
       return ERR;
    }
 
+   //Spindle isn't compatible with PT_GNU_RELRO sections. Delete them
+   // by changing the type to an unused type.
+   phdr = (Elf64_Phdr *) (buffer + ph_start);
+   for (i = 0; i < num_phdrs; i++, phdr++) {
+      if (phdr->p_type == PT_GNU_RELRO) {
+         phdr->p_type = 0x7a5843cc;
+      }
+   }
+
+   if (!strip) {
+      readUpTo(f, buffer, &cur_pos, filesize);
+      return 0;
+   }
+
    //Find the end of the last program header
    phdr = (Elf64_Phdr *) (buffer + ph_start);
    for (i = 0; i < num_phdrs; i++, phdr++) {
@@ -121,8 +139,8 @@ static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size
    return 0;
 }
 
-int read_file_and_strip(FILE *f, void *data, size_t *size) {
-   int result = readLoadableFileSections(f, (unsigned char *) data, size);
+int read_file_and_strip(FILE *f, void *data, size_t *size, int strip) {
+   int result = readLoadableFileSections(f, (unsigned char *) data, size, strip);
    if (result == ERR) {
       debug_printf3("Error reading from file\n");
       return -1;

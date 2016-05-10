@@ -18,7 +18,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define LDCS_ELF_READ_H_
 
 #include <stdio.h>
-
-int read_file_and_strip(FILE *f, void *data, size_t *size);
+int read_file_and_strip(FILE *f, void *data, size_t *size, int strip);
 
 #endif
