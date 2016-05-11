@@ -651,6 +651,8 @@ MPICXX
 MPI_CLDFLAGS
 MPI_CFLAGS
 MPICC
+BLD_TESTSUITE_FALSE
+BLD_TESTSUITE_TRUE
 TESTRM
 AM_CFLAGS
 LMON_DYNAMIC_FALSE
@@ -842,6 +844,7 @@ with_launchmon_incdir
 with_launchmon_libdir
 with_launchmon_rmcommdir
 with_testrm
+enable_testsuite
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1512,6 +1515,8 @@ Optional Features:
   --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
                           for connections
   --enable-sec-none       Disable security authentication of connections
+  --enable-testsuite      Chooses whether to build the Spindle testsuite.
+                          Default yes
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -16875,6 +16880,22 @@ fi
 
 
 #MPI detection
+# Check whether --enable-testsuite was given.
+if test "${enable_testsuite+set}" = set; then :
+  enableval=$enable_testsuite; BUILD_TESTSUITE=${enableval}
+else
+  BUILD_TESTSUITE=yes
+fi
+
+ if test "x$BUILD_TESTSUITE" == "xyes"; then
+  BLD_TESTSUITE_TRUE=
+  BLD_TESTSUITE_FALSE='#'
+else
+  BLD_TESTSUITE_TRUE='#'
+  BLD_TESTSUITE_FALSE=
+fi
+
+
 #################################################################################################
 # Copyright (c) 2010, Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory
@@ -17776,6 +17797,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
   as_fn_error $? "conditional \"LMON_DYNAMIC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BLD_TESTSUITE_TRUE}" && test -z "${BLD_TESTSUITE_FALSE}"; then
+  as_fn_error $? "conditional \"BLD_TESTSUITE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

@@ -30,6 +30,12 @@ AC_ARG_WITH(testrm,
 AC_SUBST(TESTRM)
 
 #MPI detection
+AC_ARG_ENABLE(testsuite,
+              [AS_HELP_STRING([--enable-testsuite],[Chooses whether to build the Spindle testsuite. Default yes])],
+              [BUILD_TESTSUITE=${enableval}],
+              [BUILD_TESTSUITE=yes])
+AM_CONDITIONAL([BLD_TESTSUITE], [test "x$BUILD_TESTSUITE" == "xyes"])
+
 m4_include([m4/lx_find_mpi.m4])
 AC_LANG_PUSH(C)
 LX_FIND_MPI
