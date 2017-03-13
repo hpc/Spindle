@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "auditclient.h"
 #include "ldcs_api.h"
+#include "intercept.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -43,6 +44,7 @@ unsigned int la_version(unsigned int version)
       return 0;
    debug_printf("la_version function is loaded at %p\n", la_version);
    debug_printf3("la_version(): %d\n", version);
+   init_bindings_hash();
    return spindle_la_version(version);
 }
 

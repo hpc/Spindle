@@ -42,8 +42,6 @@ unsigned int spindle_la_version(unsigned int version)
    debug_printf3("Updating subaudit bindings with offset %d\n", binding_offset);
    init_plt_binding_func(binding_offset);
 
-   init_bindings_hash();
-
    return 1;
 }
 
