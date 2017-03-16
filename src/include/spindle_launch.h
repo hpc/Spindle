@@ -46,12 +46,12 @@ extern "C" {
 #define OPT_REMAPEXEC  (1 << 14)            /* Use remapping hack to make /proc/PID/exe point to original exe */
 #define OPT_LOGUSAGE   (1 << 15)            /* Log usage information to a file */
 #define OPT_SHMCACHE   (1 << 16)            /* Use a shared memory cache optimization (only needed on BlueGene) */
-#define OPT_SEC        (3 << 17)            /* Security mode, one of the below OPT_SEC_* values */
-#define OPT_SUBAUDIT   (1 << 19)            /* Use subaudit mechanism (needed on BlueGene and very old GLIBCs) */
-#define OPT_PERSIST    (1 << 20)            /* Spindle servers should not exit when all clients exit. */
+#define OPT_SUBAUDIT   (1 << 17)            /* Use subaudit mechanism (needed on BlueGene and very old GLIBCs) */
+#define OPT_PERSIST    (1 << 18)            /* Spindle servers should not exit when all clients exit. */
+#define OPT_SEC        (7 << 19)            /* Security mode, one of the below OPT_SEC_* values */
 
-#define OPT_SET_SEC(OPT, X) OPT |= (X << 17)
-#define OPT_GET_SEC(OPT) ((OPT >> 17) & 3)
+#define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
+#define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
 #define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */
 #define OPT_SEC_KEYLMON 1                   /* Use LaunchMON transmitted keys to validate */
 #define OPT_SEC_KEYFILE 2                   /* Use a key from a shared file to validate */
