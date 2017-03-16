@@ -115,7 +115,7 @@ struct ldcs_process_data_struct
   char *pythonprefix;
   int number;
   int preload_done;
-  unsigned int opts;
+  opt_t opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
   requestor_list_t pending_metadata_requests;

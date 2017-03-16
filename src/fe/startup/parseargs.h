@@ -22,7 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 
-unsigned long parseArgs(int argc, char *argv[]);
+opt_t parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
 unsigned int getPort();
 unsigned int getNumPorts();

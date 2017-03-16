@@ -278,7 +278,7 @@ void ModifyArgv::exit_w_err(string msg)
 void ModifyArgv::modifyCmdLine()
 {
    char options_str[32];
-   snprintf(options_str, 32, "%u", params->opts);
+   snprintf(options_str, 32, "%lu", (unsigned long) params->opts);
    string options(options_str);
    
    string location(params->location);

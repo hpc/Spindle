@@ -94,18 +94,18 @@ using namespace std;
 
 static const char *YESNO = "yes|no";
 
-static const unsigned long all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC | 
+static const opt_t all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC |
                                             OPT_RELOCPY | OPT_FOLLOWFORK;
-static const unsigned long all_network_opts = OPT_COBO;
-static const unsigned long all_pushpull_opts = OPT_PUSH | OPT_PULL;
-static const unsigned long all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST;
+static const opt_t all_network_opts = OPT_COBO;
+static const opt_t all_pushpull_opts = OPT_PUSH | OPT_PULL;
+static const opt_t all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST;
 
-static const unsigned long default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC | 
+static const opt_t default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC |
                                                 OPT_RELOCPY | OPT_FOLLOWFORK;
-static const unsigned long default_network_opts = OPT_COBO;
-static const unsigned long default_pushpull_opts = OPT_PUSH;
-static const unsigned long default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST);
-static const unsigned long default_sec = DEFAULT_SEC;
+static const opt_t default_network_opts = OPT_COBO;
+static const opt_t default_pushpull_opts = OPT_PUSH;
+static const opt_t default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST);
+static const opt_t default_sec = DEFAULT_SEC;
 
 #if defined(HOSTBIN_PATH)
 static char default_hostbin_path[] = HOSTBIN_PATH;
@@ -122,8 +122,8 @@ static char *hostbin_path = NULL;
 #define SHM_MIN_SIZE 0
 #endif
 
-static unsigned long enabled_opts = 0;
-static unsigned long disabled_opts = 0;
+static opt_t enabled_opts = 0;
+static opt_t disabled_opts = 0;
 
 static char *preload_file;
 static char **mpi_argv;
@@ -134,8 +134,8 @@ static int sec_model = -1;
 static int launcher = 0;
 static int startup_type = 0;
 static int shm_cache_size = SHM_DEFAULT_SIZE;
-static int use_subaudit = DEFAULT_USE_SUBAUDIT;
-static const unsigned long persist = DEFAULT_PERSIST;
+static opt_t use_subaudit = DEFAULT_USE_SUBAUDIT;
+static const opt_t persist = DEFAULT_PERSIST;
 
 
 static set<string> python_prefixes;
@@ -168,7 +168,7 @@ static unsigned int num_ports = NUM_COBO_PORTS;
 
 string spindle_location(SPINDLE_LOC);
 
-unsigned long opts = 0;
+opt_t opts = 0;
 
 struct argp_option options[] = {
    { NULL, 0, NULL, 0,
@@ -260,7 +260,7 @@ struct argp_option options[] = {
    {0}
 };
 
-static int opt_key_to_code(int key)
+static opt_t opt_key_to_code(int key)
 {
    switch (key) {
       case RELOCAOUT: return OPT_RELOCAOUT;
@@ -280,7 +280,7 @@ static int opt_key_to_code(int key)
    }
 }
 
-static bool multi_bits_set(unsigned long v)
+static bool multi_bits_set(opt_t v)
 {
    return (v & (v - 1)) != 0;
 }
@@ -289,7 +289,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 {
    struct argp_state *state = (struct argp_state *) vstate;
    struct argp_option *entry;
-   int opt = 0;
+   opt_t opt = 0;
 
    if (done && key != ARGP_KEY_END)
       return 0;
@@ -425,14 +425,14 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
 
       /* Set one and only one network option */
-      unsigned long enabled_network_opts = enabled_opts & all_network_opts;
+      opt_t enabled_network_opts = enabled_opts & all_network_opts;
       if (multi_bits_set(enabled_network_opts)) {
          argp_error(state, "Cannot enable multiple network options");
       }
       opts |= enabled_network_opts ? enabled_network_opts : default_network_opts;
 
       /* Set one and only one push/pull option */
-      unsigned long enabled_pushpull_opts = enabled_opts & all_pushpull_opts;
+      opt_t enabled_pushpull_opts = enabled_opts & all_pushpull_opts;
       if (multi_bits_set(enabled_pushpull_opts)) {
          argp_error(state, "Cannot enable both push and pull options");
       }
@@ -472,7 +472,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    return -1;
 }
 
-unsigned long parseArgs(int argc, char *argv[])
+opt_t parseArgs(int argc, char *argv[])
 {
    error_t result;
    argp_program_version = PACKAGE_VERSION;
@@ -633,7 +633,7 @@ unique_id_t get_unique_id()
 
 void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
 {
-   unsigned int opts = parseArgs(argc, argv);   
+   opt_t opts = parseArgs(argc, argv);
 
    args->number = getpid();
    args->port = getPort();
@@ -647,6 +647,6 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
 
-   debug_printf("Spindle options bitmask: %u\n", opts);
+   debug_printf("Spindle options bitmask: %lu\n", (unsigned long) opts);
 }
 

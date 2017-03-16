@@ -60,7 +60,8 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 7;
+   buffer_size = sizeof(unsigned int) * 6;
+   buffer_size += sizeof(opt_t);
    buffer_size += sizeof(unique_id_t);
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
@@ -184,7 +185,7 @@ int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spin
    char cachesize_s[32];
 
    snprintf(number_s, sizeof(number_s), "%u", params->number);
-   snprintf(opt_s, sizeof(opt_s), "%u", params->opts);
+   snprintf(opt_s, sizeof(opt_s), "%lu", (unsigned long) params->opts);
    snprintf(cachesize_s, sizeof(cachesize_s), "%u", params->shm_cache_size);
    
    *spindle_argv = (char **) malloc(sizeof(char*) * 6);
@@ -211,7 +212,7 @@ void fillInSpindleArgsFE(spindle_args_t *params)
    fake_argv[2] = NULL;
    parseCommandLine(2, fake_argv, params);
 
-   params->use_launcher = unknown_launcher;
+   params->use_launcher = external_launcher;
    params->startup_type = startup_external;
 }
 

@@ -72,6 +72,7 @@ extern "C" {
 #define startup_external 3
 
 typedef uint64_t unique_id_t;
+typedef unsigned int opt_t;
 
 /* Parameters for configuring Spindle */
 typedef struct {
@@ -85,7 +86,7 @@ typedef struct {
    unsigned int num_ports;
 
    /* A bitfield of the above OPT_* values */
-   unsigned int opts;
+   opt_t opts;
 
    /* A unique number that all servers will need
       to provide to join the Spindle network */

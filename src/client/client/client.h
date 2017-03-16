@@ -24,6 +24,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <elf.h>
 #include <link.h>
 
+#include "spindle_launch.h"
+
 #define NOT_FOUND_PREFIX "/__not_exists"
 
 extern int use_ldcs;
@@ -83,7 +85,7 @@ void parse_python_prefixes(int fd);
 
 void test_log(const char *name);
 
-extern unsigned long opts;
+extern opt_t opts;
 
 extern int intercept_open;
 extern int intercept_exec;

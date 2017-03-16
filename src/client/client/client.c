@@ -40,7 +40,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 errno_location_t app_errno_location;
 
-unsigned long opts;
+opt_t opts;
 int ldcsid = -1;
 unsigned int shm_cachesize;
 static unsigned int shm_cache_limit;
@@ -189,7 +189,7 @@ static int init_server_connection()
    rankinfo_s = getenv("LDCS_RANKINFO");
    opts_s = getenv("LDCS_OPTIONS");
    cachesize_s = getenv("LDCS_CACHESIZE");
-   opts = atoi(opts_s);
+   opts = atol(opts_s);
    shm_cachesize = atoi(cachesize_s) * 1024;
 
    if (strchr(location, '$')) {

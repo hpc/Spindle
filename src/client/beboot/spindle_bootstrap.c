@@ -59,7 +59,7 @@ static char *opts_s;
 static char **daemon_args;
 static char *cachesize_s;
 
-unsigned long opts;
+opt_t opts;
 
 char libstr_socket_subaudit[] = PROGLIBDIR "/libspindle_subaudit_socket.so";
 char libstr_pipe_subaudit[] = PROGLIBDIR "/libspindle_subaudit_pipe.so";
@@ -159,7 +159,7 @@ static int parse_cmdline(int argc, char *argv[])
    number_s = argv[i++];
    number = atoi(number_s);
    opts_s = argv[i++];
-   opts = atoi(opts_s);
+   opts = atol(opts_s);
    cachesize_s = argv[i++];
    cachesize = atoi(cachesize_s);
    cmdline = argv + i;
