@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Spindle Job Launch Integration API</h1>
+    
+<p>This README describes the API for integrating Spindle into job launchers (i.e., making Spindle an option to mpirun).  End-users of Spindle should not need to use this API.
+
+<h2>Overview</h2>
+
+<p>While Spindle comes with several mechanisms for launching (launchmon, hostbin, and serial as of v0.10), each of these has disadvantages such as in-operatability with debuggers (launchmon), difficult to use (hostbin), or of limited scope (serial).  In the ideal case Spindle should be integrated directly into a job launcher, which can easily perform the necessary actions of starting the servers, managing the job lifetime, and helping Spindle estabilish connections.  This document describes the API for integrating Spindle into job launchers.
+
+<h2>API</h2>
+
+<p>The API is split into two parts:
+<ol>
+<li>The front-end (FE) API, which is expected to be used on a job-control node or someplace where one can modify and query the job information (such as the application command line and host list) before it runs.  One instance of this API should be invoked for each job Spindle will control.  This API need not be run a node where the application will run (though it could).</li>
+<li>The back-end (BE) API, which should be run in a daemon on each node in the job (i.e., if a job has 16k processes spread across 1k nodes, then you'd have 1k daemons invoking this API).</li>
+</ol>
+
+<p>Both API's are declared in the $SPINDLE_PREFIX/include/spindle_launch.h header file.  The FE functions are defined in the $SPINDLE_PREFIX/lib/libspindlefe.[a,so] libraries and all have a "FE" suffix on their name.  The BE functions are defined in the $SPINDLE_PREFIX/lib/libspindlebe.[a,so] libraries and all have a "BE" suffix on their name.  Both APIs utilize common data types, which are also defined in the spindle_launch.h header file.
+
+<h2>The Datatypes</h2>
+
+<p>The spindle_launch.h include file contains structures, typedefs, macros, and defines used by both the FE and BE APIs.  Users should utilize the aliases and names described in this README rather than the underlying types and values (i.e., type the options bitflag as an opt_t, rather then using the current underlying typedef of uint64_t).  This should keep this interface API compatible, even in situations where we have to break ABI compatibility.<br>
+
+<ul>
+<li><tt>typedef ... unique_id_t</tt><br>
+<p>The unique_id_t is an integer type used to identify a specific Spindle session.  If a user is running multiple jobs on overlapping nodes, then the unique_id_t will be used to distinguish the Spindle sessions for each job.</li>
+
+<li><tt>typedef ... opt_t</tt></li>
+<p>The opt_t type is a bitfield describing the options enabled in this Spindle session.  It will have the following bit values set if spindle should:
+<ul>
+<li><tt>OPT_COBO</tt> - Use COBO for the communication implementation</li>
+<li><tt>OPT_DEBUG</tt> - Hide from debuggers (currently unnecessary)</li>
+<li><tt>OPT_FOLLOWFORK</tt> -Follow forks and manage child processes</li>
+<li><tt>OPT_PRELOAD</tt> - Pre-stage libraries from a preload file</li>
+<li><tt>OPT_PUSH</tt> - Stage files to all nodes when one node requests one</li>
+<li><tt>OPT_PULL</tt> - Stage files only to nodes that specifically request them</li>
+<li><tt>OPT_RELOCAOUT</tt> - Stage the initial executable</li>
+<li><tt>OPT_RELOCSO</tt> - Stage shared libraries</li>
+<li><tt>OPT_RELOCEXEC</tt> - Stage the targets of exec() calls</li>
+<li><tt>OPT_RELOCPY</tt> - Stage python .py/.pyc/.pyo files</li>
+<li><tt>OPT_STRIP</tt> - Strip debug information from ELF files before staging</li>
+<li><tt>OPT_NOCLEAN</tt> - Not clean stage area on exit (useful for debugging)</li>
+<li><tt>OPT_NOHIDE</tt> - Hide Spindle's communication FDs from application</li>
+<li><tt>OPT_REMAPEXEC</tt> - Use a remapping hack to make /proc/PID/exe point to original exe</li>
+<li><tt>OPT_LOGUSAGE</tt> - Log usage information to a file</li>
+<li><tt>OPT_SHMCACHE</tt> - Use a shared memory cache optimization (only needed on BlueGene)</li>
+<li><tt>OPT_SUBAUDIT</tt> - Use the subaudit mechanism (needed on BlueGene and very old GLIBCs)</li>
+<li><tt>OPT_PERSIST</tt> - Spindle servers should remain running after all clients exit.</li>
+<li><tt>OPT_SEC</tt> - Security mode, set to one of the below OPT_SEC_* values:<ul>
+<li><tt>OPT_SEC_MUNGE</tt> - Use MUNGE to generate connection authentication keys</li>
+<li><tt>OPT_SEC_KEYLMON</tt> - Use LaunchMON to distribute security keys (not yet implemented)</li>
+<li><tt>OPT_SEC_KEYFILE</tt> - Generate a key and distribute it via a shared file system</li>
+<li><tt>OPT_SEC_NONE</tt> - Do not authenticate connections between Spindle components</li></li>
+</ul>
+Since OPT_SEC is a multi-bit value, it should be accessed with the following macros:
+<ul>
+<li><tt>OPT_SET_SEC(OPT, X)</tt> - Used to set the OPT_SEC part of the opt_t bitfield to the value X.  OPT should be an opt_t and X should be a OPT_SEC_* value.</li>
+<li><tt>OPT_GET_SEC(OPT)</tt> - Returns the OPT_SEC part of the opt_t bitfield specified by OPT.</li>
+</ul>
+</ul>
+<br>
+
+<li><tt>typedef struct { ... } spindle_args_t</tt><br>
+<p>The above opt_t bitfield cannot describe all the configurations of a Spindle session (such as a TCP port number), and that information is supplemented in the spindle_args_t structure.  This struct's member types and names are:
+<ul> 
+<li><tt>unsigned int number</tt> - A public-facing session ID.  In future versions this may be merged with unique_id.</li>
+<li><tt>unsigned int port</tt> - A first TCP port number that Spindle servers will try to use for communication.</li>
+<li><tt>unsigned int num_ports</tt> - Along with port, specifies set of ports that Spindle can use for communication.  If another application is occupying the TCP port, Spindle will try another port in the range between port and port+num_ports.  For example, if port is 21940 and num_ports is 25, then Spindle will try TCP ports 21940 to 21964.</li>
+<li><tt>opt_t opts</tt> - A bitfield of the above opt_t values.</li>
+<li><tt>unique_id_t unique_id</tt> - A private-facing session ID that should be common between all FE and BE servers in this instance.</li>
+<li><tt>unsigned int use_launcher</tt> - A field that specifies what kind of application launcher is being used.  It will be one of the following values:<ul>
+  <li><tt>srun_launcher</tt> - SLURM is the job launcher</li>
+  <li><tt>serial_launcher</tt> - This is a non-parallel job launched via fork/exec</li>
+  <li><tt>openmpi_launcher</tt> - ORTE is the job launcher</li>
+  <li><tt>wreckrun_launcher</tt> - FLUX is the job launcher</li>
+  <li><tt>marker_launcher</tt> - An unknown job launcher is utilizing Spindle markers in the launch line</li>
+  <li><tt>external_launcher</tt> - An external job launcher is handling the application.  <i>This is the value that should be used with this API</i>.</li>
+</ul></li>
+<li><tt>unsigned int startup_type</tt> - A field specifying how spindle servers are being launched.  It should be one of the following values:<ul>
+  <li><tt>startup_serial</tt> - The job is non-parallel and Spindle should start servers via fork/exec</li>
+  <li><tt>startup_lmon</tt> - LaunchMON will be used to start the Spindle servers.</li>
+  <li><tt>startup_hostbin</tt> - The hostbin mechanism will be used to start Spindle servers.</li>
+  <li><tt>startup_external</tt> - External infrastructure will be used to start Spindle servers.  <i>This is the value that should be used with this API</i>.</li>
+</ul></li>
+<li><tt>unsigned int shm_cache_size</tt> - When using a shared memory cache between clients, this is the size in bytes of the cache.  This is only used on BlueGene systems.</li>
+<li><tt>char *location</tt> - The staging directory where Spindle should store relocated files.  This should preferably be on local and scalable storage, such as a RAMDISK or SSD.  You can use environment variables in this string by encoding them with a $.  i.e., "$TMPDIR/spindle"</li>
+<li><tt>char *pythonprefix</tt> - Spindle can do more effecient Python loading if it knows the install prefix of Python.  This string should be a ':' separated list of diretories that are prefixes of Python installs.  It is legal to use a prefix at an arbitrary point above Python in the directory tree (e.g, "/usr" will capture the python install in "/usr/lib64/python2.7/"), but the job should never be doing file writes in one of these prefixes (so "/" or "/home" would make bad prefixes).</li>
+<li><tt>char *preloadfile</tt> - Points to a file containing a white-space separated list of files that should be staged onto every node in the job before the application runs.</li>
+</ul>
+
+<h2>The FrontEnd API</h2>
+
+As mentioned above, functions in the FE API are expected to be run from a job-control node, or someplace similar.  It should be somewhere with the ability to modify the application launch line and provide the list of hostnames used in the job.  The FE API functions are:
+
+<ul>
+<li><tt>void fillInSpindleArgsFE(spindle_args_t *params)</tt>
+<p>This function fills in the 'params' struct with what Spindle considers sensible default values.  These default values may come from configure-time arguments used to build Spindle (i.e., if a default port was specified at configure time), from hardcoded values, or from runtime detected values.
+
+<p>Calling this function is optional, but recommended.  API users may rely on this function to fill-in options and then overwrite any important values, or just manually fill in the entire spindle_args_t structure.</li>
+
+<li><tt>int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char spindle_argv)</tt>
+<p>Given a filled in spindle_args_t, getApplicationArgsFE gets the array of arguments that should be inserted into the application launch line.  The job launcher is responsible for inserting these new arguments into the application launch line before the executable.
+
+<p>Upon completion, *spindle_argv will be set to point at a malloc'd array of strings (each of which is also malloc'd), that should be inserted.  *spindle_argc will be set to the size of the *spindle_argv array.  spindle_argv and its strings can be free'd at any time.
+
+<p>For example, the line:<br>
+  &nbsp<tt>mpirun -n 512 mpi_app</tt><br>
+Should be changed to:<br>
+  &nbsp<tt>mpirun -n 512 SPINDLE_ARGV[] mpi_app</tt><br>
+
+<p>This function return 0 on success and non-0 on error.<br>
+
+<li><tt>int spindleInitFE(const char **hosts, spindle_args_t *params)</tt>
+
+<p>This function initializes the Spindle front-end's network connection to the servers running on the back-ends.  It should be called with a filled-in spindle_args_t, params, and given the list of hostnames in the job, hosts.  The hosts parameter is an array of strings with a NULL pointer in the final array slot.  spindleInitFE does not keep pointers into the hosts table, and it may be deallocated after spindleInitFE returns.
+
+<p>spindleInitFE will block while establishing connections to Spindle's servers, and thus should be run concurrently to the spindleRunBE() function on the BEs.  It will return after the initial connection has been established.
+
+<p>This function return 0 on success and non-0 on error.
+</li>
+
+<li><tt>int spindleCloseFE(spindle_args_t *params)</tt>
+
+<p>This function both shuts down and cleans the current Spindle session.  It takes a filled-in spindle_args_t, params, as input.  If Spindle is actively running alongside a job when this function this is called it will force-shutdown the Spindle servers (which may have a negative impact on the application).  This function will also clean up temporary files and sockets associated with the Spindle FE.
+
+<p>This function return 0 on success and non-0 on error.
+</li>
+</ul>
+
+<h2>The BackEnd API</h2>
+
+<p>The BackEnd API is expected to be invoked on each host in the job.  It currently consists of a single function, which starts the Spindle server.  The inputs to the the BE API can be found in the spindle_args_t used on the front-end, but those input values will need to be broadcast from the FE to each node by the job launcher.  The BE API function is:
+
+<ul>
+<li><tt>int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type, int (*post_setup)(spindle_args_t *))</tt>
+
+<p>This function starts the spindle server running.  As input it takes the port, num_ports, unique_id, which should have the same-named values as passed to spindleInitFE in the spindle_args parameter.  The security_type should match the OPT_SEC value passed to spindleInitFE in the opt field of spindle_args (i.e., OPT_SEC_MUNGE, OPT_SEC_KEYFILE, ....).
+
+<p>This function also takes an callback function, post_setup, which will be invoked Spindle is ready to accept connections from applications.  The callback is passed a filled in spindle_args_t with the same values as the front-end's.  Using this callback is optional, it can safely be a NULL value, and it is not necessary to synchronize application startup against this callback.
+
+<p>The SpindleRunBE function does not return until the Spindle server terminates, which will likely happen at job completion.  Therefore SpindleRunBE should be invoked in either a forked process or seperate thread if the job launcher does not want to remain blocked.
+</li>
+</ul>
+
+</body>
+</html>

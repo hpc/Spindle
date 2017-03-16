@@ -29,47 +29,48 @@ extern "C" {
 #define SPINDLE_EXPORT
 #endif
 
-/* Bitfield values for opts parameter */
-#define OPT_COBO       (1 << 1)
-#define OPT_DEBUG      (1 << 2)
-#define OPT_FOLLOWFORK (1 << 3)
-#define OPT_PRELOAD    (1 << 4)
-#define OPT_PUSH       (1 << 5)
-#define OPT_PULL       (1 << 6)
-#define OPT_RELOCAOUT  (1 << 7)
-#define OPT_RELOCSO    (1 << 8)
-#define OPT_RELOCEXEC  (1 << 9)
-#define OPT_RELOCPY    (1 << 10)
-#define OPT_STRIP      (1 << 11)
-#define OPT_NOCLEAN    (1 << 12)
-#define OPT_NOHIDE     (1 << 13)
-#define OPT_REMAPEXEC  (1 << 14)
-#define OPT_LOGUSAGE   (1 << 15)
-#define OPT_SHMCACHE   (1 << 16)
-#define OPT_SEC        ((1 << 17) | (1 << 18))
-#define OPT_SUBAUDIT   (1 << 19)
-#define OPT_PERSIST    (1 << 20)
+/* Bitfield values for opts parameter */   /* Bit is set if ... */
+#define OPT_COBO       (1 << 1)             /* COBO is the communication implementation */
+#define OPT_DEBUG      (1 << 2)             /* Hide Spindle from debuggers (currently unnecessary) */
+#define OPT_FOLLOWFORK (1 << 3)             /* Spindle should follow and manage child processes */
+#define OPT_PRELOAD    (1 << 4)             /* Spindle should pre-stage libraries from a preload file */
+#define OPT_PUSH       (1 << 5)             /* Libraries are staged to all nodes when one node requests */
+#define OPT_PULL       (1 << 6)             /* Libraries are staged to nodes that request them */
+#define OPT_RELOCAOUT  (1 << 7)             /* Relocate initial executable */
+#define OPT_RELOCSO    (1 << 8)             /* Relocate libraries */
+#define OPT_RELOCEXEC  (1 << 9)             /* Relocate the targets of exec() calls */
+#define OPT_RELOCPY    (1 << 10)            /* Relocate python .py/.pyc/.pyo files */
+#define OPT_STRIP      (1 << 11)            /* Strip debug information from ELF files */
+#define OPT_NOCLEAN    (1 << 12)            /* Don't clean stage area on exit (useful for debugging) */
+#define OPT_NOHIDE     (1 << 13)            /* Hide Spindle's communication FDs from application */
+#define OPT_REMAPEXEC  (1 << 14)            /* Use remapping hack to make /proc/PID/exe point to original exe */
+#define OPT_LOGUSAGE   (1 << 15)            /* Log usage information to a file */
+#define OPT_SHMCACHE   (1 << 16)            /* Use a shared memory cache optimization (only needed on BlueGene) */
+#define OPT_SEC        (3 << 17)            /* Security mode, one of the below OPT_SEC_* values */
+#define OPT_SUBAUDIT   (1 << 19)            /* Use subaudit mechanism (needed on BlueGene and very old GLIBCs) */
+#define OPT_PERSIST    (1 << 20)            /* Spindle servers should not exit when all clients exit. */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 17)
 #define OPT_GET_SEC(OPT) ((OPT >> 17) & 3)
-#define OPT_SEC_MUNGE 0
-#define OPT_SEC_KEYLMON 1
-#define OPT_SEC_KEYFILE 2
-#define OPT_SEC_NULL 3
+#define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */
+#define OPT_SEC_KEYLMON 1                   /* Use LaunchMON transmitted keys to validate */
+#define OPT_SEC_KEYFILE 2                   /* Use a key from a shared file to validate */
+#define OPT_SEC_NULL 3                      /* Do not validate connections */
 
-/* Possible values for use_launcher */
-#define srun_launcher (1 << 0)
-#define serial_launcher (1 << 1)
-#define openmpi_launcher (1 << 2)
-#define wreckrun_launcher (1 << 3)
-#define marker_launcher (1 << 4)
-#define unknown_launcher (1 << 5)
+/* Possible values for use_launcher, describe how the job is started */
+#define srun_launcher (1 << 0)              /* Job is launched via SLURM */
+#define serial_launcher (1 << 1)            /* Job is a non-parallel app launched via fork/exec */
+#define openmpi_launcher (1 << 2)           /* Job is launched via ORTE */
+#define wreckrun_launcher (1 << 3)          /* Job is launched via FLUX's job launcher */
+#define marker_launcher (1 << 4)            /* Unknown job launcher with Spindle markers in launch line */
+#define external_launcher (1 << 5)          /* An external mechanism starts application */
+#define unknown_launcher (1 << 5)           /* Deprecated alias for external launcher */
 
-/* Possible values for startup_type */
-#define startup_serial 0
-#define startup_lmon 1
-#define startup_hostbin 2
-#define startup_external 3
+/* Possible values for startup_type, describe how Spindle servers are started */
+#define startup_serial 0                    /* Job is non-parallel app, and server is forked/exec */
+#define startup_lmon 1                      /* Start via LaunchMON */
+#define startup_hostbin 2                   /* Start via hostbin */
+#define startup_external 3                  /* An external mechanism starts Spindle */
 
 typedef uint64_t unique_id_t;
 typedef uint64_t opt_t;
@@ -128,7 +129,7 @@ SPINDLE_EXPORT void fillInSpindleArgsFE(spindle_args_t *params);
 
    Upon completion, *spindle_argv will be set to point at a malloc'd
    array of strings (each of which is also malloc'd), that should be
-   inserted.  *spindle_args will be set to the size of the
+   inserted.  *spindle_argc will be set to the size of the
    *spindle_argv array.  spindle_argv and its strings can be free'd at
    any time.
 
