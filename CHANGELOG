@@ -1,3 +1,10 @@
+Spindle 0.10
+-----------
+  - New API for integrating Spindle with job-launchers
+  - Integration of BGQ branch into mainline
+  - Support for RHEL7
+  - Bug fixes
+
 Spindle 0.9
 -----------
   - Support for OpenMPI's ORTE-based launching
