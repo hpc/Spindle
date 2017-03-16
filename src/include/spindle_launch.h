@@ -72,7 +72,7 @@ extern "C" {
 #define startup_external 3
 
 typedef uint64_t unique_id_t;
-typedef unsigned int opt_t;
+typedef uint64_t opt_t;
 
 /* Parameters for configuring Spindle */
 typedef struct {
