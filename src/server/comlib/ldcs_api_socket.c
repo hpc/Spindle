@@ -185,7 +185,7 @@ int ldcs_destroy_server_socket(int fd) {
 static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
 
   int         left,bsumread;
-  size_t      btoread, bread;
+  ssize_t      btoread, bread;
   char       *dataptr;
   
   left      = bytes;

@@ -281,7 +281,7 @@ int client_register_connection_pipe(char *connection_str)
    char *in_name = NULL, *out_name = NULL;
    int in_fd, out_fd, result;
 
-   result = sscanf(connection_str, "%as %as %d %d", &in_name, &out_name, &in_fd, &out_fd);
+   result = sscanf(connection_str, "%ms %ms %d %d", &in_name, &out_name, &in_fd, &out_fd);
    if (result != 4) {
       err_printf("Reading connection string.  Returned %d on '%s' (%s %s %d %d)\n", result, connection_str,
                  in_name, out_name, in_fd, out_fd);
