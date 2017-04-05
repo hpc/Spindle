@@ -39,6 +39,8 @@ extern "C" {
 #include "handshake.h"
 
 #define COBO_SUCCESS (0)
+#define COBO_PRIMARY_TREE (0)
+#define COBO_FOREST (-1)
 
 #define COBO_NAMESPACE ldcs
 
@@ -148,8 +150,14 @@ int cobo_server_get_root_socket(int* fd);
 
 extern double __cobo_ts;
 
-int cobo_get_num_childs(int* num_childs);
+int cobo_get_num_tree(int *num_trees);
+int cobo_get_forest_child_socket(int tree_id, int num, int *fd);
+int cobo_get_num_forest_childs(int tree_id, int* num_childs);
+int cobo_get_forest_parent_socket(int tree_id, int *fd);
+int cobo_get_forest_parent_socket_at(int num, int *fd);
+int cobo_get_num_forest_parents(int tree_id, int *num_parents);
 
+int cobo_get_num_childs(int* num_childs);
 /* Methods to access child fds */
 int cobo_get_child_socket(int num, int *fd);
 

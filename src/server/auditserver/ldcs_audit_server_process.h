@@ -115,7 +115,7 @@ struct ldcs_process_data_struct
   char *pythonprefix;
   int number;
   int preload_done;
-  opt_t opts;
+  unsigned int opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
   requestor_list_t pending_metadata_requests;
@@ -127,6 +127,7 @@ struct ldcs_process_data_struct
   int md_fan_out; 		/* number of childs */
   int md_listen_to_parent;
   unsigned int md_port;
+  char *md_path;
   
   /* statistics */
   ldcs_server_stat_t server_stat;

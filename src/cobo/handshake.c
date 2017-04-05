@@ -66,6 +66,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
       if (debug_file) {                                                 \
          fprintf(debug_file, "ERROR: [%s:%u] - %s", BASE_FILE, __LINE__, last_error_message); \
       }                                                                 \
+      fprintf(stderr, "ERROR: [%s:%u] - %s", BASE_FILE, __LINE__, last_error_message); \
    } while (0)
 
 #define security_error_printf(format, ...)                              \
@@ -239,6 +240,7 @@ static int handshake_wrapper(int sockfd, handshake_protocol_t *hdata, uint64_t s
       return_result = result;
       goto done;
    }
+
    
    for (;;) {
       result = handshake_main(sockfd, hdata, session_id, is_server);
@@ -786,8 +788,14 @@ static int reliable_read(int fd, void *buf, size_t size)
       }
       result = read(fd, ((unsigned char *) buf) + bytes_read, size - bytes_read);
       if (result <= 0) {
-         error_printf("Expected error return %d when reading from socket: %s\n", result,
+#if 1 /*Kento modified*/
+	/*During handshaking, connection can be dropped. So handle this as debug print */	
+        debug_printf("Expected error return %d when reading from socket: %s\n", result,
                       strerror(errno));
+#else
+        error_printf("Expected error return %d when reading from socket: %s\n", result,
+                      strerror(errno));
+#endif
          return HSHAKE_INTERNAL_ERROR;
       }
       else
