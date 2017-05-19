@@ -101,9 +101,6 @@ static int ldcs_audit_server_md_get_responsible_tree_id(char *path)
       dir = dirname(path_dup);
     }
     responsible_tree_id = ldcs_audit_server_md_hashval(dir) % spindle_root_count;
-#ifdef LDCS_DBG
-    cobo_dbg_printf("%s -> %d", path, responsible_tree_id);
-#endif
     free(path_dup);
   } 
   return responsible_tree_id;
@@ -221,32 +218,6 @@ void ldcs_audit_server_md_barrier()
 }
 
 
-/* int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) { */
-/*    int rc=0, i; */
-/*    int parent_fd, child_fd; */
-/*    int num_childs; */
-   
-/*    /\* Registering parents *\/ */
-/*    if(cobo_get_parent_socket(&parent_fd)!=COBO_SUCCESS) { */
-/*       err_printf("Error, could not get parent socket\n"); */
-/*       assert(0); */
-/*    } */
-
-/*    debug_printf3("Registering fd %d for cobo parent connection\n",parent_fd); */
-/*    ldcs_listen_register_fd(parent_fd, 0, &ldcs_audit_server_md_cobo_CB, (void *) ldcs_process_data); */
-/*    ldcs_process_data->md_listen_to_parent=1; */
-   
-/*    /\* Registering childs *\/ */
-/*    cobo_get_num_childs(&num_childs); */
-/*    for (i = 0; i<num_childs; i++) { */
-/*       cobo_get_child_socket(i, &child_fd); */
-/*       ldcs_listen_register_fd(child_fd, 0, &ldcs_audit_server_md_cobo_CB, (void *) ldcs_process_data); */
-/*    } */
-
-/*    /\* Registering spindle_fe_main parent *\/ */
-   
-/*    return(rc); */
-/* } */
 int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) 
 {
    int rc=0, i;
@@ -284,26 +255,7 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data )
    return(rc);
 }
 
-/* int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *ldcs_process_data ) { */
-/*    int rc=0, i; */
-/*    int parent_fd, child_fd; */
-/*    int num_childs; */
-/*    if(ldcs_process_data->md_listen_to_parent) { */
-/*       if(cobo_get_parent_socket(&parent_fd)!=COBO_SUCCESS) { */
-/*          _error("cobo internal error (parent socket)"); */
-/*       } */
-/*       ldcs_process_data->md_listen_to_parent=0; */
-/*       ldcs_listen_unregister_fd(parent_fd); */
 
-/*       cobo_get_num_childs(&num_childs); */
-/*       for (i = 0; i<num_childs; i++) { */
-/*          cobo_get_child_socket(i, &child_fd); */
-/*          ldcs_listen_unregister_fd(child_fd); */
-/*       } */
-/*    } */
-
-/*    return(rc); */
-/* } */
 int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *ldcs_process_data ) {
    int rc=0, i;
    int parent_fd, child_fd;
@@ -360,10 +312,6 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
 {
   int responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(filename);
 
-#ifdef LDCS_DBG
-  cobo_dbg_printf("heward: %s, rank: %d (tree_id: %d)", filename, ldcs_process_data->md_rank, responsible_tree_id);
-#endif
-
   if(ldcs_process_data->md_rank == responsible_tree_id) { 
        cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
        debug_printf3("Decided I am responsible for file %s\n", filename);
@@ -377,11 +325,7 @@ int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, l
    int result;
    int responsible_tree_id;
    
-   //   cobo_dbg_printf("%s", __func__);
    responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(ldcs_process_data->md_path);
-#ifdef LDCS_DBG
-   cobo_dbg_printf("upward: %s (tree_id: %d)", ldcs_process_data->md_path, responsible_tree_id);
-#endif
 
    if (ldcs_process_data->md_rank == responsible_tree_id) {
       /* We're root--no one to forward a query to*/
@@ -509,13 +453,7 @@ int ldcs_audit_server_md_broadcast(ldcs_process_data_t *ldcs_process_data, ldcs_
    int num_childs = 0;
    int responsible_tree_id = 0;
 
-
    responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(ldcs_process_data->md_path);
-#ifdef LDCS_DBG
-   cobo_dbg_printf("dwward: %s, type: %d (tree_id: %d) bcast", ldcs_process_data->md_path, responsible_tree_id,
-		   msg->header.type);
-#endif
-
 
    cobo_get_num_forest_childs(responsible_tree_id, &num_childs);
    for (i = 0; i<num_childs; i++) {
@@ -539,17 +477,9 @@ int ldcs_audit_server_md_broadcast_noncontig(ldcs_process_data_t *ldcs_process_d
    int responsible_tree_id = 0;
 
    if (!secondary_size) {
-#ifdef LDCS_DBG
-     cobo_dbg_printf("to contig: %s", ldcs_process_data->md_path);
-#endif
      return ldcs_audit_server_md_broadcast(ldcs_process_data, msg);
    }
 
-   //   cobo_dbg_printf("%s", __func__);
-#ifdef LDCS_DBG
-   cobo_dbg_printf("dwward: %s, type: %d (tree_id: %d) bcas noncontigt", ldcs_process_data->md_path, responsible_tree_id,
-                   msg->header.type);
-#endif
    responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(ldcs_process_data->md_path);
 
    cobo_get_num_forest_childs(responsible_tree_id, &num_childs);

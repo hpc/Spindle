@@ -150,9 +150,11 @@ static double cobo_getsecs(struct timeval* tv2, struct timeval* tv1)
 /* Fills in timeval via gettimeofday */
 static void cobo_gettimeofday(struct timeval* tv)
 {
+#if 0
     if (gettimeofday(tv, NULL) < 0) {
         err_printf("Getting time (gettimeofday() %m errno=%d)\n", errno);
     }
+#endif
 }
 
 /* Reads environment variable, bails if not set */
@@ -1827,9 +1829,9 @@ int cobo_close()
     debug_printf3("Exiting cobo_close(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
     debug_printf3("Total time from cobo_open() to cobo_close() took %f seconds for %d procs\n",
         cobo_getsecs(&time_close, &time_open), cobo_nprocs);
-    if (cobo_me == 0) {
-      cobo_dbg_printf("Total time: %f seconds (%d procs)", cobo_getsecs(&time_close, &time_open), cobo_nprocs);
-    }
+    /* if (cobo_me == 0) { */
+    /*   cobo_dbg_printf("Total time: %f seconds (%d procs)", cobo_getsecs(&time_close, &time_open), cobo_nprocs); */
+    /* } */
     return COBO_SUCCESS;
 }
 
