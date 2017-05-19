@@ -115,6 +115,7 @@ static int* cobo_child_incl = NULL;  /* number of children each child is respons
 static int  cobo_num_child_incl = 0; /* total number of children this node is responsible for */
 
 /* forest data structures */
+static int  cobo_is_forest_opened  = 0;
 static int  cobo_num_forest_childs = 0;      /* number of clockwise direction peers (children) */
 static int* cobo_forest_childs     = NULL;   /* ranks of clockwise direction peers**/
 static int* cobo_forest_childs_fd  = NULL;   /* sockets to clockwise direction peers */
@@ -1227,7 +1228,7 @@ static int cobo_close_tree()
 }
 
 /* open socket forest */
-static int cobo_open_forest()
+int cobo_open_forest()
 {
 
     int i;
@@ -1314,7 +1315,7 @@ static int cobo_open_forest()
     //    sleep(1000);
     //    cobo_dbg_printf("============= %d", cobo_me);
     //    exit(0);
-
+    cobo_is_forest_opened = 1;
     return COBO_SUCCESS;  
 }
 
@@ -1587,7 +1588,12 @@ int cobo_get_forest_parent_socket_at(int num, int *fd)
 #ifdef COBO_FOREST
 int cobo_get_child_socket(int num, int *fd)
 {
-  cobo_get_forest_child_socket(0, num, fd);
+  if (cobo_is_forest_opened) {
+    cobo_get_forest_child_socket(0, num, fd);
+  } else {
+    assert(num < cobo_num_child);
+    *fd = cobo_child_fd[num];
+  }
   return COBO_SUCCESS;
 }
 #else
@@ -1601,7 +1607,11 @@ int cobo_get_child_socket(int num, int *fd)
 
 #ifdef COBO_FOREST
 int cobo_get_num_childs(int* num_childs) {
-  cobo_get_num_forest_childs(0, num_childs);
+  if (cobo_is_forest_opened) {
+    cobo_get_num_forest_childs(0, num_childs);
+  } else {
+    *num_childs=cobo_num_child;    
+  }
   return COBO_SUCCESS;
 }
 #else
@@ -1620,7 +1630,16 @@ int cobo_get_num_childs(int* num_childs) {
 #ifdef COBO_FOREST
 int cobo_get_parent_socket(int* fd)
 {
-  cobo_get_forest_parent_socket(0, fd);
+  if (cobo_is_forest_opened){
+    cobo_get_forest_parent_socket(0, fd);
+  } else {
+    if (cobo_parent_fd != -1) {
+	*fd = cobo_parent_fd;
+        return COBO_SUCCESS;
+    }
+    return -1; /* failure RCs? */
+  }
+  return COBO_SUCCESS;
 }
 #else
 int cobo_get_parent_socket(int* fd)
@@ -1926,10 +1945,7 @@ int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* 
 
     cobo_gettimeofday(&end);
     debug_printf3("Exiting cobo_init(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
-
-    /* open the forest */
-    cobo_open_forest();
-
+    
     return COBO_SUCCESS;
 }
 

@@ -45,6 +45,7 @@ using namespace std;
 #define AUDITTYPE 'k'
 #define RELOCSO 'l'
 #define NOCLEAN 'n'
+#define COBO_FOREST 'm'
 #define LOCATION 'o'
 #define PUSH 'p'
 #define PULL 'q'
@@ -163,6 +164,7 @@ static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
 #endif
 static bool logging_enabled = DEFAULT_LOGGING_ENABLED;
 
+static unsigned int spindle_roots = SPINDLE_ROOTS;
 static unsigned int spindle_port = SPINDLE_PORT;
 static unsigned int num_ports = NUM_COBO_PORTS;
 
@@ -193,6 +195,8 @@ struct argp_option options[] = {
      "These options configure Spindle's network model.  Typical Spindle runs should not need to set these.", GROUP_NETWORK },
    { "cobo", COBO, NULL, 0,
      "Use a tree-based cobo network for distributing objects", GROUP_NETWORK },
+   { "roots", COBO_FOREST, "X", 0,
+     "The number of roots in a cobo network.  Default: " STR(SPINDLE_ROOTS), GROUP_NETWORK },
    { "port", PORT, "port1-port2", 0,
      "TCP/IP port range for Spindle servers.  Default: " STR(SPINDLE_PORT) "-" STR(SPINDLE_MAX_PORT), GROUP_NETWORK },
    { NULL, 0, NULL, 0,
@@ -320,6 +324,15 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       enabled_opts |= opt;
       preload_file = arg;
       return 0;
+   }
+   else if (entry->key == COBO_FOREST) {
+     int v = atoi(arg);
+     if (v <= 0) {
+       argp_error(state, "Roots was given a negative or 0 value");
+     } else {
+       spindle_roots = v;
+     }
+     return 0;
    }
    else if (entry->key == PORT) {
       spindle_port = atoi(arg);
@@ -503,6 +516,11 @@ char *getPreloadFile()
    return preload_file;
 }
 
+unsigned int getRoots()
+{
+   return spindle_roots;
+}
+
 unsigned int getPort()
 {
    return spindle_port;
@@ -636,6 +654,7 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    opt_t opts = parseArgs(argc, argv);
 
    args->number = getpid();
+   args->num_roots = getRoots();
    args->port = getPort();
    args->num_ports = getNumPorts();
    args->opts = opts;

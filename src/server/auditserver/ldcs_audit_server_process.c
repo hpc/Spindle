@@ -106,6 +106,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.location = args->location;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.md_roots = args->num_roots;
    ldcs_process_data.md_port = args->port;
    ldcs_process_data.md_path = NULL;
    ldcs_process_data.opts = args->opts;
@@ -161,6 +162,13 @@ int ldcs_audit_server_process(spindle_args_t *args)
 
    return 0;
 }  
+
+int ldcs_audit_server_network_post_setup()
+{
+  int result;
+  result = ldcs_audit_server_md_init_post_process(ldcs_process_data);
+  return result;
+}
 
 int ldcs_audit_server_run()
 {

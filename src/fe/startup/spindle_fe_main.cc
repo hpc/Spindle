@@ -77,7 +77,6 @@ int main(int argc, char *argv[])
       bare_printf2("%s ", app_argv[i]);
    }
    bare_printf2("\n");
-
    if (params.use_launcher == serial_launcher) {
       debug_printf("Starting application in serial mode\n");
       result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);

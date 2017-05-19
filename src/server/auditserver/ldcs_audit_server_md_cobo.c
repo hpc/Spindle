@@ -199,16 +199,8 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
       ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
       debug_printf3("sent FE client signal that server are ready %d\n",ack);
    }
-   if (NULL == (env = getenv("SPINDLE_ROOT_COUNT"))) {
-     spindle_root_count = 1;
-   } else {
-     if (atoi(env) == 0) { 
-       spindle_root_count = 1;
-     } else {
-       spindle_root_count = atoi(env);
-     }
-   }
-   
+   //
+   spindle_root_count = 4;//data->md_roots;
    if (spindle_root_count > ranks || spindle_root_count <= 0) {
      cobo_dbg_printf("spindle_root_count(%d) error", spindle_root_count);
      err_printf("spindle_root_count(%d) error", spindle_root_count);
@@ -218,8 +210,17 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
    if (cobo_rank == 0) {
      cobo_dbg_printf("root_count: %d root_hop: %d", spindle_root_count, spindle_root_hop);
    }
+   //
        
    return(rc);
+}
+
+int ldcs_audit_server_md_init_post_process(ldcs_process_data_t *ldcs_process_data)
+{
+  if (ldcs_process_data->md_roots > 1) {
+    return cobo_open_forest();
+  }
+  return 1;
 }
 
 void ldcs_audit_server_md_barrier()
@@ -386,13 +387,13 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
   
   //  if(ldcs_process_data->md_rank == 1) { 
   if(ldcs_process_data->md_rank == responsible_tree_id) { 
-    cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
-    debug_printf3("Decided I am responsible for file %s\n", filename);
+       cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
+       debug_printf3("Decided I am responsible for file %s\n", filename);
     return 1;
   } else {
     //    if (ldcs_process_data->md_path != NULL) {
     //    cobo_dbg_printf("I am not responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
-    debug_printf3("Decided I am not responsible for file %s\n", filename);
+    //    debug_printf3("Decided I am not responsible for file %s\n", filename);
     return 0;
   }
 }

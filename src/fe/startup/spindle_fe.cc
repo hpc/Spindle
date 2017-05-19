@@ -60,7 +60,7 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 6;
+   buffer_size = sizeof(unsigned int) * 7;
    buffer_size += sizeof(opt_t);
    buffer_size += sizeof(unique_id_t);
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
@@ -70,6 +70,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    unsigned int pos = 0;
    char *buf = (char *) malloc(buffer_size);
    pack_param(args->number, buf, pos);
+   pack_param(args->num_roots, buf, pos);
    pack_param(args->port, buf, pos);
    pack_param(args->num_ports, buf, pos);
    pack_param(args->opts, buf, pos);

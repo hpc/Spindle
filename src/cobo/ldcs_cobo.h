@@ -48,6 +48,7 @@ extern "C" {
 #define COMBINE2(a, b) a ## _ ## b
 #define COMBINE(a, b) COMBINE2(a, b)
 #define cobo_open COMBINE(COBO_NAMESPACE, cobo_open)
+#define cobo_open_forest COMBINE(COBO_NAMESPACE, cobo_open_forest)
 #define cobo_close COMBINE(COBO_NAMESPACE, cobo_close)
 #define cobo_get_parent_socket COMBINE(COBO_NAMESPACE, cobo_get_parent_socket)
 #define cobo_barrier COMBINE(COBO_NAMESPACE, cobo_barrier)
@@ -77,6 +78,9 @@ extern "C" {
 
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
 int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int *num_ranks);
+
+/* Convet form tree to forest */
+int cobo_open_forest();
 
 /* shut down the connections between tasks and free data structures */
 int cobo_close();

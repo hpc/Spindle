@@ -784,6 +784,7 @@ enable_fast_install
 with_gnu_ld
 with_sysroot
 enable_libtool_lock
+with_default_roots
 with_default_port
 with_default_num_ports
 with_localstorage
@@ -1469,6 +1470,8 @@ Optional Packages:
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-sysroot=DIR Search for dependent libraries within DIR
                         (or the compiler's sysroot if not specified).
+  --with-default-roots=NUM
+                          The number of roots in a cobo network
   --with-default-port=NUM TCP/IP Port for Spindle server communication
   --with-default-numports=NUM
                           Number of TCP/IP ports to scan for Spindle server
@@ -12401,9 +12404,18 @@ CC="$lt_save_CC"
 
 #Configure operations that are common between the Spindle and Spindle-client configurations
 #Network port and local storage location
+DEFAULT_ROOTS=1
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
 DEFAULT_NUM_COBO_PORTS=25
+
+
+# Check whether --with-default-roots was given.
+if test "${with_default_roots+set}" = set; then :
+  withval=$with_default_roots; SPINDLE_ROOTS=${withval}
+else
+  SPINDLE_ROOTS=$DEFAULT_ROOTS
+fi
 
 
 # Check whether --with-default-port was given.
@@ -12428,6 +12440,11 @@ if test "${with_localstorage+set}" = set; then :
 else
   SPINDLE_LOC=$DEFAULT_LOC
 fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define SPINDLE_ROOTS $SPINDLE_ROOTS
+_ACEOF
 
 
 cat >>confdefs.h <<_ACEOF

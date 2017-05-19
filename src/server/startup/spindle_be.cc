@@ -50,6 +50,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    int pos = 0;
    char *buf = static_cast<char *>(buffer);
    unpack_param(args->number, buf, pos);
+   unpack_param(args->num_roots, buf, pos);
    unpack_param(args->port, buf, pos);
    unpack_param(args->num_ports, buf, pos);
    unpack_param(args->opts, buf, pos);
@@ -153,6 +154,12 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
          err_printf("post_setup callback errored.  Returning\n");
          return -1;
       }
+   }
+
+   result = ldcs_audit_server_network_post_setup();
+   if (result == -1) {
+     err_printf("Error in ldcs_audit_server_network_post_setup");
+     return -1;
    }
 
    debug_printf("Setup done.  Running server.\n");
