@@ -138,7 +138,7 @@ typedef struct ldcs_process_data_struct ldcs_process_data_t;
 int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, unique_id_t unique_id,
                                     void **packed_setup_data, int *data_size);
 int ldcs_audit_server_process (spindle_args_t *args);
-int ldcs_audit_server_network_post_setup();
+int ldcs_audit_server_network_post_setup(spindle_args_t* args);
 int ldcs_audit_server_run();
 
 #define CLIENT_CB_AUX_FD INT32_MAX

@@ -21,6 +21,8 @@
 #include <sys/inotify.h>
 #include <errno.h>
 #include <assert.h>
+#include <libgen.h>
+#include <execinfo.h>
 
 #include "ldcs_api.h"
 #include "ldcs_api_listen.h"
@@ -41,7 +43,7 @@ extern unique_id_t unique_id;
 
 int cobo_rank = -1;
 int cobo_size = -1;
-int spindle_root_count = -1;
+int spindle_root_count = 1;
 int spindle_root_hop   = -1;
 
 extern int ll_read(int fd, void *buf, size_t count);
@@ -53,20 +55,14 @@ static void ldcs_audit_server_md_backtrace_print()
   char **strings;
 
   nptrs = backtrace(buffer, 100);
-
   /* backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)*/
   strings = backtrace_symbols(buffer, nptrs);
   if (strings == NULL) {
     perror("backtrace_symbols");
     exit(EXIT_FAILURE);
   }   
-
-  /*
-    You can translate the address to function name by
-    addr2line -f -e ./a.out <address>
-  */
   for (j = 0; j < nptrs; j++) {
-    cobo_dbg_printf("    %s", strings[j]);
+    debug_printf("    %s", strings[j]);
   }
   free(strings);
 
@@ -95,7 +91,6 @@ static int ldcs_audit_server_md_get_responsible_tree_id(char *path)
   /*TODO: Can I use message header for this if-else to find out
     if tree_id is for management communication or library broadcast ? */
   if (path != NULL && strlen(path) > 0) {
-    //responsible_tree_id = spindle_root_count -1;//COBO_PRIMARY_TREE;
     path_dup = strdup(path);
     ret = stat(path_dup, &st);
     if ((st.st_mode & S_IFMT) == S_IFDIR) {
@@ -106,12 +101,9 @@ static int ldcs_audit_server_md_get_responsible_tree_id(char *path)
       dir = dirname(path_dup);
     }
     responsible_tree_id = ldcs_audit_server_md_hashval(dir) % spindle_root_count;
-    //    responsible_tree_id = ldcs_audit_server_md_hashval(path) % (spindle_root_count - 1);
-    //    responsible_tree_id++;
 #ifdef LDCS_DBG
     cobo_dbg_printf("%s -> %d", path, responsible_tree_id);
 #endif
-    //    ldcs_audit_server_md_backtrace_print();
     free(path_dup);
   } 
   return responsible_tree_id;
@@ -163,7 +155,6 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
    int i;
    char* env;
 
-
    portlist = malloc(sizeof(unsigned int) * (num_ports + 1));
    for (i = 0; i < num_ports; i++) {
       portlist[i] = port + i;
@@ -181,6 +172,7 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
 
    cobo_rank = data->server_stat.md_rank = data->md_rank = my_rank;
    cobo_size = data->server_stat.md_size = data->md_size = ranks;
+   spindle_root_hop = cobo_size;
    data->md_listen_to_parent = 0;
 
    //   cobo_get_num_childs(&fanout);
@@ -188,7 +180,6 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
    data->server_stat.md_fan_out = data->md_fan_out = fanout;
 
    cobo_barrier();
-
    /* send ack about being ready */
    if (data->md_rank == 0) { 
       int root_fd, ack=13;
@@ -199,26 +190,26 @@ int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports,
       ldcs_cobo_write_fd(root_fd, &ack, sizeof(ack));
       debug_printf3("sent FE client signal that server are ready %d\n",ack);
    }
-   //
-   spindle_root_count = 4;//data->md_roots;
-   if (spindle_root_count > ranks || spindle_root_count <= 0) {
-     cobo_dbg_printf("spindle_root_count(%d) error", spindle_root_count);
-     err_printf("spindle_root_count(%d) error", spindle_root_count);
-     exit(1);
-   }
-   spindle_root_hop = ranks / spindle_root_count;
-   if (cobo_rank == 0) {
-     cobo_dbg_printf("root_count: %d root_hop: %d", spindle_root_count, spindle_root_hop);
-   }
-   //
-       
+
    return(rc);
 }
 
-int ldcs_audit_server_md_init_post_process(ldcs_process_data_t *ldcs_process_data)
+int ldcs_audit_server_md_init_post_process(unsigned int md_roots)
 {
-  if (ldcs_process_data->md_roots > 1) {
-    return cobo_open_forest();
+  if (md_roots > 1) {
+    spindle_root_count = md_roots;
+    if (spindle_root_count > cobo_size || spindle_root_count <= 0) {
+      err_printf("spindle_root_count(%d) error", spindle_root_count);
+      exit(1);
+    }
+    spindle_root_hop = cobo_size / spindle_root_count;
+    if (cobo_rank == 0) {
+      cobo_dbg_printf("root_count: %d root_hop: %d", spindle_root_count, spindle_root_hop);
+    }
+    cobo_open_forest();
+  } else {
+    spindle_root_count = 1;
+    spindle_root_hop = cobo_size / spindle_root_count;
   }
   return 1;
 }
@@ -256,7 +247,8 @@ void ldcs_audit_server_md_barrier()
    
 /*    return(rc); */
 /* } */
-int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) {
+int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data ) 
+{
    int rc=0, i;
    int parent_fd, child_fd;
    int num_parents, num_childs;
@@ -366,36 +358,18 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data )
 
 int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data, char *filename )
 {
-  /*kento*/
-   /* current implementation: only MD rank does file operations  */
-  //   if(ldcs_process_data->md_rank % spindle_root_hop == 0) { 
-
-  //  cobo_dbg_printf("is_responsible");
   int responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(filename);
 
 #ifdef LDCS_DBG
   cobo_dbg_printf("heward: %s, rank: %d (tree_id: %d)", filename, ldcs_process_data->md_rank, responsible_tree_id);
 #endif
 
-
-  //  cobo_dbg_printf("filename: <%s>, path: <%s> => %d", filename, ldcs_process_data->md_path, responsible_tree_id);
-  //  cobo_dbg_printf("Decided I am responsible for file <%s>: res_tree_id: %d", filename, responsible_tree_id);
-  /* if (responsible_tree_id != 1) { */
-  /*   cobo_dbg_printf("filename: <%s>, path: <%s> => %d", filename, ldcs_process_data->md_path, responsible_tree_id); */
-  /*   exit(1); */
-  /* } */
-  
-  //  if(ldcs_process_data->md_rank == 1) { 
   if(ldcs_process_data->md_rank == responsible_tree_id) { 
        cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
        debug_printf3("Decided I am responsible for file %s\n", filename);
     return 1;
-  } else {
-    //    if (ldcs_process_data->md_path != NULL) {
-    //    cobo_dbg_printf("I am not responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
-    //    debug_printf3("Decided I am not responsible for file %s\n", filename);
-    return 0;
   }
+  return 0;
 }
 
 int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, ldcs_message_t* msg) {
@@ -458,7 +432,6 @@ int ldcs_audit_server_md_recv_from_parent(ldcs_message_t *msg)
 {
    int fd;
    node_peer_t peer;
-
    cobo_get_forest_parent_socket(COBO_PRIMARY_TREE, &fd);
    return read_msg(fd, &peer, msg);
 }
@@ -536,13 +509,12 @@ int ldcs_audit_server_md_broadcast(ldcs_process_data_t *ldcs_process_data, ldcs_
    int num_childs = 0;
    int responsible_tree_id = 0;
 
-   //   cobo_dbg_printf("%s", __func__);
+
    responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(ldcs_process_data->md_path);
 #ifdef LDCS_DBG
    cobo_dbg_printf("dwward: %s, type: %d (tree_id: %d) bcast", ldcs_process_data->md_path, responsible_tree_id,
 		   msg->header.type);
 #endif
-
 
 
    cobo_get_num_forest_childs(responsible_tree_id, &num_childs);
@@ -552,6 +524,7 @@ int ldcs_audit_server_md_broadcast(ldcs_process_data_t *ldcs_process_data, ldcs_
      if (result == -1)
        global_result = -1;
    }
+
    
    return global_result;
 }

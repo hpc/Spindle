@@ -328,7 +328,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (entry->key == COBO_FOREST) {
      int v = atoi(arg);
      if (v <= 0) {
-       argp_error(state, "Roots was given a negative or 0 value");
+       argp_error(state, "'roots' was given a negative or 0 value or invalid value");
      } else {
        spindle_roots = v;
      }

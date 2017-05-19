@@ -55,17 +55,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define COBO_CONNECT_TIMELIMIT (600) /* seconds -- wait this long before giving up for good */
 #endif
 
-#define ENABLE_HANDSHAKE
-
 #if defined(_IA64_)
 #undef htons
 #undef ntohs
 #define htons(__bsx) ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8))
 #define ntohs(__bsx) ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8))
 #endif
-
-#define err_printf cobo_dbg_printf
-
 
 /*
  * ==========================================================================
@@ -482,8 +477,6 @@ static int cobo_connect_hostname(char* hostname, int rank)
       saddr = *((struct in_addr *) (*he->h_addr_list));
     }
 
-
-
     /* Loop until we make a connection or until our timeout expires. */
     struct timeval start, end;
     cobo_gettimeofday(&start);
@@ -505,7 +498,6 @@ static int cobo_connect_hostname(char* hostname, int rank)
             s = cobo_connect(saddr, htons(port), connect_timeout);
             if (s != -1) {
                 /* got a connection, let's test it out */
-	      //                cobo_dbg_printf("Connected to rank %d port %d on %s", rank, port, hostname);
                 debug_printf3("Connected to rank %d port %d on %s\n", rank, port, hostname);
                 int test_failed = 0;
 
@@ -538,7 +530,6 @@ static int cobo_connect_hostname(char* hostname, int rank)
                       assert(0 && "Unknown return value from handshake_server\n");
                 }
 
-                
                 /* write cobo service id */
                 if (!test_failed && cobo_write_fd_w_suppress(s, &cobo_serviceid, sizeof(cobo_serviceid), 1) < 0) {
                     debug_printf3("Writing service id to %s on port %d\n",
@@ -988,7 +979,6 @@ static int cobo_open_tree()
     sockfd = cobo_create_socket();
     cobo_bind_and_listen(sockfd);
     cobo_parent_fd = cobo_accept_and_handshake(sockfd);
-    //    sleep(1);
     close(sockfd);
 #else
     /* create a socket to accept connection from parent IPPROTO_TCP */
@@ -1169,14 +1159,11 @@ static int cobo_open_tree()
     /* given our rank and the number of ranks, compute the ranks of our children */
     cobo_compute_children();  
     /* cobo_compute_children_root_C1(); */
-
     /* for each child, open socket connection and forward hostname table */
     for(i=0; i < cobo_num_child; i++) {
         /* get rank and hostname for this child */
         int c = cobo_child[i];
         char* child_hostname = cobo_expand_hostname(c);
-
-
         debug_printf3("%d: on COBO%02d: connect to child #%02d (%s)\n",i,cobo_me,c,child_hostname);
         /* connect to child */
         cobo_child_fd[i] = cobo_connect_hostname(child_hostname, c);
@@ -1197,9 +1184,7 @@ static int cobo_open_tree()
 
         /* free the child hostname string */
         free(child_hostname);
-
     }
-
     return COBO_SUCCESS;
 }
 
@@ -1230,18 +1215,7 @@ static int cobo_close_tree()
 /* open socket forest */
 int cobo_open_forest()
 {
-
     int i;
-    /* read our rank number */
-    /* if (cobo_me == 0) { */
-    /*   int i; */
-    /*   cobo_dbg_printf("cobo_me: %d, cobo_nprocs: %d, cobo_hostlist_size: %d", cobo_me, cobo_nprocs, cobo_hostlist_size); */
-    /*   cobo_dbg_printf("cobo_hostlist:"); */
-    /*   for (i = 0; i < cobo_nprocs; i++) { */
-    /* 	cobo_dbg_printf("  %s", cobo_expand_hostname(i)); */
-    /*   } */
-    /* } */
-    
     /* compute ranks of peers */
     {
       int rank_offset = 1;
@@ -1249,8 +1223,6 @@ int cobo_open_forest()
 	cobo_num_forest_childs++;
 	rank_offset = rank_offset << 1;
       }
-
-
       i = 0;
       rank_offset = 1;
       cobo_forest_childs        = (int*)cobo_malloc(sizeof(int) * cobo_num_forest_childs, "clockwise peer buffer");    
@@ -1261,19 +1233,9 @@ int cobo_open_forest()
 	rank_offset = rank_offset << 1;
 	i++;
       }
-      
-      /* if (cobo_me == 12) { */
-      /* 	for (i = 0; i < cobo_num_forest_childs; i++) { */
-      /* 	  cobo_dbg_printf("-> %d", cobo_forest_childs[i]); */
-      /* 	} */
-      /* 	cobo_dbg_printf("======"); */
-      /* 	for (i = 0; i < cobo_num_forest_childs; i++) { */
-      /* 	  cobo_dbg_printf("-> %d", cobo_forest_parents[i]); */
-      /* 	} */
-      /* } */
     }
 
-    /* Create Binominal Forest overlay network */
+    /* Create Binomial Forest overlay network */
     int sockfd;
     int num_successive_listen_rank_num = 1;
     cobo_forest_childs_fd        = (int*)cobo_malloc(sizeof(int) * cobo_num_forest_childs, "clockwise peer fd buffer");    
@@ -1293,28 +1255,18 @@ int cobo_open_forest()
 
       if (connection_group_id % 2 == 0) {
 	/* Active connection => Passive connection */
-	//	cobo_dbg_printf("%d: connect to %d (Hop: %d)", cobo_me, conn_rank, num_successive_listen_rank_num);
         cobo_forest_childs_fd[i] = cobo_connect_rank(conn_rank);
-	//	cobo_dbg_printf("%d: listen (Hop: %d)", cobo_me, num_successive_listen_rank_num);
 	cobo_listen(sockfd);
-	//	cobo_dbg_printf("%d: accept (Hop: %d)", cobo_me, num_successive_listen_rank_num);
 	cobo_forest_parents_fd[i] = cobo_accept_and_handshake(sockfd);
       } else {
 	/* Passive connection -> Active connection */
-	//	cobo_dbg_printf("%d: listen (Hop: %d)", cobo_me, num_successive_listen_rank_num);
 	cobo_listen(sockfd);
-	//	cobo_dbg_printf("%d: accept (Hop: %d)", cobo_me, num_successive_listen_rank_num);
 	cobo_forest_parents_fd[i] = cobo_accept_and_handshake(sockfd);
-	//	cobo_dbg_printf("%d: connect to %d (Hop: %d)", cobo_me, conn_rank, num_successive_listen_rank_num);
         cobo_forest_childs_fd[i] = cobo_connect_rank(conn_rank);
       }
       num_successive_listen_rank_num = num_successive_listen_rank_num << 1;
     }
     close(sockfd);
-    //    cobo_dbg_printf("============= %d", cobo_me);
-    //    sleep(1000);
-    //    cobo_dbg_printf("============= %d", cobo_me);
-    //    exit(0);
     cobo_is_forest_opened = 1;
     return COBO_SUCCESS;  
 }
@@ -1506,6 +1458,16 @@ int cobo_get_num_tree(int *num_trees)
 int cobo_get_forest_child_socket(int root, int num, int *fd)
 {
   int num_forest_childs;
+  
+  if (!cobo_is_forest_opened) {
+    if (root == COBO_PRIMARY_TREE) {
+      return cobo_get_child_socket(num, fd);
+    } else {
+      err_printf("Trying to use forest before cobo_open_forest");
+      exit(1);
+    }
+  }
+
   if (root == COBO_FOREST) {
     *fd = cobo_forest_childs_fd[num];
     return COBO_SUCCESS;
@@ -1525,6 +1487,15 @@ int cobo_get_num_forest_childs(int root, int* num_forest_childs)
   int num_childs = 0;
   int logical_rank = 0;   /*logical_rank of the root is 0*/
   int tmp_cobo_nprocs;
+
+  if (!cobo_is_forest_opened) {
+    if (root == COBO_PRIMARY_TREE) {
+      return cobo_get_num_childs(num_forest_childs);
+    } else {
+      err_printf("Trying to use forest before cobo_open_forest");
+      exit(1);
+    }
+  }
 
   if (root == COBO_FOREST) {
     *num_forest_childs = cobo_num_forest_childs;
@@ -1551,6 +1522,16 @@ int cobo_get_forest_parent_socket(int root, int *fd)
 {
   int num_childs;
   int forest_parents_fd_index;
+
+  if (!cobo_is_forest_opened) {
+    if (root == COBO_PRIMARY_TREE) {
+      return cobo_get_parent_socket(fd);
+    } else {
+      err_printf("Trying to use forest before cobo_open_forest");
+      exit(1);
+    }
+  }
+
   if (cobo_me == root) {
     if (cobo_me != 0) {
       cobo_dbg_printf("root (tree_id=%d) does not have parent", root);
@@ -1569,6 +1550,16 @@ int cobo_get_forest_parent_socket(int root, int *fd)
 
 int cobo_get_num_forest_parents(int root, int *num_parents)
 {
+  if (!cobo_is_forest_opened) {
+    if (root == COBO_PRIMARY_TREE) {
+      *num_parents = 1;
+      return COBO_SUCCESS;
+    } else {
+      err_printf("Trying to use forest before cobo_open_forest");
+      exit(1);
+    }
+  }
+
   if (root == COBO_FOREST) {
     *num_parents = cobo_num_forest_childs;
   } else {
@@ -1579,6 +1570,16 @@ int cobo_get_num_forest_parents(int root, int *num_parents)
 
 int cobo_get_forest_parent_socket_at(int num, int *fd)
 {
+  if (!cobo_is_forest_opened) {
+    if (num == COBO_PRIMARY_TREE) {
+      *fd = cobo_parent_fd;
+      return COBO_SUCCESS;
+    } else {
+      err_printf("Trying to use forest before cobo_open_forest");
+      exit(1);
+    }
+  }
+
   *fd = cobo_forest_parents_fd[num];
   return COBO_SUCCESS;
 }
@@ -1792,11 +1793,7 @@ int cobo_alltoall(void* sendbuf, int sendcount, void* recvbuf)
 /*
  * Perform MPI-like Allreduce maximum of a single int from each task
  */
-static int cobo_allreduce()
-{
-
-
-}
+static int cobo_allreduce(){}
 
 /*
  * Perform MPI-like Allreduce maximum of a single int from each task
@@ -1945,7 +1942,7 @@ int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* 
 
     cobo_gettimeofday(&end);
     debug_printf3("Exiting cobo_init(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
-    
+
     return COBO_SUCCESS;
 }
 

@@ -131,7 +131,6 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    assert(args.unique_id == unique_id);
    assert(args.port == port);
    
-   
    /* Expand environment variables in location. */
    char *new_location = parse_location(args.location);
    if (!new_location) {
@@ -141,6 +140,12 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    debug_printf("Translated location from %s to %s\n", args.location, new_location);
    free(args.location);
    args.location = new_location;
+
+   result = ldcs_audit_server_network_post_setup(&args);
+   if (result == -1) {
+     err_printf("Error in ldcs_audit_server_network_post_setup");
+     return -1;
+   } 
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
@@ -154,12 +159,6 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
          err_printf("post_setup callback errored.  Returning\n");
          return -1;
       }
-   }
-
-   result = ldcs_audit_server_network_post_setup();
-   if (result == -1) {
-     err_printf("Error in ldcs_audit_server_network_post_setup");
-     return -1;
    }
 
    debug_printf("Setup done.  Running server.\n");

@@ -60,7 +60,7 @@ typedef void* node_peer_t;
 int ldcs_audit_server_md_init(unsigned int port, unsigned int num_ports, unique_id_t unique_id, ldcs_process_data_t *data);
 
 /* Any further initialization (after receiving spindle command arguments) can be done here. */
-int ldcs_audit_server_md_init_post_process();
+int ldcs_audit_server_md_init_post_process(unsigned int md_roots);
 
 /* register_fd should, for every fd we want Spindle to recv messages on, call
    ldcs_listen_register_fd with the fd and a callback function to be triggered
