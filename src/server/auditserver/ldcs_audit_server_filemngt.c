@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
+#include "ldcs_elf_read.h"
 #include "config.h"
 
 #if !defined(LIBEXECDIR)
@@ -56,8 +57,6 @@ int ldcs_audit_server_filemngt_init (char* location) {
 
    return(rc);
 }
-
-extern int read_file_and_strip(FILE *f, void *data, size_t *size);
 
 char *filemngt_calc_localname(char *global_name)
 {
@@ -108,15 +107,7 @@ int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip)
       return -1;
    }
 
-   if (strip) {
-      result = read_file_and_strip(f, buffer, size);
-   }
-   else {
-      do {
-         result = fread(buffer, 1, *size, f);
-      } while (result == -1 && errno == EINTR);
-      result = (result == *size) ? 0 : -1;
-   }
+   result = read_file_and_strip(f, buffer, size, strip);
    if (result == -1)
       err_printf("Error reading from file %s: %s\n", filename, strerror(errno));
 

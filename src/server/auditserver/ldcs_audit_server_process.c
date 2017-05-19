@@ -233,16 +233,6 @@ int ldcs_audit_server_run()
  /* Statistic functions */
  int _ldcs_server_stat_print ( ldcs_server_stat_t *server_stat ) {
    int rc=0;
-   /* cobo_dbg_printf("SERVER[%02d] STAT: #conn=%2d md_size=%2d md_fan_out=%2d listen_time=%8.4f select_time=%8.4f ts_first_connect=%16.6f hostname=%s", */
-   /* 	   server_stat->md_rank,  */
-   /* 	   server_stat->num_connections,	 */
-   /* 	   server_stat->md_size, */
-   /* 	   server_stat->md_fan_out, */
-   /* 	   server_stat->listen_time, */
-   /* 	   server_stat->select_time, */
-   /* 	   server_stat->starttime, */
-   /* 	   server_stat->hostname ); */
-
    debug_printf("SERVER[%02d] STAT: #conn=%2d md_size=%2d md_fan_out=%2d listen_time=%8.4f select_time=%8.4f ts_first_connect=%16.6f hostname=%s\n",
 	   server_stat->md_rank, 
 	   server_stat->num_connections,	
@@ -255,69 +245,11 @@ int ldcs_audit_server_run()
 
 #define MYFORMAT "SERVER[%02d] STAT:  %-10s, #cnt=%5d, bytes=%8.2f MB, time=%8.4f sec\n"
 
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"libread", */
-  /* 	  server_stat->libread.cnt, */
-  /* 	  server_stat->libread.bytes/1024.0/1024.0, */
-  /* 	  server_stat->libread.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"libstore", */
-  /* 	  server_stat->libstore.cnt, */
-  /* 	  server_stat->libstore.bytes/1024.0/1024.0, */
-  /* 	  server_stat->libstore.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"libdist", */
-  /* 	  server_stat->libdist.cnt, */
-  /* 	  server_stat->libdist.bytes/1024.0/1024.0, */
-  /* 	  server_stat->libdist.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"procdir", */
-  /* 	  server_stat->procdir.cnt, */
-  /* 	  server_stat->procdir.bytes/1024.0/1024.0, */
-  /* 	  server_stat->procdir.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"distdir", */
-  /* 	  server_stat->distdir.cnt, */
-  /* 	  server_stat->distdir.bytes/1024.0/1024.0, */
-  /* 	  server_stat->distdir.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"client_cb", */
-  /* 	  server_stat->client_cb.cnt, */
-  /* 	  server_stat->client_cb.bytes/1024.0/1024.0, */
-  /* 	  server_stat->client_cb.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"server_cb", */
-  /* 	  server_stat->server_cb.cnt, */
-  /* 	  server_stat->server_cb.bytes/1024.0/1024.0, */
-  /* 	  server_stat->server_cb.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"md_cb", */
-  /* 	  server_stat->md_cb.cnt, */
-  /* 	  server_stat->md_cb.bytes/1024.0/1024.0, */
-  /* 	  server_stat->md_cb.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"cl_msg_avg", */
-  /* 	  server_stat->clientmsg.cnt/((server_stat->num_connections>0)?server_stat->num_connections:1), */
-  /* 	  server_stat->clientmsg.bytes/1024.0/1024.0, */
-  /* 	  server_stat->clientmsg.time/((server_stat->num_connections>0)?server_stat->num_connections:1) ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"bcast", */
-  /* 	  server_stat->bcast.cnt, */
-  /* 	  server_stat->bcast.bytes/1024.0/1024.0, */
-  /* 	  server_stat->bcast.time ); */
-  /* cobo_dbg_printf(MYFORMAT, */
-  /* 	  server_stat->md_rank,"preload_cb", */
-  /* 	  server_stat->preload.cnt, */
-  /* 	  server_stat->preload.bytes/1024.0/1024.0, */
-  /* 	  server_stat->preload.time ); */
-
-
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libread",
 	  server_stat->libread.cnt,
 	  server_stat->libread.bytes/1024.0/1024.0,
 	  server_stat->libread.time );
-
 
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libstore",
@@ -325,13 +257,11 @@ int ldcs_audit_server_run()
 	  server_stat->libstore.bytes/1024.0/1024.0,
 	  server_stat->libstore.time );
 
-
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libdist",
 	  server_stat->libdist.cnt,
 	  server_stat->libdist.bytes/1024.0/1024.0,
 	  server_stat->libdist.time );
-
 
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"procdir",
@@ -339,13 +269,11 @@ int ldcs_audit_server_run()
 	  server_stat->procdir.bytes/1024.0/1024.0,
 	  server_stat->procdir.time );
 
-
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"distdir",
 	  server_stat->distdir.cnt,
 	  server_stat->distdir.bytes/1024.0/1024.0,
 	  server_stat->distdir.time );
-
 
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"client_cb",
@@ -353,20 +281,17 @@ int ldcs_audit_server_run()
 	  server_stat->client_cb.bytes/1024.0/1024.0,
 	  server_stat->client_cb.time );
 
-
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"server_cb",
 	  server_stat->server_cb.cnt,
 	  server_stat->server_cb.bytes/1024.0/1024.0,
 	  server_stat->server_cb.time );
 
-
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"md_cb",
 	  server_stat->md_cb.cnt,
 	  server_stat->md_cb.bytes/1024.0/1024.0,
 	  server_stat->md_cb.time );
-
 
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"cl_msg_avg",
