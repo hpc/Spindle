@@ -302,7 +302,6 @@ int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data )
   /*TODO: close cobo for time measurement, but remove it*/
   if (cobo_close() != COBO_SUCCESS) {
     debug_printf3("Failed to close\n");
-    printf("Failed to close\n");
     exit(1);
   }
    return 0;

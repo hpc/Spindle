@@ -1137,6 +1137,23 @@ int cobo_open_forest()
     return COBO_SUCCESS;  
 }
 
+
+/* open socket forest */
+int cobo_close_forest()
+{
+    int i;
+    for (i = 0; i < cobo_num_forest_childs; i++) {
+      close(cobo_forest_childs_fd[i]);
+      close(cobo_forest_parents_fd[i]);
+    }
+    cobo_is_forest_opened = 0;
+    cobo_free(cobo_forest_childs);
+    cobo_free(cobo_forest_parents);
+    cobo_free(cobo_forest_childs_fd);
+    cobo_free(cobo_forest_parents_fd);
+    return COBO_SUCCESS;  
+}
+
 /* 
  * =============================
  * Functions to bcast/gather/scatter with root as rank 0 using the TCP/socket tree.
@@ -1820,6 +1837,9 @@ int cobo_close()
     debug_printf3("Starting cobo_close()");
     /* shut down the tree */
     cobo_close_tree();
+    if (cobo_is_forest_opened) {
+      cobo_close_forest();
+    }
 
     /* free our data structures */
     cobo_free(cobo_ports);
