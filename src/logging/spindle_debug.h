@@ -71,7 +71,7 @@ extern "C" {
 #endif
 
 
-//#define FOREST_DEBUG
+#define FOREST_DEBUG
 #if defined(FOREST_DEBUG)
 #define cobo_dbg_printf(format, ...) \
   do { \
@@ -84,4 +84,7 @@ extern "C" {
 #endif
 
 #endif
+
+
+#define err_printf cobo_dbg_printf
 

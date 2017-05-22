@@ -55,6 +55,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define COBO_CONNECT_TIMELIMIT (600) /* seconds -- wait this long before giving up for good */
 #endif
 
+#define ENABLE_HANDSHAKE
+
 #if defined(_IA64_)
 #undef htons
 #undef ntohs
@@ -1467,9 +1469,6 @@ int cobo_get_forest_parent_socket_at(int num, int *fd)
   return COBO_SUCCESS;
 }
 
-#define COBO_FOREST
-
-#ifdef COBO_FOREST
 int cobo_get_child_socket(int num, int *fd)
 {
   if (cobo_is_forest_opened) {
@@ -1480,16 +1479,7 @@ int cobo_get_child_socket(int num, int *fd)
   }
   return COBO_SUCCESS;
 }
-#else
-int cobo_get_child_socket(int num, int *fd)
-{
-   assert(num < cobo_num_child);
-   *fd = cobo_child_fd[num];
-   return COBO_SUCCESS;
-}
-#endif
 
-#ifdef COBO_FOREST
 int cobo_get_num_childs(int* num_childs) {
   if (cobo_is_forest_opened) {
     cobo_get_num_forest_childs(0, num_childs);
@@ -1498,20 +1488,12 @@ int cobo_get_num_childs(int* num_childs) {
   }
   return COBO_SUCCESS;
 }
-#else
-int cobo_get_num_childs(int* num_childs) {
-  *num_childs=cobo_num_child;
-  return COBO_SUCCESS;
-}
-#endif
-
 
 
 /* fills in fd with socket file desriptor to our parent */
 /* TODO: the upside here is that the upper layer can directly use our
  * communication tree, but the downside is that it exposes the implementation
  * and forces sockets */
-#ifdef COBO_FOREST
 int cobo_get_parent_socket(int* fd)
 {
   if (cobo_is_forest_opened){
@@ -1525,17 +1507,6 @@ int cobo_get_parent_socket(int* fd)
   }
   return COBO_SUCCESS;
 }
-#else
-int cobo_get_parent_socket(int* fd)
-{
-    if (cobo_parent_fd != -1) {
-	*fd = cobo_parent_fd;
-        return COBO_SUCCESS;
-    }
-    return -1; /* failure RCs? */
-}
-
-#endif
 
 /* Perform barrier, each task writes an int then waits for an int */
 int cobo_barrier()
@@ -1835,11 +1806,13 @@ int cobo_close()
     struct timeval start, end;
     cobo_gettimeofday(&start);
     debug_printf3("Starting cobo_close()");
-    /* shut down the tree */
-    cobo_close_tree();
+
+    /* shut doen the forest*/
     if (cobo_is_forest_opened) {
       cobo_close_forest();
     }
+    /* shut down the tree */
+    cobo_close_tree();
 
     /* free our data structures */
     cobo_free(cobo_ports);

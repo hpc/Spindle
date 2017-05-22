@@ -41,6 +41,8 @@ extern "C" {
 #define COBO_SUCCESS (0)
 #define COBO_PRIMARY_TREE (0)
 #define COBO_FOREST (-1)
+#define COBO_ALL_PARENTS (-2)
+#define COBO_ALL_CHILDS  (-3)
 
 #define COBO_NAMESPACE ldcs
 

@@ -225,7 +225,9 @@ int ldcs_audit_server_md_register_fd ( ldcs_process_data_t *ldcs_process_data )
    int num_parents, num_childs;
    
    /* Registering parents */
+   cobo_dbg_printf("before 1");
    cobo_get_num_forest_parents(COBO_FOREST, &num_parents);
+   cobo_dbg_printf("after 1");
    for (i = 0; i < num_parents; i++) {
      if(cobo_get_forest_parent_socket_at(i, &parent_fd)!=COBO_SUCCESS) {
        err_printf("Error, could not get parent socket\n");
@@ -265,7 +267,9 @@ int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *ldcs_process_data 
    if (!ldcs_process_data->md_listen_to_parent) return rc;
 
    /* Registering parents */
+   cobo_dbg_printf("before 2");
    cobo_get_num_forest_parents(COBO_FOREST, &num_parents);
+   cobo_dbg_printf("before 3");
    for (i = 0; i < num_parents; i++) {
      if(cobo_get_forest_parent_socket_at(i, &parent_fd)!=COBO_SUCCESS) {
        err_printf("Error, could not get parent socket\n");
@@ -312,7 +316,7 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
   int responsible_tree_id = ldcs_audit_server_md_get_responsible_tree_id(filename);
 
   if(ldcs_process_data->md_rank == responsible_tree_id) { 
-       cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
+    //       cobo_dbg_printf("I am responsible for file: %s (tree_id: %d)", filename, responsible_tree_id);
        debug_printf3("Decided I am responsible for file %s\n", filename);
     return 1;
   }

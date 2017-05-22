@@ -2,7 +2,10 @@
 
 num_roots=$1
 
+./run_driver --dependency --push 
+exit
 ./run_driver --dependency --push --roots $num_roots
+exit
 ./run_driver --dlopen --push --roots $num_roots
 ./run_driver --dlreopen --push --roots $num_roots
 ./run_driver --reorder --push --roots $num_roots
