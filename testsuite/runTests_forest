@@ -4,7 +4,6 @@
 export SPINDLE_BLUEGENE="false"
 num_roots=$1
 
-if false ; then
 ./run_driver --dlopen --push --roots $num_roots
 ./run_driver --dlreopen --push --roots $num_roots
 ./run_driver --reorder --push --roots $num_roots
@@ -26,7 +25,7 @@ if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --partial --fork --roots $num_roots
 ./run_driver --ldpreload --fork --roots $num_roots
 fi
-fi
+
 
 if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --dependency --forkexec --roots $num_roots
