@@ -1,18 +1,16 @@
 #!/bin/sh
 
+#export SPINDLE_TEST_ARGS="$@"
+export SPINDLE_BLUEGENE="false"
 num_roots=$1
 
-./run_driver --dependency --push 
-exit
-./run_driver --dependency --push --roots $num_roots
-exit
+if false ; then
 ./run_driver --dlopen --push --roots $num_roots
 ./run_driver --dlreopen --push --roots $num_roots
 ./run_driver --reorder --push --roots $num_roots
 ./run_driver --partial --push --roots $num_roots
 ./run_driver --ldpreload --push --roots $num_roots
 
-if false; then
 ./run_driver --dependency --pull --roots $num_roots
 ./run_driver --dlopen --pull --roots $num_roots
 ./run_driver --dlreopen --pull --roots $num_roots
@@ -27,6 +25,7 @@ if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --reorder --fork --roots $num_roots
 ./run_driver --partial --fork --roots $num_roots
 ./run_driver --ldpreload --fork --roots $num_roots
+fi
 fi
 
 if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
@@ -51,10 +50,6 @@ fi
 ./run_driver --reorder --preload --roots $num_roots
 ./run_driver --partial --preload --roots $num_roots
 ./run_driver --ldpreload --preload --roots $num_roots
-fi
 
-#sleep 10
-#handler
 
-echo "Done."
 

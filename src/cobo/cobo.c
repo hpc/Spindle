@@ -956,7 +956,6 @@ static int cobo_accept_and_handshake(int sockfd)
         /* if we get here, we've got a good connection to our parent */
         have_parent = 1;
     }
-    //    cobo_dbg_printf("handhsare done (rank: %d)", cobo_me);
     return accepted_sockfd;
 }
 
@@ -1343,16 +1342,14 @@ int cobo_get_num_tree(int *num_trees)
 int cobo_get_forest_child_socket(int root, int num, int *fd)
 {
   int num_forest_childs;
-  
-  if (!cobo_is_forest_opened) {
-    if (root == COBO_PRIMARY_TREE) {
-      return cobo_get_child_socket(num, fd);
-    } else {
-      err_printf("Trying to use forest before cobo_open_forest");
-      exit(1);
-    }
-  }
-
+  /* if (!cobo_is_forest_opened) { */
+  /*   if (root == COBO_PRIMARY_TREE) { */
+  /*     return cobo_get_child_socket(num, fd); */
+  /*   } else { */
+  /*     err_printf("Trying to use forest before cobo_open_forest"); */
+  /*     exit(1); */
+  /*   } */
+  /* } */
   if (root == COBO_FOREST) {
     *fd = cobo_forest_childs_fd[num];
     return COBO_SUCCESS;
@@ -1372,16 +1369,14 @@ int cobo_get_num_forest_childs(int root, int* num_forest_childs)
   int num_childs = 0;
   int logical_rank = 0;   /*logical_rank of the root is 0*/
   int tmp_cobo_nprocs;
-
-  if (!cobo_is_forest_opened) {
-    if (root == COBO_PRIMARY_TREE) {
-      return cobo_get_num_childs(num_forest_childs);
-    } else {
-      err_printf("Trying to use forest before cobo_open_forest");
-      exit(1);
-    }
-  }
-
+  /* if (!cobo_is_forest_opened) { */
+  /*   if (root == COBO_PRIMARY_TREE) { */
+  /*     return cobo_get_num_childs(num_forest_childs); */
+  /*   } else { */
+  /*     err_printf("Trying to use forest before cobo_open_forest"); */
+  /*     exit(1); */
+  /*   } */
+  /* } */
   if (root == COBO_FOREST) {
     *num_forest_childs = cobo_num_forest_childs;
     return COBO_SUCCESS;
@@ -1407,44 +1402,39 @@ int cobo_get_forest_parent_socket(int root, int *fd)
 {
   int num_childs;
   int forest_parents_fd_index;
-
-  if (!cobo_is_forest_opened) {
-    if (root == COBO_PRIMARY_TREE) {
-      return cobo_get_parent_socket(fd);
-    } else {
-      err_printf("Trying to use forest before cobo_open_forest");
-      exit(1);
-    }
-  }
-
+  /* if (!cobo_is_forest_opened) { */
+  /*   if (root == COBO_PRIMARY_TREE) { */
+  /*     return cobo_get_parent_socket(fd); */
+  /*   } else { */
+  /*     err_printf("Trying to use forest before cobo_open_forest"); */
+  /*     exit(1); */
+  /*   } */
+  /* } */
   if (cobo_me == root) {
     if (cobo_me != 0) {
       cobo_dbg_printf("root (tree_id=%d) does not have parent", root);
       exit(1);
     }
     *fd = cobo_parent_fd;
-    //    fprintf(stderr, "cobo_index: %d\n", -1);
   } else {
     cobo_get_num_forest_childs(root, &num_childs);
     forest_parents_fd_index = num_childs;
     *fd = cobo_forest_parents_fd[forest_parents_fd_index];
-    //    fprintf(stderr, "cobo_index: %d\n", forest_parents_fd_index);
   }  
   return COBO_SUCCESS;
 }
 
 int cobo_get_num_forest_parents(int root, int *num_parents)
 {
-  if (!cobo_is_forest_opened) {
-    if (root == COBO_PRIMARY_TREE) {
-      *num_parents = 1;
-      return COBO_SUCCESS;
-    } else {
-      err_printf("Trying to use forest before cobo_open_forest");
-      exit(1);
-    }
-  }
-
+  /* if (!cobo_is_forest_opened) { */
+  /*   if (root == COBO_PRIMARY_TREE) { */
+  /*     *num_parents = 1; */
+  /*     return COBO_SUCCESS; */
+  /*   } else { */
+  /*     err_printf("Trying to use forest before cobo_open_forest"); */
+  /*     exit(1); */
+  /*   } */
+  /* } */
   if (root == COBO_FOREST) {
     *num_parents = cobo_num_forest_childs;
   } else {
@@ -1455,37 +1445,38 @@ int cobo_get_num_forest_parents(int root, int *num_parents)
 
 int cobo_get_forest_parent_socket_at(int num, int *fd)
 {
-  if (!cobo_is_forest_opened) {
-    if (num == COBO_PRIMARY_TREE) {
-      *fd = cobo_parent_fd;
-      return COBO_SUCCESS;
-    } else {
-      err_printf("Trying to use forest before cobo_open_forest");
-      exit(1);
-    }
-  }
-
+  /* if (!cobo_is_forest_opened) { */
+  /*   if (num == COBO_PRIMARY_TREE) { */
+  /*     *fd = cobo_parent_fd; */
+  /*     return COBO_SUCCESS; */
+  /*   } else { */
+  /*     err_printf("Trying to use forest before cobo_open_forest"); */
+  /*     exit(1); */
+  /*   } */
+  /* } */
   *fd = cobo_forest_parents_fd[num];
   return COBO_SUCCESS;
 }
 
 int cobo_get_child_socket(int num, int *fd)
 {
-  if (cobo_is_forest_opened) {
-    cobo_get_forest_child_socket(0, num, fd);
-  } else {
-    assert(num < cobo_num_child);
-    *fd = cobo_child_fd[num];
-  }
+  /* if (cobo_is_forest_opened) { */
+  /*   cobo_get_forest_child_socket(0, num, fd); */
+  /* } else { */
+  /*   assert(num < cobo_num_child); */
+  /*   *fd = cobo_child_fd[num]; */
+  /* } */
+  cobo_get_forest_child_socket(0, num, fd);
   return COBO_SUCCESS;
 }
 
 int cobo_get_num_childs(int* num_childs) {
-  if (cobo_is_forest_opened) {
-    cobo_get_num_forest_childs(0, num_childs);
-  } else {
-    *num_childs=cobo_num_child;    
-  }
+  /* if (cobo_is_forest_opened) { */
+  /*   cobo_get_num_forest_childs(0, num_childs); */
+  /* } else { */
+  /*   *num_childs=cobo_num_child;     */
+  /* } */
+  cobo_get_num_forest_childs(0, num_childs);
   return COBO_SUCCESS;
 }
 
@@ -1496,15 +1487,16 @@ int cobo_get_num_childs(int* num_childs) {
  * and forces sockets */
 int cobo_get_parent_socket(int* fd)
 {
-  if (cobo_is_forest_opened){
-    cobo_get_forest_parent_socket(0, fd);
-  } else {
-    if (cobo_parent_fd != -1) {
-	*fd = cobo_parent_fd;
-        return COBO_SUCCESS;
-    }
-    return -1; /* failure RCs? */
-  }
+  /* if (cobo_is_forest_opened){ */
+  /*   cobo_get_forest_parent_socket(0, fd); */
+  /* } else { */
+  /*   if (cobo_parent_fd != -1) { */
+  /* 	*fd = cobo_parent_fd; */
+  /*       return COBO_SUCCESS; */
+  /*   } */
+  /*   return -1; /\* failure RCs? *\/ */
+  /* } */
+  cobo_get_forest_parent_socket(0, fd);
   return COBO_SUCCESS;
 }
 
@@ -1778,12 +1770,14 @@ int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* 
     /* open the tree */
     cobo_open_tree();
 
-
     /* need to check that tree opened successfully before returning, so do a barrier */
     if (cobo_barrier() != COBO_SUCCESS) {
         err_printf("Failed to open tree\n");
         exit(1);
     }
+
+    /* open the forest */
+    cobo_open_forest();
 
     if (cobo_me == 0) {
         cobo_gettimeofday(&tree_end);

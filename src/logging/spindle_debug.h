@@ -71,13 +71,14 @@ extern "C" {
 #endif
 
 
-#define FOREST_DEBUG
+//#define FOREST_DEBUG
 #if defined(FOREST_DEBUG)
 #define cobo_dbg_printf(format, ...) \
   do { \
     fprintf(stderr, "COBO:%6d: " format " (%s:%d)\n", getpid(), ## __VA_ARGS__, __FILE__, __LINE__); \
   } while (0)
-
+#undef err_printf
+#define err_printf cobo_dbg_printf
 #else
 #define cobo_dbg_printf(format, ...) 
 #define md_cobo_dbg_printf(format, ...) 
@@ -86,5 +87,4 @@ extern "C" {
 #endif
 
 
-#define err_printf cobo_dbg_printf
 
