@@ -109,9 +109,6 @@
 /* Define if we're compiling for a ppc64 target */
 #undef arch_ppc64
 
-/* Define if we're compiling for a ppc64le target */
-#undef arch_ppc64le
-
 /* Define if we're compiling for an x86_64 target */
 #undef arch_x86_64
 
