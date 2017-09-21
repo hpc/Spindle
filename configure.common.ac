@@ -95,14 +95,6 @@ if test "x$target_cpu" == "xx86_64"; then
   AC_DEFINE([arch_x86_64],[1],[Define if we're compiling for an x86_64 target])
   ARCH_BUILD=x86_64
 fi
-if test "x$target_cpu" == "xppc64le"; then
-  AC_DEFINE([arch_ppc64le],[1],[Define if we're compiling for a ppc64le target])
-  ARCH_BUILD=ppc64le
-fi
-if test "x$target_cpu" == "xpowerpc64le"; then
-  AC_DEFINE([arch_ppc64le],[1],[Define if we're compiling for a ppc64le target])
-  ARCH_BUILD=ppc64le
-fi
 if test "x$target_cpu" == "xppc64"; then
   AC_DEFINE([arch_ppc64],[1],[Define if we're compiling for a ppc64 target])
   ARCH_BUILD=ppc64
@@ -125,7 +117,6 @@ AM_CONDITIONAL([BGQ_BLD], [test "x$OS_BUILD" == "xbluegene"])
 AM_CONDITIONAL([LINUX_BLD], [test "x$OS_BUILD" == "xlinux"])
 AM_CONDITIONAL([X86_64_BLD], [test "x$ARCH_BUILD" == "xx86_64"])
 AM_CONDITIONAL([PPC64_BLD], [test "x$ARCH_BUILD" == "xppc64"])
-AM_CONDITIONAL([PPC64LE_BLD], [test "x$ARCH_BUILD" == "xppc64le"])
 
 if test "x$OS_BUILD" == "xlinux"; then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])
