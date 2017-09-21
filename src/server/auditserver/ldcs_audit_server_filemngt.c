@@ -401,7 +401,7 @@ int filemngt_read_stat(char *localname, struct stat *buf)
 #if defined(arch_x86_64)
 #define PROFILE_FUNC_NAME "_dl_runtime_profile"
 #define GET_ADDR_FROM_SYMVALUE(X) (X)
-#elif defined(arch_ppc64)
+#elif defined(arch_ppc64) || defined(arch_ppc64le)
 #define PROFILE_FUNC_NAME "_dl_profile_resolve"
 #define GET_ADDR_FROM_SYMVALUE(X) (*((unsigned long *) (X+base)))
 #else
