@@ -636,6 +636,8 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 LIBSPINDLE_LIB_VERSION
+PPC64LE_BLD_FALSE
+PPC64LE_BLD_TRUE
 PPC64_BLD_FALSE
 PPC64_BLD_TRUE
 X86_64_BLD_FALSE
@@ -12600,6 +12602,18 @@ $as_echo "#define arch_x86_64 1" >>confdefs.h
 
   ARCH_BUILD=x86_64
 fi
+if test "x$target_cpu" == "xppc64le"; then
+
+$as_echo "#define arch_ppc64le 1" >>confdefs.h
+
+  ARCH_BUILD=ppc64le
+fi
+if test "x$target_cpu" == "xpowerpc64le"; then
+
+$as_echo "#define arch_ppc64le 1" >>confdefs.h
+
+  ARCH_BUILD=ppc64le
+fi
 if test "x$target_cpu" == "xppc64"; then
 
 $as_echo "#define arch_ppc64 1" >>confdefs.h
@@ -12656,6 +12670,14 @@ fi
 else
   PPC64_BLD_TRUE='#'
   PPC64_BLD_FALSE=
+fi
+
+ if test "x$ARCH_BUILD" == "xppc64le"; then
+  PPC64LE_BLD_TRUE=
+  PPC64LE_BLD_FALSE='#'
+else
+  PPC64LE_BLD_TRUE='#'
+  PPC64LE_BLD_FALSE=
 fi
 
 
@@ -12931,6 +12953,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PPC64_BLD_TRUE}" && test -z "${PPC64_BLD_FALSE}"; then
   as_fn_error $? "conditional \"PPC64_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${PPC64LE_BLD_TRUE}" && test -z "${PPC64LE_BLD_FALSE}"; then
+  as_fn_error $? "conditional \"PPC64LE_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

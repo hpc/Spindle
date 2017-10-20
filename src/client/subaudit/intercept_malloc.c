@@ -55,7 +55,7 @@ static unsigned int *pltrelsz_list = NULL;
 static unsigned int pltrelsz_size = 0, pltrelsz_cur = 0;
 #define default_pltrelsz 16
 
-#if defined(arch_x86_64)
+#if defined(arch_x86_64) || defined(arch_ppc64le)
 #define LDSO_EXTRA_CALLOC_SZ 32
 #elif defined(arch_ppc64)
 #define LDSO_EXTRA_CALLOC_SZ 32
