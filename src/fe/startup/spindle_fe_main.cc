@@ -22,84 +22,165 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <string>
+#include <errno.h>
 
-#include "config.h"
-#include "spindle_debug.h"
-#include "parseargs.h"
-#include "spindle_launch.h"
 #include "ldcs_api.h"
+#include "config.h"
+#include "jobtask.h"
+#include "launcher.h"
 #include "parse_launcher.h"
+#include "parseargs.h"
+#include "spindle_debug.h"
+#include "spindle_launch.h"
+#include "parse_launcher.h"
+#include "spindle_session.h"
 
 using namespace std;
 
 static void setupLogging(int argc, char **argv);
-static void getAppCommandLine(int argc, char *argv[], int daemon_argc, char *daemon_argv[], spindle_args_t *args, int *mod_argc, char ***mod_argv);
-static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args);
+static bool getNextTask(Launcher *launcher, spindle_args_t *params, vector<JobTask*> &tasks);
 
 #if defined(HAVE_LMON)
-extern int startLaunchmonFE(int app_argc, char *app_argv[],
-                            int daemon_argc, char *daemon_argv[],
-                            spindle_args_t *params);
+extern Launcher *createLaunchmonLauncher(spindle_args_t *params);
 #endif
-extern int startSerialFE(int app_argc, char *app_argv[],
-                         int daemon_argc, char *daemon_argv[],
-                         spindle_args_t *params);
+extern Launcher *createSerialLauncher(spindle_args_t *params);
+extern Launcher *createHostbinLauncher(spindle_args_t *params);
 
-extern int startHostbinFE(string hostbin_exe,
-                          int app_argc, char **app_argv,
-                          spindle_args_t *params);
-
-int main(int argc, char *argv[])
+Launcher *newLauncher(spindle_args_t *params)
 {
-   int result = 0;
-
-   setupLogging(argc, argv);
-
-   spindle_args_t params;
-   parseCommandLine(argc, argv, &params);
-
-   int daemon_argc;
-   char **daemon_argv;
-   getDaemonCommandLine(&daemon_argc, &daemon_argv, &params);
-   debug_printf2("Daemon CmdLine: ");
-   for (int i = 0; i < daemon_argc; i++) {
-      bare_printf2("%s ", daemon_argv[i]);
-   }
-   bare_printf2("\n");
-
-   int app_argc;
-   char **app_argv;
-   getAppCommandLine(argc, argv, daemon_argc, daemon_argv, &params, &app_argc, &app_argv);     
-   debug_printf2("Application CmdLine: ");
-   for (int i = 0; i < app_argc; i++) {
-      bare_printf2("%s ", app_argv[i]);
-   }
-   bare_printf2("\n");
-
-   if (params.use_launcher == serial_launcher) {
+   if (params->use_launcher == serial_launcher) {
       debug_printf("Starting application in serial mode\n");
-      result = startSerialFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
+      return createSerialLauncher(params);
    }
-   else if (params.startup_type == startup_lmon) {
+   else if (params->startup_type == startup_lmon) {
       debug_printf("Starting application with launchmon\n");
 #if defined(HAVE_LMON)
-      result = startLaunchmonFE(app_argc, app_argv, daemon_argc, daemon_argv, &params);
+      return createLaunchmonLauncher(params);
 #else
       fprintf(stderr, "Spindle Error: Spindle was not built with LaunchMON support\n");
       err_printf("HAVE_LMON not defined\n");
-      return -1;
+      return NULL;
 #endif
    }
-   else if (params.startup_type == startup_hostbin) {
+   else if (params->startup_type == startup_hostbin) {
       debug_printf("Starting application with hostbin\n");
-      result = startHostbinFE(getHostbin(),
-                              app_argc, app_argv, &params);
+      return createHostbinLauncher(params);
+      return NULL;
+   }
+   err_printf("Mis-set use_launcher value: %d\n", (int) params->use_launcher);
+   return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+   bool result;
+   setupLogging(argc, argv);
+
+   spindle_args_t *params = (spindle_args_t *) malloc(sizeof(spindle_args_t));;
+   parseCommandLine(argc, argv, params);
+
+   init_session(params);
+
+   Launcher *launcher = newLauncher(params);
+   if (!launcher) {
+      fprintf(stderr, "Internal error while initializing spindle\n");
+      return -1;
    }
 
-   LOGGING_FINI;
-   return result;
+   debug_printf("Spawning spindle daemons\n");
+   result = launcher->setupDaemons();
+   if (!result) {
+      fprintf(stderr, "Internal error while spawning spindle daemons\n");
+      return -1;
+   }
+
+   int num_live_jobs = 0, num_run_jobs = 0;
+   int nonzero_rc = 0;
+   bool session_shutdown = false, do_shutdown = false, initialized_spindle = false;
+
+   for (;;) {
+      vector<JobTask*> tasks;
+      debug_printf("Getting next task in Spindle main loop\n");
+      result = getNextTask(launcher, params, tasks);
+      if (!result) {
+         fprintf(stderr, "Internal error while getting next spindle job\n");
+         return -1;
+      }
+      
+      for (vector<JobTask*>::iterator t = tasks.begin(); t != tasks.end(); t++) {
+         JobTask *task = *t;
+         if (task->isJobDone()) {
+            debug_printf("Job completed\n");
+            app_id_t appid = task->getJobDoneID();
+            int rc = task->getReturnCode();
+            if (params->opts & OPT_SESSION) 
+               mark_session_job_done(appid, rc);
+            else if (rc != 0 && nonzero_rc == 0)
+               nonzero_rc = rc;
+            num_live_jobs--;
+         }
+         else if (task->isLaunch()) {
+            int app_argc = 0;
+            char **app_argv = NULL;
+            app_id_t id;
+            task->getAppArgs(id, app_argc, app_argv);
+            debug_printf("Running application with id %d: ", id);
+            for (int i = 0; i < app_argc; i++) {
+               bare_printf("%s ", app_argv[i]);
+            }
+            bare_printf("\n");
+            result = launcher->setupJob(id, app_argc, app_argv);
+            if (!result) {
+               debug_printf("Failed in caller to launcher::setupJob\n");
+            }
+            else {
+               num_live_jobs++;
+               num_run_jobs++;
+               debug_printf("num_live_jobs = %d, num_run_jobs = %d\n", num_live_jobs, num_run_jobs);
+            }
+         }
+         else if (task->isSessionShutdown()) {
+            debug_printf("Shutdown requested\n");
+            if (session_shutdown) {
+               debug_printf("Second shutdown request.  Forcing shutdown despite num_live_jobs = %d\n", num_live_jobs);
+               do_shutdown = true;
+            }
+            session_shutdown = true;            
+         }
+         else if (task->isDaemonDone()) {
+            int rc = task->getReturnCode();
+            if (rc != 0 && nonzero_rc == 0)
+               nonzero_rc = rc;
+            do_shutdown = true;
+         }
+         delete task;
+      }
+
+      if (session_shutdown && num_live_jobs == 0) {
+         do_shutdown = true;
+      }
+
+      if ((num_run_jobs == 1 || do_shutdown) && !initialized_spindle) {
+         debug_printf("Calling spindleInitFE\n");
+         const char **hosts = launcher->getProcessTable();
+         int iresult = spindleInitFE(hosts, params);
+         if (iresult == -1) {
+            err_printf("[LMON FE] spindleInitFE returned an error\n");
+            return -1;
+         }
+         debug_printf("Done calling spindleInitFE\n");
+         initialized_spindle = true;
+      }
+
+      if (do_shutdown) {
+         spindleCloseFE(params);
+         LOGGING_FINI;
+         return nonzero_rc;
+      }
+   }
 }
 
 static void setupLogging(int argc, char **argv)
@@ -112,68 +193,98 @@ static void setupLogging(int argc, char **argv)
    bare_printf("\n");
 }
 
-static void getAppCommandLine(int argc, char *argv[], int daemon_argc, char *daemon_argv[], spindle_args_t *params, int *mod_argc, char ***mod_argv)
+static bool getNextTask(Launcher *launcher, spindle_args_t *params, vector<JobTask*> &tasks)
 {
    int app_argc;
-   char **app_argv;
+   char **app_argv;      
+   static bool init_done = false;
+   if (!(params->opts & OPT_SESSION) && !init_done) {   
+      JobTask *runapp = new JobTask();
+      getAppArgs(&app_argc, &app_argv);
+      runapp->setLaunch(1, app_argc, app_argv);
+      runapp->setNoClean();
+      tasks.push_back(runapp);      
 
-   getAppArgs(&app_argc, &app_argv);
+      JobTask *shutdown = new JobTask;
+      shutdown->setSessionShutdown();
+      tasks.push_back(shutdown);
 
-   ModifyArgv modargv(app_argc, app_argv, daemon_argc, daemon_argv, params);
-   modargv.getNewArgv(*mod_argc, *mod_argv);
-}
-
-#if !defined(LIBEXECDIR)
-#error Expected LIBEXECDIR to be defined
-#endif
-char spindle_daemon[] = LIBEXECDIR "/spindle_be";
-char spindle_serial_arg[] = "--spindle_serial";
-char spindle_lmon_arg[] = "--spindle_lmon";
-char spindle_hostbin_arg[] = "--spindle_hostbin";
-
-static void getDaemonCommandLine(int *daemon_argc, char ***daemon_argv, spindle_args_t *args)
-{
-   char **daemon_opts = (char **) malloc(11 * sizeof(char *));
-   char number_s[32];
-   int i = 0;
-
-   snprintf(number_s, 32, "%d", args->number);
-
-   //daemon_opts[i++] = "/usr/local/bin/valgrind";
-   //daemon_opts[i++] = "--tool=memcheck";
-   //daemon_opts[i++] = "--leak-check=full";
-   daemon_opts[i++] = spindle_daemon;
-   if (args->use_launcher == serial_launcher)
-      daemon_opts[i++] = spindle_serial_arg;
-   else if (args->startup_type == startup_lmon)
-      daemon_opts[i++] = spindle_lmon_arg;
-   else if (args->startup_type == startup_hostbin)
-      daemon_opts[i++] = spindle_hostbin_arg;
-
-#define STR2(X) #X
-#define STR(X) STR2(X)
-#define STR_CASE(X) case X: daemon_opts[i++] = const_cast<char *>(STR(X)); break
-   switch (OPT_GET_SEC(args->opts)) {
-      STR_CASE(OPT_SEC_MUNGE);
-      STR_CASE(OPT_SEC_KEYLMON);
-      STR_CASE(OPT_SEC_KEYFILE);
-      STR_CASE(OPT_SEC_NULL);
+      init_done = true;
+      return true;
    }
-   daemon_opts[i++] = strdup(number_s);
 
-   if (args->startup_type == startup_hostbin) {
-      char port_str[32], ss_str[32], port_num_str[32];
-      snprintf(port_str, 32, "%d", args->port);
-      snprintf(port_num_str, 32, "%d", args->num_ports);
-      snprintf(ss_str, 32, "%lu", args->unique_id);
-      daemon_opts[i++] = strdup(port_str);
-      daemon_opts[i++] = strdup(port_num_str);
-      daemon_opts[i++] = strdup(ss_str);
+   int launcher_fd = launcher->getJobFinishFD();
+   int session_fd = get_session_fd();
+   int max_fd = session_fd > launcher_fd ? session_fd : launcher_fd;
+   
+   fd_set readset;
+   FD_ZERO(&readset);
+   if (launcher_fd != -1)
+      FD_SET(launcher_fd, &readset);
+   if (session_fd != -1)
+      FD_SET(session_fd, &readset);
+   assert(max_fd != -1);
+   int result;
+   do {
+      result = select(max_fd+1, &readset, NULL, NULL, NULL);
+   } while (result == -1 && errno == EINTR);
+   if (result == -1) {
+      int error = errno;
+      err_printf("Could not wait on socket: %s\n", strerror(error));
+      return false;
    }
-   daemon_opts[i] = NULL;
 
-   *daemon_argc = i;
-   *daemon_argv = daemon_opts;
+   if (launcher_fd != -1 && FD_ISSET(launcher_fd, &readset)) {
+      bool daemon_done = false;
+      int daemon_ret = 0;
+      vector<pair<app_id_t, int> > app_rets;
+      result = launcher->getReturnCodes(daemon_done, daemon_ret, app_rets);
+      if (!result) {
+         debug_printf("Failed to get return codes from spindle.\n");
+         return false;
+      }
+      
+      if (daemon_done) {
+         JobTask *task = new JobTask();
+         task->setDaemonDone(daemon_ret);
+         tasks.push_back(task);
+      }
+      for (vector<pair<app_id_t, int> >::iterator i = app_rets.begin(); i != app_rets.end(); i++) {
+         JobTask *task = new JobTask();
+         task->setJobDone(i->first, i->second);
+         tasks.push_back(task);
+      }
+
+      char byte;
+      do {
+         result = read(launcher_fd, &byte, sizeof(byte));
+      } while (result == -1 && errno == EINTR);
+      if (result == -1) {
+         int error = errno;
+         err_printf("Could not clear byte from launcher socket: %s\n", strerror(error));
+         return false;
+      }
+   }
+   
+   if (session_fd != -1 && FD_ISSET(session_fd, &readset)) {
+      bool session_complete = false;
+      app_id_t appid;
+      result = get_session_runcmds(appid, app_argc, app_argv, session_complete);
+      if (result == -1) {
+         debug_printf("Error reading session command. Dropping.\n");
+         return true;
+      }
+      if (session_complete) {
+         JobTask *task = new JobTask();
+         task->setSessionShutdown();
+         tasks.push_back(task);
+      }
+      if (app_argc > 0) {
+         JobTask *task = new JobTask();
+         task->setLaunch(appid, app_argc, app_argv);
+         tasks.push_back(task);         
+      }
+   }
+
+   return true;
 }
-
-

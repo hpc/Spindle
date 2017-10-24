@@ -14,35 +14,15 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSEARGS_H_)
-#define PARSEARGS_H_
+#if !defined(SPINDLE_SESSION_H_)
+#define SPINDLE_SESSION_H_
 
 #include "spindle_launch.h"
-#include <string>
+#include "launcher.h"
 
-typedef enum {
-   sstatus_unused,
-   sstatus_start,
-   sstatus_run,
-   sstatus_end
-} session_status_t;
-
-void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
-
-opt_t parseArgs(int argc, char *argv[]);
-char *getPreloadFile();
-unsigned int getPort();
-unsigned int getNumPorts();
-std::string getLocation(int number);
-std::string getPythonPrefixes();
-std::string getHostbin();
-int getStartupType();
-int getLauncher();
-int getShmCacheSize();
-unique_id_t get_unique_id();
-std::string get_arg_session_id();
-session_status_t get_session_status();
-
-int getAppArgs(int *argc, char ***argv);
+int init_session(spindle_args_t *args);
+int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &session_complete);
+int get_session_fd();
+void mark_session_job_done(app_id_t appid, int rc);
 
 #endif

@@ -36,6 +36,8 @@ using namespace std;
 
 #include "spindle_launch.h"
 #include "spindle_debug.h"
+#include "../startup/parseargs.h"
+#include "../startup/launcher.h"
 
 #if !defined(LIBEXEC)
 #error Expected libexec to be defined
@@ -54,11 +56,6 @@ static pthread_cond_t exited_cvar;
 static pthread_mutex_t exited_mut;
 static pthread_cond_t result_cvar;
 static pthread_mutex_t result_mut;
-
-static void on_child(int)
-{
-   hit_sigchild = true;
-}
 
 class IOThread {
    static const int RD = 0;
@@ -378,7 +375,7 @@ private:
       if (result == -1) {
          err_printf("Unexpected error calling waitpid for hostbin: %s\n", strerror(errno));
          return proc_error;
-      }
+      }      
       if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
          debug_printf("Hostbin completed successfully\n");
          hostbin_running = false;
@@ -537,20 +534,80 @@ static bool fileExists(string f)
    return result != -1;
 }
 
-int startHostbinFE(string hostbin_exe,
-                   int app_argc, char **app_argv,
-                   spindle_args_t *params)
-{
+class HostbinLauncher : public Launcher {
+   friend Launcher *createHostbinLauncher(spindle_args_t *params);
+   friend void hostbin_on_child(int);
+private:
+   bool initError;
+   bool initDone;
+   static HostbinLauncher *hlauncher;
    IOThread io_thread;
-   ProcManager proc_manager(&io_thread);
+   ProcManager proc_manager;
+   char **host_array;
+   app_id_t appid;
 
+protected:
+   virtual bool spawnDaemon();
+   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
+   HostbinLauncher(spindle_args_t *args);
+public:
+   virtual const char **getProcessTable();
+   virtual const char *getDaemonArg();
+   virtual bool getReturnCodes(bool &daemon_done, int &daemon_ret,
+                               std::vector<std::pair<app_id_t, int> > &app_rets);
+   virtual void getSecondaryDaemonArgs(std::vector<const char *> &secondary_args);
+   virtual ~HostbinLauncher();
+};
+HostbinLauncher *HostbinLauncher::hlauncher = NULL;
+
+void hostbin_on_child(int)
+{
+   hit_sigchild = true;
+   if (HostbinLauncher::hlauncher->initDone) {
+      HostbinLauncher::hlauncher->markFinished();
+   }
+}
+
+Launcher *createHostbinLauncher(spindle_args_t *params) {
+   HostbinLauncher::hlauncher = new HostbinLauncher(params);
+   if (HostbinLauncher::hlauncher->initError) {
+      delete HostbinLauncher::hlauncher;
+      return NULL;
+   }
+   return HostbinLauncher::hlauncher;
+}
+
+HostbinLauncher::HostbinLauncher(spindle_args_t *params) :
+   Launcher(params),
+   initError(false),
+   initDone(false),
+   io_thread(),
+   proc_manager(&io_thread),
+   host_array(NULL),
+   appid(0)
+{
+}
+
+HostbinLauncher::~HostbinLauncher()
+{
+   HostbinLauncher::hlauncher = NULL;
+}
+
+bool HostbinLauncher::spawnDaemon()
+{
+   return true;
+}
+
+bool HostbinLauncher::spawnJob(app_id_t id, int app_argc, char **app_argv)
+{
+   string hostbin_exe = getHostbin(); 
    if (hostbin_exe.find('/') == string::npos) {
       string fullpath = string(libexec_dir) + hostbin_exe;
       if (fileExists(fullpath))
          hostbin_exe = fullpath;
    }
 
-   signal(SIGCHLD, on_child);
+   signal(SIGCHLD, hostbin_on_child);
 
    proc_manager.runLauncher(app_argc, app_argv);
 
@@ -579,33 +636,57 @@ int startHostbinFE(string hostbin_exe,
       }
       if (proc_manager.hostbinError()) {
          err_printf("Hostbin exited with an error code.  Exiting\n");
-         return -1;
+         return false;
       }
    }
-   
+
    vector<string> &hostvec = io_thread.getHosts();
    if (hostvec.empty()) {
       err_printf("Empty hostlist from hostbin %s\n", hostbin_exe.c_str());
-      return -1;
+      return false;
    }
 
-   char **host_array = (char **) malloc(sizeof(char *) * (hostvec.size()+1));
+   host_array = (char **) malloc(sizeof(char *) * (hostvec.size()+1));
    for (unsigned int i = 0; i < hostvec.size(); i++)
       host_array[i] = const_cast<char *>(hostvec[i].c_str());
-   host_array[hostvec.size()] = NULL;
+   host_array[hostvec.size()] = NULL;   
 
-   int result = spindleInitFE(const_cast<const char **>(host_array), params);
-   if (result == -1) {
-      debug_printf("spindleInitFE returned an error\n");
-      return -1;
-   }
+   appid = id;
+   initDone = true;
+   return true;
+}
 
+const char **HostbinLauncher::getProcessTable()
+{
+   assert(host_array);
+   return const_cast<const char**>(host_array);
+}
+
+const char *HostbinLauncher::getDaemonArg()
+{
+   return "--spindle_hostbin";
+}
+
+bool HostbinLauncher::getReturnCodes(bool &daemon_done, int &daemon_ret,
+                                     vector<pair<app_id_t, int> > &app_rets)
+{
    while (!proc_manager.launcherDone()) {
       debug_printf3("Calling waitForResult for launcher exit\n");
       proc_manager.waitForResult();
    }
+   daemon_done = true;
+   daemon_ret = 0;
+   app_rets.push_back(make_pair(appid, proc_manager.launcherResult()));
+   return true;
+}
 
-   spindleCloseFE(params);
-
-   return proc_manager.launcherResult();
+void HostbinLauncher::getSecondaryDaemonArgs(vector<const char *> &secondary_args)
+{
+   char port_str[32], ss_str[32], port_num_str[32];
+   snprintf(port_str, 32, "%d", params->port);
+   snprintf(port_num_str, 32, "%d", params->num_ports);
+   snprintf(ss_str, 32, "%lu", params->unique_id);
+   secondary_args.push_back(strdup(port_str));
+   secondary_args.push_back(strdup(port_num_str));
+   secondary_args.push_back(strdup(ss_str));
 }

@@ -29,6 +29,7 @@ using namespace std;
 #include "config.h"
 #include "spindle_launch.h"
 #include "spindle_debug.h"
+#include "parseargs.h"
 
 #if !defined(STR)
 #define STR2(X) #X
@@ -64,6 +65,9 @@ using namespace std;
 #define NOMPI 273
 #define HOSTBIN 274
 #define PERSIST 275
+#define STARTSESSION 276
+#define RUNSESSION 277
+#define ENDSESSION 278
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -71,6 +75,7 @@ using namespace std;
 #define GROUP_SEC 4
 #define GROUP_LAUNCHER 5
 #define GROUP_MISC 6
+#define GROUP_SESSION 7
 
 #if defined(MUNGE)
 #define DEFAULT_SEC OPT_SEC_MUNGE
@@ -137,6 +142,8 @@ static int shm_cache_size = SHM_DEFAULT_SIZE;
 static opt_t use_subaudit = DEFAULT_USE_SUBAUDIT;
 static const opt_t persist = DEFAULT_PERSIST;
 
+static session_status_t session_status = sstatus_unused;
+static string session_id;
 
 static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
@@ -257,6 +264,12 @@ struct argp_option options[] = {
      "Don't hide spindle file descriptors from application", GROUP_MISC },
    { "persist", PERSIST, YESNO, 0,
      "Allow spindle servers to persist after the last client job has exited. Default: " DEFAULT_PERSIST_STR, GROUP_MISC },
+   { "start-session", STARTSESSION, NULL, 0,
+     "Start a persistent Spindle session and print the session-id to stdout", GROUP_SESSION },
+   { "end-session", ENDSESSION, "session-id", 0,
+     "End a persistent Spindle session with the given session-id" },
+   { "run-in-session", RUNSESSION, "session-id", 0,
+     "Run a new job in the given session" },
    {0}
 };
 
@@ -413,6 +426,23 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       hostbin_path = arg;
       return 0;
    }
+   else if (key == STARTSESSION) {
+      session_status = sstatus_start;
+      opts |= OPT_SESSION;
+      return 0;
+   }
+   else if (key == RUNSESSION) {
+      session_status = sstatus_run;
+      session_id = string(arg);
+      opts |= OPT_SESSION;
+      return 0;
+   }
+   else if (key == ENDSESSION) {
+      session_status = sstatus_end;
+      session_id = string(arg);
+      opts |= OPT_SESSION;
+      return 0;
+   }
    else if (key == ARGP_KEY_ARGS) {
       mpi_argv = state->argv + state->next;
       mpi_argc = state->argc - state->next;
@@ -460,9 +490,12 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= logging_enabled ? OPT_LOGUSAGE : 0;
       opts |= shm_cache_size > 0 ? OPT_SHMCACHE : 0;
 
+      if (opts & OPT_SESSION) 
+         opts |= OPT_PERSIST;
       return 0;
    }
-   else if (key == ARGP_KEY_NO_ARGS) {
+   else if (key == ARGP_KEY_NO_ARGS && 
+            !(session_status == sstatus_start || session_status == sstatus_end)) {
       argp_error(state, "No MPI command line found");
    }
    else {
@@ -508,7 +541,7 @@ unsigned int getPort()
    return spindle_port;
 }
 
-const string getLocation(int number)
+string getLocation(int number)
 {
    char num_s[32];
    snprintf(num_s, 32, "%d", number);
@@ -650,3 +683,13 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    debug_printf("Spindle options bitmask: %lu\n", (unsigned long) opts);
 }
 
+string get_arg_session_id()
+{
+   assert(session_status == sstatus_run || session_status == sstatus_end);
+   return session_id;
+}
+
+session_status_t get_session_status()
+{
+   return session_status;
+}
