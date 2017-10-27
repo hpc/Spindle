@@ -52,6 +52,10 @@ static int sock = -1;
 #define SOCKET_PREFIX "spin."
 #define MIN(X, Y) (X < Y ? X : Y)
 
+#define RET_JOB_DONE 1
+#define RET_RUN_CMD 2
+#define RET_END_SESSION 3
+
 static void create_session_id()
 {
    char *socket_name = tempnam(NULL, SOCKET_PREFIX);
@@ -191,27 +195,65 @@ static int safe_recv(int fd, void *buf, size_t buffer_size)
    return buffer_size;
 }
 
-static int send_msg(int app_argc, char **app_argv)
+static int send_msg(int fd, int app_argc, char **app_argv)
 {
    int result;
    
    debug_printf3("Sending message with argc %d\n", app_argc);
-   result = safe_send(sock, &app_argc, sizeof(app_argc));
+   result = safe_send(fd, &app_argc, sizeof(app_argc));
    if (result == -1)
       return -1;
 
    if (app_argv) {
       for (int i = 0; i < app_argc; i++) {
          int len = strlen(app_argv[i]);
-         result = safe_send(sock, &len, sizeof(len));
+         result = safe_send(fd, &len, sizeof(len));
          if (result == -1)
             return -1;
-         result = safe_send(sock, app_argv[i], len);
+         result = safe_send(fd, app_argv[i], len);
          if (result == -1)
             return -1;
       }
    }
 
+   return 0;
+}
+
+static int get_msg(int fd, int &argc, char** &argv)
+{
+   int arg_max = 16*1024;
+
+   int result = safe_recv(fd, &argc, sizeof(argc));
+   if (result == -1) {
+      debug_printf("Error receiving argc message\n");
+      return -1;
+   }
+
+   debug_printf3("Received argc value %d\n", argc);
+   if (argc > arg_max || argc < 0) {
+      err_printf("Nonsense values for argc in client request: %d > %d\n", argc, arg_max);
+      return -1;
+   }   
+   argv = (char **) malloc(sizeof(char *) * (argc+1));
+   for (int i = 0; i < argc; i++) {
+      int arglen = 0;
+      result = safe_recv(fd, &arglen, sizeof(arglen));
+      if (result == -1) {
+         return -1;
+      }
+      if (arglen > arg_max || (arglen < 0)) {
+         err_printf("Nonsense values for argv in client request: %d\n", arglen);
+         return -1;
+      }
+      char *arg = (char *) malloc(arglen+1);
+      result = safe_recv(fd, arg, arglen);
+      if (result == -1) {
+         return -1;
+      }
+      arg[arglen] = '\0';
+      argv[i] = arg;
+   }
+   argv[argc] = NULL;
    return 0;
 }
 
@@ -290,8 +332,6 @@ static map<app_id_t, int> socket_ids;
 
 int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &session_complete)
 {
-   int arg_max = 4096;
-
    debug_printf("Receiving client request in session handler\n");
 
    int client = accept_unixsocket();
@@ -304,14 +344,25 @@ int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &
       return 0;
    }
 
-   int argc;
-   int result = safe_recv(client, &argc, sizeof(argc));
+   int cmd;
+   int result = safe_recv(client, &cmd, sizeof(cmd));
    if (result == -1) {
+      debug_printf("Received bad initial message after connect\n");
       close(client);
       return -1;
    }
-   debug_printf3("Received argc value %d\n", argc);
-   if (argc == -1) {
+   if (cmd == RET_RUN_CMD) {
+      result = get_msg(client, app_argc, app_argv);
+      if (result == -1) {
+         debug_printf("Error reading message from client on socket %d\n", client);
+         close(client);
+         return -1;
+      }
+      appid = next_app_id++;
+      socket_ids[appid] = client;
+      session_complete = false;
+   }
+   if (cmd == RET_END_SESSION) {
       debug_printf("Received session shutdown message\n");
       session_complete = true;
       app_argc = 0;
@@ -319,39 +370,7 @@ int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &
       close(client);
       close(sock);
       unlink(session_socket.c_str());
-      return 0;
    }
-   if (argc > arg_max || argc < 0) {
-      err_printf("Nonsense values for argc in client request: %d > %d\n", argc, arg_max);
-      close(client);
-      return -1;
-   }
-   app_argc = argc;
-   app_argv = (char **) malloc(sizeof(char *) * (argc+1));
-   for (int i = 0; i < argc; i++) {
-      int arglen = 0;
-      result = safe_recv(client, &arglen, sizeof(arglen));
-      if (result == -1) {
-         close(client);
-         return -1;
-      }
-      if (arglen > (4*1024*1024) || (arglen < 0)) {
-         err_printf("Nonsense values for argv in client request: %d\n", arglen);
-         close(client);
-         return -1;
-      }
-      char *arg = (char *) malloc(arglen+1);
-      result = safe_recv(client, arg, arglen);
-      if (result == -1) {
-         close(client);
-         return -1;
-      }
-      arg[arglen] = '\0';
-      app_argv[i] = arg;
-   }
-   app_argv[argc] = NULL;
-   appid = next_app_id++;
-   socket_ids[appid] = client;
 
    return 0;
 }
@@ -369,22 +388,28 @@ int init_session(spindle_args_t *args)
       debug_printf("Starting new spindle session\n");
 
       create_session_id();
-      debug_printf("New session-id is %s\n", session_id.c_str());
+      debug_printf("New session code is %s\n", session_id.c_str());
       debug_printf("New session socket is %s\n", session_socket.c_str());
 
+      //Print new session id
+      write(1, session_id.c_str(), session_id.length());
+      write(1, "\n", 1);
+
+      close(0);
+      open("/dev/null", O_RDONLY);
+      close(1);
+      open("/dev/null", O_WRONLY);
+      //close(2);
+      //open("/dev/null", O_WRONLY);
+         
       pid_t pid = grandchild_fork();
       if (pid == -1) {
          //Error mode
          debug_printf("Error in grandchild forking for session. exiting.\n");
-         fprintf(stderr, "Error creating spindle session daemon\n");
          exit(-1);
       }
       else if (pid > 0) {
-         //In original process. Print session-id and exit
          debug_printf("Session daemon startup was successful.  Exiting\n");
-         setsid();
-         setpgid(0, 0);
-         printf("%s\n", session_id.c_str());
          exit(0);
       }
       else {
@@ -412,30 +437,62 @@ int init_session(spindle_args_t *args)
       debug_printf("New run in spindle session-id %s\n", session_id.c_str());
       int app_argc;
       char **app_argv;
+      int cmd = RET_RUN_CMD;
+      int rc;
       getAppArgs(&app_argc, &app_argv);
-      result = send_msg(app_argc, app_argv);
+      result = safe_send(sock, &cmd, sizeof(cmd));
       if (result == -1) {
-         fprintf(stderr, "ERROR: Spindle could not communicate with session %s\n", session_id.c_str());
-         close(sock);
-         exit(-1);
+         debug_printf("Error sending RET_RUN_CMD\n");
+         goto done;
+      }
+      result = send_msg(sock, app_argc, app_argv);
+      if (result == -1) {
+         debug_printf("Error sending app cmdline\n");
+         goto done;
       }
 
-      int rc = 0;
-      result = safe_recv(sock, &rc, sizeof(rc));
+      result = safe_recv(sock, &cmd, sizeof(cmd));
       if (result == -1) {
-         fprintf(stderr, "ERROR: Spindle was disconnected from session %s", session_id.c_str());
-         rc = -1;
+         debug_printf("Error receiving app cmd\n");
+         goto done;
       }
+
+      if (cmd == RET_RUN_CMD) {
+         result = get_msg(sock, app_argc, app_argv);
+         if (result == -1) {
+            debug_printf("Error receiving app cmdline\n");
+            goto done;
+         }
+         close(sock);
+         
+         execvp(app_argv[0], app_argv);
+         int error = errno;
+         fprintf(stderr, "Error running %s: %s\n", app_argv[0], strerror(error));
+         exit(-1);
+      }
+      else if (cmd == RET_JOB_DONE) {
+         result = safe_recv(sock, &rc, sizeof(rc));
+         if (result == -1) {
+            debug_printf("Error receiving app return code\n");
+            goto done;
+         }
+         debug_printf("Application exiting with code %d\n", rc);
+         close(sock);
+         exit(rc);
+      }
+     done:
+      fprintf(stderr, "Spindle error while communicating with session %s\n", session_id.c_str());
       close(sock);
-      exit(rc);
+      exit(-1);
    }
    
    if (sstatus == sstatus_end) {
       debug_printf("Telling session-id %s to shutdown\n", session_id.c_str());
-      result = send_msg(-1, NULL);
+      int cmd = RET_END_SESSION;
+      result = safe_send(sock, &cmd, sizeof(cmd));
       close(sock);
       if (result == -1) {
-         fprintf(stderr, "ERROR: Spindle could not communicate with session %s\n", session_id.c_str());
+         fprintf(stderr, "Spindle error while communicating with session %s\n", session_id.c_str());
          exit(-1);
       }
       exit(0);
@@ -447,10 +504,33 @@ int init_session(spindle_args_t *args)
 void mark_session_job_done(app_id_t appid, int rc)
 {
    map<app_id_t, int>::iterator i = socket_ids.find(appid);
+   debug_printf("Marking session %lu done with rc %d\n", appid, rc);
    assert(i != socket_ids.end());
    int client = i->second;
+   int cmd = RET_JOB_DONE;
    
+   safe_send(client, &cmd, sizeof(cmd));
    safe_send(client, &rc, sizeof(rc));
    socket_ids.erase(i);
    close(client);
+}
+
+int return_session_cmd(app_id_t appid, int app_argc, char **app_argv)
+{
+   map<app_id_t, int>::iterator i = socket_ids.find(appid);
+   assert(i != socket_ids.end());
+   int client = i->second;
+   int cmd = RET_RUN_CMD;
+   int result;
+
+   result = safe_send(client, &cmd, sizeof(cmd));
+   if (result != -1)
+      result = send_msg(client, app_argc, app_argv);
+
+   if (result == -1) {
+      debug_printf("safe_send returned error communicating on socket %d for session-id %lu\n", client, appid);
+   }
+   socket_ids.erase(i);
+   close(client);
+   return result;
 }

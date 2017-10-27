@@ -191,20 +191,22 @@ ModifyArgv::ModifyArgv(int argc_, char **argv_,
 {
 }
 
-void ModifyArgv::chooseParser()
+bool ModifyArgv::chooseParser()
 {
    if (!params->use_launcher) {
-      autodetectParser();
-      return;
+      if (!autodetectParser())
+         return false;
+      return true;
    }
 
    set<LauncherParser *> parsers;
    initParsers(params->use_launcher, parsers);
    assert(parsers.size() == 1);
    parser = new CmdLineParser(argc, argv, *parsers.begin());
+   return true;
 }
 
-void ModifyArgv::autodetectParser()
+bool ModifyArgv::autodetectParser()
 {
    //Get all the LauncherParsers we've been configured with
    set<LauncherParser *> parsers;
@@ -212,7 +214,7 @@ void ModifyArgv::autodetectParser()
    initParsers(default_launchers_enabled, parsers);
    if (parsers.empty()) {
       fprintf(stderr, "Error: Spindle was not configured with support for any MPI implementations.");
-      exit(-1);
+      return false;
    }
    
    //Get the list of CmdLineParsers that can work with our argv/argc
@@ -258,13 +260,15 @@ void ModifyArgv::autodetectParser()
       }      
    }
    if (cmdline_parsers.size() != 1) {
-      exit_w_err("Spindle could not identify the MPI implementation used on the command line");
+      print_err("Spindle could not identify the MPI implementation used on the command line");
+      return false;
    }
    parser = *cmdline_parsers.begin();
    params->use_launcher = parser->getParser()->getCode();
+   return true;
 }
 
-void ModifyArgv::exit_w_err(string msg)
+void ModifyArgv::print_err(string msg)
 {
    fprintf(stderr, "%s\n", msg.c_str());
    fprintf(stderr, "\n");
@@ -272,7 +276,6 @@ void ModifyArgv::exit_w_err(string msg)
    fprintf(stderr, " spindle -openmpi mpirun -np 4 a.out arg1 arg2\n");
    fprintf(stderr, "Alternatively, try adding the 'spindlemarker' keyword before your executable.  E.g:\n");
    fprintf(stderr, " spindle mpirun -np 4 spindlemarker a.out arg1 arg2\n\n");
-   exit(-1);
 }
 
 void ModifyArgv::modifyCmdLine()
@@ -335,15 +338,18 @@ void ModifyArgv::modifyCmdLine()
    new_argc = n;
 }
 
-void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
+bool ModifyArgv::getNewArgv(int &newargc, char** &newargv)
 {
    if (new_argv) {
       newargc = new_argc;
       newargv = new_argv;
-      return;
+      return true;
    }
    
-   chooseParser();
+   bool bresult = chooseParser();
+   if (!bresult)
+      return false;
+
    assert(parser);
 
    CmdLineParser::parse_ret_t result;
@@ -353,10 +359,12 @@ void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
          break;
       case CmdLineParser::no_exec:
          err_printf("Could not find executable in command line\n");
-         exit_w_err("Spindle was unable to locate an executable in your command line");
+         print_err("Spindle was unable to locate an executable in your command line");
+         return false;
       case CmdLineParser::no_launcher:
          err_printf("Could not find launcher in command line\n");
-         exit_w_err("Spindle was unable to find the job launcher command in your command line");
+         print_err("Spindle was unable to find the job launcher command in your command line");
+         return false;
    }
    
    modifyCmdLine();
@@ -374,4 +382,5 @@ void ModifyArgv::getNewArgv(int &newargc, char** &newargv)
    if (params->use_launcher == openmpi_launcher && params->startup_type == startup_lmon) {
       setOpenMPIInterceptEnv(argv[parser->launcherAt()]);
    }
+   return true;
 }

@@ -210,7 +210,7 @@ private:
          bool launcher_done = false, hostbin_done = false;
          fd_set read_set;
          int max_fd = 0;
-         int result;
+         int result = 0;
          FD_ZERO(&read_set);
          
 #define ADD_FD(FD)                                                \
@@ -548,9 +548,9 @@ private:
 
 protected:
    virtual bool spawnDaemon();
-   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
    HostbinLauncher(spindle_args_t *args);
 public:
+   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
    virtual const char **getProcessTable();
    virtual const char *getDaemonArg();
    virtual bool getReturnCodes(bool &daemon_done, int &daemon_ret,

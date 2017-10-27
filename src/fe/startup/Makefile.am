@@ -4,7 +4,7 @@ include_HEADERS = $(top_srcdir)/../include/spindle_launch.h
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
-CORE_SOURCES = spindle_fe.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c launcher.cc spindle_session.cc
+CORE_SOURCES = spindle_fe.cc parseargs.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\"
 CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la -lpthread
 if COBO
@@ -21,7 +21,7 @@ libspindlefe_la_LIBADD = $(CORE_LDADD)
 libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
 
 spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE
-spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc $(CORE_SOURCES)
+spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc launcher.cc spindle_session.cc launch_slurm.cc $(CORE_SOURCES)
 
 spindle_LDADD = $(CORE_LDADD) $(top_builddir)/openmpi_intercept/libparseompi.la $(top_builddir)/hostbin/libhostbin.la
 

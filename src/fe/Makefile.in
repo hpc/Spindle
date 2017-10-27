@@ -286,6 +286,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SPINDLEFE_LIB_VERSION = @SPINDLEFE_LIB_VERSION@
 STRIP = @STRIP@
+TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@

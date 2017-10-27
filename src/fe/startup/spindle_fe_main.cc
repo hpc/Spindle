@@ -48,6 +48,7 @@ extern Launcher *createLaunchmonLauncher(spindle_args_t *params);
 #endif
 extern Launcher *createSerialLauncher(spindle_args_t *params);
 extern Launcher *createHostbinLauncher(spindle_args_t *params);
+extern Launcher *createMPILauncher(spindle_args_t *params);
 
 Launcher *newLauncher(spindle_args_t *params)
 {
@@ -68,7 +69,10 @@ Launcher *newLauncher(spindle_args_t *params)
    else if (params->startup_type == startup_hostbin) {
       debug_printf("Starting application with hostbin\n");
       return createHostbinLauncher(params);
-      return NULL;
+   }
+   else if (params->startup_type == startup_mpi) {
+      debug_printf("Starting application with MPI startup\n");
+      return createMPILauncher(params);
    }
    err_printf("Mis-set use_launcher value: %d\n", (int) params->use_launcher);
    return NULL;
@@ -101,6 +105,7 @@ int main(int argc, char *argv[])
    int nonzero_rc = 0;
    bool session_shutdown = false, do_shutdown = false, initialized_spindle = false;
 
+   //Main loop when running multiple jobs
    for (;;) {
       vector<JobTask*> tasks;
       debug_printf("Getting next task in Spindle main loop\n");
@@ -127,7 +132,7 @@ int main(int argc, char *argv[])
             char **app_argv = NULL;
             app_id_t id;
             task->getAppArgs(id, app_argc, app_argv);
-            debug_printf("Running application with id %d: ", id);
+            debug_printf("Running application with id %lu: ", id);
             for (int i = 0; i < app_argc; i++) {
                bare_printf("%s ", app_argv[i]);
             }
@@ -137,9 +142,28 @@ int main(int argc, char *argv[])
                debug_printf("Failed in caller to launcher::setupJob\n");
             }
             else {
-               num_live_jobs++;
-               num_run_jobs++;
-               debug_printf("num_live_jobs = %d, num_run_jobs = %d\n", num_live_jobs, num_run_jobs);
+               debug_printf2("Modified app argv to: ");
+               for (int i = 0; i < app_argc; i++) {
+                  bare_printf2("%s ", app_argv[i]);
+               }
+               bare_printf2("\n");
+               if (params->opts & OPT_SESSION) {
+                  debug_printf("Returning app cmdline to proc with session-id %lu for running\n", id);
+                  result = (return_session_cmd(id, app_argc, app_argv) == 0);
+                  num_run_jobs++;
+               }
+               else {
+                  debug_printf("Spawning application for session-id %lu", id);
+                  result = launcher->spawnJob(id, app_argc, app_argv);
+                  num_live_jobs++;
+                  num_run_jobs++;
+                  debug_printf("num_live_jobs = %d, num_run_jobs = %d\n", num_live_jobs, num_run_jobs);
+               }
+            }
+            if (!result) {
+               debug_printf("Error launching session.  Marking it as done.\n");
+               if (params->opts & OPT_SESSION) 
+                  mark_session_job_done(id, -1);
             }
          }
          else if (task->isSessionShutdown()) {

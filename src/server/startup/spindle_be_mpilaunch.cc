@@ -14,16 +14,10 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(SPINDLE_SESSION_H_)
-#define SPINDLE_SESSION_H_
-
 #include "spindle_launch.h"
-#include "launcher.h"
+#include "spindle_debug.h"
 
-int init_session(spindle_args_t *args);
-int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &session_complete);
-int get_session_fd();
-int return_session_cmd(app_id_t appid, int app_argc, char **app_argv);
-void mark_session_job_done(app_id_t appid, int rc);
-
-#endif
+int startMPILaunchBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type)
+{
+   return spindleRunBE(port, num_ports, unique_id, security_type, NULL);
+}

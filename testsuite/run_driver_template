@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo Running: ./run_driver $*
+echo Running: ./run_driver $* $SPINDLE_LAUNCH_MODE
 
 cd TEST_RUN_DIR
 
@@ -31,6 +31,9 @@ export SPINDLE_OPTS="--preload=preload_file_list"
 fi
 if [ $2 == --push ] ; then 
 export SPINDLE_OPTS="--push"
+fi
+if [ $2 == --session ] ; then
+export SPINDLE_OPTS="--run-in-session $SESSION_ID"
 fi
 if [ $2 == --pull ] ; then 
 export SPINDLE_OPTS="--pull"

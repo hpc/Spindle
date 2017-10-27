@@ -40,16 +40,16 @@ class ModifyArgv {
    spindle_args_t *params;
    CmdLineParser *parser;
    
-   void exit_w_err(std::string str);
-   void autodetectParser();
-   void chooseParser();
+   void print_err(std::string str);
+   bool autodetectParser();
+   bool chooseParser();
    void modifyCmdLine();
    
   public:
    ModifyArgv(int argc, char **argv,
               int daemon_argc, char **daemon_argv,
               spindle_args_t *params);
-   void getNewArgv(int &newargc, char** &newargv);
+   bool getNewArgv(int &newargc, char** &newargv);
 };
 
 /**

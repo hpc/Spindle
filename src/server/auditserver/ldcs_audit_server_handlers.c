@@ -1763,7 +1763,7 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
    char pathname[MAX_PATH_LEN+1], *localpath;
    struct stat buf;
    ldso_info_t ldsoinfo;
-   int pos = 0, pathlen, result, payload_size;
+   int pos = 0, pathlen, result, payload_size = 0;
    char *buffer = (char *) msg->data;
    unsigned char *payload = NULL;
 
@@ -1921,8 +1921,8 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
    char *localpath;
    struct stat buf;
    ldso_info_t ldsoinfo;
-   unsigned char *buffer;
-   size_t buffer_size;
+   unsigned char *buffer = NULL;
+   size_t buffer_size = 0;
 
    debug_printf2("Loading existing metadata result for %s and broadcasting it\n", pathname);
    result = lookup_stat_cache(pathname, &localpath);

@@ -72,6 +72,7 @@ extern "C" {
 #define startup_lmon 1                      /* Start via LaunchMON */
 #define startup_hostbin 2                   /* Start via hostbin */
 #define startup_external 3                  /* An external mechanism starts Spindle */
+#define startup_mpi 4                       /* Start via the MPI launcher */
 
 typedef uint64_t unique_id_t;
 typedef uint64_t opt_t;

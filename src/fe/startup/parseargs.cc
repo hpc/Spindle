@@ -74,8 +74,8 @@ using namespace std;
 #define GROUP_NETWORK 3
 #define GROUP_SEC 4
 #define GROUP_LAUNCHER 5
-#define GROUP_MISC 6
-#define GROUP_SESSION 7
+#define GROUP_SESSION 6
+#define GROUP_MISC 7
 
 #if defined(MUNGE)
 #define DEFAULT_SEC OPT_SEC_MUNGE
@@ -238,6 +238,14 @@ struct argp_option options[] = {
    { "no-mpi", NOMPI, NULL, 0,
      "Run serial jobs instead of MPI job", GROUP_LAUNCHER },
    { NULL, 0, NULL, 0,
+     "Options for managing sessions, which can run multiple jobs out of one spindle cache.", GROUP_SESSION },
+   { "start-session", STARTSESSION, NULL, 0,
+     "Start a persistent Spindle session and print the session-id to stdout", GROUP_SESSION },
+   { "end-session", ENDSESSION, "session-id", 0,
+     "End a persistent Spindle session with the given session-id", GROUP_SESSION },
+   { "run-in-session", RUNSESSION, "session-id", 0,
+     "Run a new job in the given session", GROUP_SESSION },
+   { NULL, 0, NULL, 0,
      "Misc options", GROUP_MISC },
    { "audit-type", AUDITTYPE, "subaudit|audit", 0,
      "Use the new-style subaudit interface for intercepting ld.so, or the old-style audit interface.  The subaudit option reduces memory overhead, but is more complex.  Default is " DEFAULT_USE_SUBAUDIT_STR ".", GROUP_MISC },
@@ -245,6 +253,8 @@ struct argp_option options[] = {
      "Size of client shared memory cache in kilobytes, which can be used to improve performance if multiple processes are running on each node.  Default: " STR(SHM_DEFAULT_SIZE), GROUP_MISC },
    { "python-prefix", PYTHONPREFIX, "path", 0,
      "Colon-seperated list of directories that contain the python install location", GROUP_MISC },
+   { "cache-prefix", PYTHONPREFIX, "path", 0,
+     "Alias for python-prefix" },
    { "debug", DEBUG, YESNO, 0,
      "If yes, hide spindle from debuggers so they think libraries come from the original locations.  May cause extra overhead. Default: no", GROUP_MISC },
    { "hostbin", HOSTBIN, "EXECUTABLE", 0,
@@ -264,12 +274,6 @@ struct argp_option options[] = {
      "Don't hide spindle file descriptors from application", GROUP_MISC },
    { "persist", PERSIST, YESNO, 0,
      "Allow spindle servers to persist after the last client job has exited. Default: " DEFAULT_PERSIST_STR, GROUP_MISC },
-   { "start-session", STARTSESSION, NULL, 0,
-     "Start a persistent Spindle session and print the session-id to stdout", GROUP_SESSION },
-   { "end-session", ENDSESSION, "session-id", 0,
-     "End a persistent Spindle session with the given session-id" },
-   { "run-in-session", RUNSESSION, "session-id", 0,
-     "Run a new job in the given session" },
    {0}
 };
 
@@ -490,8 +494,13 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= logging_enabled ? OPT_LOGUSAGE : 0;
       opts |= shm_cache_size > 0 ? OPT_SHMCACHE : 0;
 
-      if (opts & OPT_SESSION) 
+      if (opts & OPT_SESSION) { 
          opts |= OPT_PERSIST;
+         if (startup_type == startup_lmon || startup_type == startup_hostbin) {
+            debug_printf("Changing unsupported startup type in session-mode to startup_mpi\n");
+            startup_type = startup_mpi;
+         }
+      }
       return 0;
    }
    else if (key == ARGP_KEY_NO_ARGS && 

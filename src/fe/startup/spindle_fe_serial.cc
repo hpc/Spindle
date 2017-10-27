@@ -29,34 +29,24 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 using namespace std;
 
-class SerialLauncher : public Launcher
+class SerialLauncher : public ForkLauncher
 {
-   friend void serial_on_child(int sig);
    friend Launcher *createSerialLauncher(spindle_args_t *params);
 private:
    bool initError;
    pid_t daemon_pid;
-   map<pid_t, app_id_t> app_pids;
-
    static SerialLauncher *slauncher;
 
    SerialLauncher(spindle_args_t *params_);
 protected:
    virtual bool spawnDaemon();
-   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
 public:
+   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
    virtual const char **getProcessTable();
    virtual const char *getDaemonArg();
-   virtual bool getReturnCodes(bool &daemon_done, int &daemon_ret,
-                               std::vector<std::pair<app_id_t, int> > &app_rets);
    virtual ~SerialLauncher();
 };
 SerialLauncher *SerialLauncher::slauncher = NULL;
-
-void serial_on_child(int)
-{
-   SerialLauncher::slauncher->markFinished();
-}
 
 Launcher *createSerialLauncher(spindle_args_t *params)
 {
@@ -65,14 +55,13 @@ Launcher *createSerialLauncher(spindle_args_t *params)
       delete SerialLauncher::slauncher;
       return NULL;
    }
-   return SerialLauncher::slauncher;
+   return static_cast<Launcher*>(SerialLauncher::slauncher);
 }
 
 SerialLauncher::SerialLauncher(spindle_args_t *params_) :
-   Launcher(params_),
+   ForkLauncher(params_),
    initError(false)
 {
-   signal(SIGCHLD, serial_on_child);
 }
 
 SerialLauncher::~SerialLauncher()
@@ -96,6 +85,7 @@ bool SerialLauncher::spawnJob(app_id_t id, int /*app_argc*/, char *app_argv[])
       execvp(app_argv[0], app_argv);
       int error = errno;
       err_printf("Error exec'ing application %s: %s\n", app_argv[0], strerror(error));
+      fprintf(stderr, "Error running %s: %s\n", app_argv[0], strerror(error)); 
       exit(-1);
       return false;
    }
@@ -127,51 +117,6 @@ bool SerialLauncher::spawnDaemon()
       err_printf("Error exec'ing daemon %s: %s\n", daemon_argv[0], strerror(error));
       exit(-1);
       return false;
-   }
-}
-
-bool SerialLauncher::getReturnCodes(bool &daemon_done, int &daemon_ret,
-                                    vector<pair<app_id_t, int> > &app_rets)
-{
-   for (;;) {
-      int status, result;
-      result = waitpid(-1, &status, WNOHANG);
-      if (result == 0 || (result == -1 && errno == ECHILD)) {
-         return true;
-      }
-      if (result == -1) {
-         err_printf("Error calling waitpid: %s\n", strerror(errno));
-         return false;
-      }
-      
-      map<pid_t, app_id_t>::iterator appi = app_pids.find(result);
-      if (WIFEXITED(status) && appi != app_pids.end()) {
-         debug_printf("App process %d exited with code %d\n", result, (int) WEXITSTATUS(status));
-         app_rets.push_back(make_pair(appi->second, WEXITSTATUS(status)));
-         app_pids.erase(appi);
-      }
-      else if (WIFSIGNALED(status) && appi != app_pids.end()) {
-         debug_printf("App process %d terminated with signal %d\n", result, WTERMSIG(status));
-         app_rets.push_back(make_pair(appi->second, -1));
-         app_pids.erase(appi);
-      }
-      else if (WIFEXITED(status) && result == daemon_pid) {
-         daemon_done = true;
-         daemon_ret = WEXITSTATUS(status);
-         if (daemon_ret == 0) 
-            debug_printf("Daemon process %d exited normally with exit code 0\n", daemon_pid);
-         else
-            err_printf("Daemon process %d exited with code %d\n", daemon_pid, daemon_ret);
-      }
-      else if (WIFSIGNALED(status) && result == daemon_pid) {
-         err_printf("Daemon process %d terminated with signal %d\n", daemon_pid, WTERMSIG(status));
-         daemon_done = true;
-         daemon_ret = -1;
-      }
-      else {
-         err_printf("Unexpected return from wait.  result = %d, status = %d\n", result, status);
-         return false;
-      }
    }
 }
 
