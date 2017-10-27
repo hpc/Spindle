@@ -49,17 +49,20 @@
 <li><tt>OPT_SHMCACHE</tt> - Use a shared memory cache optimization (only needed on BlueGene)</li>
 <li><tt>OPT_SUBAUDIT</tt> - Use the subaudit mechanism (needed on BlueGene and very old GLIBCs)</li>
 <li><tt>OPT_PERSIST</tt> - Spindle servers should remain running after all clients exit.</li>
-<li><tt>OPT_SEC</tt> - Security mode, set to one of the below OPT_SEC_* values:<ul>
+<li><tt>OPT_SEC</tt> - Security mode, set to one of the below OPT_SEC_* values:
+<ul>
 <li><tt>OPT_SEC_MUNGE</tt> - Use MUNGE to generate connection authentication keys</li>
 <li><tt>OPT_SEC_KEYLMON</tt> - Use LaunchMON to distribute security keys (not yet implemented)</li>
 <li><tt>OPT_SEC_KEYFILE</tt> - Generate a key and distribute it via a shared file system</li>
-<li><tt>OPT_SEC_NONE</tt> - Do not authenticate connections between Spindle components</li></li>
+<li><tt>OPT_SEC_NONE</tt> - Do not authenticate connections between Spindle components<br>
 </ul>
 Since OPT_SEC is a multi-bit value, it should be accessed with the following macros:
 <ul>
 <li><tt>OPT_SET_SEC(OPT, X)</tt> - Used to set the OPT_SEC part of the opt_t bitfield to the value X.  OPT should be an opt_t and X should be a OPT_SEC_* value.</li>
 <li><tt>OPT_GET_SEC(OPT)</tt> - Returns the OPT_SEC part of the opt_t bitfield specified by OPT.</li>
 </ul>
+</li>
+<li><tt>OPT_SESSION</tt> - Run in session mode, where spindle caches persist between runs</li>
 </ul>
 <br>
 
