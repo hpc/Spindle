@@ -77,14 +77,17 @@ SlurmLauncher::SlurmLauncher(spindle_args_t *params_) :
       initError = true;
       return;
    }
-   if (!getenv("SLURM_NNODES")) {
+   char *nnodes_str = getenv("SLURM_NNODES");
+   if (!nnodes_str)
+      nnodes_str = getenv("SLURM_JOB_NUM_NODES");
+   if (!nnodes_str) {
       fprintf(stderr, "ERROR: Spindle could not find the SLURM_NNODES environment variable. "
               "Please run spindle from an already-allocated session.\n");
       err_printf("Could not find SLURM_NNODES\n");
       initError = true;
       return;
    }   
-   nnodes = atoi(getenv("SLURM_NNODES"));
+   nnodes = atoi(nnodes_str);
    if (nnodes <= 0) {
       fprintf(stderr, "ERROR: Spindle could not parse the SLURM_NNODES environment variable. "
               "Please run spindle from an already-allocated session.\n");
