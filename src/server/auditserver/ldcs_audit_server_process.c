@@ -68,18 +68,22 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, u
    /* Initialize server->server network */
    ldcs_audit_server_md_init(port, num_ports, unique_id, &ldcs_process_data);
 
+
    /* Use network to broadcast configuration parameters */
    ldcs_message_t msg;
    msg.header.type = 0;
    msg.header.len = 0;
    msg.data = NULL;
    debug_printf2("Reading setup message from parent\n");
+
    result = ldcs_audit_server_md_recv_from_parent(&msg);
    if (result == -1) {
       err_printf("Error reading setup message from parent\n");
       return -1;
    }
    assert(msg.header.type == LDCS_MSG_SETTINGS);
+   ldcs_process_data.md_path = NULL;
+
    result = ldcs_audit_server_md_broadcast(&ldcs_process_data, &msg);
    if (result == -1) {
       err_printf("Error broadcast setup message to children\n");
@@ -88,6 +92,10 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, u
 
    *packed_setup_data = msg.data;
    *data_size = msg.header.len;
+   /* Synchronize here because a library file may be tranfered via ldcs_audit_server_md_recv_from_parent 
+      if a fast process start sending files by using this tree.
+    */
+   ldcs_audit_server_md_barrier();
 
    return 0;
 }
@@ -100,7 +108,9 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.location = args->location;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.md_roots = args->num_roots;
    ldcs_process_data.md_port = args->port;
+   ldcs_process_data.md_path = NULL;
    ldcs_process_data.opts = args->opts;
    ldcs_process_data.pending_requests = new_requestor_list();
    ldcs_process_data.completed_requests = new_requestor_list();
@@ -144,16 +154,21 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.serverfd = fd;
   
    ldcs_audit_server_md_register_fd(&ldcs_process_data);
-  
    /* register server listen fd to listener */
    if (fd != -1)
       ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
-  
    debug_printf3("Initializing cache\n");
    ldcs_cache_init();
 
    return 0;
 }  
+
+int ldcs_audit_server_network_post_setup(spindle_args_t* args)
+{
+  int result;
+  result = ldcs_audit_server_md_init_post_process(args->num_roots);
+  return result;
+}
 
 int ldcs_audit_server_run()
 {

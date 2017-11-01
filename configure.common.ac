@@ -1,9 +1,14 @@
 #Configure operations that are common between the Spindle and Spindle-client configurations
 #Network port and local storage location
+DEFAULT_ROOTS=1
 DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
 DEFAULT_NUM_COBO_PORTS=25
 
+AC_ARG_WITH(default-roots,
+            [AS_HELP_STRING([--with-default-roots=NUM],[The number of roots in a cobo network])],
+            [SPINDLE_ROOTS=${withval}],
+            [SPINDLE_ROOTS=$DEFAULT_ROOTS])
 AC_ARG_WITH(default-port,
             [AS_HELP_STRING([--with-default-port=NUM],[TCP/IP Port for Spindle server communication])],
             [SPINDLE_PORT=${withval}],
@@ -16,6 +21,7 @@ AC_ARG_WITH(localstorage,
             [AS_HELP_STRING([--with-localstorage=DIR],[Directory on back-ends for storing relocated files])],
             [SPINDLE_LOC=${withval}],
             [SPINDLE_LOC=$DEFAULT_LOC])
+AC_DEFINE_UNQUOTED([SPINDLE_ROOTS],[$SPINDLE_ROOTS],[The default number of roots in a cobo network])
 AC_DEFINE_UNQUOTED([SPINDLE_PORT],[$SPINDLE_PORT],[The default port for Spindle])
 AC_DEFINE_UNQUOTED([NUM_COBO_PORTS],[$NUM_COBO_PORTS],[Number of ports for COBO to search for an open port])
 AC_DEFINE_UNQUOTED([SPINDLE_MAX_PORT],[$(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))],[The maximum port value])

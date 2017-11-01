@@ -115,7 +115,7 @@ struct ldcs_process_data_struct
   char *pythonprefix;
   int number;
   int preload_done;
-  opt_t opts;
+  unsigned int opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
   requestor_list_t pending_metadata_requests;
@@ -126,7 +126,9 @@ struct ldcs_process_data_struct
   int md_size;
   int md_fan_out; 		/* number of childs */
   int md_listen_to_parent;
+  int md_roots;
   unsigned int md_port;
+  char *md_path;
   
   /* statistics */
   ldcs_server_stat_t server_stat;
@@ -136,6 +138,7 @@ typedef struct ldcs_process_data_struct ldcs_process_data_t;
 int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, unique_id_t unique_id,
                                     void **packed_setup_data, int *data_size);
 int ldcs_audit_server_process (spindle_args_t *args);
+int ldcs_audit_server_network_post_setup(spindle_args_t* args);
 int ldcs_audit_server_run();
 
 #define CLIENT_CB_AUX_FD INT32_MAX

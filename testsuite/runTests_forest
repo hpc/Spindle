@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#export SPINDLE_TEST_ARGS="$@"
+export SPINDLE_BLUEGENE="false"
+num_roots=$1
+
+./run_driver --dlopen --push --roots $num_roots
+./run_driver --dlreopen --push --roots $num_roots
+./run_driver --reorder --push --roots $num_roots
+./run_driver --partial --push --roots $num_roots
+./run_driver --ldpreload --push --roots $num_roots
+
+./run_driver --dependency --pull --roots $num_roots
+./run_driver --dlopen --pull --roots $num_roots
+./run_driver --dlreopen --pull --roots $num_roots
+./run_driver --reorder --pull --roots $num_roots
+./run_driver --partial --pull --roots $num_roots
+./run_driver --ldpreload --pull --roots $num_roots
+
+if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
+./run_driver --dependency --fork --roots $num_roots
+./run_driver --dlopen --fork --roots $num_roots
+./run_driver --dlreopen --fork --roots $num_roots
+./run_driver --reorder --fork --roots $num_roots
+./run_driver --partial --fork --roots $num_roots
+./run_driver --ldpreload --fork --roots $num_roots
+fi
+
+
+if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
+./run_driver --dependency --forkexec --roots $num_roots
+./run_driver --dlopen --forkexec --roots $num_roots
+./run_driver --dlreopen --forkexec --roots $num_roots
+./run_driver --reorder --forkexec --roots $num_roots
+./run_driver --partial --forkexec --roots $num_roots
+./run_driver --ldpreload --forkexec --roots $num_roots
+fi
+
+./run_driver --dependency --chdir --roots $num_roots
+./run_driver --dlopen --chdir --roots $num_roots
+./run_driver --dlreopen --chdir --roots $num_roots
+./run_driver --reorder --chdir --roots $num_roots
+./run_driver --partial --chdir --roots $num_roots
+./run_driver --ldpreload --chdir--roots $num_roots
+
+./run_driver --dependency --preload --roots $num_roots
+./run_driver --dlopen --preload --roots $num_roots
+./run_driver --dlreopen --preload --roots $num_roots
+./run_driver --reorder --preload --roots $num_roots
+./run_driver --partial --preload --roots $num_roots
+./run_driver --ldpreload --preload --roots $num_roots
+
+
+

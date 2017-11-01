@@ -798,6 +798,7 @@ static int handle_exit_broadcast(ldcs_process_data_t *procdata)
    out_msg.header.len = 0;
    out_msg.data = NULL;
 
+   procdata->md_path = NULL;
    ldcs_audit_server_md_broadcast(procdata, &out_msg);
 
    mark_exit();
@@ -819,11 +820,13 @@ static int handle_request(ldcs_process_data_t *procdata, node_peer_t from, ldcs_
       err_printf("Badly formed request message with starting char '%c'\n", msg_type);
       return -1;
    }
+   procdata->md_path = pathname;
    is_dir = (msg_type == 'D');
    if (is_dir)
       return handle_request_directory(procdata, from, pathname);
    else
       return handle_request_file(procdata, from, pathname);
+   procdata->md_path = NULL;
 
    return result;
 }
@@ -1002,8 +1005,9 @@ static int handle_send_directory_query(ldcs_process_data_t *procdata, char *dire
 
    bytes_written = snprintf(out_msg.data, MAX_PATH_LEN+1, "D%s", directory);
    out_msg.header.len = bytes_written+1;
-
+   procdata->md_path = directory;
    ldcs_audit_server_md_forward_query(procdata, &out_msg);
+   procdata->md_path = NULL;
    return 0;
 }
 
@@ -1023,7 +1027,10 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath)
    bytes_written = snprintf(out_msg.data, MAX_PATH_LEN+1, "F%s", fullpath);
    out_msg.header.len = bytes_written+1;
 
+
+   procdata->md_path = fullpath;
    ldcs_audit_server_md_forward_query(procdata, &out_msg);
+   procdata->md_path = NULL;
    return 0;
 }
 
@@ -1155,7 +1162,9 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
 
    if (procdata->dist_model == LDCS_PUSH || force_broadcast) {
       debug_printf3("Pushing message to all children\n");
+      procdata->md_path = key;
       result = ldcs_audit_server_md_broadcast_noncontig(procdata, msg, secondary_data, secondary_size);
+      procdata->md_path = NULL;
       if (result == -1)
          global_result = -1;
       have_done_broadcast = 1;
@@ -1382,6 +1391,7 @@ static int handle_preload_done(ldcs_process_data_t *procdata)
    done_msg.header.len = 0;
    done_msg.data = NULL;
 
+   procdata->md_path = NULL;
    result = ldcs_audit_server_md_broadcast(procdata, &done_msg);
    if (result == -1) {
       err_printf("Error broadcasting done message during preload\n");
@@ -1409,6 +1419,7 @@ static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message
    int result, nc, global_result = 0, found_client = 0;
 
    debug_printf("Recieved notice to selfload file %s\n", filename);
+
    result = handle_send_msg_to_keys(procdata, msg, filename, NULL, 0, request_broadcast, 0);
    if (result == -1) {
       err_printf("Could not send selfload file message\n");
@@ -1745,6 +1756,7 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
 
    /* Send packet on network */
    starttime = ldcs_get_time();
+
    result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, 1);
    procdata->server_stat.libdist.cnt++;
    procdata->server_stat.libdist.bytes += packet_size;
@@ -1858,6 +1870,7 @@ static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname
 {
    ldcs_message_t msg;
    int pathlen;
+   int ret;
 
    if (been_requested(procdata->pending_metadata_requests, pathname)) {
       debug_printf2("Metadata %s has already been requested.  Not resending request\n", pathname);
@@ -1877,7 +1890,10 @@ static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname
    msg.header.len = pathlen;
    msg.data = pathname;
 
-   return ldcs_audit_server_md_forward_query(procdata, &msg);
+   procdata->md_path = pathname;
+   ret = ldcs_audit_server_md_forward_query(procdata, &msg);
+   procdata->md_path = NULL;
+   return ret;
 }
 
 /**
@@ -1999,6 +2015,7 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
    }
    else {
       debug_printf2("Sending exit ready message to parent\n");
+      procdata->md_path = NULL;
       return ldcs_audit_server_md_forward_query(procdata, &msg);
    }
 }
@@ -2054,5 +2071,9 @@ static int handle_send_exit_cancel(ldcs_process_data_t *procdata)
    msg.header.len = 0;
    msg.data = NULL;
 
+   procdata->md_path = NULL;
+#ifdef LDCS_DBG
+   cobo_dbg_printf("handle_send_exit_cancel: %s", procdata->md_path);
+#endif
    return ldcs_audit_server_md_forward_query(procdata, &msg);
 }

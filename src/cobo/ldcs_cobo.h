@@ -39,6 +39,10 @@ extern "C" {
 #include "handshake.h"
 
 #define COBO_SUCCESS (0)
+#define COBO_PRIMARY_TREE (0)
+#define COBO_FOREST (-1)
+#define COBO_ALL_PARENTS (-2)
+#define COBO_ALL_CHILDS  (-3)
 
 #define COBO_NAMESPACE ldcs
 
@@ -46,6 +50,7 @@ extern "C" {
 #define COMBINE2(a, b) a ## _ ## b
 #define COMBINE(a, b) COMBINE2(a, b)
 #define cobo_open COMBINE(COBO_NAMESPACE, cobo_open)
+#define cobo_open_forest COMBINE(COBO_NAMESPACE, cobo_open_forest)
 #define cobo_close COMBINE(COBO_NAMESPACE, cobo_close)
 #define cobo_get_parent_socket COMBINE(COBO_NAMESPACE, cobo_get_parent_socket)
 #define cobo_barrier COMBINE(COBO_NAMESPACE, cobo_barrier)
@@ -75,6 +80,9 @@ extern "C" {
 
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
 int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int *num_ranks);
+
+/* Convet form tree to forest */
+int cobo_open_forest();
 
 /* shut down the connections between tasks and free data structures */
 int cobo_close();
@@ -148,8 +156,13 @@ int cobo_server_get_root_socket(int* fd);
 
 extern double __cobo_ts;
 
+int cobo_get_num_tree(int *num_trees);
+int cobo_get_forest_child_socket(int tree_id, int num, int *fd);
+int cobo_get_num_forest_childs(int tree_id, int* num_childs);
+int cobo_get_forest_parent_socket(int tree_id, int *fd);
+int cobo_get_forest_parent_socket_at(int num, int *fd);
+int cobo_get_num_forest_parents(int tree_id, int *num_parents);
 int cobo_get_num_childs(int* num_childs);
-
 /* Methods to access child fds */
 int cobo_get_child_socket(int num, int *fd);
 

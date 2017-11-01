@@ -130,6 +130,9 @@
 /* The default port for Spindle */
 #undef SPINDLE_PORT
 
+/* The default number of roots in a cobo network */
+#undef SPINDLE_ROOTS
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

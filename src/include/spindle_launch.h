@@ -80,6 +80,9 @@ typedef struct {
    /* A unique number that will be used to identify this spindle session */
    unsigned int number;
 
+   /* The number of roots in the cobo network */
+   unsigned int num_roots;
+
    /* The beginning port in a range that will be used for server->server communication */
    unsigned int port;
 
