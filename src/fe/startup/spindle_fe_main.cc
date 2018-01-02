@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
                   num_run_jobs++;
                }
                else {
-                  debug_printf("Spawning application for session-id %lu", id);
+                  debug_printf("Spawning application for session-id %lu\n", id);
                   result = launcher->spawnJob(id, app_argc, app_argv);
                   num_live_jobs++;
                   num_run_jobs++;

@@ -68,6 +68,7 @@ using namespace std;
 #define STARTSESSION 276
 #define RUNSESSION 277
 #define ENDSESSION 278
+#define LAUNCHERSTARTUP 279
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -155,6 +156,12 @@ static char *user_python_prefixes = NULL;
 #define DEFAULT_USE_SUBAUDIT_STR "audit"
 #endif
 
+#if defined(HAVE_LMON)
+#define DEFAULT_MPI_STARTUP startup_lmon
+#else
+#define DEFAULT_MPI_STARTUP startup_mpi
+#endif
+
 #if DEFAULT_PERSIST == 1
 #define DEFAULT_PERSIST_STR "Yes"
 #else
@@ -209,7 +216,7 @@ struct argp_option options[] = {
    { "security-munge", SECMUNGE, NULL, 0,
      "Use munge for security authentication", GROUP_SEC },
 #endif
-#if defined(SECLMON)
+#if defined(SECLMON) && defined(HAVE_LMON)
    { "security-lmon", SECKEYLMON, NULL, 0,
      "Use LaunchMON to exchange keys for security authentication", GROUP_SEC },
 #endif
@@ -234,6 +241,10 @@ struct argp_option options[] = {
 #if defined(ENABLE_WRECKRUN_LAUNCHER)
    { "wreck", WRECK, NULL, 0,
      "MPI Job is launched with the wreck job launcher.", GROUP_LAUNCHER },
+#endif
+#if defined(ENABLE_SRUN_LAUNCHER)
+   { "launcher-startup", LAUNCHERSTARTUP, NULL, 0,
+     "Launch spindle daemons using the system's job launcher (requires an already set-up session).", GROUP_LAUNCHER },
 #endif
    { "no-mpi", NOMPI, NULL, 0,
      "Run serial jobs instead of MPI job", GROUP_LAUNCHER },
@@ -447,6 +458,14 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= OPT_SESSION;
       return 0;
    }
+   else if (key == LAUNCHERSTARTUP) {
+      startup_type = startup_mpi;
+#if defined(TESTRM)
+      if (strcmp(TESTRM, "slurm") == 0)
+         launcher = srun_launcher;
+#endif
+      return 0;
+   }
    else if (key == ARGP_KEY_ARGS) {
       mpi_argv = state->argv + state->next;
       mpi_argc = state->argc - state->next;
@@ -476,12 +495,14 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= all_reloc_opts & ~disabled_opts & (enabled_opts | default_reloc_opts);
 
       /* Set startup type */
-      if (launcher == serial_launcher)
-         startup_type = startup_serial;
-      else if (hostbin_path != NULL)
-         startup_type = startup_hostbin;
-      else
-         startup_type = startup_lmon;
+      if (startup_type == 0) {
+         if (launcher == serial_launcher)
+            startup_type = startup_serial;
+         else if (hostbin_path != NULL)
+            startup_type = startup_hostbin;
+         else
+            startup_type = DEFAULT_MPI_STARTUP;
+      }
 
       /* Set security options */
       if (sec_model == -1)
