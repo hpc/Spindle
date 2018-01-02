@@ -679,12 +679,10 @@ int main(int argc, char *argv[])
    // or a backtick'd `spindle --start-session` may not return.
    // since the output daemon could have forked from the spindle
    // session we may have its pipe from the backticks open.  
-   if (!runTests) {
-      close(0);
-      open("/dev/null", O_RDONLY);
-      close(1);
-      open("/dev/null", O_WRONLY);
-   }
+   close(0);
+   open("/dev/null", O_RDONLY);
+   close(1);
+   open("/dev/null", O_WRONLY);
 
    if (runDebug) {
       debug_log = new OutputLog(debug_fname);

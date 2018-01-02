@@ -49,12 +49,12 @@ fi
 ./run_driver --partial --preload
 ./run_driver --ldpreload --preload
 
-export SESSION_ID=`SPINDLE_EXEC --start-session`
+export SESSION_ID=`./run_driver --start-session`
 ./run_driver --dependency --session
 ./run_driver --dlopen --session
 ./run_driver --dlreopen --session
 ./run_driver --reorder --session
 ./run_driver --partial --session
 ./run_driver --ldpreload --session
-SPINDLE_EXEC --end-session $SESSION_ID
+./run_driver --end-session $SESSION_ID
 unset SESSION_ID

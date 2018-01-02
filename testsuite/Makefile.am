@@ -96,7 +96,7 @@ libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
 
 libsymlink.so: libtest10.so
-	$(AM_V_GEN) ln -s $< $@
+	$(AM_V_GEN) ln -fs $< $@
 
 libdepB.so: libdepB.c libdepC.so
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< -shared -L. -ldepC
