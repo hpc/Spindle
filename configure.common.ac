@@ -234,7 +234,7 @@ AC_DEFUN([CHOOSE_SEC],[
         LIBS=$LIBS_HOLD
 
         #Check for libgcrypt availability
-        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt"
+        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt -lgpg-error"
         CFLAGS="$CFLAGS $GCRYPT_CFLAGS"
         LIBS="$LIBS $GCRYPT_LIBS"
         HAVE_GCRYPT="true"

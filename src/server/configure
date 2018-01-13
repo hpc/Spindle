@@ -2762,8 +2762,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -16738,7 +16738,7 @@ $as_echo "no" >&6; }
         LIBS=$LIBS_HOLD
 
         #Check for libgcrypt availability
-        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt"
+        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt -lgpg-error"
         CFLAGS="$CFLAGS $GCRYPT_CFLAGS"
         LIBS="$LIBS $GCRYPT_LIBS"
         HAVE_GCRYPT="true"
