@@ -139,7 +139,7 @@ bool SlurmLauncher::spawnDaemon()
       return false;
    }
    else if (daemon_pid == 0) {
-      int total_args = 9 + daemon_argc;
+      int total_args = 10 + daemon_argc;
       char **new_daemon_args = (char **) malloc(total_args * sizeof(char *));
       int i = 0;
       char count_buffer[64];
@@ -148,6 +148,7 @@ bool SlurmLauncher::spawnDaemon()
       new_daemon_args[i++] = const_cast<char *>("--ntasks-per-node=1");
       new_daemon_args[i++] = const_cast<char *>("--wait=0");
       new_daemon_args[i++] = const_cast<char *>("--gres=none");
+      new_daemon_args[i++] = const_cast<char *>("--mem=0");      
       new_daemon_args[i++] = const_cast<char *>("-n");
       new_daemon_args[i++] = count_buffer;
       new_daemon_args[i++] = const_cast<char *>("-N");
