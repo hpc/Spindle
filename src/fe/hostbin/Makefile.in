@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -301,9 +302,10 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
 noinst_LTLIBRARIES = libhostbin.la
 libhostbin_la_SOURCES = launch_hostbin.cc
-libhostbin_la_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DLIBEXEC=\"${pkglibexecdir}\"
+libhostbin_la_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DLIBEXEC=\"${installdir}/libexec\"
 all: all-am
 
 .SUFFIXES:

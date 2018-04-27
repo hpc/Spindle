@@ -4,7 +4,7 @@ pkglib_LTLIBRARIES = libprint_ldso_audit.la
 print_ldso_entry_SOURCES = print_ldso_entry.c
 libprint_ldso_audit_la_SOURCES = print_ldso_audit.c
 
-print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(pkglibexecdir)\"
+print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(installlibexecdir)\"
 
 libprint_ldso_audit_la_LDFLAGS = -shared -avoid-version
 

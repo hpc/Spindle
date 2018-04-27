@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -355,13 +356,14 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
 pkglib_LTLIBRARIES = libompiintercept.la
 noinst_LTLIBRARIES = libparseompi.la
 libompiintercept_la_SOURCES = ompi_intercept.c
 libompiintercept_la_LDFLAGS = -shared -avoid-version
 libparseompi_la_SOURCES = parse_openmpi.cc
 AM_CPPFLAGS = -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/startup
-libparseompi_la_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\"
+libparseompi_la_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(installdir)/libexec/spindle\" -DPROGLIBDIR=\"$(installdir)/lib\"
 all: all-am
 
 .SUFFIXES:

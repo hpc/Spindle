@@ -6,6 +6,7 @@
 #
 #
 # Copyright (C) 1992-1996, 1998-2012 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 #
 #
 # This configure script is free software; the Free Software Foundation
@@ -14,6 +15,7 @@
 ## M4sh Initialization. ##
 ## -------------------- ##
 
+echo $* > /tmp/DAVE_SOLT_CONFIG
 # Be more Bourne compatible
 DUALCASE=1; export DUALCASE # for MKS sh
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then :
@@ -766,6 +768,7 @@ bindir
 program_transform_name
 prefix
 exec_prefix
+staging_prefix
 PACKAGE_URL
 PACKAGE_BUGREPORT
 PACKAGE_STRING
@@ -830,6 +833,7 @@ exec_prefix=NONE
 no_create=
 no_recursion=
 prefix=NONE
+staging_prefix=NONE
 program_prefix=NONE
 program_suffix=NONE
 program_transform_name=s,x,x,
@@ -846,6 +850,7 @@ x_libraries=NONE
 # by default will actually change.
 # Use braces instead of parens because sh, perl, etc. also accept them.
 # (The list follows the same order as the GNU Coding Standards.)
+
 bindir='${exec_prefix}/bin'
 sbindir='${exec_prefix}/sbin'
 libexecdir='${exec_prefix}/libexec'
@@ -971,6 +976,12 @@ do
   | --exec-pref=* | --exec-pre=* | --exec-pr=* | --exec-p=* | --exec-=* \
   | --exec=* | --exe=* | --ex=*)
     exec_prefix=$ac_optarg ;;
+  -staging-prefix | --staging_prefix | --staging-prefix | --staging-prefi \
+  | --staging-pref | --staging-pre | --staging-pr | --staging-p | --staging-) 
+    staging_prefix=staging_prefix ;;
+  -staging-prefix=* | --staging_prefix=* | --staging-prefix=* | --staging-prefi=* \
+  | --staging-pref=* | --staging-pre=* | --staging-pr=* | --staging-p=* | --staging-=*)
+    staging_prefix=$ac_optarg ;;
 
   -gas | --gas | --ga | --g)
     # Obsolete; use --with-gas.
@@ -13432,6 +13443,7 @@ gives unlimited permission to copy, distribute and modify it."
 
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
+installdir='$staging_prefix'
 INSTALL='$INSTALL'
 MKDIR_P='$MKDIR_P'
 AWK='$AWK'
@@ -14342,6 +14354,7 @@ s|@configure_input@|$ac_sed_conf_input|;t t
 s&@top_builddir@&$ac_top_builddir_sub&;t t
 s&@top_build_prefix@&$ac_top_build_prefix&;t t
 s&@srcdir@&$ac_srcdir&;t t
+s&@installdir@&$installdir&;t t
 s&@abs_srcdir@&$ac_abs_srcdir&;t t
 s&@top_srcdir@&$ac_top_srcdir&;t t
 s&@abs_top_srcdir@&$ac_abs_top_srcdir&;t t

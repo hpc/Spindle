@@ -6,6 +6,7 @@
 #
 #
 # Copyright (C) 1992-1996, 1998-2012 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp. 
 #
 #
 # This configure script is free software; the Free Software Foundation
@@ -885,6 +886,7 @@ exec_prefix=NONE
 no_create=
 no_recursion=
 prefix=NONE
+staging_prefix=NONE
 program_prefix=NONE
 program_suffix=NONE
 program_transform_name=s,x,x,
@@ -901,6 +903,13 @@ x_libraries=NONE
 # by default will actually change.
 # Use braces instead of parens because sh, perl, etc. also accept them.
 # (The list follows the same order as the GNU Coding Standards.)
+
+#if [ -z "$staging_prefix" ]; then 
+#	installdir='${prefix}'
+#else
+#	installdir='${staging_prefix}'
+#fi
+
 bindir='${exec_prefix}/bin'
 sbindir='${exec_prefix}/sbin'
 libexecdir='${exec_prefix}/libexec'
@@ -1188,6 +1197,13 @@ do
   -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
     srcdir=$ac_optarg ;;
 
+  -staging-prefix | --staging_prefix | --staging-prefix | --staging-prefi \
+  | --staging-pref | --staging-pre | --staging-pr | --staging-p | --staging-)
+    staging_prefix=staging_prefix ;;
+  -staging-prefix=* | --staging_prefix=* | --staging-prefix=* | --staging-prefi=* \
+  | --staging-pref=* | --staging-pre=* | --staging-pr=* | --staging-p=* | --staging-=*)
+    staging_prefix=$ac_optarg ;;
+ 
   -sysconfdir | --sysconfdir | --sysconfdi | --sysconfd | --sysconf \
   | --syscon | --sysco | --sysc | --sys | --sy)
     ac_prev=sysconfdir ;;
@@ -1298,7 +1314,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir staging_prefix
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -18301,6 +18317,7 @@ This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
 ac_pwd='$ac_pwd'
+installdir='$staging_prefix'
 srcdir='$srcdir'
 INSTALL='$INSTALL'
 MKDIR_P='$MKDIR_P'
@@ -19304,6 +19321,7 @@ s&@top_build_prefix@&$ac_top_build_prefix&;t t
 s&@srcdir@&$ac_srcdir&;t t
 s&@abs_srcdir@&$ac_abs_srcdir&;t t
 s&@top_srcdir@&$ac_top_srcdir&;t t
+s&@installdir@&$installdir&;t t
 s&@abs_top_srcdir@&$ac_abs_top_srcdir&;t t
 s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t

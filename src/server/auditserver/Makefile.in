@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -313,10 +314,11 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
 
 #noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
 noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
-AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(pkglibexecdir)\"
+AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(installdir)/libexec/spindle\"
 LDADD = $(top_builddir)/cache/libldcs_cache.la
 #AM_LDFLAGS = -all-static
 libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c
