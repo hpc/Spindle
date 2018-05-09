@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -303,9 +304,10 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
 noinst_LTLIBRARIES = libfelmon.la
 libfelmon_la_SOURCES = spindle_fe_lmon.cc
-libfelmon_la_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\"
+libfelmon_la_CPPFLAGS = $(LAUNCHMON_INC) -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DBINDIR=\"$(installdir)/bin\" -DLIBEXECDIR=\"$(installdir)/libexec/spindle/\"
 libfelmon_la_LIBADD = $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonfeapi
 all: all-am
 

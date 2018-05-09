@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -331,10 +332,12 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
+
 pkglib_LTLIBRARIES = libprint_ldso_audit.la
 print_ldso_entry_SOURCES = print_ldso_entry.c
 libprint_ldso_audit_la_SOURCES = print_ldso_audit.c
-print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(pkglibexecdir)\"
+print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(installdir)/libexec/spindle/\"
 libprint_ldso_audit_la_LDFLAGS = -shared -avoid-version
 @BGQ_BLD_TRUE@print_ldso_entry_LDFLAGS = -dynamic
 all: all-am

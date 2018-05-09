@@ -1,7 +1,7 @@
 #noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
 noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
 
-AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(pkglibexecdir)\"
+AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(installlibexecdir)\"
 LDADD = $(top_builddir)/cache/libldcs_cache.la
 #AM_LDFLAGS = -all-static
 

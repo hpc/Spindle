@@ -2,6 +2,7 @@
 # @configure_input@
 
 # Copyright (C) 1994-2013 Free Software Foundation, Inc.
+# Copyright (C) 2018 International Business Machines Corp.
 
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -299,8 +300,9 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+installdir = @installdir@
 spindle_bootstrap_LDFLAGS = -all-static $(AM_LDFLAGS)
-spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/client
+spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(installdir)/libexec/spindle\" -DPROGLIBDIR=\"$(installdir)/lib/spindle\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/client
 spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la \
 	$(am__append_1) $(am__append_2)
 spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/client/exec_util.c
