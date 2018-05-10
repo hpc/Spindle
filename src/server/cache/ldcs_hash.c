@@ -88,6 +88,9 @@ struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, c
    entry->localpath = localname;
    entry->buffer = buffer;
    entry->buffer_size = buffer_size;
+
+   add_global_name(entry->filename, entry->dirname, entry->localpath);
+   
    return entry;
 }
 
@@ -187,6 +190,7 @@ int ldcs_hash_init() {
     ldcs_hash_table[index].filename = NULL;
     ldcs_hash_table[index].dirname  = NULL;
   }
+  init_global_name_list();
   return(rc);
 }
 
