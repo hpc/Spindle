@@ -899,8 +899,15 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    char *pathname = client->query_globalpath;
    int broadcast_result, client_result;
    metadata_t mdtype;
-   
-   debug_printf3("Entry\n");
+   char *globalname;
+   /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
+   globalname = lookup_global_name(pathname);
+
+   if (globalname != NULL) {
+     debug_printf3("Remapping stat of %s to %s\n", pathname, globalname);
+     pathname = globalname;
+   }
+
    if (client->is_stat)
       mdtype = metadata_stat;
    else if (client->is_loader)
@@ -908,7 +915,6 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    else
       assert(0);
       
-
    stat_result = handle_howto_metadata(procdata, pathname);
    switch (stat_result) {
       case REQUEST_METADATA:
@@ -1633,16 +1639,7 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
 static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf)
 {
    double starttime;
-   char *globalname;
    int result, file_exists;
-
-   /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
-   globalname = lookup_global_name(pathname);
-
-   if (globalname != NULL) {
-     debug_printf3("Remapping stat of %s to %s\n", pathname, globalname);
-     pathname = globalname;
-   }
 
    /* Don't read if already cached */
    result = lookup_stat_cache(pathname, localname);

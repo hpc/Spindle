@@ -62,6 +62,9 @@ int ldcs_audit_server_filemngt_init (char* location) {
 char* ldcs_is_a_localfile (char* filename) {
   int len = strlen(_ldcs_audit_server_tmpdir);
 
+  if ( *filename == '*' )
+    filename++;           /* Skip preceeding '*' if present for stat */
+
   if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) != 0 )
     return NULL;
 
