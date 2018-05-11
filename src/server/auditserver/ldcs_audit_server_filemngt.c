@@ -58,6 +58,16 @@ int ldcs_audit_server_filemngt_init (char* location) {
    return(rc);
 }
 
+/* Returns NULL if not a local file. Otherwise, returns pointer to file portion of string */
+char* ldcs_is_a_localfile (char* filename) {
+  int len = strlen(_ldcs_audit_server_tmpdir);
+
+  if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) != 0 )
+    return NULL;
+
+  return filename + len + 1;  /* Account for the "/" character at the end */
+}
+
 char *filemngt_calc_localname(char *global_name)
 {
    static unsigned int unique_str_num = 0;

@@ -29,6 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
 #include "stat_cache.h"
+#include "global_name.h"
 #include "ldcs_audit_server_handlers.h"
 #include "ldcs_audit_server_requestors.h"
 #include "spindle_launch.h"
@@ -1621,7 +1622,16 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
 static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf)
 {
    double starttime;
+   char *globalname;
    int result, file_exists;
+
+   /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
+   globalname = lookup_global_name(pathname);
+
+   if (globalname != NULL) {
+     debug_printf3("Remapping stat of %s to %s\n", pathname, globalname);
+     pathname = globalname;
+   }
 
    /* Don't read if already cached */
    result = lookup_stat_cache(pathname, localname);
