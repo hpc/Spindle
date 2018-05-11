@@ -23,7 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_debug.h"
 #include "global_name.h"
 
-#define INITIAL_GLOBAL_NAME_ARRAY_SIZE 1
+#define INITIAL_GLOBAL_NAME_ARRAY_SIZE (10*1024)
 typedef struct global_name_entry_t
 {
    char *global_name;
@@ -55,11 +55,16 @@ void grow_global_name_list()
 
 void add_global_name(char* pathname, char* localpath) 
 {
+  if (lookup_global_name(localpath) != NULL) {
+    debug_printf3("%s already present in global name cache\n", localpath);
+    return;
+  }
+
   char path[MAX_PATH_LEN+1];
 
-  sprintf(path, "%s%s", "*", pathname);
+  sprintf(path, "%s%s", (*pathname == '*') ? "" : "*", pathname);
 
-  debug_printf3("Adding %s, %s, index=%ld\n", localpath, path, global_name_array_index);
+  debug_printf3("Adding %s, %s, index=%lx\n", localpath, path, global_name_array_index);
 
   if (global_name_array_index > hiwat_global_name_array_size)
     grow_global_name_list();
@@ -112,11 +117,13 @@ char* lookup_global_name(char* localpath)
 
   index = get_global_file_index(fname);
 
-  debug_printf3("get_global_file_index(%s) returned index=%d : global_name_array_index=%d\n", fname, index, global_name_array_index);
-  assert(index < global_name_array_index);
+  if (index >= global_name_array_index) {
+    debug_printf3("%s is not yet in global_name_cache\n", fname);
+    return NULL;
+  }
 
   rval = (*localpath == '*') ? global_name_array[index].global_name : global_name_array[index].global_name+1;
 
-  debug_printf3("global name %s for local name %s found at index %d\n", rval, localpath, index);
+  debug_printf3("global name %s for local name %s found at index %x\n", rval, localpath, index);
   return rval;
 }

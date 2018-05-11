@@ -254,6 +254,16 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
       pathname++;
    }
 
+   if ( is_stat ) {
+     /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
+     char *globalname = lookup_global_name(pathname);
+
+     if (globalname != NULL) {
+       debug_printf3("Remapping stat of %s --> %s\n", pathname, globalname);
+       pathname = globalname;
+     }
+   }
+
    parseFilenameNoAlloc(pathname, file, dir, MAX_PATH_LEN);
 
    /* do initial check of query, parse the filename and store info */
@@ -902,13 +912,6 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    metadata_t mdtype;
 
    if (client->is_stat) {
-      /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
-      char *globalname = lookup_global_name(pathname);
-
-      if (globalname != NULL) {
-        debug_printf3("Will remap stat of %s --> %s\n", pathname, globalname);
-        //pathname = globalname;
-      }
       mdtype = metadata_stat;
    }
    else if (client->is_loader)
