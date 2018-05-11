@@ -570,6 +570,7 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
     **/
    *localname = filemngt_calc_localname(pathname);
    assert(*localname);
+   add_global_name(pathname, *localname);
 
    starttime = ldcs_get_time();
    result = filemngt_create_file_space(*localname, size, &buffer, fd);
@@ -899,17 +900,17 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    char *pathname = client->query_globalpath;
    int broadcast_result, client_result;
    metadata_t mdtype;
-   char *globalname;
-   /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
-   globalname = lookup_global_name(pathname);
 
-   if (globalname != NULL) {
-     debug_printf3("Remapping stat of %s to %s\n", pathname, globalname);
-     pathname = globalname;
-   }
+   if (client->is_stat) {
+      /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
+      char *globalname = lookup_global_name(pathname);
 
-   if (client->is_stat)
+      if (globalname != NULL) {
+        debug_printf3("Will remap stat of %s --> %s\n", pathname, globalname);
+        //pathname = globalname;
+      }
       mdtype = metadata_stat;
+   }
    else if (client->is_loader)
       mdtype = metadata_loader;
    else
@@ -1677,6 +1678,7 @@ static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, 
    else {
       debug_printf3("Successfully stat'd file %s\n", pathname);
       *localname = filemngt_calc_localname(pathname);
+      add_global_name(pathname, *localname);
    }
    add_stat_cache(pathname, *localname);
 
@@ -1701,8 +1703,10 @@ static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int 
 {
    double starttime;
 
-   if (file_exists) 
+   if (file_exists) {
       *localname = filemngt_calc_localname(pathname);
+      add_global_name(pathname, *localname);
+   }
    else
       *localname = NULL;
    add_stat_cache(pathname, *localname);

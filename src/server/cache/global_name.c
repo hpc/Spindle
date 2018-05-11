@@ -53,11 +53,11 @@ void grow_global_name_list()
   assert(global_name_array);
 }
 
-void add_global_name(char* filename, char* dirname, char* localpath) 
+void add_global_name(char* pathname, char* localpath) 
 {
   char path[MAX_PATH_LEN+1];
 
-  sprintf(path, "%s%s/%s", "*", dirname, filename);
+  sprintf(path, "%s%s", "*", pathname);
 
   debug_printf3("Adding %s, %s, index=%ld\n", localpath, path, global_name_array_index);
 
@@ -78,11 +78,12 @@ static int get_global_file_index(char* file)
   assert("Filename length too large" && len < MAX_PATH_LEN);
   
   for (cnt = 0; cnt < len; ++cnt) {
-    if (file[cnt] == '_' && cnt > 0)
+    if (file[cnt] == '-' && cnt > 0)
       break;
 
-    if ( ! isxdigit(file[cnt]) )
+    if ( ! isxdigit(file[cnt]) ) {
       return -1;
+    }
 
     buf[cnt] = file[cnt];
   }
@@ -103,12 +104,15 @@ char* lookup_global_name(char* localpath)
   char *rval;
   int index;
 
+  debug_printf3("localpath=%s\n", localpath);
   if (fname == NULL) {
     debug_printf3("Returning early since %s is not a local name\n", localpath);
     return NULL;      /* Not a local name */
   }
 
   index = get_global_file_index(fname);
+
+  debug_printf3("get_global_file_index(%s) returned index=%d : global_name_array_index=%d\n", fname, index, global_name_array_index);
   assert(index < global_name_array_index);
 
   rval = (*localpath == '*') ? global_name_array[index].global_name : global_name_array[index].global_name+1;

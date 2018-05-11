@@ -21,6 +21,6 @@ int init_global_name();
 
 int init_global_name_list(void);
 void grow_global_name_list(void);
-void add_global_name(char* filename, char* dirname, char* localpath);
+void add_global_name(char* pathname, char* localpath);
 char* lookup_global_name(char* localpath);
 #endif
