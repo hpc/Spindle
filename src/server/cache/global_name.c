@@ -59,7 +59,7 @@ void add_global_name(char* filename, char* dirname, char* localpath)
 
   sprintf(path, "%s/%s", dirname, filename);
 
-  debug_printf3("%s Adding %s, %s, index=%d\n", __func__, localpath, path, global_name_array_index);
+  debug_printf3("%s Adding %s, %s, index=%ld\n", __func__, localpath, path, global_name_array_index);
 
   if (global_name_array_index > hiwat_global_name_array_size)
     grow_global_name_list();

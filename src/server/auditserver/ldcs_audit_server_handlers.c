@@ -364,19 +364,29 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
 {
    handle_file_result_t result;
    int read_result, broadcast_result, client_result;
+   debug_printf3("Entry\n");
 
    ldcs_client_t *client = procdata->client_table + nc;
    if ((procdata->opts & OPT_PRELOAD) && !procdata->preload_done) {
       /* Postpone client requests until preload is complete */
+     debug_printf3("Postpone client requests until preload is complete\n");
       return 0;
    }
-   if (!client->query_open)
+   if (!client->query_open) {
+      debug_printf3("Not Open, Returning Early\n");
       return 0;
-   if (client->existance_query)
+   }
+   if (client->existance_query) {
+      debug_printf3("Calling handle_fileexist_test\n");
       return handle_fileexist_test(procdata, nc);
-   if (client->is_stat || client->is_loader)
+   }
+   if (client->is_stat || client->is_loader) {
+      debug_printf3("Calling handle_client_metadata\n");
       return handle_client_metadata(procdata, nc);
+   }
 
+
+   debug_printf3("Calling handle_howto_file\n");
    result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
                               client->query_dirname, &client->query_localpath);
    switch (result) {
@@ -890,6 +900,7 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    int broadcast_result, client_result;
    metadata_t mdtype;
    
+   debug_printf3("Entry\n");
    if (client->is_stat)
       mdtype = metadata_stat;
    else if (client->is_loader)
