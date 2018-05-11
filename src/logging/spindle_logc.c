@@ -39,9 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #error Expected to have DAEMON_NAME defined
 #endif
 
-#define STR2(S) #S
-#define STR(S) STR2(S)
-#define LOG_DAEMON STR(LIBEXEC) "/" STR(DAEMON_NAME)
+static char spindle_log_daemon_name[] = LIBEXEC "/" DAEMON_NAME;
 
 static int debug_fd = -1;
 static int test_fd = -1;
@@ -76,7 +74,7 @@ void spawnLogDaemon(char *tempdir)
       if (result == 0) {
          char *params[7];
          int cur = 0;
-         params[cur++] = LOG_DAEMON;
+         params[cur++] = spindle_log_daemon_name;
          params[cur++] = tempdir;
          if (spindle_debug_prints) {
             params[cur++] = "-debug";
@@ -88,8 +86,8 @@ void spawnLogDaemon(char *tempdir)
          }
          params[cur++] = NULL;
          
-         execv(LOG_DAEMON, params);
-         fprintf(stderr, "Error executing %s: %s\n", LOG_DAEMON, strerror(errno));
+         execv(spindle_log_daemon_name, params);
+         fprintf(stderr, "Error executing %s: %s\n", spindle_log_daemon_name, strerror(errno));
          exit(0);
       }
       else {
