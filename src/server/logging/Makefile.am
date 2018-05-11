@@ -7,4 +7,4 @@ spindled_logd_LDADD = -lpthread
 
 libspindlelogc_la_SOURCES = ../../logging/spindle_logc.c
 libspindlelogc_la_CPP = -I../../logging
-libspindlelogc_la_CFLAGS = -DLIBEXEC=${pkglibexecdir} -DDAEMON_NAME=spindled_logd
+libspindlelogc_la_CFLAGS = -DLIBEXEC=\"${pkglibexecdir}\" -DDAEMON_NAME=\"spindled_logd\"
