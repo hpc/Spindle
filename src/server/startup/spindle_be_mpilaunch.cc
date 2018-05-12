@@ -14,35 +14,10 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(PARSEARGS_H_)
-#define PARSEARGS_H_
-
 #include "spindle_launch.h"
-#include <string>
+#include "spindle_debug.h"
 
-typedef enum {
-   sstatus_unused,
-   sstatus_start,
-   sstatus_run,
-   sstatus_end
-} session_status_t;
-
-void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
-
-opt_t parseArgs(int argc, char *argv[]);
-char *getPreloadFile();
-unsigned int getPort();
-unsigned int getNumPorts();
-std::string getLocation(int number);
-std::string getPythonPrefixes();
-std::string getHostbin();
-int getStartupType();
-int getLauncher();
-int getShmCacheSize();
-unique_id_t get_unique_id();
-std::string get_arg_session_id();
-session_status_t get_session_status();
-
-int getAppArgs(int *argc, char ***argv);
-
-#endif
+int startMPILaunchBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type)
+{
+   return spindleRunBE(port, num_ports, unique_id, security_type, NULL);
+}

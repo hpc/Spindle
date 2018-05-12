@@ -653,7 +653,6 @@ MPI_CFLAGS
 MPICC
 BLD_TESTSUITE_FALSE
 BLD_TESTSUITE_TRUE
-TESTRM
 AM_CFLAGS
 LMON_DYNAMIC_FALSE
 LMON_DYNAMIC_TRUE
@@ -686,6 +685,7 @@ SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
+TESTRM
 CXXCPP
 CPP
 OTOOL64
@@ -824,6 +824,8 @@ enable_libtool_lock
 with_default_port
 with_default_num_ports
 with_localstorage
+with_testrm
+with_rm
 enable_bluegene
 with_hostbin
 enable_pipes
@@ -845,7 +847,6 @@ with_launchmon
 with_launchmon_incdir
 with_launchmon_libdir
 with_launchmon_rmcommdir
-with_testrm
 enable_testsuite
 '
       ac_precious_vars='build_alias
@@ -1533,6 +1534,9 @@ Optional Packages:
                           Number of TCP/IP ports to scan for Spindle server
                           communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
+  --with-testrm=ARM
+  --with-rm=ARG           Default resource manager (valid options are 'slurm'
+                          and 'flux')
   --with-hostbin=EXE      Executable for returning host lists for jobs
   --with-python-prefix=STR
                           List of directories containing python installs
@@ -1548,8 +1552,6 @@ Optional Packages:
                           Launchmon library directory
   --with-launchmon-rmcommdir=DIR
                           RM communication library LaunchMON uses
-  --with-testrm=ARG       Resource manager to use for tests (valid options are
-                          'slurm' and 'flux')
 
 Some influential environment variables:
   CC          C compiler command
@@ -2791,8 +2793,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -16244,6 +16246,32 @@ _ACEOF
 
 
 
+TESTRM=unknown
+
+# Check whether --with-testrm was given.
+if test "${with_testrm+set}" = set; then :
+  withval=$with_testrm; TESTRM=${withval}
+fi
+
+
+# Check whether --with-rm was given.
+if test "${with_rm+set}" = set; then :
+  withval=$with_rm; TESTRM=${withval}
+fi
+
+if test "x$TESTRM" == "xunknown"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"--with-rm not specified.  Tests will not work\"" >&5
+$as_echo "$as_me: WARNING: \"--with-rm not specified.  Tests will not work\"" >&2;}
+fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define TESTRM "$TESTRM"
+_ACEOF
+
+
+
+
 #OS Detection
 # Check whether --enable-bluegene was given.
 if test "${enable_bluegene+set}" = set; then :
@@ -16888,17 +16916,6 @@ fi
 
 #Default flags
 AM_CFLAGS=-Wall
-
-
-
-# Check whether --with-testrm was given.
-if test "${with_testrm+set}" = set; then :
-  withval=$with_testrm; TESTRM=${withval}
-else
-  TESTRM=unknown; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-testrm not specified. Spindle tests will not work" >&5
-$as_echo "$as_me: WARNING: --with-testrm not specified. Spindle tests will not work" >&2;}
-fi
-
 
 
 #MPI detection

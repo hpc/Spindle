@@ -161,7 +161,9 @@ am__objects_2 = spindle-spindle_fe.$(OBJEXT) \
 am_spindle_OBJECTS = spindle-spindle_fe_main.$(OBJEXT) \
 	spindle-spindle_fe_serial.$(OBJEXT) \
 	spindle-parse_launcher.$(OBJEXT) \
-	spindle-parse_launcher_args.$(OBJEXT) $(am__objects_2)
+	spindle-parse_launcher_args.$(OBJEXT) \
+	spindle-launcher.$(OBJEXT) spindle-spindle_session.$(OBJEXT) \
+	spindle-launch_slurm.$(OBJEXT) $(am__objects_2)
 spindle_OBJECTS = $(am_spindle_OBJECTS)
 spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
@@ -322,6 +324,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SPINDLEFE_LIB_VERSION = @SPINDLEFE_LIB_VERSION@
 STRIP = @STRIP@
+TESTRM = @TESTRM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -393,7 +396,7 @@ libspindlefe_la_SOURCES = $(CORE_SOURCES)
 libspindlefe_la_LIBADD = $(CORE_LDADD)
 libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
 spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE
-spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc $(CORE_SOURCES)
+spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc launcher.cc spindle_session.cc launch_slurm.cc $(CORE_SOURCES)
 spindle_LDADD = $(CORE_LDADD) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
 	$(top_builddir)/hostbin/libhostbin.la $(am__append_3)
@@ -536,6 +539,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-pathfn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-spindle_fe.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-keyfile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-launch_slurm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-launcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_launcher_args.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-parse_preload.Po@am__quote@
@@ -545,6 +550,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_fe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_fe_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_fe_serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle-spindle_session.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -727,6 +733,48 @@ spindle-parse_launcher_args.obj: parse_launcher_args.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parse_launcher_args.cc' object='spindle-parse_launcher_args.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_launcher_args.obj `if test -f 'parse_launcher_args.cc'; then $(CYGPATH_W) 'parse_launcher_args.cc'; else $(CYGPATH_W) '$(srcdir)/parse_launcher_args.cc'; fi`
+
+spindle-launcher.o: launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-launcher.o -MD -MP -MF $(DEPDIR)/spindle-launcher.Tpo -c -o spindle-launcher.o `test -f 'launcher.cc' || echo '$(srcdir)/'`launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-launcher.Tpo $(DEPDIR)/spindle-launcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='launcher.cc' object='spindle-launcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-launcher.o `test -f 'launcher.cc' || echo '$(srcdir)/'`launcher.cc
+
+spindle-launcher.obj: launcher.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-launcher.obj -MD -MP -MF $(DEPDIR)/spindle-launcher.Tpo -c -o spindle-launcher.obj `if test -f 'launcher.cc'; then $(CYGPATH_W) 'launcher.cc'; else $(CYGPATH_W) '$(srcdir)/launcher.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-launcher.Tpo $(DEPDIR)/spindle-launcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='launcher.cc' object='spindle-launcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-launcher.obj `if test -f 'launcher.cc'; then $(CYGPATH_W) 'launcher.cc'; else $(CYGPATH_W) '$(srcdir)/launcher.cc'; fi`
+
+spindle-spindle_session.o: spindle_session.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_session.o -MD -MP -MF $(DEPDIR)/spindle-spindle_session.Tpo -c -o spindle-spindle_session.o `test -f 'spindle_session.cc' || echo '$(srcdir)/'`spindle_session.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_session.Tpo $(DEPDIR)/spindle-spindle_session.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='spindle_session.cc' object='spindle-spindle_session.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_session.o `test -f 'spindle_session.cc' || echo '$(srcdir)/'`spindle_session.cc
+
+spindle-spindle_session.obj: spindle_session.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_session.obj -MD -MP -MF $(DEPDIR)/spindle-spindle_session.Tpo -c -o spindle-spindle_session.obj `if test -f 'spindle_session.cc'; then $(CYGPATH_W) 'spindle_session.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_session.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-spindle_session.Tpo $(DEPDIR)/spindle-spindle_session.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='spindle_session.cc' object='spindle-spindle_session.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-spindle_session.obj `if test -f 'spindle_session.cc'; then $(CYGPATH_W) 'spindle_session.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_session.cc'; fi`
+
+spindle-launch_slurm.o: launch_slurm.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-launch_slurm.o -MD -MP -MF $(DEPDIR)/spindle-launch_slurm.Tpo -c -o spindle-launch_slurm.o `test -f 'launch_slurm.cc' || echo '$(srcdir)/'`launch_slurm.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-launch_slurm.Tpo $(DEPDIR)/spindle-launch_slurm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='launch_slurm.cc' object='spindle-launch_slurm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-launch_slurm.o `test -f 'launch_slurm.cc' || echo '$(srcdir)/'`launch_slurm.cc
+
+spindle-launch_slurm.obj: launch_slurm.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-launch_slurm.obj -MD -MP -MF $(DEPDIR)/spindle-launch_slurm.Tpo -c -o spindle-launch_slurm.obj `if test -f 'launch_slurm.cc'; then $(CYGPATH_W) 'launch_slurm.cc'; else $(CYGPATH_W) '$(srcdir)/launch_slurm.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-launch_slurm.Tpo $(DEPDIR)/spindle-launch_slurm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='launch_slurm.cc' object='spindle-launch_slurm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-launch_slurm.obj `if test -f 'launch_slurm.cc'; then $(CYGPATH_W) 'launch_slurm.cc'; else $(CYGPATH_W) '$(srcdir)/launch_slurm.cc'; fi`
 
 spindle-spindle_fe.o: spindle_fe.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_fe.o -MD -MP -MF $(DEPDIR)/spindle-spindle_fe.Tpo -c -o spindle-spindle_fe.o `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc

@@ -22,6 +22,23 @@ AC_DEFINE_UNQUOTED([SPINDLE_MAX_PORT],[$(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))]
 AC_DEFINE_UNQUOTED([SPINDLE_LOC],"[$SPINDLE_LOC]",[The default local directory for Spindle])
 
 
+TESTRM=unknown
+AC_ARG_WITH(testrm,
+       [AS_HELP_STRING([--with-testrm=ARM],[])],
+       [TESTRM=${withval}],
+       [])
+AC_ARG_WITH(rm,
+        [AS_HELP_STRING([--with-rm=ARG],[Default resource manager (valid options are 'slurm' and 'flux')])],
+        [TESTRM=${withval}],
+        [])
+if test "x$TESTRM" == "xunknown"; then
+   AC_WARN(["--with-rm not specified.  Tests will not work"])
+fi
+AC_SUBST(TESTRM)
+AC_DEFINE_UNQUOTED([TESTRM], "[$TESTRM]", [Default recource manager])
+
+
+
 #OS Detection
 AC_ARG_ENABLE(bluegene,
               [AS_HELP_STRING([--enable-bluegene],[Build Spindle for BlueGene/Q])],
@@ -217,7 +234,7 @@ AC_DEFUN([CHOOSE_SEC],[
         LIBS=$LIBS_HOLD
 
         #Check for libgcrypt availability
-        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt"
+        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt -lgpg-error"
         CFLAGS="$CFLAGS $GCRYPT_CFLAGS"
         LIBS="$LIBS $GCRYPT_LIBS"
         HAVE_GCRYPT="true"

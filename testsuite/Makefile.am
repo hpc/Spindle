@@ -96,7 +96,7 @@ libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
 
 libsymlink.so: libtest10.so
-	$(AM_V_GEN) ln -s $< $@
+	$(AM_V_GEN) ln -fs $< $@
 
 libdepB.so: libdepB.c libdepC.so
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< -shared -L. -ldepC
@@ -118,7 +118,7 @@ libfuncdict.so: funcdict.c
 
 runTests: $(srcdir)/runTests_template
 	@rm -f ./runTests
-	$(AM_V_GEN)$(SED) -e s,BLUEGENE_TEST,$(IS_BLUEGENE),g < $(srcdir)/runTests_template > $(top_builddir)/testsuite/runTests
+	$(AM_V_GEN)$(SED) -e s,BLUEGENE_TEST,$(IS_BLUEGENE),g\;s,SPINDLE_EXEC,$(bindir)/spindle,g < $(srcdir)/runTests_template > $(top_builddir)/testsuite/runTests
 	@chmod 700 $(top_builddir)/testsuite/runTests
 
 run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile

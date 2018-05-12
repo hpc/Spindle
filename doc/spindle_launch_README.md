@@ -106,6 +106,8 @@ we have to break ABI compatibility.
             should be a OPT_SEC_* value.
         -   `OPT_GET_SEC(OPT)` - Returns the OPT_SEC part of the opt_t
             bitfield specified by OPT.
+   -    'OPT_SESSION' - Run in session mode, where spindle caches persist
+        between runs.
 
 
 - `typedef struct { ... } spindle_args_t`

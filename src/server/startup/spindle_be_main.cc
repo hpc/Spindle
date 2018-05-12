@@ -31,11 +31,13 @@ extern int startLaunchmonBE(int argc, char *argv[], int security_type);
 #endif
 extern int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type);
 extern int startSerialBE(int argc, char *argv[], int security_type);
+extern int startMPILaunchBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type);
 
 enum startup_type_t {
    lmon,
    serial,
-   hostbin
+   hostbin,
+   mpilaunch
 };
 startup_type_t startup_type;
 static int security_type;
@@ -77,6 +79,9 @@ int main(int argc, char *argv[])
          break;
       case hostbin:
          result = startHostbinBE(port, num_ports, unique_id, security_type);
+         break;
+      case mpilaunch:
+         result = startMPILaunchBE(port, num_ports, unique_id, security_type);
          break;
       default:
          err_printf("Unknown startup mode\n");
@@ -120,6 +125,10 @@ static int parseCommandLine(int argc, char *argv[])
          startup_type = hostbin;
          break;
       }
+      else if (strcmp(argv[i], "--spindle_mpi") == 0) {
+         startup_type = mpilaunch;
+         break;
+      }
    }
 
    if (++i >= argc) return -1;   
@@ -128,7 +137,7 @@ static int parseCommandLine(int argc, char *argv[])
    if (++i >= argc) return -1;   
    number = atoi(argv[i]);
 
-   if (startup_type == hostbin) {
+   if (startup_type == hostbin || startup_type == mpilaunch) {
       if (++i >= argc) return -1;
       port = atoi(argv[i]);
       if (++i >= argc) return -1;

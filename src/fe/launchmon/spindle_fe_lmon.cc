@@ -17,8 +17,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "lmon_api/common.h"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_fe.h"
+
 #include "spindle_debug.h"
 #include "config.h"
+#include "spindle_launch.h"
+#include "../startup/launcher.h"
 
 #include <set>
 #include <algorithm>
@@ -41,10 +44,54 @@ using namespace std;
 #define PUSH_ENV_DEFAULT_VAL false
 #endif
 
+
 static bool push_env = PUSH_ENV_DEFAULT_VAL;
 extern char **environ;
 
-static void initLMONEnvironment()
+
+class LMonLauncher : public Launcher 
+{
+   friend Launcher *createLaunchmonLauncher(spindle_args_t *params);
+private:
+   static LMonLauncher *llauncher;
+   int aSession;
+   app_id_t appid;
+   int status;
+   bool initError;
+
+   void initEnvironment();
+   bool initLMon();
+   LMonLauncher(spindle_args_t *params_);
+   static int pack_environ(void *udata, void *msgbuf, 
+                           int msgbufmax, int *msgbuflen);
+   static int packfebe_cb(void *udata, void *msgbuf, 
+                          int msgbufmax, int *msgbuflen);
+   static int onLaunchmonStatusChange_cb(int *pstatus);
+protected:
+   virtual bool spawnDaemon();
+public:
+   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
+   virtual const char **getProcessTable();
+   virtual const char *getDaemonArg();
+   virtual bool getReturnCodes(bool &daemon_done, int &daemon_ret,
+                               vector<pair<app_id_t, int> > &app_rets);
+   int onLaunchmonStatusChange(int *pstatus);
+};
+
+LMonLauncher *LMonLauncher::llauncher = NULL;
+
+Launcher *createLaunchmonLauncher(spindle_args_t *params)
+{
+   LMonLauncher *l = new LMonLauncher(params);
+   if (l->initError) {
+      delete l;
+      return NULL;
+   }
+   LMonLauncher::llauncher = l;
+   return l;
+}
+
+void LMonLauncher::initEnvironment()
 {
    if (!strlen(LAUNCHMON_BIN_DIR))
       return;
@@ -57,14 +104,19 @@ static void initLMONEnvironment()
 #endif
 }
 
-static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { return pt.pd.host_name; }
-bool rank_lt(const MPIR_PROCDESC_EXT &a, const MPIR_PROCDESC_EXT &b) { return a.mpirank < b.mpirank; }
+static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { 
+   return pt.pd.host_name; 
+}
+
+static bool rank_lt(const MPIR_PROCDESC_EXT &a, const MPIR_PROCDESC_EXT &b) { 
+   return a.mpirank < b.mpirank; 
+}
 
 struct str_lt {
    bool operator()(const char *a, const char *b) { return strcmp(a, b) < 0; }
 };
 
-static const char **getProcessTable(int aSession)
+const char **LMonLauncher::getProcessTable()
 {
   /* Get the process table */
    lmon_rc_e rc;
@@ -99,39 +151,38 @@ static const char **getProcessTable(int aSession)
    return hosts;
 }
 
-static pthread_mutex_t completion_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t completion_condvar = PTHREAD_COND_INITIALIZER;
-static bool spindle_done = false;
-
-static void signal_done()
+const char *LMonLauncher::getDaemonArg()
 {
-   pthread_mutex_lock(&completion_lock);
-   spindle_done = true;
-   pthread_cond_signal(&completion_condvar);
-   pthread_mutex_unlock(&completion_lock);
+   return "--spindle_lmon";
 }
 
-static void waitfor_done()
+bool LMonLauncher::getReturnCodes(bool &daemon_done, int &daemon_ret,
+                                  vector<pair<app_id_t, int> > &app_rets)
 {
-  pthread_mutex_lock(&completion_lock);
-  while (!spindle_done) {
-     pthread_cond_wait(&completion_condvar, &completion_lock);
-  }
-  pthread_mutex_unlock(&completion_lock);
-}
-
-static int onLaunchmonStatusChange(int *pstatus) {
-   int status = *pstatus;
    if (WIFKILLED(status) || WIFDETACHED(status)) {
-      signal_done();
+      daemon_done = true;
+      daemon_ret = 0;
+      app_rets.push_back(make_pair(appid, 0));
+   }
+   return true;
+}
+
+int LMonLauncher::onLaunchmonStatusChange_cb(int *pstatus)
+{
+   return llauncher->onLaunchmonStatusChange(pstatus);
+}
+
+int LMonLauncher::onLaunchmonStatusChange(int *pstatus) {
+   assert(llauncher);
+   if (WIFKILLED(*pstatus) || WIFDETACHED(*pstatus)) {
+      llauncher->status = *pstatus;
+      llauncher->markFinished();
    }
    return 0;
 }
 
-static int pack_environ(void *udata, 
-                        void *msgbuf, 
-                        int msgbufmax, 
-                        int *msgbuflen)
+int LMonLauncher::pack_environ(void *udata, void *msgbuf, 
+                               int msgbufmax, int *msgbuflen)
 {
    size_t pos = 0;
    char *buffer = (char *) msgbuf;
@@ -154,10 +205,8 @@ static int pack_environ(void *udata,
    return 0;
 }
 
-static int packfebe_cb(void *udata, 
-                       void *msgbuf, 
-                       int msgbufmax, 
-                       int *msgbuflen)
+int LMonLauncher::packfebe_cb(void *udata, void *msgbuf, 
+                       int msgbufmax, int *msgbuflen)
 {  
    if (udata == (void *) environ)
       return pack_environ(udata, msgbuf, msgbufmax, msgbuflen);
@@ -185,38 +234,57 @@ static int packfebe_cb(void *udata,
    return 0;
 }
 
-int startLaunchmonFE(int app_argc, char *app_argv[],
-                     int daemon_argc, char *daemon_argv[],
-                     spindle_args_t *params)
-{   
-   int aSession, result;
-   lmon_rc_e rc;
+LMonLauncher::LMonLauncher(spindle_args_t *params_) :
+   Launcher(params_),
+   aSession(0),
+   appid(0),
+   status(0),
+   initError(false)
+{
+   initEnvironment();
+   if (!initLMon()) 
+      initError = true;
+}
 
-   initLMONEnvironment();
+bool LMonLauncher::initLMon() {
+   lmon_rc_e rc;
 
    rc = LMON_fe_init(LMON_VERSION);
    if (rc != LMON_OK )  {
       err_printf("[LMON FE] LMON_fe_init FAILED\n" );
-      return EXIT_FAILURE;
+      return false;
    }
 
    rc = LMON_fe_createSession(&aSession);
    if (rc != LMON_OK)  {
       err_printf("[LMON FE] LMON_fe_createFEBESession FAILED\n");
-      return EXIT_FAILURE;
+      return false;
    }
    
-   rc = LMON_fe_regStatusCB(aSession, onLaunchmonStatusChange);
+   rc = LMON_fe_regStatusCB(aSession, onLaunchmonStatusChange_cb);
    if (rc != LMON_OK) {
       err_printf("[LMON FE] LMON_fe_regStatusCB FAILED\n");     
-      return EXIT_FAILURE;
+      return false;
    }
    
    rc = LMON_fe_regPackForFeToBe(aSession, packfebe_cb);
    if (rc != LMON_OK) {
       err_printf("[LMON FE] LMON_fe_regPackForFeToBe FAILED\n");
-      return EXIT_FAILURE;
+      return false;
    }
+   return true;
+}
+
+bool LMonLauncher::spawnDaemon()
+{
+   assert(daemon_argc > 0);
+   assert(daemon_argv);
+   return true;
+}
+
+bool LMonLauncher::spawnJob(app_id_t id, int app_argc, char **app_argv)
+{   
+   lmon_rc_e rc;
 
    rc = LMON_fe_launchAndSpawnDaemons(aSession, NULL,
                                       app_argv[0], app_argv,
@@ -224,42 +292,23 @@ int startLaunchmonFE(int app_argc, char *app_argv[],
                                       NULL, NULL);
    if (rc != LMON_OK) {
       err_printf("[LMON FE] LMON_fe_launchAndSpawnDaemons FAILED\n");
-      return EXIT_FAILURE;
+      return false;
    }
 
    rc = LMON_fe_sendUsrDataBe(aSession, params);
    if (rc != LMON_OK) {
       err_printf("[LMON FE] Error sending user data to backends\n");
-      return EXIT_FAILURE;
+      return false;
    }
 
    if (push_env) {
       rc = LMON_fe_sendUsrDataBe(aSession, environ);
       if (rc != LMON_OK) {
          err_printf("[LMON FE] Error sending environment data to backends\n");
-         return EXIT_FAILURE;
+         return false;
       }
    }
 
-   const char **hosts = getProcessTable(aSession);
-   if (!hosts) {
-      err_printf("[LMON FE] Error getting process table\n");
-      return EXIT_FAILURE;
-   }
-   
-   result = spindleInitFE(hosts, params);
-   if (result == -1) {
-      err_printf("[LMON FE] spindleInitFE returned an error\n");
-      return EXIT_FAILURE;
-   }
-  
-   waitfor_done();
-
-   result = spindleCloseFE(params);
-   if (result == -1) {
-      err_printf("[LMON FE] spindleFinishFE returned an error\n");
-      return EXIT_FAILURE;
-   }
-
-   return 0;
+   appid = id;
+   return true;
 }

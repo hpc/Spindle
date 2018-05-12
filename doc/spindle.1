@@ -19,6 +19,18 @@ spindle -q --reloc-python=no mpirun -np 512 ./my_mpi_app apparg1 apparg2
 .fi
 .RE
 
+Spindle can also run in a persistent session mode, where Spindle can provide scalable loading to ensemble application runs (running many small jobs rather than one big job).  In this case spindle may be started as something like:
+
+.nf
+.RS
+export ID=`spindle --start-session`
+spindle --run-in-session $ID srun -n 4 /home/me/my_mpi_app &
+spindle --run-in-session $ID srun -n 4 /home/me/my_mpi_app &
+spindle --run-in-session $ID srun -n 4 /home/me/my_mpi_app &
+spindle --run-in-session $ID srun -n 4 /home/me/my_mpi_app &
+wait
+spindle --end-session $ID
+
 .SH OPTIONS
 .TP
 \fB\-a \fIyes\fR|\fIno\fR, \fB\-\-reloc\-aout\fR=\fIyes\fR|\fIno\fR
@@ -73,6 +85,18 @@ Use gcrypt based signatures to authenticate connections between Spindle servers,
 Spindle will not attempt to authenticate connections between Spindle server.  Any outside users may be able to connect into Spindle's server network and provide/request files as the user.  This option must be explicitly enabled at Spindle build time before it will be available.
 
 .TP
+\fB\-\-start\-session\fR
+Spindle will spawn a persistent session daemon, print an alpha-numeric session ID to stdout, and exit.  Spindle's other session arguments take the ID and can be used to run multiple jobs in the same spindle session.  Each job will share the same file caches and can run concurrently.  Any other spindle arguments (security, cache location, etc) should be specified on the command line when starting the spindle session.
+
+.TP
+\fB\-\-run\-in\-session\fR \fISESSION_ID\fR
+Run a new spindle job in an existing session.  The required SESSION_ID argument is the alpha-numeric session ID printed by \fI\-\-start-session\fR.  Any other arguments on the command line, besides the job launch command, will be ignored.  Instead the job will run in the configuration specified when the session was started.
+
+.TP
+\fB\-\-end\-session\fR \fISESSION_ID\fR
+End a spindle session and clean up related caches.  The required SESSION_ID argument is the alpha-numeric session ID printed by \fI\-\-start-session\fR.  This option should not be used while jobs are still running in the session.
+
+.TP
 \fB\-\-no\-mpi\fR
 Tells spindle to run a serial job rather than an MPI job.  Spindle does not provide significant performance benefits for serial jobs, but this option can be useful for debugging.
 
@@ -114,7 +138,8 @@ Spindle requires local storage on each node (such as a ramdisk or SSD) for stori
 
 .TP
 \fB\-r\fR \fIPATH\fR, \fB\-\-python\-prefix=\fIPATH\fR
-Spindle can provide a better quality-of-service on Python programs if it knows the prefix where Python was installed.  This option provides a colon-separated list of directories where Spindle may find Python installations.  The directories in \fIPATH\fR are treated as prefixes, and any file operation in their subdirectories are assumed to be on Python files.  This directory list should not contain any directories where the application will make writes (so it would be a bad idea to add '/' to this list).
+\fB\-r\fR \fIPATH\fR, \fB\-\-cache\-prefix=\fIPATH\fR
+Spindle can provide a better quality-of-service on Python and other interpreted programs if it knows the prefix where the interpreter stores libraries.  This option provides a colon-separated list of directories where Spindle may find interpreter libraries.  The directories in \fIPATH\fR are treated as prefixes, and any file read operation in their subdirectories will be scalably broadcast through spindle.  This directory list should not contain any directories where the application will make writes (so it would be a bad idea to add '/' to this list).  The \fI\-\-cache-prefix\fR and \fI\-\-python-prefix\fR options are aliases.
 
 .TP
 \fB\-s\fR \fIyes\fR|\fIno\fR, \fB\-\-strip=\fIyes\fR|\fIno\fR
@@ -147,11 +172,11 @@ Setting the \fBSPINDLE_DEBUG\fR environment variable before running Spindle will
 Spindle will return after the completion of the MPI launcher and with its error code.  If Spindle encounters a fatal error independent of the MPI launcher it will return with a non-zero exit code.
 
 .SH COPYRIGHT
-Copyright (c) 2014, Lawrence Livermore National Security, LLC. Produced at
+Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at
 the Lawrence Livermore National Laboratory. Written by Matthew LeGendre 
 legendre1@llnl.gov. CODE-636292. All rights reserved.
 
-Copyright (c) 2014, Juelich Supercomputing Center.  Written by Wolfgang Frings
+Copyright (c) 2017, Juelich Supercomputing Center.  Written by Wolfgang Frings
 W.Frings@fz-juelich.de. All rights reserved.
 
 License: LGPL 2.1
