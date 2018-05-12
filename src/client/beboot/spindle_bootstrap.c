@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
     * Exec the user's application.
     **/
    setup_environment();
-   execv(executable, cmdline);
+   execvp(executable, cmdline);
 
    /**
     * Exec error handling
