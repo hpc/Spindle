@@ -22,6 +22,6 @@
 #define SCRIPT_NOTSCRIPT -3
 
 int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char **interp_path, char ***new_argv);
-int exec_pathsearch(int ldcsid, const char *orig_exec, char **new_exec);
+int exec_pathsearch(int ldcsid, const char *orig_exec, char **new_exec, int *errcode);
 
 #endif

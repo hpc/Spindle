@@ -76,18 +76,19 @@ void ldcs_hash_addEntry(char *dirname, char *filename) {
 }
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
-                                                void *buffer, size_t buffer_size)
+                                                void *buffer, size_t buffer_size, int errcode)
 {
    struct ldcs_hash_entry_t *entry;
 
-   debug_printf3("Update cache entry dir='%s' fn='%s' ln='%s', buffer='%p', size='%lu'\n", 
-                 dirname, filename, localname, buffer, (unsigned long) buffer_size);
+   debug_printf3("Update cache entry dir='%s' fn='%s' ln='%s', buffer='%p', size='%lu', errcode='%d'\n", 
+                 dirname, filename, localname, buffer, (unsigned long) buffer_size, errcode);
 
    entry = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
    assert(entry);
    entry->localpath = localname;
    entry->buffer = buffer;
    entry->buffer_size = buffer_size;
+   entry->errcode = errcode;
    return entry;
 }
 

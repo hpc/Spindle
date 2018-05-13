@@ -70,7 +70,7 @@ void remap_executable();
 int get_ldso_metadata(signed int *binding_offset);
 
 
-int get_relocated_file(int fd, const char *name, char** newname);
+int get_relocated_file(int fd, const char *name, char** newname, int *errcode);
 int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf);
 int get_existance_test(int fd, const char *path, int *exists);
 /**

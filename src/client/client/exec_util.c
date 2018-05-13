@@ -131,7 +131,7 @@ static int parse_interp_args(char *interp_line, char **interp_exec, char ***inte
 
 int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char **interp_path, char ***new_argv)
 {
-   int result, fd, argc, interp_argc, i, j;
+   int result, fd, argc, interp_argc, i, j, errcode;
    char interpreter_line[MAX_PATH_LEN+1];
    char *interpreter, *new_interpreter;
    char **interpreter_args;
@@ -167,7 +167,7 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
    }
    
    debug_printf2("Exec operation requesting interpreter %s for script %s\n", interpreter, orig_path);
-   get_relocated_file(ldcsid, interpreter, &new_interpreter);
+   get_relocated_file(ldcsid, interpreter, &new_interpreter, &errcode);
    debug_printf2("Changed interpreter %s to %s for script %s\n", 
                  interpreter, new_interpreter ? new_interpreter : "NULL", orig_path);
    if (!new_interpreter) {
@@ -203,7 +203,7 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
    return 0;
 }
 
-int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec)
+int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *errcode)
 {
    char *saveptr = NULL, *path, *cur;
    char newexec[MAX_PATH_LEN+1];
@@ -215,14 +215,14 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec)
    }
    
    if (orig_exec[0] == '/' || orig_exec[0] == '.') {
-      get_relocated_file(ldcsid, (char *) orig_exec, reloc_exec);
+      get_relocated_file(ldcsid, (char *) orig_exec, reloc_exec, errcode);
       debug_printf3("exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
       return 0;
    }
 
    path = getenv("PATH");
    if (!path) {
-      get_relocated_file(ldcsid, (char *) orig_exec, reloc_exec);
+      get_relocated_file(ldcsid, (char *) orig_exec, reloc_exec, errcode);
       debug_printf3("No path.  exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
       return 0;
    }
@@ -234,7 +234,7 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec)
       newexec[MAX_PATH_LEN] = '\0';
 
       debug_printf2("Exec search operation requesting file: %s\n", newexec);
-      get_relocated_file(ldcsid, newexec, reloc_exec);
+      get_relocated_file(ldcsid, newexec, reloc_exec, errcode);
       debug_printf("Exec search request returned %s -> %s\n", newexec, *reloc_exec ? *reloc_exec : "NULL");
       if (*reloc_exec)
          break;

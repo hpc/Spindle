@@ -218,13 +218,14 @@ static void launch_daemon(char *location)
 
 static void get_executable()
 {
+   int errcode = 0;
    if (!(opts & OPT_RELOCAOUT)) {
       executable = *cmdline;
       return;
    }
 
    debug_printf2("Sending request for executable %s\n", *cmdline);
-   exec_pathsearch(ldcsid, *cmdline, &executable);
+   exec_pathsearch(ldcsid, *cmdline, &executable, &errcode);
 
    if (executable == NULL) {
       executable = *cmdline;
@@ -260,13 +261,14 @@ static void adjust_script()
 static void get_clientlib()
 {
    char *default_libstr = (opts & OPT_SUBAUDIT) ? default_subaudit_libstr : default_audit_libstr;
-
+   int errorcode;
+   
    if (!(opts & OPT_RELOCAOUT)) {
       client_lib = default_libstr;
       return;
    }
 
-   send_file_query(ldcsid, default_libstr, &client_lib);
+   send_file_query(ldcsid, default_libstr, &client_lib, &errorcode);
    if (client_lib == NULL) {
       client_lib = default_libstr;
       err_printf("Failed to relocate client library %s\n", default_libstr);
@@ -277,9 +279,9 @@ static void get_clientlib()
    }
 }
 
-int get_relocated_file(int fd, const char *name, char** newname)
+int get_relocated_file(int fd, const char *name, char** newname, int *errcode)
 {
-   return send_file_query(fd, (char *) name, newname);
+   return send_file_query(fd, (char *) name, newname, errcode);
 }
 
 /**

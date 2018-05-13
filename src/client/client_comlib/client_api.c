@@ -37,12 +37,12 @@ static struct lock_t comm_lock;
 #define COMM_LOCK do { if (lock(&comm_lock) == -1) return -1; } while (0)
 #define COMM_UNLOCK unlock(&comm_lock)
    
-int send_file_query(int fd, char* path, char** newpath) {
+int send_file_query(int fd, char* path, char** newpath, int *errcode) {
    ldcs_message_t message;
-   char buffer[MAX_PATH_LEN+1];
-   buffer[MAX_PATH_LEN] = '\0';
+   char buffer[MAX_PATH_LEN+1+sizeof(int)];
    int result;
    int path_len = strlen(path)+1;
+   buffer[MAX_PATH_LEN+sizeof(int)] = '\0';
     
    if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
@@ -71,13 +71,15 @@ int send_file_query(int fd, char* path, char** newpath) {
       assert(0);
    }
    
-   if (message.header.len > 0) {
-      *newpath = spindle_strdup(message.data);
+   if (message.header.len > sizeof(int)) {
+      *newpath = spindle_strdup(message.data + sizeof(int));
+      *errcode = 0;
       result = 0;
    } 
    else {
+      *errcode = *((int *) message.data);
       *newpath = NULL;
-      result = -1;
+      result = 0;
    }
 
    return result;

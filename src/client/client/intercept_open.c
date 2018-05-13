@@ -49,6 +49,7 @@ int (*orig_close)(int fd);
    1 exists, newpath contains real location */
 static int do_check_file(const char *path, char **newpath) {
    char *myname, *newname;
+   int errcode;
   
    myname=(char *) path;
    debug_printf2("Open operation requesting file: %s\n", path);
@@ -60,7 +61,7 @@ static int do_check_file(const char *path, char **newpath) {
    }
    sync_cwd();
 
-   get_relocated_file(ldcsid, myname, &newname);
+   get_relocated_file(ldcsid, myname, &newname, &errcode);
 
    if (newname != NULL) {
       *newpath=newname;
@@ -68,9 +69,9 @@ static int do_check_file(const char *path, char **newpath) {
       return 1;
    } else {
       *newpath=NULL;
-      errno = ENOENT;
-      debug_printf3("file not found file, set errno to ENOENT\n");
-      return(0);
+      debug_printf3("file not found file, set errno to %d\n", errcode);
+      errno = errcode ? errcode : ENOENT;
+      return 0;
    }
 }
 
@@ -109,7 +110,7 @@ int open_worker(const char *path, int oflag, mode_t mode, int is_64)
       result = do_check_file(path, &newpath);
       if (result == 0) {
          /* File doesn't exist */
-         set_errno(ENOENT);
+         set_errno(errno);
          return -1;
       }
       else if (result < 0) {
@@ -175,7 +176,7 @@ FILE *fopen_worker(const char *path, const char *mode, int is_64)
       result = do_check_file(path, &newpath);
       if (result == 0) {
          /* File doesn't exist */
-         set_errno(ENOENT);
+         set_errno(errno);
          return NULL;
       }
       else if (result < 0) {

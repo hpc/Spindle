@@ -45,11 +45,19 @@ pid_t (*orig_fork)();
 
 static int prep_exec(const char *filepath, char **argv,
                      char *newname, char *newpath, int newpath_size,
-                     char ***new_argv)
+                     char ***new_argv, int errcode)
 {
    int result;
    char *interp_name;
 
+   if (errcode == EACCES) {
+      debug_printf2("exec'ing original path %s because file wasn't +r, but could be +x\n",
+                    newpath);
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      return 0;
+   }
+   
    if (!newname) {
       snprintf(newpath, newpath_size, "%s/%s", NOT_FOUND_PREFIX, filepath);
       newpath[newpath_size-1] = '\0';
@@ -84,6 +92,7 @@ static int prep_exec(const char *filepath, char **argv,
 static int find_exec(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
    char *newname = NULL;
+   int errcode;
 
    if (!filepath) {
       newpath[0] = '\0';
@@ -99,16 +108,18 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
 
    sync_cwd();
    debug_printf2("Exec operation requesting file: %s\n", filepath);
-   get_relocated_file(ldcsid, (char *) filepath, &newname);
-   debug_printf("Exec file request returned %s -> %s\n", filepath, newname ? newname : "NULL");
+   get_relocated_file(ldcsid, (char *) filepath, &newname, &errcode);
+   debug_printf("Exec file request returned %s -> %s with errcode %d\n",
+                filepath, newname ? newname : "NULL", errcode);
 
-   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
+   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv, errcode);
 }
 
 static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
    char *newname = NULL;
    int result;
+   int errcode;
 
    if (!filepath) {
       newpath[0] = '\0';
@@ -126,11 +137,11 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    }
    sync_cwd();
 
-   result = exec_pathsearch(ldcsid, filepath, &newname);
+   result = exec_pathsearch(ldcsid, filepath, &newname, &errcode);
    if (result == -1)
       return -1;
 
-   result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
+   result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv, errcode);
    return result;
 }
 

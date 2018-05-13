@@ -506,7 +506,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    return 0;
 }
 
-int get_relocated_file(int fd, const char *name, char** newname)
+int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
 {
    int found_file = 0;
    int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
@@ -521,7 +521,7 @@ int get_relocated_file(int fd, const char *name, char** newname)
 
    if (!found_file) {
       debug_printf2("Send file request to server: %s\n", name);
-      send_file_query(fd, (char *) name, newname);
+      send_file_query(fd, (char *) name, newname, errorcode);
       debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");      
       if (use_cache)
          shmcache_update(cache_name, *newname);
@@ -533,6 +533,7 @@ int get_relocated_file(int fd, const char *name, char** newname)
 char *client_library_load(const char *name)
 {
    char *newname;
+   int errcode;
 
    check_for_fork();
    if (!use_ldcs || ldcsid == -1) {
@@ -552,7 +553,7 @@ char *client_library_load(const char *name)
    
    sync_cwd();
 
-   get_relocated_file(ldcsid, name, &newname);
+   get_relocated_file(ldcsid, name, &newname, &errcode);
  
    if(!newname) {
       newname = concatStrings(NOT_FOUND_PREFIX, name);

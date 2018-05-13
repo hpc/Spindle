@@ -94,17 +94,17 @@ char *filemngt_calc_localname(char *global_name)
    return newname;
 }
 
-int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip)
+int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, int *errcode)
 {
    FILE *f;
    int result = 0;
 
    debug_printf2("Reading file %s from disk\n", filename);
-
    f = fopen(filename, "r");
    if (!f) {
-      err_printf("Failed to open file %s\n", filename);
-      return -1;
+      *errcode = errno;
+      debug_printf2("Could not read file %s from disk, errcode = %d\n", filename, *errcode);
+      return 0;
    }
 
    result = read_file_and_strip(f, buffer, size, strip);
@@ -236,6 +236,21 @@ int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, i
       return -1;
    }
    assert(*buffer_out);
+   return 0;
+}
+
+int filemngt_clear_file_space(void *buffer, size_t size, int fd)
+{
+   int result = 0;
+   if (buffer && size)
+      result = munmap(buffer, size);
+   if (fd != -1)
+      close(fd);
+   if (result == -1) {
+      err_printf("Error unmapping buffer");
+      return -1;
+   }
+
    return 0;
 }
 

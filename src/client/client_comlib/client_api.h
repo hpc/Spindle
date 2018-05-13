@@ -25,7 +25,7 @@
 /**
  * Communication functions for sending messages to the server
  **/
-int send_file_query(int fd, char* path, char **newpath);
+int send_file_query(int fd, char* path, char **newpath, int *errcode);
 int send_dir_cwd(int fd, char *cwd);
 int send_cwd(int fd);
 int send_pid(int fd);
