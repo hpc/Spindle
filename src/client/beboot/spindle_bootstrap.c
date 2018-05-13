@@ -279,6 +279,38 @@ static void get_clientlib()
    }
 }
 
+extern int read_buffer(char *localname, char *buffer, int size);
+int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf)
+{
+   int result;
+   char buffer[MAX_PATH_LEN+1];
+   char *newpath;
+   int found_file = 0;
+
+   if (!found_file) {
+      result = send_stat_request(fd, (char *) path, is_lstat, buffer);
+      if (result == -1) {
+         *exists = 0;
+         return -1;
+      }
+      newpath = buffer[0] != '\0' ? buffer : NULL;
+   }
+   
+   if (newpath == NULL) {
+      *exists = 0;
+      return 0;
+   }
+   *exists = 1;
+
+   result = read_buffer(newpath, (char *) buf, sizeof(*buf));
+   if (result == -1) {
+      err_printf("Failed to read stat info for %s from %s\n", path, newpath);
+      *exists = 0;
+      return -1;
+   }
+   return 0;
+}
+
 int get_relocated_file(int fd, const char *name, char** newname, int *errcode)
 {
    return send_file_query(fd, (char *) name, newname, errcode);

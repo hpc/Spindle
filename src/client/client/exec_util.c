@@ -229,20 +229,77 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *e
    path = spindle_strdup(path);
 
    debug_printf3("exec_pathsearch using path %s on file %s\n", path, orig_exec);
+   int found = 0;
+   int access_denied_found = 0;
    for (cur = strtok_r(path, ":", &saveptr); cur; cur = strtok_r(NULL, ":", &saveptr)) {
+      struct stat buf;
+      int exists = 0;
       snprintf(newexec, MAX_PATH_LEN, "%s/%s", cur, orig_exec);
       newexec[MAX_PATH_LEN] = '\0';
-
-      debug_printf2("Exec search operation requesting file: %s\n", newexec);
+      
+      debug_printf2("Exec search operation requesting file via stat: %s\n", newexec);
+      get_stat_result(ldcsid, newexec, 0, &exists, &buf);
+      if (!exists)
+         continue;
+      if (buf.st_mode & S_IFDIR) {
+         debug_printf3("Skipping file %s in pathsearch: directory\n", newexec);
+         access_denied_found = 1;         
+         continue;
+      }
+      if (!(buf.st_mode & 0111)) {
+         debug_printf3("Skipping file %s in pathsearch: not executable\n", newexec);
+         access_denied_found = 1;
+         continue;
+      }
+      debug_printf("File %s exists and has execute set, requesting full file\n", newexec);
       get_relocated_file(ldcsid, newexec, reloc_exec, errcode);
       debug_printf("Exec search request returned %s -> %s\n", newexec, *reloc_exec ? *reloc_exec : "NULL");
-      if (*reloc_exec)
+      if (*reloc_exec) {
+         found = 1;
          break;
+      }
+      if (*errcode == EACCES) {
+         *reloc_exec = spindle_strdup(newexec);
+         found = 1;
+         break;
+      }
    }
    spindle_free(path);
-   if (*reloc_exec)
+   if (found)
       return 0;
 
-   *reloc_exec = spindle_strdup(orig_exec);
+   if (access_denied_found) {
+      debug_printf3("Non executable file, setting errcode to %d\n", EACCES);
+      *errcode = EACCES;
+      return -1;
+   }
+   *errcode = ENOENT;
+   return -1;
+}
+
+int read_buffer(char *localname, char *buffer, int size)
+{
+   int result, bytes_read, fd;
+
+   fd = open(localname, O_RDONLY);
+   if (fd == -1) {
+      err_printf("Failed to open %s for reading: %s\n", localname, strerror(errno));
+      return -1;
+   }
+
+   bytes_read = 0;
+
+   while (bytes_read != size) {
+      result = read(fd, buffer + bytes_read, size - bytes_read);
+      if (result <= 0) {
+         if (errno == EAGAIN || errno == EINTR)
+            continue;
+         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
+         close(fd);
+         return -1;
+      }
+      bytes_read += result;
+   }
+   close(fd);
    return 0;
 }
