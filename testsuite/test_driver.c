@@ -404,6 +404,91 @@ void open_libraries()
    }      
 }
 
+static int run_exec_test(const char *prefix, const char *path, int expected)
+{
+   int pathsearch;
+   char newpath[4097];
+   newpath[4096] = '\0';
+   if (prefix) {
+      snprintf(newpath, 4097, "%s/%s", prefix, path);
+      pathsearch = 0;
+   }
+   else {
+      snprintf(newpath, 4097, "%s", path);
+      pathsearch = 1;
+   }
+
+   int pid = fork();
+   if (pid == -1) {
+      err_printf("%s could not fork\n", newpath);
+      return -1;
+   }
+   if (pid == 0) {
+      if (expected == 0)
+         test_printf("dlstart %s\n", "path");
+
+      char* args[2];
+      args[0] = newpath;
+      args[1] = NULL;
+      if (pathsearch)
+         execvp(newpath, args);
+      else
+         execv(newpath, args);
+      exit(errno);
+   }
+
+   int status, result;
+   do {
+      result = waitpid(pid, &status, 0);
+      if (WIFSIGNALED(status)) {
+         err_printf("%s unexpectedly exited on signal %d\n", newpath, WTERMSIG(status));
+         return -1;
+      }
+      if (result == -1) {
+         err_printf("%s had unexpected waitpid failure\n", newpath);
+         return -1;
+      }
+   } while (result != pid && !WIFEXITED(status));
+   if (expected != WEXITSTATUS(status)) {
+      err_printf("%s exited with return code %d, expected %d\n", newpath, WEXITSTATUS(status), expected);
+      return -1;
+   }
+   return 0;
+}
+
+static int run_exec_sets(const char *prefix)
+{
+   int errcode, result = 0;
+
+   result |= run_exec_test(prefix, "retzero_rx", 0);
+   result |= run_exec_test(prefix, "retzero_x", 0);
+   result |= run_exec_test(prefix, "retzero_r", EACCES);
+   result |= run_exec_test(prefix, "retzero_", EACCES);   
+   result |= run_exec_test(prefix, "nofile", ENOENT);
+   result |= run_exec_test(prefix, "nodir/nofile", ENOENT);
+   result |= run_exec_test(prefix, "..", EACCES);
+   result |= run_exec_test(prefix, "badinterp", ENOENT);
+   return result;
+}
+
+static int run_execs()
+{
+   if (fork_mode || forkexec_mode || nompi_mode || chdir_mode)
+      return 0;
+   
+   int result = run_exec_sets(STR(LPATH));
+   if (result == -1)
+      return -1;
+      
+   //Add LPATH to PATH environment variable and run again without a prefix
+   char *path = getenv("PATH");
+   int len = strlen(path) + strlen(STR(LPATH)) + 2;
+   char *newpath = (char *) malloc(len);
+   snprintf(newpath, len, "%s:%s", path, STR(LPATH));
+   return run_exec_sets(NULL);
+}
+
+
 void push_cwd()
 {
    getcwd(oldcwd, 4096);
@@ -440,7 +525,7 @@ void parse_args(int argc, char *argv[])
    }
    gargc = argc;
    gargv = argv;
-   
+
    if (forkexec_mode)
       fork_mode = 1;
 }
@@ -507,6 +592,10 @@ int run_test()
    if (had_error)
       return -1;
 
+   run_execs();
+   if (had_error)
+      return -1;
+                  
    check_libraries();
    if (had_error)
       return -1;

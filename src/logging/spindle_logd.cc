@@ -247,14 +247,14 @@ public:
    }
 
    bool parseOpenNotice(int proc, char *filename)
-   {      
+   {
       target_libs.insert(make_pair(proc, string(filename))).second;
       return true;
    }
 
    bool parseOpen(int proc, char *filename, int ret_code)
    {
-      if (strstr(filename, ".so") == NULL)
+      if (strstr(filename, ".so") == NULL && strstr(filename, "retzero") == NULL)
          return true;
       bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL);
 
@@ -270,7 +270,7 @@ public:
          return false;
       }
 
-      if (ret_code != -1) {
+      if (ret_code != -1 || strstr(filename, "retzero_x")) {
          libs_loaded.insert(make_pair(proc, string(filename)));
       }
 
