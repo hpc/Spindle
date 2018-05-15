@@ -4,6 +4,8 @@
 /src/client/autom4te.cache
 /src/fe/autom4te.cache
 
+tags
+
 #Need if someone does an in-source configure/build
 Makefile
 config.h
