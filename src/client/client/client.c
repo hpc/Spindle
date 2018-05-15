@@ -472,6 +472,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    }
    *exists = 1;
 
+   test_log(newpath);
    result = read_stat(newpath, buf);
    if (result == -1) {
       err_printf("Failed to read stat info for %s from %s\n", path, newpath);

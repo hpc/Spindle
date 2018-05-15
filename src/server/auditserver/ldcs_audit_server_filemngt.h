@@ -36,7 +36,7 @@ int ldcs_audit_server_filemngt_clean();
 int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, int *fd_out);
 void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size, size_t newsize);
 int filemngt_clear_file_space(void *buffer, size_t size, int fd);
-size_t filemngt_get_file_size(char *pathname);
+size_t filemngt_get_file_size(char *pathname, int *errcode);
 
 int filemngt_stat(char *pathname, struct stat *buf);
 int filemngt_write_stat(char *localname, struct stat *buf);

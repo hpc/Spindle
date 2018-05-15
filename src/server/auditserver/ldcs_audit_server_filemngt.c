@@ -311,14 +311,16 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
    return buffer2;
 }
 
-size_t filemngt_get_file_size(char *pathname)
+size_t filemngt_get_file_size(char *pathname, int *errcode)
 {
    struct stat st;
    int result;
 
    result = stat(pathname, &st);
    if (result == -1) {
-      err_printf("Error stat'ing %s, which should exist\n", pathname);
+      if (errcode)
+         *errcode = errno;
+      debug_printf2("Could not stat file %s, perhaps bad symlink\n", pathname);
       return (size_t) -1;
    }
    return (size_t) st.st_size;

@@ -601,7 +601,8 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
                     buffer, pathname, errcode);
       filemngt_clear_file_space(buffer, size, *fd);
       buffer = NULL;
-      free(localname);
+      if (localname)
+         free(localname);
       localname = NULL;
       size = 0;
    }
@@ -632,18 +633,19 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
                                           broadcast_t bcast)
 {
    double starttime;
-   char *buffer = NULL, *localname;
+   char *buffer = NULL, *localname = NULL;
    size_t size, newsize;
    int result, global_result = 0, already_loaded;
    int fd = -1;
+   int errcode = 0;
 
    debug_printf2("Reading and broadcasting file %s\n", pathname);
    /* Read file size from disk */
    starttime = ldcs_get_time();
-   size = filemngt_get_file_size(pathname);
+   size = filemngt_get_file_size(pathname, &errcode);
    if (size == (size_t) -1) {
-      global_result = -1;
-      goto done;
+      size = 0;
+      goto readdone;
    }
    newsize = size;
    procdata->server_stat.libread.time += (ldcs_get_time() - starttime);
@@ -659,7 +661,6 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    /* Actually read the file into the buffer */
    starttime = ldcs_get_time();
 
-   int errcode = 0;
    result = filemngt_read_file(pathname, buffer, &newsize, (procdata->opts & OPT_STRIP), &errcode);
    if (result == -1) {
       global_result = -1;
@@ -674,6 +675,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    procdata->server_stat.libstore.bytes += !errcode ? newsize : 0;
    procdata->server_stat.libstore.time += (ldcs_get_time() - starttime);
 
+  readdone:   
    result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, buffer, size, newsize, errcode);
    if (result == -1) {
       global_result = -1;
@@ -682,7 +684,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
 
    if (bcast == suppress_broadcast)
       goto done;
-   
+
    if (!errcode)
       result = handle_broadcast_file(procdata, pathname, buffer, newsize, bcast);
    else

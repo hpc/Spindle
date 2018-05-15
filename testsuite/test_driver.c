@@ -424,9 +424,12 @@ static int run_exec_test(const char *prefix, const char *path, int expected)
       return -1;
    }
    if (pid == 0) {
-      if (expected == 0)
-         test_printf("dlstart %s\n", "path");
-
+      if (expected == 0) {
+         close(-1); /* A close call does a check_for_fork under the hood, re-initing the
+                       logger connection for the following print */
+         test_printf("dlstart %s\n", path);
+      }
+      
       char* args[2];
       args[0] = newpath;
       args[1] = NULL;
@@ -486,6 +489,124 @@ static int run_execs()
    char *newpath = (char *) malloc(len);
    snprintf(newpath, len, "%s:%s", path, STR(LPATH));
    return run_exec_sets(NULL);
+}
+
+
+#define STAT 1
+#define LSTAT 2
+#define FSTAT 4
+static dev_t device;
+static int run_stat_test(const char *file, int flags, mode_t prot, int expected)
+{
+   struct stat buf;
+   int result = -1;
+   int fd = -1;
+   const char *statname = NULL;
+
+   if (expected == 0)
+      test_printf("dlstart %s\n", file);
+   if (flags & LSTAT) {
+      statname = "lstat";
+      result = lstat(file, &buf);
+   }
+   else if (flags & FSTAT) {
+      statname = "fstat";      
+      fd = open(file, O_RDONLY);
+      if (fd != -1)
+         result = fstat(fd, &buf);
+   }
+   else if (flags & STAT) {
+      statname = "stat";      
+      result = stat(file, &buf);
+   }
+   if (result == -1)
+      result = errno;
+   if (fd != -1)
+      close(fd);
+   
+   if (result != expected) {
+      err_printf("Expected return value %d, got return value %d from %s test of %s\n",
+                 expected, result, statname, file);
+      return -1;
+   }
+   if (result)
+      //Expected error return, do not test buf
+      return 0;
+   
+   if (buf.st_dev != device) {
+      err_printf("Expected device %d, got device %d on %s test of %s\n",
+                 (int) device, (int) buf.st_dev, statname, file);
+      return -1;
+   }
+   if (prot && ((buf.st_mode & 0700) != prot)) {
+      err_printf("Expected prot %o, got prot %o on %s test of %s\n",
+                 prot, buf.st_mode & 0700, statname, file);
+      return -1;      
+   }
+
+   return 0;
+}
+
+static int set_device()
+{
+   struct stat buf;
+   int result;
+   
+   result = stat("retzero_rx", &buf);
+   if (result == -1) {
+      err_printf("Could not get device of retzero_rx");
+      return -1;
+   }
+   device = buf.st_dev;
+   return 0;
+}
+
+static int run_stats()
+{
+   int result;
+
+   if (fork_mode || forkexec_mode || nompi_mode || chdir_mode)
+      return 0;
+   
+   result = set_device();
+
+   result |= run_stat_test("hello_r.py", STAT, 0600, 0);
+   result |= run_stat_test("hello_x.py", STAT, 0300, 0);
+   result |= run_stat_test("hello_rx.py", STAT, 0700, 0);
+   result |= run_stat_test("hello_.py", STAT, 0200, 0);
+   result |= run_stat_test("hello_l.py", STAT, 0300, 0);
+   result |= run_stat_test("noexist.py", STAT, 0000, ENOENT);
+   result |= run_stat_test("/nodir/nofile.py", STAT, 0000, ENOENT);
+   /* result |= run_stat_test("retzero_/nofile.py", STAT, 0000, ENOTDIR); */
+   result |= run_stat_test("badlink.py", STAT, 0000, ENOENT);
+   result |= run_stat_test(".", STAT, 0000, 0);
+   result |= run_stat_test(NULL, STAT, 0000, EFAULT);
+
+   /* result |= run_stat_test("hello_r.py", FSTAT, 0600, 0); */
+   /* result |= run_stat_test("hello_x.py", FSTAT, 0000, EACCES); */
+   /* result |= run_stat_test("hello_rx.py", FSTAT, 0700, 0); */
+   /* result |= run_stat_test("hello_.py", FSTAT, 0000, EACCES); */
+   /* result |= run_stat_test("hello_l.py", FSTAT, 0000, EACCES); */
+   /* result |= run_stat_test("noexist.py", FSTAT, 0000, ENOENT); */
+   /* result |= run_stat_test("/nodir/nofile.py", FSTAT, 0000, ENOENT); */
+   /* result |= run_stat_test("retzero_/nofile.py", FSTAT, 0000, ENOTDIR);    */
+   /* result |= run_stat_test("badlink.py", FSTAT, 0000, ENOENT); */
+   /* result |= run_stat_test(".", FSTAT, 0000, 0); */
+   /* result |= run_stat_test(NULL, FSTAT, 0000, EFAULT); */
+
+   result |= run_stat_test("hello_r.py", LSTAT, 0600, 0);
+   result |= run_stat_test("hello_x.py", LSTAT, 0300, 0);
+   result |= run_stat_test("hello_rx.py", LSTAT, 0700, 0);
+   result |= run_stat_test("hello_.py", LSTAT, 0200, 0);
+   result |= run_stat_test("hello_l.py", LSTAT, 0700, 0);
+   result |= run_stat_test("noexist.py", LSTAT, 0000, ENOENT);
+   result |= run_stat_test("/nodir/nofile.py", LSTAT, 0000, ENOENT);
+   /* result |= run_stat_test("retzero_/nofile.py", LSTAT, 0000, ENOTDIR); */
+   result |= run_stat_test("badlink.py", LSTAT, 0700, 0);
+   result |= run_stat_test(".", LSTAT, 0000, 0);
+   result |= run_stat_test(NULL, LSTAT, 0000, EFAULT);
+   
+   return result;
 }
 
 
@@ -593,6 +714,10 @@ int run_test()
       return -1;
 
    run_execs();
+   if (had_error)
+      return -1;
+
+   run_stats();
    if (had_error)
       return -1;
                   

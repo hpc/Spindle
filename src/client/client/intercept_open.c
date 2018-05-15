@@ -99,7 +99,10 @@ int open_worker(const char *path, int oflag, mode_t mode, int is_64)
    int rc;
    char *newpath;
    int result, exists;
-   
+
+   if (!path) {
+      return call_orig_open(path, oflag, mode, is_64);
+   }
    result = open_filter(path, oflag);
    if (ldcsid < 0 || result == ORIG_CALL) {
       /* Use the original open */
@@ -165,7 +168,10 @@ FILE *fopen_worker(const char *path, const char *mode, int is_64)
    FILE *rc;
    char *newpath;
    int result, exists;
-   
+
+   if (!path) {
+      return call_orig_fopen(path, mode, is_64);      
+   }
    result = fopen_filter(path, mode);
    if (ldcsid < 0 || result == ORIG_CALL) {
       /* Use the original open */

@@ -31,6 +31,8 @@
 #include "sym_alias.h"
 #endif
 
+extern void test_log(const char *name);
+
 int (*orig_stat)(const char *path, struct stat *buf);
 int (*orig_lstat)(const char *path, struct stat *buf);
 int (*orig_xstat)(int vers, const char *path, struct stat *buf);
@@ -46,8 +48,10 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    int result, exists;
 
    check_for_fork();
-   if (ldcsid < 0 || !use_ldcs) {
-      debug_printf3("no ldcs: stat query %s\n", path);
+   if (ldcsid < 0 || !use_ldcs || !path || !buf) {
+      debug_printf3("no ldcs: stat query %s\n", path ? path : "NULL");
+      if (path)
+         test_log(path);      
       return ORIG_STAT;
    }
    sync_cwd();
