@@ -217,15 +217,11 @@ private:
             continue;
          bool found = false;
          for (j = libs_loaded.begin(); j != libs_loaded.end(); j++) {
-            char buffer[4096*3];
-            snprintf(buffer, 4096*3, "Comparing %d/%s with %d/%s", i->first, i->second.c_str(), j->first, j->second.c_str());
-            debug_log->writeMessage(0, buffer, strlen(buffer), "\n", 1);
             if (i->first != j->first)
                continue;
             const string &loaded = j->second;
             if (strstr(loaded.c_str(), target.c_str()) != NULL) {
                found = true;
-               debug_log->writeMessage(0, "match", 5, "\n", 1);               
                break;
             }
          }

@@ -312,7 +312,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
 @BGQ_BLD_FALSE@DYNAMIC_FLAG = 
 @BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
 @BGQ_BLD_FALSE@IS_BLUEGENE = false
@@ -328,7 +328,7 @@ test_driver_libsLDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2
 test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
-CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp
+CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -728,7 +728,28 @@ retzero_: retzero.c
 	$(AM_V_GEN)chmod 200 $@
 
 badinterp:
-	$(AM_V_GEN)echo "#!/notexit" > $@; chmod 700 $@
+	$(AM_V_GEN)echo "#!/notexist" > $@; chmod 700 $@
+
+hello_r.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 600 $@
+
+hello_x.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 300 $@
+
+hello_rx.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 700 $@
+
+hello_.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 200 $@
+
+hello_l.py:
+	$(AM_V_GEN)ln -fs hello_x.py $@
+
+badlink.py:
+	@if [ ! -h $@ ] ; then \
+		if [ $V ]; then echo ln -fs noexist.py $@; else echo "  GEN      $@"; fi; \
+		ln -fs noexist.py $@; \
+	fi
 
 runTests: $(srcdir)/runTests_template
 	@rm -f ./runTests

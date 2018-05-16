@@ -1,7 +1,7 @@
 noinst_PROGRAMS = libgenerator
 
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
 
 if BGQ_BLD
 DYNAMIC_FLAG=-dynamic
@@ -133,7 +133,28 @@ retzero_: retzero.c
 	$(AM_V_GEN)chmod 200 $@
 
 badinterp:
-	$(AM_V_GEN)echo "#!/notexit" > $@; chmod 700 $@
+	$(AM_V_GEN)echo "#!/notexist" > $@; chmod 700 $@
+
+hello_r.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 600 $@
+
+hello_x.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 300 $@
+
+hello_rx.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 700 $@
+
+hello_.py: hello.py
+	$(AM_V_GEN)cp $< $@; chmod 200 $@
+
+hello_l.py:
+	$(AM_V_GEN)ln -fs hello_x.py $@
+
+badlink.py:
+	@if [ ! -h $@ ] ; then \
+		if [ $V ]; then echo ln -fs noexist.py $@; else echo "  GEN      $@"; fi; \
+		ln -fs noexist.py $@; \
+	fi
 
 runTests: $(srcdir)/runTests_template
 	@rm -f ./runTests
@@ -153,5 +174,5 @@ preload_file_list: $(srcdir)/preload_file_list_template $(top_builddir)/Makefile
 	@rm -f ./preload_file_list
 	$(AM_V_GEN)$(SED) -e s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/preload_file_list_template > $(top_builddir)/testsuite/preload_file_list
 
-CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp
+CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
 
