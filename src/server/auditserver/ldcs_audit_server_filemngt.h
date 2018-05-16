@@ -38,6 +38,7 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
 int filemngt_clear_file_space(void *buffer, size_t size, int fd);
 size_t filemngt_get_file_size(char *pathname, int *errcode);
 
+char* ldcs_is_a_localfile(char* filename);
 int filemngt_stat(char *pathname, struct stat *buf);
 int filemngt_write_stat(char *localname, struct stat *buf);
 int filemngt_read_stat(char *localname, struct stat *buf);

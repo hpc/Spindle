@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "ldcs_api.h"
 #include "ldcs_hash.h"
+#include "global_name.h"
 
 struct ldcs_hash_entry_t  ldcs_hash_table[HASH_SIZE];
 int                       ldcs_hash_last_new_entry_index=-1;
@@ -188,6 +189,7 @@ int ldcs_hash_init() {
     ldcs_hash_table[index].filename = NULL;
     ldcs_hash_table[index].dirname  = NULL;
   }
+  init_global_name_list();
   return(rc);
 }
 
