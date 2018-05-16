@@ -64,6 +64,8 @@ static const char *interp_name = NULL;
 static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
 static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
+char *location;
+int number;
 
 static char *concatStrings(const char *str1, const char *str2) 
 {
@@ -173,8 +175,7 @@ void int_spindle_test_log_msg(char *buffer)
 
 static int init_server_connection()
 {
-   char *location, *connection, *rankinfo_s, *opts_s, *cachesize_s;
-   int number;
+   char *connection, *rankinfo_s, *opts_s, *cachesize_s;
 
    debug_printf("Initializing connection to server\n");
 

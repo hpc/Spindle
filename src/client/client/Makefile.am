@@ -14,7 +14,7 @@ AM_CFLAGS = -fvisibility=hidden
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache
 
-INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_spindleapi.c intercept.c
+INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c
 
 BASE_SRCS = client.c should_intercept.c exec_util.c remap_exec.c rogot.c $(top_srcdir)/../utils/parseloc.c
 

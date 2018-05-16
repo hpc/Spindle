@@ -35,6 +35,7 @@ int send_end(int fd);
 int send_existance_test(int fd, char *path, int *exists);
 int send_stat_request(int fd, char *path, int islstat, char *result);
 int send_ldso_info_request(int fd, const char *ldso_path, char *result_path);
+int send_orig_path_request(int fd, const char *path, char *newpath);
 
 int get_python_prefix(int fd, char **prefix);
 

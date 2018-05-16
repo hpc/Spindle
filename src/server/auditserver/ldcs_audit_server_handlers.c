@@ -132,6 +132,7 @@ static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc,
 
 static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
+static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf);
 static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, broadcast_t bcast);
 static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, 
@@ -1326,6 +1327,8 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
          return handle_client_file_request(procdata, nc, msg);
       case LDCS_MSG_EXISTS_QUERY:
          return handle_client_fileexist_msg(procdata, nc, msg);
+      case LDCS_MSG_ORIGPATH_QUERY:
+         return handle_client_origpath_msg(procdata, nc, msg);
       case LDCS_MSG_END:
          return handle_client_end(procdata, nc);
       default:
@@ -1654,6 +1657,48 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
    debug_printf2("Server recvd existance query for %s.  Dir = %s, File = %s\n", 
                  client->query_globalpath, client->query_dirname, client->query_filename);
    return handle_client_progress(procdata, nc);
+}
+
+extern char *_ldcs_audit_server_tmpdir;
+static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg)
+{
+   ldcs_client_t *client;
+   char *origpath, *newpath;
+   char lookuppath[MAX_PATH_LEN+1];
+   ldcs_message_t resp;
+   int result;
+
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   origpath = msg->data;
+
+   lookuppath[MAX_PATH_LEN] = '\0';
+   if (*origpath != '/' && *origpath != '.')
+      snprintf(lookuppath, MAX_PATH_LEN, "%s/%s", _ldcs_audit_server_tmpdir, origpath);
+   else
+      strncpy(lookuppath, origpath, MAX_PATH_LEN);
+
+   newpath = lookup_global_name(lookuppath);
+   if (!newpath) {
+      debug_printf2("Leaving origpath %s as itself\n", origpath);
+      newpath = origpath;
+   }
+   else {
+      debug_printf2("Translating origpath %s to %s\n", origpath, newpath);
+   }
+      
+
+   resp.header.type = LDCS_MSG_ORIGPATH_ANSWER;
+   resp.header.len = strlen(newpath)+1;
+   resp.data = (void*) newpath;
+
+   result = ldcs_send_msg(client->connid, &resp);
+   client->query_open = 0;
+
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   return result;
 }
 
 /**
