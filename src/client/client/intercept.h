@@ -35,6 +35,8 @@ extern int (*orig_fxstat64)(int vers, int fd, struct stat *buf);
 extern int (*orig_execv)(const char *path, char *const argv[]);
 extern int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
 extern int (*orig_execvp)(const char *file, char *const argv[]);
+extern ssize_t (*orig_readlink)(const char *path, char *buf, size_t bufsiz);
+extern int (*orig_readlinkat)(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 extern pid_t (*orig_fork)();
 extern int (*orig_open)(const char *pathname, int flags, ...);
 extern int (*orig_open64)(const char *pathname, int flags, ...);
@@ -65,6 +67,9 @@ int execve_wrapper(const char *path, char *const argv[], char *const envp[]);
 int execlp_wrapper(const char *path, const char *arg0, ...);
 int execvp_wrapper(const char *path, char *const argv[]);
 pid_t vfork_wrapper();
+
+ssize_t readlink_wrapper(const char *path, char *buf, size_t bufsiz);
+int readlinkat_wrapper(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 
 int int_spindle_open(const char *pathname, int flags, ...);
 FILE *int_spindle_fopen(const char *path, const char *opts);

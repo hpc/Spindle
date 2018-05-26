@@ -34,9 +34,9 @@ extern void spindle_dump_on_error();
 #define debug_printf(format, ...)                                       \
    do {                                                                 \
       if (spindle_debug_prints && spindle_debug_output_f) {             \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
+         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
                  spindle_debug_name, getpid(),                          \
-                 BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
+                 BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)
@@ -44,9 +44,9 @@ extern void spindle_dump_on_error();
 #define debug_printf2(format, ...)                                      \
    do {                                                                 \
       if (spindle_debug_prints > 1 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
+         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
                  spindle_debug_name, getpid(),                          \
-                 BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
+                 BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)
@@ -54,9 +54,9 @@ extern void spindle_dump_on_error();
 #define debug_printf3(format, ...)                                      \
    do {                                                                 \
       if (spindle_debug_prints > 2 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - " format,     \
+         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
                  spindle_debug_name, getpid(),                          \
-                 BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
+                 BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)

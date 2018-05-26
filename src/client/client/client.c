@@ -64,6 +64,8 @@ static const char *interp_name = NULL;
 static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
 static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
+char *location;
+int number;
 
 static char *concatStrings(const char *str1, const char *str2) 
 {
@@ -173,8 +175,7 @@ void int_spindle_test_log_msg(char *buffer)
 
 static int init_server_connection()
 {
-   char *location, *connection, *rankinfo_s, *opts_s, *cachesize_s;
-   int number;
+   char *connection, *rankinfo_s, *opts_s, *cachesize_s;
 
    debug_printf("Initializing connection to server\n");
 
@@ -358,32 +359,7 @@ int client_done()
    return 0;
 }
 
-static int read_buffer(char *localname, char *buffer, int size)
-{
-   int result, bytes_read, fd;
-
-   fd = open(localname, O_RDONLY);
-   if (fd == -1) {
-      err_printf("Failed to open %s for reading: %s\n", localname, strerror(errno));
-      return -1;
-   }
-
-   bytes_read = 0;
-
-   while (bytes_read != size) {
-      result = read(fd, buffer + bytes_read, size - bytes_read);
-      if (result <= 0) {
-         if (errno == EAGAIN || errno == EINTR)
-            continue;
-         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
-         close(fd);
-         return -1;
-      }
-      bytes_read += result;
-   }
-   close(fd);
-   return 0;
-}
+extern int read_buffer(char *localname, char *buffer, int size);
 
 static int read_stat(char *localname, struct stat *buf)
 {
@@ -497,6 +473,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    }
    *exists = 1;
 
+   test_log(newpath);
    result = read_stat(newpath, buf);
    if (result == -1) {
       err_printf("Failed to read stat info for %s from %s\n", path, newpath);
@@ -506,7 +483,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    return 0;
 }
 
-int get_relocated_file(int fd, const char *name, char** newname)
+int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
 {
    int found_file = 0;
    int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
@@ -521,7 +498,7 @@ int get_relocated_file(int fd, const char *name, char** newname)
 
    if (!found_file) {
       debug_printf2("Send file request to server: %s\n", name);
-      send_file_query(fd, (char *) name, newname);
+      send_file_query(fd, (char *) name, newname, errorcode);
       debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");      
       if (use_cache)
          shmcache_update(cache_name, *newname);
@@ -533,6 +510,7 @@ int get_relocated_file(int fd, const char *name, char** newname)
 char *client_library_load(const char *name)
 {
    char *newname;
+   int errcode;
 
    check_for_fork();
    if (!use_ldcs || ldcsid == -1) {
@@ -552,7 +530,7 @@ char *client_library_load(const char *name)
    
    sync_cwd();
 
-   get_relocated_file(ldcsid, name, &newname);
+   get_relocated_file(ldcsid, name, &newname, &errcode);
  
    if(!newname) {
       newname = concatStrings(NOT_FOUND_PREFIX, name);

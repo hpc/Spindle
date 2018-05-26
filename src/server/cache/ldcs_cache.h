@@ -34,12 +34,12 @@ typedef enum {
 } ldcs_hash_object_status_t;
 
 ldcs_cache_result_t ldcs_cache_findDirInCache(char *dirname);
-ldcs_cache_result_t ldcs_cache_findFileDirInCache(char *filename, char *dirname, char **localpath);
+ldcs_cache_result_t ldcs_cache_findFileDirInCache(char *filename, char *dirname, char **localpath, int *errcode);
 
 ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread);
 
 ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname, 
-                                           char *localname, void *buffer, size_t buffer_size);
+                                           char *localname, void *buffer, size_t buffer_size, int errcode);
 
 ldcs_cache_result_t ldcs_cache_updateStatus(char *filename, char *dirname, ldcs_hash_object_status_t ostate);
 ldcs_hash_object_status_t ldcs_cache_getStatus(char *filename);

@@ -16,6 +16,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_launch.h"
 #include "spindle_debug.h"
+#include "launcher.h"
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -23,42 +25,83 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static pid_t app_pid;
-static pid_t daemon_pid;
-static bool app_done = true;
-static bool daemon_done = true;
+#include <map>
 
-static int startApp(int /*app_argc*/, char *app_argv[])
+using namespace std;
+
+class SerialLauncher : public ForkLauncher
 {
-   app_pid = fork();
+   friend Launcher *createSerialLauncher(spindle_args_t *params);
+private:
+   bool initError;
+   pid_t daemon_pid;
+   static SerialLauncher *slauncher;
+
+   SerialLauncher(spindle_args_t *params_);
+protected:
+   virtual bool spawnDaemon();
+public:
+   virtual bool spawnJob(app_id_t id, int app_argc, char **app_argv);
+   virtual const char **getProcessTable();
+   virtual const char *getDaemonArg();
+   virtual ~SerialLauncher();
+};
+SerialLauncher *SerialLauncher::slauncher = NULL;
+
+Launcher *createSerialLauncher(spindle_args_t *params)
+{
+   SerialLauncher::slauncher = new SerialLauncher(params);
+   if (SerialLauncher::slauncher->initError) {
+      delete SerialLauncher::slauncher;
+      return NULL;
+   }
+   return static_cast<Launcher*>(SerialLauncher::slauncher);
+}
+
+SerialLauncher::SerialLauncher(spindle_args_t *params_) :
+   ForkLauncher(params_),
+   initError(false)
+{
+}
+
+SerialLauncher::~SerialLauncher()
+{
+}
+
+bool SerialLauncher::spawnJob(app_id_t id, int /*app_argc*/, char *app_argv[])
+{
+   pid_t app_pid = fork();
    if (app_pid == -1) {
-      err_printf("Error forking application: %s\n", strerror(errno));
-      return -1;
+      int error = errno;
+      err_printf("Error forking application: %s\n", strerror(error));
+      return false;
    }
    else if (app_pid != 0) {
       debug_printf2("Forked application pid %d\n", app_pid);
-      app_done = false;
-      return 0;
+      app_pids[app_pid] = id;
+      return true;
    }
    else {
       execvp(app_argv[0], app_argv);
-      err_printf("Error exec'ing application %s\n", app_argv[0]);
+      int error = errno;
+      err_printf("Error exec'ing application %s: %s\n", app_argv[0], strerror(error));
+      fprintf(stderr, "Error running %s: %s\n", app_argv[0], strerror(error)); 
       exit(-1);
-      return -1;
+      return false;
    }
 }
    
-static int startDaemon(int /*daemon_argc*/, char *daemon_argv[], spindle_args_t *params)
+bool SerialLauncher::spawnDaemon()
 {
    daemon_pid = fork();
    if (daemon_pid == -1) {
-      err_printf("Error forking daemon: %s\n", strerror(errno));
-      return -1;
+      int error = errno;
+      err_printf("Error forking daemon: %s\n", strerror(error));
+      return false;
    }
    else if (daemon_pid != 0) {
       debug_printf("Forked daemon pid %d\n", daemon_pid);
-      daemon_done = false;
-      return 0;
+      return true;
    }
    else {
       char port_s[32], num_ports_s[32], unique_id_s[32];
@@ -70,90 +113,23 @@ static int startDaemon(int /*daemon_argc*/, char *daemon_argv[], spindle_args_t 
       setenv("SPINDLE_SERIAL_SHARED", unique_id_s, 1);
 
       execv(daemon_argv[0], daemon_argv);
-      err_printf("Error exec'ing daemon %s\n", daemon_argv[0]);
+      int error = errno;
+      err_printf("Error exec'ing daemon %s: %s\n", daemon_argv[0], strerror(error));
       exit(-1);
-      return -1;      
+      return false;
    }
 }
 
-enum collect_for_t {
-   collect_app,
-   collect_daemon
-};
-
-void collectResults(collect_for_t collect_for)
+const char **SerialLauncher::getProcessTable()
 {
-   while ((collect_for == collect_app && !app_done) ||
-          (collect_for == collect_daemon && !daemon_done))
-   {
-      int status, result;
-      result = wait(&status);
-      if (result == -1) {
-         err_printf("Error calling wait: %s\n", strerror(errno));
-         return;
-      }
-      
-      if (WIFEXITED(status) && result == app_pid) {
-         debug_printf("App process %d exited with code %d\n", app_pid, WEXITSTATUS(status));
-         app_done = true;
-      }
-      else if (WIFSIGNALED(status) && result == app_pid) {
-         debug_printf("App process %d terminated with signal %d\n", app_pid, WTERMSIG(status));
-         app_done = true;
-      }
-      else if (WIFEXITED(status) && result == daemon_pid) {
-         if (WEXITSTATUS(status) == 0)
-            debug_printf("Daemon process %d exited normally with exit code 0\n", daemon_pid);
-         else
-            err_printf("Daemon process %d exited with code %d\n", daemon_pid, WEXITSTATUS(status));
-         daemon_done = true;
-      }
-      else if (WIFSIGNALED(status) && result == daemon_pid) {
-         err_printf("Daemon process %d terminated with signal %d\n", daemon_pid, WTERMSIG(status));
-         daemon_done = true;
-      }
-      else {
-         err_printf("Unexpected return from wait.  result = %d, status = %d\n", result, status);
-         return;
-      }
-   }
-}
-
-int startSerialFE(int app_argc, char *app_argv[],
-                  int daemon_argc, char *daemon_argv[],
-                  spindle_args_t *params)
-{
-   int result;
-   const char *hostlist[2];
-
-   result = startApp(app_argc, app_argv);
-   if (result == -1) {
-      return -1;
-   }
-
-   startDaemon(daemon_argc, daemon_argv, params); 
-   if (result == -1) {
-      return -1;
-   }
-
+   const char **hostlist;
+   hostlist = (const char **) malloc(sizeof(const char *) * 2);
    hostlist[0] = "localhost";
    hostlist[1] = NULL;
-   result = spindleInitFE(hostlist, params);
-   if (result == -1) {
-      err_printf("Error in spindleInitFE\n");
-      return -1;
-   }
-   
-   collectResults(collect_app);
-   
+   return hostlist;
+}
 
-   result = spindleCloseFE(params);
-   if (result == -1) {
-      err_printf("Error in spindleCloseFE\n");
-      return -1;
-   }
-
-   collectResults(collect_daemon);
-   
-   return 0;
+const char *SerialLauncher::getDaemonArg()
+{
+   return "--spindle_serial";
 }

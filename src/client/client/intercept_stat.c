@@ -31,6 +31,8 @@
 #include "sym_alias.h"
 #endif
 
+extern void test_log(const char *name);
+
 int (*orig_stat)(const char *path, struct stat *buf);
 int (*orig_lstat)(const char *path, struct stat *buf);
 int (*orig_xstat)(int vers, const char *path, struct stat *buf);
@@ -46,8 +48,10 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    int result, exists;
 
    check_for_fork();
-   if (ldcsid < 0 || !use_ldcs) {
-      debug_printf3("no ldcs: stat query %s\n", path);
+   if (ldcsid < 0 || !use_ldcs || !path || !buf) {
+      debug_printf3("no ldcs: stat query %s\n", path ? path : "NULL");
+      if (path)
+         test_log(path);      
       return ORIG_STAT;
    }
    sync_cwd();
@@ -64,6 +68,7 @@ int handle_stat(const char *path, struct stat *buf, int flags)
       return ORIG_STAT;
    }
 
+   debug_printf3("Asking spindle for stat on %s\n", path);
    result = get_stat_result(ldcsid, path, flags & IS_LSTAT, &exists, buf);
    if (result == -1) {
       /* Spindle level error */
@@ -81,15 +86,38 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    return 0;
 }
 
-static int handle_fstat(int fd)
+static int get_pathname_from_fd(int fd, char* pathname, size_t len)
 {
+  char procpath[64];
+  ssize_t rval;
+
+  snprintf(procpath, sizeof(procpath), "/proc/self/fd/%d", fd);
+
+  if ((rval = readlink(procpath, pathname, len)) < 0) {
+    debug_printf3("readlink %s failed\n", procpath);
+    set_errno(EBADF);
+    return -1;
+  }
+  pathname[rval] = '\0';
+
+  return 0;
+}
+
+static int handle_fstat(int fd, struct stat* buf, int flags)
+{
+   char path[MAX_PATH_LEN];
+
    if (fd_filter(fd) == ERR_CALL) {
       debug_printf("fstat hiding fd %d from application\n", fd);
       set_errno(EBADF);
       return -1;
    }
-   debug_printf2("Allowing original fstat(%d)\n", fd);
-   return ORIG_STAT;
+
+   if (get_pathname_from_fd(fd, path, sizeof(path)) < 0)
+      return -1;
+
+   debug_printf3("%s Redirecting fstat(%s) to the spindle\n", __func__, path);
+   return handle_stat(path, buf, flags);
 }
 
 int rtcache_stat(const char *path, struct stat *buf)
@@ -142,7 +170,7 @@ int rtcache_lxstat64(int vers, const char *path, struct stat *buf)
 
 int rtcache_fstat(int fd, struct stat *buf)
 {
-   int result = handle_fstat(fd);
+   int result = handle_fstat(fd, buf, 0);
    if (result != ORIG_STAT)
       return result;
    return orig_fstat(fd, buf);
@@ -150,7 +178,7 @@ int rtcache_fstat(int fd, struct stat *buf)
 
 int rtcache_fxstat(int vers, int fd, struct stat *buf)
 {
-   int result = handle_fstat(fd);
+   int result = handle_fstat(fd, buf, IS_XSTAT);
    if (result != ORIG_STAT)
       return result;
    return orig_fxstat(vers, fd, buf);
@@ -158,7 +186,7 @@ int rtcache_fxstat(int vers, int fd, struct stat *buf)
 
 int rtcache_fxstat64(int vers, int fd, struct stat *buf)
 {
-   int result = handle_fstat(fd);
+   int result = handle_fstat(fd, buf, IS_XSTAT | IS_64);
    if (result != ORIG_STAT)
       return result;
    return orig_fxstat64(vers, fd, buf);

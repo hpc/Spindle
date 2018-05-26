@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -42,20 +43,41 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 char *_ldcs_audit_server_tmpdir;
+static char *normalized_tmpdir;
 
 extern int spindle_mkdir(char *path);
+
+static char *filemngt_normalize_dir(char *dir) {
+   char *newpath = realpath(dir, NULL);
+   return newpath ? newpath : dir;
+}
 
 int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;
 
    _ldcs_audit_server_tmpdir = location;
-
    if (-1 == spindle_mkdir(_ldcs_audit_server_tmpdir)) {
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
       _error("mkdir failed");
    }
-
+   normalized_tmpdir = filemngt_normalize_dir(location);
+   
    return(rc);
+}
+
+/* Returns NULL if not a local file. Otherwise, returns pointer to file portion of string */
+char* ldcs_is_a_localfile (char* filename) {
+  int len = strlen(_ldcs_audit_server_tmpdir);
+  int norm_len = strlen(normalized_tmpdir);
+
+  if ( *filename == '*' )
+    filename++;           /* Skip preceeding '*' if present for stat */
+
+  if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) == 0 )
+     return filename + len + 1;
+  if ( strncmp(normalized_tmpdir, filename, norm_len) == 0 )
+     return filename + norm_len + 1;
+  return NULL;
 }
 
 char *filemngt_calc_localname(char *global_name)
@@ -94,17 +116,17 @@ char *filemngt_calc_localname(char *global_name)
    return newname;
 }
 
-int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip)
+int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, int *errcode)
 {
    FILE *f;
    int result = 0;
 
    debug_printf2("Reading file %s from disk\n", filename);
-
    f = fopen(filename, "r");
    if (!f) {
-      err_printf("Failed to open file %s\n", filename);
-      return -1;
+      *errcode = errno;
+      debug_printf2("Could not read file %s from disk, errcode = %d\n", filename, *errcode);
+      return 0;
    }
 
    result = read_file_and_strip(f, buffer, size, strip);
@@ -239,6 +261,21 @@ int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, i
    return 0;
 }
 
+int filemngt_clear_file_space(void *buffer, size_t size, int fd)
+{
+   int result = 0;
+   if (buffer && size)
+      result = munmap(buffer, size);
+   if (fd != -1)
+      close(fd);
+   if (result == -1) {
+      err_printf("Error unmapping buffer");
+      return -1;
+   }
+
+   return 0;
+}
+
 void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size, size_t newsize)
 {
    /* Linux gets annoying here.  We can't just mprotect the buffer to read-only,
@@ -296,14 +333,16 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
    return buffer2;
 }
 
-size_t filemngt_get_file_size(char *pathname)
+size_t filemngt_get_file_size(char *pathname, int *errcode)
 {
    struct stat st;
    int result;
 
    result = stat(pathname, &st);
    if (result == -1) {
-      err_printf("Error stat'ing %s, which should exist\n", pathname);
+      if (errcode)
+         *errcode = errno;
+      debug_printf2("Could not stat file %s, perhaps bad symlink\n", pathname);
       return (size_t) -1;
    }
    return (size_t) st.st_size;

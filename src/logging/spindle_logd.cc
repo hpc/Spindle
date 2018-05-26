@@ -226,7 +226,9 @@ private:
             }
          }
          if (!found) {
-            logerror(string("Error: Didn't load target: ") + i->second);
+            char proc_s[16];
+            snprintf(proc_s, 16, "%d", i->first);
+            logerror(string("Error: Didn't load target: ") + i->second + string(" on proc ") + string(proc_s));
          }
       }
    }
@@ -247,14 +249,16 @@ public:
    }
 
    bool parseOpenNotice(int proc, char *filename)
-   {      
+   {
       target_libs.insert(make_pair(proc, string(filename))).second;
       return true;
    }
 
    bool parseOpen(int proc, char *filename, int ret_code)
    {
-      if (strstr(filename, ".so") == NULL)
+      if (strstr(filename, ".so") == NULL &&
+          strstr(filename, "retzero") == NULL &&
+          strstr(filename, ".py") == NULL)
          return true;
       bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL);
 
@@ -270,7 +274,7 @@ public:
          return false;
       }
 
-      if (ret_code != -1) {
+      if (ret_code != -1 || strstr(filename, "retzero_x")) {
          libs_loaded.insert(make_pair(proc, string(filename)));
       }
 
@@ -674,6 +678,15 @@ int main(int argc, char *argv[])
    lockProcess = new UniqueProcess();
    if (!lockProcess->isUnique())
       return 0;
+
+   //When running a spindle session we need all stdout closed
+   // or a backtick'd `spindle --start-session` may not return.
+   // since the output daemon could have forked from the spindle
+   // session we may have its pipe from the backticks open.  
+   close(0);
+   open("/dev/null", O_RDONLY);
+   close(1);
+   open("/dev/null", O_WRONLY);
 
    if (runDebug) {
       debug_log = new OutputLog(debug_fname);

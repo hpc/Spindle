@@ -103,6 +103,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Default recource manager */
+#undef TESTRM
+
 /* If the compiler supports a TLS storage class define it to that here */
 #undef TLS
 

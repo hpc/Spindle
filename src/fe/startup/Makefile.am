@@ -21,7 +21,7 @@ libspindlefe_la_LIBADD = $(CORE_LDADD)
 libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
 
 spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE
-spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc $(CORE_SOURCES)
+spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc parse_launcher.cc parse_launcher_args.cc launcher.cc spindle_session.cc launch_slurm.cc $(CORE_SOURCES)
 
 spindle_LDADD = $(CORE_LDADD) $(top_builddir)/openmpi_intercept/libparseompi.la $(top_builddir)/hostbin/libhostbin.la
 

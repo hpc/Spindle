@@ -44,6 +44,8 @@ struct spindle_binding_t spindle_bindings[] = {
    { "execlp", (void **) NULL, "execlp_wrapper", (void *) execlp_wrapper },
    { "execvp", (void **) &orig_execvp, "execvp_wrapper", (void *) execvp_wrapper },
    { "vfork", (void **) NULL, "vfork_wrapper", (void *) vfork_wrapper },
+   { "readlink", (void **) &orig_readlink, "readlink_wrapper", (void *) readlink_wrapper },
+   { "readlinkat", (void **) &orig_readlinkat, "readlinkat_wrapper", (void *) readlinkat_wrapper },   
    { "spindle_enable", NULL, "int_spindle_enable", (void *) int_spindle_enable },
    { "spindle_disable", NULL, "int_spindle_disable", (void *) int_spindle_disable },
    { "spindle_is_enabled", NULL, "int_spindle_is_enabled", (void *) int_spindle_is_enabled },

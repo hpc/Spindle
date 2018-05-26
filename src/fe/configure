@@ -672,6 +672,7 @@ SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
+TESTRM
 CXXCPP
 CPP
 OTOOL64
@@ -810,6 +811,8 @@ enable_libtool_lock
 with_default_port
 with_default_num_ports
 with_localstorage
+with_testrm
+with_rm
 enable_bluegene
 with_hostbin
 enable_pipes
@@ -1511,6 +1514,9 @@ Optional Packages:
                           Number of TCP/IP ports to scan for Spindle server
                           communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
+  --with-testrm=ARM
+  --with-rm=ARG           Default resource manager (valid options are 'slurm'
+                          and 'flux')
   --with-hostbin=EXE      Executable for returning host lists for jobs
   --with-python-prefix=STR
                           List of directories containing python installs
@@ -16299,6 +16305,32 @@ _ACEOF
 
 
 
+TESTRM=unknown
+
+# Check whether --with-testrm was given.
+if test "${with_testrm+set}" = set; then :
+  withval=$with_testrm; TESTRM=${withval}
+fi
+
+
+# Check whether --with-rm was given.
+if test "${with_rm+set}" = set; then :
+  withval=$with_rm; TESTRM=${withval}
+fi
+
+if test "x$TESTRM" == "xunknown"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"--with-rm not specified.  Tests will not work\"" >&5
+$as_echo "$as_me: WARNING: \"--with-rm not specified.  Tests will not work\"" >&2;}
+fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define TESTRM "$TESTRM"
+_ACEOF
+
+
+
+
 #OS Detection
 # Check whether --enable-bluegene was given.
 if test "${enable_bluegene+set}" = set; then :
@@ -16706,7 +16738,7 @@ $as_echo "no" >&6; }
         LIBS=$LIBS_HOLD
 
         #Check for libgcrypt availability
-        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt"
+        GCRYPT_LIBS="$GCRYPT_LIBS -lgcrypt -lgpg-error"
         CFLAGS="$CFLAGS $GCRYPT_CFLAGS"
         LIBS="$LIBS $GCRYPT_LIBS"
         HAVE_GCRYPT="true"

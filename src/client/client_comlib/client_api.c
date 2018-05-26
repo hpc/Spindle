@@ -37,12 +37,12 @@ static struct lock_t comm_lock;
 #define COMM_LOCK do { if (lock(&comm_lock) == -1) return -1; } while (0)
 #define COMM_UNLOCK unlock(&comm_lock)
    
-int send_file_query(int fd, char* path, char** newpath) {
+int send_file_query(int fd, char* path, char** newpath, int *errcode) {
    ldcs_message_t message;
-   char buffer[MAX_PATH_LEN+1];
-   buffer[MAX_PATH_LEN] = '\0';
+   char buffer[MAX_PATH_LEN+1+sizeof(int)];
    int result;
    int path_len = strlen(path)+1;
+   buffer[MAX_PATH_LEN+sizeof(int)] = '\0';
     
    if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
@@ -71,13 +71,15 @@ int send_file_query(int fd, char* path, char** newpath) {
       assert(0);
    }
    
-   if (message.header.len > 0) {
-      *newpath = spindle_strdup(message.data);
+   if (message.header.len > sizeof(int)) {
+      *newpath = spindle_strdup(message.data + sizeof(int));
+      *errcode = 0;
       result = 0;
    } 
    else {
+      *errcode = *((int *) message.data);
       *newpath = NULL;
-      result = -1;
+      result = 0;
    }
 
    return result;
@@ -162,6 +164,41 @@ int send_existance_test(int fd, char *path, int *exists)
    return 0;
 }
 
+int send_orig_path_request(int fd, const char *path, char *newpath)
+{
+   ldcs_message_t message;
+   char buffer[MAX_PATH_LEN+1];
+   buffer[MAX_PATH_LEN] = '\0';
+   int path_len = strlen(path)+1;
+    
+   if (path_len > MAX_PATH_LEN) {
+      err_printf("Path to long for message");
+      return -1;
+   }
+   strncpy(buffer, path, MAX_PATH_LEN);
+
+   message.header.type = LDCS_MSG_ORIGPATH_QUERY;
+   message.header.len = strlen(path) + 1;
+   message.data = (void *) buffer;
+
+   debug_printf3("Sending message of type: file_orig_path len=%d, data=%s\n",
+                 message.header.len, path);
+   COMM_LOCK;
+
+   client_send_msg(fd, &message);
+
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_ORIGPATH_ANSWER || message.header.len > MAX_PATH_LEN) {
+      err_printf("Got unexpected message after existance test: %d\n", (int) message.header.type);
+      assert(0);
+   }
+   strncpy(newpath, buffer, MAX_PATH_LEN);
+
+   return 0;
+}
 
 int send_dir_cwd(int fd, char *cwd)
 {

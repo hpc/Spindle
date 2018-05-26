@@ -20,6 +20,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include <string>
 
+typedef enum {
+   sstatus_unused,
+   sstatus_start,
+   sstatus_run,
+   sstatus_end
+} session_status_t;
+
 void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
 
 opt_t parseArgs(int argc, char *argv[]);
@@ -33,6 +40,8 @@ int getStartupType();
 int getLauncher();
 int getShmCacheSize();
 unique_id_t get_unique_id();
+std::string get_arg_session_id();
+session_status_t get_session_status();
 
 int getAppArgs(int *argc, char ***argv);
 

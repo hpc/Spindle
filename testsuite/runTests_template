@@ -48,3 +48,13 @@ fi
 ./run_driver --reorder --preload
 ./run_driver --partial --preload
 ./run_driver --ldpreload --preload
+
+export SESSION_ID=`./run_driver --start-session`
+./run_driver --dependency --session
+./run_driver --dlopen --session
+./run_driver --dlreopen --session
+./run_driver --reorder --session
+./run_driver --partial --session
+./run_driver --ldpreload --session
+./run_driver --end-session $SESSION_ID
+unset SESSION_ID

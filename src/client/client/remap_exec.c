@@ -113,6 +113,7 @@ static int openRelocatedExec(int ldcsid)
    char proc_pid_exec[64];
    ssize_t result;
    int fd;
+   int errcode = 0;
 
    snprintf(proc_pid_exec, 64, "/proc/%d/exe", getpid());
    proc_pid_exec[63] = '\0';
@@ -126,7 +127,7 @@ static int openRelocatedExec(int ldcsid)
    
    debug_printf2("Exec remapping requesting relocation of file %s\n",
                  orig_exec);
-   get_relocated_file(ldcsid, orig_exec, &reloc_exec);
+   get_relocated_file(ldcsid, orig_exec, &reloc_exec, &errcode);
    debug_printf2("Exec remapping returned %s -> %s\n", orig_exec, reloc_exec);
 
    fd = open(reloc_exec, O_RDWR);

@@ -49,6 +49,7 @@ extern "C" {
 #define OPT_SUBAUDIT   (1 << 17)            /* Use subaudit mechanism (needed on BlueGene and very old GLIBCs) */
 #define OPT_PERSIST    (1 << 18)            /* Spindle servers should not exit when all clients exit. */
 #define OPT_SEC        (7 << 19)            /* Security mode, one of the below OPT_SEC_* values */
+#define OPT_SESSION    (1 << 22)            /* Session mode, where Spindle lifetime spans jobs */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
@@ -71,6 +72,8 @@ extern "C" {
 #define startup_lmon 1                      /* Start via LaunchMON */
 #define startup_hostbin 2                   /* Start via hostbin */
 #define startup_external 3                  /* An external mechanism starts Spindle */
+#define startup_mpi 4                       /* Start via the MPI launcher */
+#define startup_unknown 5                   /* Unknown launch mechanism */
 
 typedef uint64_t unique_id_t;
 typedef uint64_t opt_t;

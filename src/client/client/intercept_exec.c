@@ -42,14 +42,31 @@ int (*orig_execv)(const char *path, char *const argv[]);
 int (*orig_execve)(const char *path, char *const argv[], char *const envp[]);
 int (*orig_execvp)(const char *file, char *const argv[]);
 pid_t (*orig_fork)();
+extern void test_log(const char *name);
 
 static int prep_exec(const char *filepath, char **argv,
                      char *newname, char *newpath, int newpath_size,
-                     char ***new_argv)
+                     char ***new_argv, int errcode)
 {
    int result;
    char *interp_name;
 
+   debug_printf3("prep_exec for filepath %s to newpath %s\n", filepath, newpath);
+   
+   if (errcode == EACCES) {
+      debug_printf2("exec'ing original path %s because file wasn't +r, but could be +x\n",
+                    newpath);
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      debug_printf("test_log(%s)\n", newpath);
+      test_log(newpath);
+      return 0;
+   }
+   if (errcode) {
+      set_errno(errcode);
+      return -1;
+   }
+   
    if (!newname) {
       snprintf(newpath, newpath_size, "%s/%s", NOT_FOUND_PREFIX, filepath);
       newpath[newpath_size-1] = '\0';
@@ -60,12 +77,16 @@ static int prep_exec(const char *filepath, char **argv,
    if (result == SCRIPT_NOTSCRIPT) {
       strncpy(newpath, newname, newpath_size);
       newpath[newpath_size - 1] = '\0';
+      debug_printf("test_log(%s)\n", newpath);      
+      test_log(newpath);
       spindle_free(newname);
       return 0;
    }
    else if (result == SCRIPT_ERR || result == SCRIPT_ENOENT) {
       strncpy(newpath, newname, newpath_size);
       newpath[newpath_size - 1] = '\0';
+      debug_printf("test_log(%s)\n", newpath);      
+      test_log(newpath);
       spindle_free(newname);
       return -1;
    }
@@ -73,6 +94,8 @@ static int prep_exec(const char *filepath, char **argv,
       // TODO: Mark filepath->newpath as future redirection for open
       strncpy(newpath, interp_name, newpath_size);
       newpath[newpath_size - 1] = '\0';
+      debug_printf("test_log(%s)\n", newpath);      
+      test_log(newpath);
       return 0;
    }
    else {
@@ -84,6 +107,8 @@ static int prep_exec(const char *filepath, char **argv,
 static int find_exec(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
    char *newname = NULL;
+   int errcode, exists;
+   struct stat buf;
 
    if (!filepath) {
       newpath[0] = '\0';
@@ -98,25 +123,39 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
    }
 
    sync_cwd();
+   debug_printf2("Requesting stat on exec of %s to validate file\n", filepath);
+   get_stat_result(ldcsid, (char *) filepath, 0, &exists, &buf);
+   if (!exists) {
+      set_errno(ENOENT);
+      return -1;
+   } else if (!(buf.st_mode & 0111)) {
+      set_errno(EACCES);
+      return -1;
+   }
+   else if (buf.st_mode & S_IFDIR) {
+      set_errno(EACCES);
+      return -1;
+   }
    debug_printf2("Exec operation requesting file: %s\n", filepath);
-   get_relocated_file(ldcsid, (char *) filepath, &newname);
-   debug_printf("Exec file request returned %s -> %s\n", filepath, newname ? newname : "NULL");
+   get_relocated_file(ldcsid, (char *) filepath, &newname, &errcode);
+   debug_printf("Exec file request returned %s -> %s with errcode %d\n",
+                filepath, newname ? newname : "NULL", errcode);
 
-   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
+   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv, errcode);
 }
 
 static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath, int newpath_size, char ***new_argv)
 {
    char *newname = NULL;
    int result;
+   int errcode;
 
    if (!filepath) {
       newpath[0] = '\0';
       return 0;
    }
    if (filepath[0] == '/' || filepath[0] == '.') {
-      find_exec(filepath, argv, newpath, newpath_size, new_argv);
-      return 0;
+      return find_exec(filepath, argv, newpath, newpath_size, new_argv);
    }
    check_for_fork();
    if (ldcsid < 0 || !use_ldcs) {
@@ -126,12 +165,13 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    }
    sync_cwd();
 
-   result = exec_pathsearch(ldcsid, filepath, &newname);
-   if (result == -1)
+   result = exec_pathsearch(ldcsid, filepath, &newname, &errcode);
+   if (result == -1) {
+      set_errno(errcode);
       return -1;
+   }
 
-   result = prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv);
-   return result;
+   return prep_exec(filepath, argv, newname, newpath, newpath_size, new_argv, errcode);
 }
 
 int execl_wrapper(const char *path, const char *arg0, ...)
@@ -143,7 +183,11 @@ int execl_wrapper(const char *path, const char *arg0, ...)
 
    debug_printf2("Intercepted execl on %s\n", path);
 
-   find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execl redirection of %s returning error code\n", path);
+      return result;
+   }
    debug_printf("execl redirection of %s to %s\n", path, newpath);
    if (orig_execv)
       result = orig_execv(newpath, new_argv ? new_argv : argv);
@@ -164,7 +208,11 @@ int execv_wrapper(const char *path, char *const argv[])
    int result, error;
 
    debug_printf2("Intercepted execv on %s\n", path);
-   find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execv redirection of %s returning error code\n", path);      
+      return result;
+   }
    debug_printf("execv redirection of %s to %s\n", path, newpath);
    result = orig_execv(newpath, new_argv ? new_argv : argv);
    error = errno;
@@ -187,7 +235,11 @@ int execle_wrapper(const char *path, const char *arg0, ...)
 
    envp = va_arg(arglist, char **);
    debug_printf2("Intercepted execle on %s\n", path);
-   find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execle redirection of %s returning error code\n", path);      
+      return result;
+   }
    debug_printf("execle redirection of %s to %s\n", path, newpath);
    if (orig_execve)
       result = orig_execve(newpath, new_argv ? new_argv : argv, envp);
@@ -208,7 +260,11 @@ int execve_wrapper(const char *path, char *const argv[], char *const envp[])
    int result, error;
 
    debug_printf2("Intercepted execve on %s\n", path);
-   find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execve redirection of %s returning error code\n", path);      
+      return result;
+   }   
    debug_printf("execve redirection of %s to %s\n", path, newpath);
    result = orig_execve(newpath, new_argv ? new_argv : argv, (char **) envp);
    error = errno;
@@ -225,7 +281,11 @@ int execlp_wrapper(const char *path, const char *arg0, ...)
 
    VARARG_TO_ARGV;
    debug_printf2("Intercepted execlp on %s\n", path);
-   find_exec_pathsearch(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec_pathsearch(path, argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execlp redirection of %s returning error code\n", path);      
+      return result;
+   }   
    debug_printf("execlp redirection of %s to %s\n", path, newpath);
    if (orig_execv)
       result = orig_execv(newpath, new_argv ? new_argv : argv);
@@ -246,7 +306,11 @@ int execvp_wrapper(const char *path, char *const argv[])
    int result, error;
 
    debug_printf2("Intercepted execvp on %s\n", path);
-   find_exec_pathsearch(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   result = find_exec_pathsearch(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
+   if (result == -1) {
+      debug_printf("execvp redirection of %s returning error code\n", path);      
+      return result;
+   }   
    debug_printf("execvp redirection of %s to %s\n", path, newpath);
    result = orig_execvp(newpath, new_argv ? new_argv : argv);
    error = errno;
