@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -42,33 +43,41 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 char *_ldcs_audit_server_tmpdir;
+static char *normalized_tmpdir;
 
 extern int spindle_mkdir(char *path);
+
+static char *filemngt_normalize_dir(char *dir) {
+   char *newpath = realpath(dir, NULL);
+   return newpath ? newpath : dir;
+}
 
 int ldcs_audit_server_filemngt_init (char* location) {
    int rc=0;
 
    _ldcs_audit_server_tmpdir = location;
-
    if (-1 == spindle_mkdir(_ldcs_audit_server_tmpdir)) {
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
       _error("mkdir failed");
    }
-
+   normalized_tmpdir = filemngt_normalize_dir(location);
+   
    return(rc);
 }
 
 /* Returns NULL if not a local file. Otherwise, returns pointer to file portion of string */
 char* ldcs_is_a_localfile (char* filename) {
   int len = strlen(_ldcs_audit_server_tmpdir);
+  int norm_len = strlen(normalized_tmpdir);
 
   if ( *filename == '*' )
     filename++;           /* Skip preceeding '*' if present for stat */
 
-  if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) != 0 )
-    return NULL;
-
-  return filename + len + 1;  /* Account for the "/" character at the end */
+  if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) == 0 )
+     return filename + len + 1;
+  if ( strncmp(normalized_tmpdir, filename, norm_len) == 0 )
+     return filename + norm_len + 1;
+  return NULL;
 }
 
 char *filemngt_calc_localname(char *global_name)

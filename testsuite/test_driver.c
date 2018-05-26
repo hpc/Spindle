@@ -582,17 +582,17 @@ static int run_stats()
    result |= run_stat_test(".", STAT, 0000, 0);
    result |= run_stat_test(NULL, STAT, 0000, EFAULT);
 
-   /* result |= run_stat_test("hello_r.py", FSTAT, 0600, 0); */
-   /* result |= run_stat_test("hello_x.py", FSTAT, 0000, EACCES); */
-   /* result |= run_stat_test("hello_rx.py", FSTAT, 0700, 0); */
-   /* result |= run_stat_test("hello_.py", FSTAT, 0000, EACCES); */
-   /* result |= run_stat_test("hello_l.py", FSTAT, 0000, EACCES); */
-   /* result |= run_stat_test("noexist.py", FSTAT, 0000, ENOENT); */
-   /* result |= run_stat_test("/nodir/nofile.py", FSTAT, 0000, ENOENT); */
-   /* result |= run_stat_test("retzero_/nofile.py", FSTAT, 0000, ENOTDIR);    */
-   /* result |= run_stat_test("badlink.py", FSTAT, 0000, ENOENT); */
-   /* result |= run_stat_test(".", FSTAT, 0000, 0); */
-   /* result |= run_stat_test(NULL, FSTAT, 0000, EFAULT); */
+   result |= run_stat_test("hello_r.py", FSTAT, 0600, 0);
+   result |= run_stat_test("hello_x.py", FSTAT, 0000, EACCES);
+   result |= run_stat_test("hello_rx.py", FSTAT, 0700, 0);
+   result |= run_stat_test("hello_.py", FSTAT, 0000, EACCES);
+   result |= run_stat_test("hello_l.py", FSTAT, 0000, EACCES);
+   result |= run_stat_test("noexist.py", FSTAT, 0000, ENOENT);
+   result |= run_stat_test("/nodir/nofile.py", FSTAT, 0000, ENOENT);
+   /* result |= run_stat_test("retzero_/nofile.py", FSTAT, 0000, ENOTDIR); */
+   result |= run_stat_test("badlink.py", FSTAT, 0000, ENOENT);
+   result |= run_stat_test(".", FSTAT, 0000, 0);
+   result |= run_stat_test(NULL, FSTAT, 0000, EFAULT);
 
    result |= run_stat_test("hello_r.py", LSTAT, 0600, 0);
    result |= run_stat_test("hello_x.py", LSTAT, 0300, 0);
