@@ -98,18 +98,18 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libspindlelogc_la_LIBADD =
-am_libspindlelogc_la_OBJECTS = libspindlelogc_la-spindle_logc.lo \
-	libspindlelogc_la-spindle_mkdir.lo
-libspindlelogc_la_OBJECTS = $(am_libspindlelogc_la_OBJECTS)
+libspindleclogc_la_LIBADD =
+am_libspindleclogc_la_OBJECTS = libspindleclogc_la-spindle_logc.lo \
+	libspindleclogc_la-spindle_mkdir.lo
+libspindleclogc_la_OBJECTS = $(am_libspindleclogc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-libspindlelogc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+libspindleclogc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libspindlelogc_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(libspindleclogc_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -144,8 +144,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libspindlelogc_la_SOURCES)
-DIST_SOURCES = $(libspindlelogc_la_SOURCES)
+SOURCES = $(libspindleclogc_la_SOURCES)
+DIST_SOURCES = $(libspindleclogc_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -175,6 +175,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+AR_FLAGS = @AR_FLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -291,11 +292,11 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libspindlelogc.la
+noinst_LTLIBRARIES = libspindleclogc.la
 AM_CFLAGS = -fvisibility=hidden
-libspindlelogc_la_SOURCES = $(top_srcdir)/../logging/spindle_logc.c $(top_srcdir)/../utils/spindle_mkdir.c
-libspindlelogc_la_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DSPINDLECLIENT
-libspindlelogc_la_CFLAGS = -DLIBEXEC=\"${pkglibexecdir}\" -DDAEMON_NAME=\"spindled_logd\" $(AM_CFLAGS)
+libspindleclogc_la_SOURCES = $(top_srcdir)/../logging/spindle_logc.c $(top_srcdir)/../utils/spindle_mkdir.c
+libspindleclogc_la_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -DSPINDLECLIENT
+libspindleclogc_la_CFLAGS = -DLIBEXEC=\"${pkglibexecdir}\" -DDAEMON_NAME=\"spindled_logd\" $(AM_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -342,8 +343,8 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libspindlelogc.la: $(libspindlelogc_la_OBJECTS) $(libspindlelogc_la_DEPENDENCIES) $(EXTRA_libspindlelogc_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspindlelogc_la_LINK)  $(libspindlelogc_la_OBJECTS) $(libspindlelogc_la_LIBADD) $(LIBS)
+libspindleclogc.la: $(libspindleclogc_la_OBJECTS) $(libspindleclogc_la_DEPENDENCIES) $(EXTRA_libspindleclogc_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspindleclogc_la_LINK)  $(libspindleclogc_la_OBJECTS) $(libspindleclogc_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -351,8 +352,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlelogc_la-spindle_logc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlelogc_la-spindle_mkdir.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindleclogc_la-spindle_logc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindleclogc_la-spindle_mkdir.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -375,19 +376,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-libspindlelogc_la-spindle_logc.lo: $(top_srcdir)/../logging/spindle_logc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlelogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindlelogc_la_CFLAGS) $(CFLAGS) -MT libspindlelogc_la-spindle_logc.lo -MD -MP -MF $(DEPDIR)/libspindlelogc_la-spindle_logc.Tpo -c -o libspindlelogc_la-spindle_logc.lo `test -f '$(top_srcdir)/../logging/spindle_logc.c' || echo '$(srcdir)/'`$(top_srcdir)/../logging/spindle_logc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlelogc_la-spindle_logc.Tpo $(DEPDIR)/libspindlelogc_la-spindle_logc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../logging/spindle_logc.c' object='libspindlelogc_la-spindle_logc.lo' libtool=yes @AMDEPBACKSLASH@
+libspindleclogc_la-spindle_logc.lo: $(top_srcdir)/../logging/spindle_logc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindleclogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindleclogc_la_CFLAGS) $(CFLAGS) -MT libspindleclogc_la-spindle_logc.lo -MD -MP -MF $(DEPDIR)/libspindleclogc_la-spindle_logc.Tpo -c -o libspindleclogc_la-spindle_logc.lo `test -f '$(top_srcdir)/../logging/spindle_logc.c' || echo '$(srcdir)/'`$(top_srcdir)/../logging/spindle_logc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindleclogc_la-spindle_logc.Tpo $(DEPDIR)/libspindleclogc_la-spindle_logc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../logging/spindle_logc.c' object='libspindleclogc_la-spindle_logc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlelogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindlelogc_la_CFLAGS) $(CFLAGS) -c -o libspindlelogc_la-spindle_logc.lo `test -f '$(top_srcdir)/../logging/spindle_logc.c' || echo '$(srcdir)/'`$(top_srcdir)/../logging/spindle_logc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindleclogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindleclogc_la_CFLAGS) $(CFLAGS) -c -o libspindleclogc_la-spindle_logc.lo `test -f '$(top_srcdir)/../logging/spindle_logc.c' || echo '$(srcdir)/'`$(top_srcdir)/../logging/spindle_logc.c
 
-libspindlelogc_la-spindle_mkdir.lo: $(top_srcdir)/../utils/spindle_mkdir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlelogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindlelogc_la_CFLAGS) $(CFLAGS) -MT libspindlelogc_la-spindle_mkdir.lo -MD -MP -MF $(DEPDIR)/libspindlelogc_la-spindle_mkdir.Tpo -c -o libspindlelogc_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlelogc_la-spindle_mkdir.Tpo $(DEPDIR)/libspindlelogc_la-spindle_mkdir.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/spindle_mkdir.c' object='libspindlelogc_la-spindle_mkdir.lo' libtool=yes @AMDEPBACKSLASH@
+libspindleclogc_la-spindle_mkdir.lo: $(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindleclogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindleclogc_la_CFLAGS) $(CFLAGS) -MT libspindleclogc_la-spindle_mkdir.lo -MD -MP -MF $(DEPDIR)/libspindleclogc_la-spindle_mkdir.Tpo -c -o libspindleclogc_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindleclogc_la-spindle_mkdir.Tpo $(DEPDIR)/libspindleclogc_la-spindle_mkdir.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/spindle_mkdir.c' object='libspindleclogc_la-spindle_mkdir.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlelogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindlelogc_la_CFLAGS) $(CFLAGS) -c -o libspindlelogc_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindleclogc_la_CPPFLAGS) $(CPPFLAGS) $(libspindleclogc_la_CFLAGS) $(CFLAGS) -c -o libspindleclogc_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

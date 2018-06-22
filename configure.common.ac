@@ -4,6 +4,33 @@ DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
 DEFAULT_NUM_COBO_PORTS=25
 
+AC_MSG_CHECKING([for -Wall])
+OCFLAGS=$CFLAGS
+OCXXFLAGS=$CXXFLAGS
+CFLAGS="$CFLAGS -Wall"
+CXXFLAGS="$CXXLAGS -Wall"
+AC_TRY_COMPILE([], [], AC_MSG_RESULT(yes), [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
+
+AC_MSG_CHECKING([for -Wno-unused-result])
+OCFLAGS=$CFLAGS
+OCXXFLAGS=$CXXFLAGS
+CFLAGS="$CFLAGS -Wunused-result"
+CXXFLAGS="$CXXFLAGS -Wunused-result"
+AC_TRY_COMPILE([], [],
+               [AC_MSG_RESULT(yes); CFLAGS="$OCFLAGS -Wno-unused-result"; CXXFLAGS="$OCXXFLAGS -Wno-unused-result"],
+               [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
+
+AC_MSG_CHECKING([for -Wno-portability])
+OCFLAGS=$CFLAGS
+OCXXFLAGS=$CXXFLAGS
+CFLAGS="$CFLAGS -Wportability"
+CXXFLAGS="$CXXFLAGS -Wportability"
+AC_TRY_COMPILE([], [],
+               [AC_MSG_RESULT(yes); CFLAGS="$OCFLAGS -Wno-portability"; CXXFLAGS="$OCXXFLAGS -Wno-portability"],
+               [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
+
+AC_SUBST([AR_FLAGS], [cr])
+
 AC_ARG_WITH(default-port,
             [AS_HELP_STRING([--with-default-port=NUM],[TCP/IP Port for Spindle server communication])],
             [SPINDLE_PORT=${withval}],

@@ -20,7 +20,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 
 #include "ldcs_api.h"
-#include "ldcs_cache.h"
 
 int addCWDToDir(const char *cwd, char *dir, int result_size)
 {

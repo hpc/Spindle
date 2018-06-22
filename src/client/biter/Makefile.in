@@ -80,8 +80,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @BGQ_BLD_TRUE@am__append_1 = -I/bgsys/drivers/ppcfloor/comm/lib/gnu -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/comm/sys/include -I/bgsys/drivers/ppcfloor/spi/include -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
-@BGQ_BLD_TRUE@am__append_2 = $(BS)/bgq_ids.c
-@LINUX_BLD_TRUE@am__append_3 = $(BS)/linux_ids.c
+@BGQ_BLD_TRUE@am__append_2 = $(top_srcdir)/../biter/bgq_ids.c
+@LINUX_BLD_TRUE@am__append_3 = $(top_srcdir)/../biter/linux_ids.c
 subdir = biter
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/../../scripts/depcomp
@@ -102,17 +102,24 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libbiterc_la_DEPENDENCIES = libsheep.la
-am__libbiterc_la_SOURCES_DIST = $(BS)/biterc.c $(BS)/client_queue.c \
-	$(BS)/demultiplex.c $(BS)/bgq_ids.c $(BS)/linux_ids.c
-@BGQ_BLD_TRUE@am__objects_1 = bgq_ids.lo
-@LINUX_BLD_TRUE@am__objects_2 = linux_ids.lo
-am_libbiterc_la_OBJECTS = biterc.lo client_queue.lo demultiplex.lo \
+am__libbiterc_la_SOURCES_DIST = $(top_srcdir)/../biter/biterc.c \
+	$(top_srcdir)/../biter/client_queue.c \
+	$(top_srcdir)/../biter/demultiplex.c \
+	$(top_srcdir)/../biter/bgq_ids.c \
+	$(top_srcdir)/../biter/linux_ids.c
+@BGQ_BLD_TRUE@am__objects_1 = libbiterc_la-bgq_ids.lo
+@LINUX_BLD_TRUE@am__objects_2 = libbiterc_la-linux_ids.lo
+am_libbiterc_la_OBJECTS = libbiterc_la-biterc.lo \
+	libbiterc_la-client_queue.lo libbiterc_la-demultiplex.lo \
 	$(am__objects_1) $(am__objects_2)
 libbiterc_la_OBJECTS = $(am_libbiterc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+libbiterc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libbiterc_la_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 libsheep_la_LIBADD =
 am_libsheep_la_OBJECTS = sheep.lo shmutil.lo shm_wrappers.lo
 libsheep_la_OBJECTS = $(am_libsheep_la_OBJECTS)
@@ -181,6 +188,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+AR_FLAGS = @AR_FLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -298,12 +306,15 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libbiterc.la libsheep.la
-BS = $(top_srcdir)/../biter
-libbiterc_la_SOURCES = $(BS)/biterc.c $(BS)/client_queue.c \
-	$(BS)/demultiplex.c $(am__append_2) $(am__append_3)
+libbiterc_la_SOURCES = $(top_srcdir)/../biter/biterc.c \
+	$(top_srcdir)/../biter/client_queue.c \
+	$(top_srcdir)/../biter/demultiplex.c $(am__append_2) \
+	$(am__append_3)
+libbiterc_la_CFLAGS = -DCLIENT
 libbiterc_la_LIBADD = libsheep.la
-libsheep_la_SOURCES = $(BS)/sheep.c $(BS)/shmutil.c $(BS)/shm_wrappers.c
-AM_CPPFLAGS = -I$(BS) -I$(top_srcdir)/../logging $(am__append_1)
+libsheep_la_SOURCES = $(top_srcdir)/../biter/sheep.c $(top_srcdir)/../biter/shmutil.c $(top_srcdir)/../biter/shm_wrappers.c
+AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging \
+	$(am__append_1)
 AM_CFLAGS = -fvisibility=hidden
 all: all-am
 
@@ -352,7 +363,7 @@ clean-noinstLTLIBRARIES:
 	}
 
 libbiterc.la: $(libbiterc_la_OBJECTS) $(libbiterc_la_DEPENDENCIES) $(EXTRA_libbiterc_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libbiterc_la_OBJECTS) $(libbiterc_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libbiterc_la_LINK)  $(libbiterc_la_OBJECTS) $(libbiterc_la_LIBADD) $(LIBS)
 
 libsheep.la: $(libsheep_la_OBJECTS) $(libsheep_la_DEPENDENCIES) $(EXTRA_libsheep_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libsheep_la_OBJECTS) $(libsheep_la_LIBADD) $(LIBS)
@@ -363,11 +374,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgq_ids.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biterc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client_queue.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demultiplex.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_ids.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libbiterc_la-bgq_ids.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libbiterc_la-biterc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libbiterc_la-client_queue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libbiterc_la-demultiplex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libbiterc_la-linux_ids.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sheep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shm_wrappers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shmutil.Plo@am__quote@
@@ -393,61 +404,61 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-biterc.lo: $(BS)/biterc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT biterc.lo -MD -MP -MF $(DEPDIR)/biterc.Tpo -c -o biterc.lo `test -f '$(BS)/biterc.c' || echo '$(srcdir)/'`$(BS)/biterc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biterc.Tpo $(DEPDIR)/biterc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/biterc.c' object='biterc.lo' libtool=yes @AMDEPBACKSLASH@
+libbiterc_la-biterc.lo: $(top_srcdir)/../biter/biterc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT libbiterc_la-biterc.lo -MD -MP -MF $(DEPDIR)/libbiterc_la-biterc.Tpo -c -o libbiterc_la-biterc.lo `test -f '$(top_srcdir)/../biter/biterc.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/biterc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libbiterc_la-biterc.Tpo $(DEPDIR)/libbiterc_la-biterc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/biterc.c' object='libbiterc_la-biterc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o biterc.lo `test -f '$(BS)/biterc.c' || echo '$(srcdir)/'`$(BS)/biterc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o libbiterc_la-biterc.lo `test -f '$(top_srcdir)/../biter/biterc.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/biterc.c
 
-client_queue.lo: $(BS)/client_queue.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT client_queue.lo -MD -MP -MF $(DEPDIR)/client_queue.Tpo -c -o client_queue.lo `test -f '$(BS)/client_queue.c' || echo '$(srcdir)/'`$(BS)/client_queue.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/client_queue.Tpo $(DEPDIR)/client_queue.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/client_queue.c' object='client_queue.lo' libtool=yes @AMDEPBACKSLASH@
+libbiterc_la-client_queue.lo: $(top_srcdir)/../biter/client_queue.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT libbiterc_la-client_queue.lo -MD -MP -MF $(DEPDIR)/libbiterc_la-client_queue.Tpo -c -o libbiterc_la-client_queue.lo `test -f '$(top_srcdir)/../biter/client_queue.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/client_queue.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libbiterc_la-client_queue.Tpo $(DEPDIR)/libbiterc_la-client_queue.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/client_queue.c' object='libbiterc_la-client_queue.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o client_queue.lo `test -f '$(BS)/client_queue.c' || echo '$(srcdir)/'`$(BS)/client_queue.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o libbiterc_la-client_queue.lo `test -f '$(top_srcdir)/../biter/client_queue.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/client_queue.c
 
-demultiplex.lo: $(BS)/demultiplex.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT demultiplex.lo -MD -MP -MF $(DEPDIR)/demultiplex.Tpo -c -o demultiplex.lo `test -f '$(BS)/demultiplex.c' || echo '$(srcdir)/'`$(BS)/demultiplex.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/demultiplex.Tpo $(DEPDIR)/demultiplex.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/demultiplex.c' object='demultiplex.lo' libtool=yes @AMDEPBACKSLASH@
+libbiterc_la-demultiplex.lo: $(top_srcdir)/../biter/demultiplex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT libbiterc_la-demultiplex.lo -MD -MP -MF $(DEPDIR)/libbiterc_la-demultiplex.Tpo -c -o libbiterc_la-demultiplex.lo `test -f '$(top_srcdir)/../biter/demultiplex.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/demultiplex.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libbiterc_la-demultiplex.Tpo $(DEPDIR)/libbiterc_la-demultiplex.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/demultiplex.c' object='libbiterc_la-demultiplex.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o demultiplex.lo `test -f '$(BS)/demultiplex.c' || echo '$(srcdir)/'`$(BS)/demultiplex.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o libbiterc_la-demultiplex.lo `test -f '$(top_srcdir)/../biter/demultiplex.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/demultiplex.c
 
-bgq_ids.lo: $(BS)/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bgq_ids.lo -MD -MP -MF $(DEPDIR)/bgq_ids.Tpo -c -o bgq_ids.lo `test -f '$(BS)/bgq_ids.c' || echo '$(srcdir)/'`$(BS)/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bgq_ids.Tpo $(DEPDIR)/bgq_ids.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/bgq_ids.c' object='bgq_ids.lo' libtool=yes @AMDEPBACKSLASH@
+libbiterc_la-bgq_ids.lo: $(top_srcdir)/../biter/bgq_ids.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT libbiterc_la-bgq_ids.lo -MD -MP -MF $(DEPDIR)/libbiterc_la-bgq_ids.Tpo -c -o libbiterc_la-bgq_ids.lo `test -f '$(top_srcdir)/../biter/bgq_ids.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/bgq_ids.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libbiterc_la-bgq_ids.Tpo $(DEPDIR)/libbiterc_la-bgq_ids.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/bgq_ids.c' object='libbiterc_la-bgq_ids.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bgq_ids.lo `test -f '$(BS)/bgq_ids.c' || echo '$(srcdir)/'`$(BS)/bgq_ids.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o libbiterc_la-bgq_ids.lo `test -f '$(top_srcdir)/../biter/bgq_ids.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/bgq_ids.c
 
-linux_ids.lo: $(BS)/linux_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT linux_ids.lo -MD -MP -MF $(DEPDIR)/linux_ids.Tpo -c -o linux_ids.lo `test -f '$(BS)/linux_ids.c' || echo '$(srcdir)/'`$(BS)/linux_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/linux_ids.Tpo $(DEPDIR)/linux_ids.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/linux_ids.c' object='linux_ids.lo' libtool=yes @AMDEPBACKSLASH@
+libbiterc_la-linux_ids.lo: $(top_srcdir)/../biter/linux_ids.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT libbiterc_la-linux_ids.lo -MD -MP -MF $(DEPDIR)/libbiterc_la-linux_ids.Tpo -c -o libbiterc_la-linux_ids.lo `test -f '$(top_srcdir)/../biter/linux_ids.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/linux_ids.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libbiterc_la-linux_ids.Tpo $(DEPDIR)/libbiterc_la-linux_ids.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/linux_ids.c' object='libbiterc_la-linux_ids.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o linux_ids.lo `test -f '$(BS)/linux_ids.c' || echo '$(srcdir)/'`$(BS)/linux_ids.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o libbiterc_la-linux_ids.lo `test -f '$(top_srcdir)/../biter/linux_ids.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/linux_ids.c
 
-sheep.lo: $(BS)/sheep.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sheep.lo -MD -MP -MF $(DEPDIR)/sheep.Tpo -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
+sheep.lo: $(top_srcdir)/../biter/sheep.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sheep.lo -MD -MP -MF $(DEPDIR)/sheep.Tpo -c -o sheep.lo `test -f '$(top_srcdir)/../biter/sheep.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/sheep.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sheep.Tpo $(DEPDIR)/sheep.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/sheep.c' object='sheep.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/sheep.c' object='sheep.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sheep.lo `test -f '$(BS)/sheep.c' || echo '$(srcdir)/'`$(BS)/sheep.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sheep.lo `test -f '$(top_srcdir)/../biter/sheep.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/sheep.c
 
-shmutil.lo: $(BS)/shmutil.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shmutil.lo -MD -MP -MF $(DEPDIR)/shmutil.Tpo -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
+shmutil.lo: $(top_srcdir)/../biter/shmutil.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shmutil.lo -MD -MP -MF $(DEPDIR)/shmutil.Tpo -c -o shmutil.lo `test -f '$(top_srcdir)/../biter/shmutil.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/shmutil.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shmutil.Tpo $(DEPDIR)/shmutil.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/shmutil.c' object='shmutil.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/shmutil.c' object='shmutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shmutil.lo `test -f '$(BS)/shmutil.c' || echo '$(srcdir)/'`$(BS)/shmutil.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shmutil.lo `test -f '$(top_srcdir)/../biter/shmutil.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/shmutil.c
 
-shm_wrappers.lo: $(BS)/shm_wrappers.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shm_wrappers.lo -MD -MP -MF $(DEPDIR)/shm_wrappers.Tpo -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
+shm_wrappers.lo: $(top_srcdir)/../biter/shm_wrappers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shm_wrappers.lo -MD -MP -MF $(DEPDIR)/shm_wrappers.Tpo -c -o shm_wrappers.lo `test -f '$(top_srcdir)/../biter/shm_wrappers.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/shm_wrappers.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shm_wrappers.Tpo $(DEPDIR)/shm_wrappers.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(BS)/shm_wrappers.c' object='shm_wrappers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../biter/shm_wrappers.c' object='shm_wrappers.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shm_wrappers.lo `test -f '$(BS)/shm_wrappers.c' || echo '$(srcdir)/'`$(BS)/shm_wrappers.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shm_wrappers.lo `test -f '$(top_srcdir)/../biter/shm_wrappers.c' || echo '$(srcdir)/'`$(top_srcdir)/../biter/shm_wrappers.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

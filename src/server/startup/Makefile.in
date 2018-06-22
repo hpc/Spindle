@@ -137,7 +137,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkglibexecdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindlelogc.la \
+am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindledlogc.la \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__DEPENDENCIES_1)
 libspindlebe_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
@@ -258,6 +258,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+AR_FLAGS = @AR_FLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -396,9 +397,9 @@ lib_LTLIBRARIES = libspindlebe.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 CORE_SOURCES = spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-CORE_LDADD = $(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
-	$(am__append_2) $(am__append_3) $(am__append_4) \
-	$(am__append_5) $(GCRYPT_LIBS)
+CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la \
+	$(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_5) $(GCRYPT_LIBS)
 libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB
 libspindlebe_la_SOURCES = $(CORE_SOURCES)
 libspindlebe_la_LIBADD = $(CORE_LDADD) $(MUNGE_DYN_LIB)

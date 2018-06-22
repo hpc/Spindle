@@ -109,7 +109,7 @@ am_spindle_bootstrap_OBJECTS =  \
 	spindle_bootstrap-exec_util.$(OBJEXT)
 spindle_bootstrap_OBJECTS = $(am_spindle_bootstrap_OBJECTS)
 spindle_bootstrap_DEPENDENCIES =  \
-	$(top_builddir)/logging/libspindlelogc.la $(am__append_1) \
+	$(top_builddir)/logging/libspindleclogc.la $(am__append_1) \
 	$(am__append_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -184,6 +184,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+AR_FLAGS = @AR_FLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -302,7 +303,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 spindle_bootstrap_LDFLAGS = -all-static $(AM_LDFLAGS)
 spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/client
-spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindlelogc.la \
+spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindleclogc.la \
 	$(am__append_1) $(am__append_2)
 spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/client/exec_util.c
 all: all-am
