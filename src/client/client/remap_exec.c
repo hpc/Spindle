@@ -28,10 +28,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
+#if !defined(REMAP_CONF_TEST)
 #include "ldcs_api.h"
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#endif
 
 static int pagesize;
 
@@ -197,6 +199,7 @@ void remap_executable(int ldcsid)
       foffset = page_align(foffset);
       fsize += vaddr + aout_base - addr;
 
+#if defined(REMAP_LEAVE_FIRST_PAGE)
       if (!p->p_offset) {
          //The Linux kernel gets /proc/pid/exe from a FD that it opened during process startup.
          // If we close the last mapping to the original exec, then that FD will be auto-closed
@@ -209,7 +212,8 @@ void remap_executable(int ldcsid)
          fsize -= pagesize;
          foffset = pagesize;
       }
-   
+#endif
+      
       mresult = mmap((void *) addr, fsize, (int) flags, MAP_PRIVATE | MAP_FIXED, exe_fd, foffset);
       if (mresult == MAP_FAILED) {
          err_printf("mmap(%lx, %lu, %d, %d %d, %lu) failed when re-mapping a.out: %s\n",

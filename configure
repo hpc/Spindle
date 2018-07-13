@@ -16674,6 +16674,9 @@ fi
 
 
 
+
+
+
 # ===========================================================================
 #          http://www.gnu.org/software/autoconf-archive/ax_tls.html
 # ===========================================================================
@@ -16994,12 +16997,6 @@ else
 
 fi
 
-
-#AC_ARG_WITH(testrm,
-#            [AS_HELP_STRING([--with-testrm=ARG],[Resource manager to use for tests (valid options are 'slurm' and 'flux')])],
-#            [TESTRM=${withval}],
-#            [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
-#AC_SUBST(TESTRM)
 
 #MPI detection
 # Check whether --enable-testsuite was given.

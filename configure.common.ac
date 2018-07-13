@@ -225,6 +225,50 @@ AC_ARG_WITH(munge-dir,
             [AS_HELP_STRING([--with-munge-dir=DIR],[Look in DIR for munge installation])],
             [MUNGE_DIR=${withval}])
 
+AC_ARG_ENABLE(remap-pageone,
+              [AS_HELP_STRING([--enable-remap-pageone],[Controls mmap behavior when replacing executables. Should be false on older linux systems])],
+              [SET_REMAP_FIRST_PAGE=$enableval],)
+
+AC_DEFUN([CHECK_MMAP],[
+   AC_MSG_CHECKING([whether to remap first pages])
+   if test "x$SET_REMAP_FIRST_PAGE" != "x"; then
+      REMAP_FIRST_PAGE=$SET_REMAP_FIRST_PAGE;
+   else
+     AC_LANG_PUSH(C)     
+     REMAP_FIRST_PAGE=unknown
+     OLD_CFLAGS=$CFLAGS
+     tmp=.
+     if test -d ${srcdir}/scripts; then auxdir=${srcdir}/scripts; else auxdir=${srcdir}/../../scripts; fi
+     CFLAGS="$CFLAGS -I${srcdir} -L${tmp}"
+
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        ${auxdir}/remap.sh ${tmp} ${auxdir}/.. "$CC $CFLAGS $LDFLAGS" $1
+        if test "x$?" == "x0"; then
+           REMAP_FIRST_PAGE=true
+        fi
+     fi
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        ${auxdir}/remap.sh ${tmp} ${auxdir}/.. "$CC -DREMAP_LEAVE_FIRST_PAGE $CFLAGS $LDFLAGS" x$1
+        if test "x$?" == "x0"; then
+           REMAP_FIRST_PAGE=false
+        fi      
+     fi
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        uname_result=`uname -r`
+        if [[ "${uname_result:0:1}" == "2" ]]; then REMAP_FIRST_PAGE=false; else REMAP_FIRST_PAGE=true; fi
+     fi
+     CFLAGS=$OLD_CFLAGS
+     AC_LANG_POP
+   fi
+   if test "x$REMAP_FIRST_PAGE" == "xtrue"; then
+     AC_MSG_RESULT([yes])
+   elif test "x$REMAP_FIRST_PAGE" == "xfalse"; then
+     AC_MSG_RESULT([no])
+   else
+     AC_MSG_ERROR([Could not determine whether to leave or remap the first page when replacing executables])
+   fi])
+                                  
+                                          
 AC_DEFUN([CHOOSE_SEC],[
         AC_LANG_PUSH(C)
         CFLAGS_HOLD=$CFLAGS

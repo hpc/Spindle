@@ -810,6 +810,7 @@ enable_sec_launchmon
 enable_sec_none
 with_gcrypt_dir
 with_munge_dir
+enable_remap_pageone
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1466,6 +1467,8 @@ Optional Features:
   --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
                           for connections
   --enable-sec-none       Disable security authentication of connections
+  --enable-remap-pageone  Controls mmap behavior when replacing executables.
+                          Should be false on older linux systems
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -12886,8 +12889,69 @@ if test "${with_munge_dir+set}" = set; then :
 fi
 
 
+# Check whether --enable-remap-pageone was given.
+if test "${enable_remap_pageone+set}" = set; then :
+  enableval=$enable_remap_pageone; SET_REMAP_FIRST_PAGE=$enableval
+fi
 
 
+
+
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to remap first pages" >&5
+$as_echo_n "checking whether to remap first pages... " >&6; }
+   if test "x$SET_REMAP_FIRST_PAGE" != "x"; then
+      REMAP_FIRST_PAGE=$SET_REMAP_FIRST_PAGE;
+   else
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     REMAP_FIRST_PAGE=unknown
+     OLD_CFLAGS=$CFLAGS
+     tmp=.
+     if test -d ${srcdir}/scripts; then auxdir=${srcdir}/scripts; else auxdir=${srcdir}/../../scripts; fi
+     CFLAGS="$CFLAGS -I${srcdir} -L${tmp}"
+
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        ${auxdir}/remap.sh ${tmp} ${auxdir}/.. "$CC $CFLAGS $LDFLAGS" cl
+        if test "x$?" == "x0"; then
+           REMAP_FIRST_PAGE=true
+        fi
+     fi
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        ${auxdir}/remap.sh ${tmp} ${auxdir}/.. "$CC -DREMAP_LEAVE_FIRST_PAGE $CFLAGS $LDFLAGS" xcl
+        if test "x$?" == "x0"; then
+           REMAP_FIRST_PAGE=false
+        fi
+     fi
+     if test "x$REMAP_FIRST_PAGE" == "xunknown"; then
+        uname_result=`uname -r`
+        if [ "${uname_result:0:1}" == "2" ]; then REMAP_FIRST_PAGE=false; else REMAP_FIRST_PAGE=true; fi
+     fi
+     CFLAGS=$OLD_CFLAGS
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+   fi
+   if test "x$REMAP_FIRST_PAGE" == "xtrue"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   elif test "x$REMAP_FIRST_PAGE" == "xfalse"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+   else
+     as_fn_error $? "Could not determine whether to leave or remap the first page when replacing executables" "$LINENO" 5
+   fi
 
 LIBSPINDLE_LIB_VERSION=`$srcdir/../../LIB_VERSION libspindle`
 

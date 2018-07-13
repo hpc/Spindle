@@ -20,12 +20,6 @@ m4_include([m4/ax_tls.m4])
 m4_include([m4/lmon.m4])
 AX_TLS
 
-#AC_ARG_WITH(testrm,
-#            [AS_HELP_STRING([--with-testrm=ARG],[Resource manager to use for tests (valid options are 'slurm' and 'flux')])],
-#            [TESTRM=${withval}],
-#            [TESTRM=unknown; AC_MSG_WARN([--with-testrm not specified. Spindle tests will not work])])
-#AC_SUBST(TESTRM)
-
 #MPI detection
 AC_ARG_ENABLE(testsuite,
               [AS_HELP_STRING([--enable-testsuite],[Chooses whether to build the Spindle testsuite. Default yes])],
