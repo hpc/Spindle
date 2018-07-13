@@ -139,6 +139,9 @@ static int openRelocatedExec(int ldcsid)
       return -1;
    }
 
+   debug_printf("test_log(%s)\n", reloc_exec);
+   test_log(reloc_exec);
+
    spindle_free(reloc_exec);
    return fd;
 }

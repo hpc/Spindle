@@ -74,11 +74,19 @@ static int prep_exec(const char *filepath, char **argv,
    }
 
    result = adjust_if_script(filepath, newname, argv, &interp_name, new_argv);
+   if (result == SCRIPT_NOTSCRIPT && (opts & OPT_REMAPEXEC)) {
+      debug_printf2("exec'ing original path %s because we're running in remap mode\n", filepath);
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      debug_printf("test_log(%s)\n", newname);      
+      test_log(newname);
+      spindle_free(newname);
+      return 0;
+   }
    if (result == SCRIPT_NOTSCRIPT) {
+      debug_printf2("exec'ing relocated path %s\n", newname);      
       strncpy(newpath, newname, newpath_size);
       newpath[newpath_size - 1] = '\0';
-      debug_printf("test_log(%s)\n", newpath);      
-      test_log(newpath);
       spindle_free(newname);
       return 0;
    }

@@ -118,6 +118,7 @@ static void setup_environment()
       setenv("LDCS_CONNECTION", connection_str, 1);
    setenv("LDCS_OPTIONS", opts_s, 1);
    setenv("LDCS_CACHESIZE", cachesize_s, 1);
+   setenv("LDCS_BOOTSTRAPPED", "1", 1);
    if (opts & OPT_SUBAUDIT) {
       char *preload_str = spindle_interceptlib;
       char *preload_env = getenv("LD_PRELOAD");
@@ -219,7 +220,7 @@ static void launch_daemon(char *location)
 static void get_executable()
 {
    int errcode = 0;
-   if (!(opts & OPT_RELOCAOUT)) {
+   if (!(opts & OPT_RELOCAOUT) || (opts & OPT_REMAPEXEC)) {
       executable = *cmdline;
       return;
    }

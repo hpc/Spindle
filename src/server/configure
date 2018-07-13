@@ -836,6 +836,7 @@ enable_sec_launchmon
 enable_sec_none
 with_gcrypt_dir
 with_munge_dir
+enable_remap_pageone
 with_launchmon
 with_launchmon_incdir
 with_launchmon_libdir
@@ -1500,6 +1501,8 @@ Optional Features:
   --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
                           for connections
   --enable-sec-none       Disable security authentication of connections
+  --enable-remap-pageone  Controls mmap behavior when replacing executables.
+                          Should be false on older linux systems
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -16728,6 +16731,12 @@ fi
 # Check whether --with-munge-dir was given.
 if test "${with_munge_dir+set}" = set; then :
   withval=$with_munge_dir; MUNGE_DIR=${withval}
+fi
+
+
+# Check whether --enable-remap-pageone was given.
+if test "${enable_remap_pageone+set}" = set; then :
+  enableval=$enable_remap_pageone; SET_REMAP_FIRST_PAGE=$enableval
 fi
 
 

@@ -110,7 +110,7 @@ static const opt_t default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCE
                                                 OPT_RELOCPY | OPT_FOLLOWFORK;
 static const opt_t default_network_opts = OPT_COBO;
 static const opt_t default_pushpull_opts = OPT_PUSH;
-static const opt_t default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST);
+static const opt_t default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST) | OPT_DEBUG;
 static const opt_t default_sec = DEFAULT_SEC;
 
 #if defined(HOSTBIN_PATH)
@@ -267,7 +267,7 @@ struct argp_option options[] = {
    { "cache-prefix", PYTHONPREFIX, "path", 0,
      "Alias for python-prefix" },
    { "debug", DEBUG, YESNO, 0,
-     "If yes, hide spindle from debuggers so they think libraries come from the original locations.  May cause extra overhead. Default: no", GROUP_MISC },
+     "If yes, hide spindle from debuggers so they think libraries come from the original locations.  May cause extra overhead. Default: yes", GROUP_MISC },
    { "hostbin", HOSTBIN, "EXECUTABLE", 0,
      "Path to a script that returns the hostlist for a job on a cluster", GROUP_MISC },
    { "preload", PRELOAD, "FILE", 0,
@@ -553,8 +553,6 @@ opt_t parseArgs(int argc, char *argv[])
 
    if (opts & OPT_DEBUG) {
       //Debug mode overrides other settings
-      opts &= ~OPT_RELOCAOUT;
-      opts &= ~OPT_RELOCEXEC;
       opts |= OPT_REMAPEXEC;
    }
 

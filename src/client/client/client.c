@@ -329,6 +329,7 @@ void set_errno(int newerrno)
 
 int client_init()
 {
+  int initial_run = 0;
   LOGGING_INIT("Client");
   check_for_fork();
   if (!use_ldcs)
@@ -339,10 +340,19 @@ int client_init()
   intercept_stat = (opts & OPT_RELOCPY || !(opts & OPT_NOHIDE)) ? 1 : 0;
   intercept_exec = (opts & OPT_RELOCEXEC) ? 1 : 0;
   intercept_fork = 1;
-  intercept_close = 1;
+  intercept_close = 1;  
 
-  if (opts & OPT_REMAPEXEC)
+  if (getenv("LDCS_BOOTSTRAPPED")) {
+     initial_run = 1;
+     unsetenv("LDCS_BOOTSTRAPPED");
+  }
+  
+  if ((opts & OPT_REMAPEXEC) &&
+      ((initial_run && (opts & OPT_RELOCAOUT)) ||
+       (!initial_run && (opts & OPT_RELOCEXEC))))
+  {
      remap_executable(ldcsid);
+  }
 
   return 0;
 }
