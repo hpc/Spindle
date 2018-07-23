@@ -13,6 +13,7 @@ cat <<EOF | $CCLINE -I $SRCDIR -shared -DWORKINGDIR=\"$WORKINGDIR\" -DUNIQ=\"$UN
 #define debug_printf3 printf
 #define err_printf printf
 #define spindle_free free
+#define test_log(X)
 #define MAX_PATH_LEN 4096
 #include <string.h>
 

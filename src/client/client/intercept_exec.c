@@ -74,11 +74,11 @@ static int prep_exec(const char *filepath, char **argv,
    }
 
    result = adjust_if_script(filepath, newname, argv, &interp_name, new_argv);
-   if (result == SCRIPT_NOTSCRIPT && (opts & OPT_REMAPEXEC)) {
+   if (opts & OPT_REMAPEXEC) {
       debug_printf2("exec'ing original path %s because we're running in remap mode\n", filepath);
       strncpy(newpath, filepath, newpath_size);
       newpath[newpath_size-1] = '\0';
-      debug_printf("test_log(%s)\n", newname);      
+      debug_printf("test_log(%s)\n", newname);
       test_log(newname);
       spindle_free(newname);
       return 0;
@@ -205,7 +205,8 @@ int execl_wrapper(const char *path, const char *arg0, ...)
 
    VARARG_TO_ARGV_CLEANUP;
 
-   set_errno(error);
+   if (!orig_execv)
+      set_errno(error);
    return result;
 }
 
@@ -213,7 +214,7 @@ int execv_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
-   int result, error;
+   int result;
 
    debug_printf2("Intercepted execv on %s\n", path);
    result = find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
@@ -223,12 +224,10 @@ int execv_wrapper(const char *path, char *const argv[])
    }
    debug_printf("execv redirection of %s to %s\n", path, newpath);
    result = orig_execv(newpath, new_argv ? new_argv : argv);
-   error = errno;
 
    if (new_argv)
       spindle_free(new_argv);
    
-   set_errno(error);
    return result;
 
 }
@@ -257,7 +256,8 @@ int execle_wrapper(const char *path, const char *arg0, ...)
 
    VARARG_TO_ARGV_CLEANUP;
 
-   set_errno(error);
+   if (!orig_execve)
+      set_errno(error);
    return result;
 }
 
@@ -265,7 +265,7 @@ int execve_wrapper(const char *path, char *const argv[], char *const envp[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
-   int result, error;
+   int result;
 
    debug_printf2("Intercepted execve on %s\n", path);
    result = find_exec(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
@@ -273,12 +273,10 @@ int execve_wrapper(const char *path, char *const argv[], char *const envp[])
       debug_printf("execve redirection of %s returning error code\n", path);      
       return result;
    }   
-   debug_printf("execve redirection of %s to %s\n", path, newpath);
+   debug_printf2("execve redirection of %s to %s\n", path, newpath);
    result = orig_execve(newpath, new_argv ? new_argv : argv, (char **) envp);
-   error = errno;
    if (new_argv)
       spindle_free(new_argv);
-   set_errno(error);
    return result;
 }
 
@@ -294,7 +292,7 @@ int execlp_wrapper(const char *path, const char *arg0, ...)
       debug_printf("execlp redirection of %s returning error code\n", path);      
       return result;
    }   
-   debug_printf("execlp redirection of %s to %s\n", path, newpath);
+   debug_printf2("execlp redirection of %s to %s\n", path, newpath);
    if (orig_execv)
       result = orig_execv(newpath, new_argv ? new_argv : argv);
    else
@@ -303,7 +301,8 @@ int execlp_wrapper(const char *path, const char *arg0, ...)
 
    VARARG_TO_ARGV_CLEANUP;
 
-   set_errno(error);
+   if (!orig_execv)
+      set_errno(error);
    return result;
 }
 
@@ -311,20 +310,19 @@ int execvp_wrapper(const char *path, char *const argv[])
 {
    char newpath[MAX_PATH_LEN+1];
    char **new_argv = NULL;
-   int result, error;
+   int result;
 
-   debug_printf2("Intercepted execvp on %s\n", path);
+   debug_printf2("problem Intercepted execvp of %s\n", path);
    result = find_exec_pathsearch(path, (char **) argv, newpath, MAX_PATH_LEN+1, &new_argv);
    if (result == -1) {
       debug_printf("execvp redirection of %s returning error code\n", path);      
       return result;
    }   
    debug_printf("execvp redirection of %s to %s\n", path, newpath);
+   
    result = orig_execvp(newpath, new_argv ? new_argv : argv);
-   error = errno;
    if (new_argv)
       spindle_free(new_argv);
-   set_errno(error);
    return result;
 }
 

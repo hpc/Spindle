@@ -116,7 +116,7 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
       
    if (message.header.type != LDCS_MSG_STAT_ANSWER) {
       err_printf("Got unexpected message of type %d\n", message.header.type);
-      assert(0);
+      return -1;
    }
    if (message.header.len == 0) {
       debug_printf3("stat of file %s says file doesn't exist\n", path);

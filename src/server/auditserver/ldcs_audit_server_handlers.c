@@ -335,6 +335,12 @@ static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, cha
    int responsible = 0;
    ldcs_cache_result_t cache_filedir_result;
    handle_file_result_t dir_result;
+
+   if (ldcs_is_a_localfile(pathname)) {
+      debug_printf("Recieved request for local file %s, returning err to client\n", pathname);
+      *errcode = 0;
+      return FOUND_ERRCODE;
+   }
    
    /* check directory + file */
    cache_filedir_result = ldcs_cache_findFileDirInCache(file, dir, localpath, errcode);

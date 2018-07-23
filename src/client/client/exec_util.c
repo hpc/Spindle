@@ -137,6 +137,18 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
    char **interpreter_args;
    *new_argv = NULL;
 
+   if (argv && argv[0] && strcmp(argv[0], orig_path) != 0) {
+      char *lastslash = strrchr(orig_path, '/');
+      if (lastslash && strcmp(lastslash+1, argv[0]) != 0) {
+         debug_printf2("Not treating %s as a script because it's argv[0] (%s) is different than the executable, "
+                       "and Spindle can't emulate that\n", orig_path, argv[0]);
+         return SCRIPT_NOTSCRIPT;
+      }
+   }
+   if (opts & OPT_REMAPEXEC) {
+      return SCRIPT_NOTSCRIPT;
+   }
+   
    fd = open(reloc_path, O_RDONLY);
    if (fd == -1) {
       err_printf("Unable to open file %s to test for script: %s\n", reloc_path, strerror(errno));
@@ -183,8 +195,7 @@ int adjust_if_script(const char *orig_path, char *reloc_path, char **argv, char 
    *new_argv = (char **) spindle_malloc(sizeof(char*) * (argc + interp_argc + 2));
    j = 0;
 
-   (*new_argv)[j++] = new_interpreter;
-   for (i = 1; i < interp_argc; i++)
+   for (i = 0; i < interp_argc; i++)
       (*new_argv)[j++] = spindle_strdup(interpreter_args[i]);
    for (i = 0; i < argc; i++) {
       (*new_argv)[j++] = argv[i];

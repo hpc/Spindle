@@ -131,6 +131,10 @@ static int openRelocatedExec(int ldcsid)
                  orig_exec);
    get_relocated_file(ldcsid, orig_exec, &reloc_exec, &errcode);
    debug_printf2("Exec remapping returned %s -> %s\n", orig_exec, reloc_exec);
+   if (!reloc_exec && !errcode) {
+      debug_printf("Tried to remap local file--leaving exec as is\n");
+      return -1;
+   }
 
    fd = open(reloc_exec, O_RDWR);
    if (fd == -1) {
