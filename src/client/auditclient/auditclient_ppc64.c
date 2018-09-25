@@ -14,20 +14,77 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <stdlib.h>
+#ifndef SPINDLE_STANDALONE_TEST
 #include "client.h"
 #include "auditclient.h"
 #include "spindle_debug.h"
+#else
+#include <string.h>
+#include <stdio.h>
+#include <elf.h>
+#include <link.h>
+#include <assert.h>
 
-Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym, unsigned int ndx,
-                                 uintptr_t *refcook, uintptr_t *defcook,
-                                 La_ppc64_regs *regs, unsigned int *flags,
-                                 const char *symname, long int *framesizep) AUDIT_EXPORT;
+#define AUDIT_EXPORT __attribute__((__visibility__("default")))
+#define debug_printf(format, ...) \
+  do { \
+     fprintf(stderr, "[%s:%u] - " format, __FILE__, __LINE__, ## __VA_ARGS__); \
+  } while (0)
+#define err_printf(format, ...) \
+  do { \
+     fprintf(stderr, "[%s:%u] - " format, __FILE__, __LINE__, ## __VA_ARGS__); \
+  } while (0)
+
+static uintptr_t *firstcookie = NULL;
+static signed long cookie_shift = 0;
+struct link_map *get_linkmap_from_cookie(uintptr_t *cookie)
+{
+   return (struct link_map *) (((unsigned char *) cookie) + cookie_shift);
+}
+
+unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
+{
+   signed long shift;
+
+   if (!firstcookie) {
+      firstcookie = cookie;
+   }
+   
+   shift = ((unsigned char *) map) - ((unsigned char *) cookie);
+   if (cookie_shift)
+      assert(cookie_shift == shift);
+   else {
+      cookie_shift = shift;
+   }
+
+   return LA_FLG_BINDTO | LA_FLG_BINDFROM;
+}
+#endif
+
+#if _CALL_ELF != 2
+// v1 ABI
+#define SPINDLE_PLTENTER la_ppc64_gnu_pltenter
+#define SPINDLE_PPC_REGS La_ppc64_regs
 
 struct ppc64_funcptr_t {
    Elf64_Addr fptr;
    Elf64_Addr toc;
 };
+#else
+// v2 ABI
+#define SPINDLE_PLTENTER la_ppc64v2_gnu_pltenter
+#define SPINDLE_PPC_REGS La_ppc64v2_regs
+#endif
+
+Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym, unsigned int ndx,
+                                 uintptr_t *refcook, uintptr_t *defcook,
+                                 SPINDLE_PPC_REGS *regs, unsigned int *flags,
+                                 const char *symname, long int *framesizep) AUDIT_EXPORT;
 
 static void get_section_info(uintptr_t *cookie, 
                              struct link_map **lmap,
@@ -131,15 +188,17 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
                                      void *stack_begin, void *stack_end)
 {
    int plt_reloc_idx;
-   Elf64_Rela *rels, *rel;
-   Elf64_Xword relsize;
-   Elf64_Sym *dynsyms;
-   char *dynstr;
+   Elf64_Rela *rels = NULL, *rel;
+   Elf64_Xword relsize = 0;
+   Elf64_Sym *dynsyms = NULL;
+   char *dynstr = NULL;
    char *objname;
    Elf64_Addr *got_entry;
    Elf64_Addr base;
    struct link_map *rmap;
+#if _CALL_ELF != 2
    struct ppc64_funcptr_t *func; 
+#endif
 
    get_section_info(refcook, &rmap, &rels, &dynsyms, &dynstr, &relsize);
    objname = (rmap->l_name && rmap->l_name[0] != '\0') ? rmap->l_name : "EXECUTABLE";
@@ -157,20 +216,24 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
    }
    rel = rels + plt_reloc_idx;
 
-   func = (struct ppc64_funcptr_t *) target;
    got_entry = (Elf64_Addr *) (rel->r_offset + base);
 
+#if _CALL_ELF != 2
+   func = (struct ppc64_funcptr_t *) target;
    got_entry[0] = func->fptr;
    got_entry[1] = func->toc;
+#else
+   *got_entry = target;
+#endif
 
    return target;
 }
 
-Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym,
+Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym,
                                  unsigned int ndx,
                                  uintptr_t *refcook,
                                  uintptr_t *defcook,
-                                 La_ppc64_regs *regs,
+                                 SPINDLE_PPC_REGS *regs,
                                  unsigned int *flags,
                                  const char *symname,
                                  long int *framesizep)
@@ -180,7 +243,11 @@ Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym,
 
    __asm__("or %0, %%r1, %%r1\n" : "=r" (sp));
 
+#ifndef SPINDLE_STANDALONE_TEST
    target = client_call_binding(symname, sym->st_value);
+#else
+   target = sym->st_value;
+#endif
    return doPermanentBinding(refcook, defcook, target, symname,
                              sp, (void *) regs);
 }
