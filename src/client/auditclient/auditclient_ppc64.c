@@ -19,52 +19,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 #include <stdlib.h>
-#ifndef SPINDLE_STANDALONE_TEST
 #include "client.h"
 #include "auditclient.h"
 #include "spindle_debug.h"
-#else
-#include <string.h>
-#include <stdio.h>
-#include <elf.h>
-#include <link.h>
-#include <assert.h>
-
-#define AUDIT_EXPORT __attribute__((__visibility__("default")))
-#define debug_printf(format, ...) \
-  do { \
-     fprintf(stderr, "[%s:%u] - " format, __FILE__, __LINE__, ## __VA_ARGS__); \
-  } while (0)
-#define err_printf(format, ...) \
-  do { \
-     fprintf(stderr, "[%s:%u] - " format, __FILE__, __LINE__, ## __VA_ARGS__); \
-  } while (0)
-
-static uintptr_t *firstcookie = NULL;
-static signed long cookie_shift = 0;
-struct link_map *get_linkmap_from_cookie(uintptr_t *cookie)
-{
-   return (struct link_map *) (((unsigned char *) cookie) + cookie_shift);
-}
-
-unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
-{
-   signed long shift;
-
-   if (!firstcookie) {
-      firstcookie = cookie;
-   }
-   
-   shift = ((unsigned char *) map) - ((unsigned char *) cookie);
-   if (cookie_shift)
-      assert(cookie_shift == shift);
-   else {
-      cookie_shift = shift;
-   }
-
-   return LA_FLG_BINDTO | LA_FLG_BINDFROM;
-}
-#endif
 
 #if _CALL_ELF != 2
 // v1 ABI
@@ -248,11 +205,7 @@ Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym,
 
    __asm__("or %0, %%r1, %%r1\n" : "=r" (sp));
 
-#ifndef SPINDLE_STANDALONE_TEST
    target = client_call_binding(symname, sym->st_value);
-#else
-   target = sym->st_value;
-#endif
    return doPermanentBinding(refcook, defcook, target, symname,
                              sp, (void *) regs);
 }
