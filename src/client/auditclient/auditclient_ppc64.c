@@ -147,15 +147,16 @@ static int find_refsymbol_index(uint32_t *begin, uint32_t *end,
    do {
       uint32_t index;
       uint32_t val = begin[i];
-      if ((val < relsize) &&
-          (!tested_zero || val != 0) &&
-          (val % 24 == 0))
+      if ( (val < relsize) && 
+           (!tested_zero || val != 0) && 
+           (val % sizeof(*rels) == 0) )
       {
-         index = val / 24;
+         index = val / sizeof(*rels);
          
          if (check_sym_index(index, symname, rels, dynstrs, dynsyms)) {
             if (prev_i != i) {
-               debug_printf("Bound %s in %s at index %d (position %d)\n", symname, objname, (int) index, i);
+               debug_printf("Bound %s in %s at index %d (position %d)\n",
+                   symname, objname, (int) index, i);
                prev_i = i;
             }
             return (int) index;
@@ -170,10 +171,10 @@ static int find_refsymbol_index(uint32_t *begin, uint32_t *end,
          i = 0;
    } while (i != start_i);
 
-   debug_printf("WARNING - Stack scanning for index failed for symbol %s in %s.  Testing every relocation\n",
-                symname, objname);
+   debug_printf("WARNING - Stack scanning for index failed for "
+       "symbol %s in %s.  Testing every relocation\n", symname, objname);
 
-   num_rels = (uint32_t) (relsize / 24);
+   num_rels = (uint32_t) (relsize / sizeof(*rels));
    for (i = 0; i < num_rels; i++) {
       if (check_sym_index(i, symname, rels, dynstrs, dynsyms)) {
          return (int) i;
@@ -201,17 +202,21 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
 #endif
 
    get_section_info(refcook, &rmap, &rels, &dynsyms, &dynstr, &relsize);
-   objname = (rmap->l_name && rmap->l_name[0] != '\0') ? rmap->l_name : "EXECUTABLE";
+   objname = (rmap->l_name && rmap->l_name[0] != '\0') 
+                                    ? rmap->l_name : "EXECUTABLE";
    base = rmap->l_addr;
 
    if (!rels || !dynsyms) {
       err_printf("Object %s does not have proper elf structures\n", objname);
       return target;
    }
-   plt_reloc_idx = find_refsymbol_index((uint32_t *) stack_begin, (uint32_t *) stack_end,
-                                        symname, rels, dynstr, dynsyms, relsize, objname);
+   plt_reloc_idx = find_refsymbol_index((uint32_t *) stack_begin, 
+                                        (uint32_t *) stack_end, symname, 
+                                        rels, dynstr, dynsyms, 
+                                        relsize, objname);
    if (plt_reloc_idx == -1) {
-      err_printf("Failed to bind symbol %s.  All future calls will bounce through Spindle.\n", symname);
+      err_printf("Failed to bind symbol %s.  "
+                  "All future calls will bounce through Spindle.\n", symname);
       return target;
    }
    rel = rels + plt_reloc_idx;
@@ -223,6 +228,8 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
    got_entry[0] = func->fptr;
    got_entry[1] = func->toc;
 #else
+   debug_printf("Writing %p of %s to GOT location %p\n",
+       target, symname, got_entry);
    *got_entry = target;
 #endif
 
