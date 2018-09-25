@@ -228,8 +228,6 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
    got_entry[0] = func->fptr;
    got_entry[1] = func->toc;
 #else
-   debug_printf("Writing %p of %s to GOT location %p\n",
-       target, symname, got_entry);
    *got_entry = target;
 #endif
 
