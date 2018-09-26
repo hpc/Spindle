@@ -14,20 +14,34 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <stdlib.h>
 #include "client.h"
 #include "auditclient.h"
 #include "spindle_debug.h"
 
-Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym, unsigned int ndx,
-                                 uintptr_t *refcook, uintptr_t *defcook,
-                                 La_ppc64_regs *regs, unsigned int *flags,
-                                 const char *symname, long int *framesizep) AUDIT_EXPORT;
+#if _CALL_ELF != 2
+// v1 ABI
+#define SPINDLE_PLTENTER la_ppc64_gnu_pltenter
+#define SPINDLE_PPC_REGS La_ppc64_regs
 
 struct ppc64_funcptr_t {
    Elf64_Addr fptr;
    Elf64_Addr toc;
 };
+#else
+// v2 ABI
+#define SPINDLE_PLTENTER la_ppc64v2_gnu_pltenter
+#define SPINDLE_PPC_REGS La_ppc64v2_regs
+#endif
+
+Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym, unsigned int ndx,
+                                 uintptr_t *refcook, uintptr_t *defcook,
+                                 SPINDLE_PPC_REGS *regs, unsigned int *flags,
+                                 const char *symname, long int *framesizep) AUDIT_EXPORT;
 
 static void get_section_info(uintptr_t *cookie, 
                              struct link_map **lmap,
@@ -90,15 +104,16 @@ static int find_refsymbol_index(uint32_t *begin, uint32_t *end,
    do {
       uint32_t index;
       uint32_t val = begin[i];
-      if ((val < relsize) &&
-          (!tested_zero || val != 0) &&
-          (val % 24 == 0))
+      if ( (val < relsize) && 
+           (!tested_zero || val != 0) && 
+           (val % sizeof(*rels) == 0) )
       {
-         index = val / 24;
+         index = val / sizeof(*rels);
          
          if (check_sym_index(index, symname, rels, dynstrs, dynsyms)) {
             if (prev_i != i) {
-               debug_printf("Bound %s in %s at index %d (position %d)\n", symname, objname, (int) index, i);
+               debug_printf("Bound %s in %s at index %d (position %d)\n",
+                   symname, objname, (int) index, i);
                prev_i = i;
             }
             return (int) index;
@@ -113,10 +128,10 @@ static int find_refsymbol_index(uint32_t *begin, uint32_t *end,
          i = 0;
    } while (i != start_i);
 
-   debug_printf("WARNING - Stack scanning for index failed for symbol %s in %s.  Testing every relocation\n",
-                symname, objname);
+   debug_printf("WARNING - Stack scanning for index failed for "
+       "symbol %s in %s.  Testing every relocation\n", symname, objname);
 
-   num_rels = (uint32_t) (relsize / 24);
+   num_rels = (uint32_t) (relsize / sizeof(*rels));
    for (i = 0; i < num_rels; i++) {
       if (check_sym_index(i, symname, rels, dynstrs, dynsyms)) {
          return (int) i;
@@ -131,46 +146,56 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
                                      void *stack_begin, void *stack_end)
 {
    int plt_reloc_idx;
-   Elf64_Rela *rels, *rel;
-   Elf64_Xword relsize;
-   Elf64_Sym *dynsyms;
-   char *dynstr;
+   Elf64_Rela *rels = NULL, *rel;
+   Elf64_Xword relsize = 0;
+   Elf64_Sym *dynsyms = NULL;
+   char *dynstr = NULL;
    char *objname;
    Elf64_Addr *got_entry;
    Elf64_Addr base;
    struct link_map *rmap;
+#if _CALL_ELF != 2
    struct ppc64_funcptr_t *func; 
+#endif
 
    get_section_info(refcook, &rmap, &rels, &dynsyms, &dynstr, &relsize);
-   objname = (rmap->l_name && rmap->l_name[0] != '\0') ? rmap->l_name : "EXECUTABLE";
+   objname = (rmap->l_name && rmap->l_name[0] != '\0') 
+                                    ? rmap->l_name : "EXECUTABLE";
    base = rmap->l_addr;
 
    if (!rels || !dynsyms) {
       err_printf("Object %s does not have proper elf structures\n", objname);
       return target;
    }
-   plt_reloc_idx = find_refsymbol_index((uint32_t *) stack_begin, (uint32_t *) stack_end,
-                                        symname, rels, dynstr, dynsyms, relsize, objname);
+   plt_reloc_idx = find_refsymbol_index((uint32_t *) stack_begin, 
+                                        (uint32_t *) stack_end, symname, 
+                                        rels, dynstr, dynsyms, 
+                                        relsize, objname);
    if (plt_reloc_idx == -1) {
-      err_printf("Failed to bind symbol %s.  All future calls will bounce through Spindle.\n", symname);
+      err_printf("Failed to bind symbol %s.  "
+                  "All future calls will bounce through Spindle.\n", symname);
       return target;
    }
    rel = rels + plt_reloc_idx;
 
-   func = (struct ppc64_funcptr_t *) target;
    got_entry = (Elf64_Addr *) (rel->r_offset + base);
 
+#if _CALL_ELF != 2
+   func = (struct ppc64_funcptr_t *) target;
    got_entry[0] = func->fptr;
    got_entry[1] = func->toc;
+#else
+   *got_entry = target;
+#endif
 
    return target;
 }
 
-Elf64_Addr la_ppc64_gnu_pltenter(Elf64_Sym *sym,
+Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym,
                                  unsigned int ndx,
                                  uintptr_t *refcook,
                                  uintptr_t *defcook,
-                                 La_ppc64_regs *regs,
+                                 SPINDLE_PPC_REGS *regs,
                                  unsigned int *flags,
                                  const char *symname,
                                  long int *framesizep)

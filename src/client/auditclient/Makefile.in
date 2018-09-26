@@ -136,9 +136,10 @@ am__libspindle_audit_biter_la_SOURCES_DIST = auditclient.c \
 	auditclient_ppc64.c auditclient_x86_64.c
 am__objects_1 = auditclient.lo auditclient_common.lo patch_linkmap.lo \
 	redirect.lo
-@PPC64_BLD_FALSE@@X86_64_BLD_TRUE@am__objects_2 =  \
-@PPC64_BLD_FALSE@@X86_64_BLD_TRUE@	auditclient_x86_64.lo
-@PPC64_BLD_TRUE@am__objects_2 = auditclient_ppc64.lo
+@PPC64LE_BLD_FALSE@@PPC64_BLD_FALSE@@X86_64_BLD_TRUE@am__objects_2 = auditclient_x86_64.lo
+@PPC64LE_BLD_FALSE@@PPC64_BLD_TRUE@am__objects_2 =  \
+@PPC64LE_BLD_FALSE@@PPC64_BLD_TRUE@	auditclient_ppc64.lo
+@PPC64LE_BLD_TRUE@am__objects_2 = auditclient_ppc64.lo
 am_libspindle_audit_biter_la_OBJECTS = $(am__objects_1) \
 	$(am__objects_2)
 libspindle_audit_biter_la_OBJECTS =  \
@@ -371,6 +372,7 @@ pkglib_LTLIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib
 BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c
+@PPC64LE_BLD_TRUE@ARCH_SRCS = auditclient_ppc64.c
 @PPC64_BLD_TRUE@ARCH_SRCS = auditclient_ppc64.c
 @X86_64_BLD_TRUE@ARCH_SRCS = auditclient_x86_64.c
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
