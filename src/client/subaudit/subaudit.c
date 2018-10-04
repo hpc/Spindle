@@ -29,11 +29,6 @@ unsigned int spindle_la_version(unsigned int version)
    int result;
    int binding_offset = 0;
 
-   result = lookup_calloc_got();
-   if (result == -1)
-      return 0;
-   update_calloc_got();
-
    result = get_ldso_metadata(&binding_offset);
    if (result == -1) {
       err_printf("Unable to lookup binding offset\n");
@@ -60,7 +55,6 @@ static void bind_to_libc()
 void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
 {
    bind_to_libc();
-   update_calloc_got();
    update_plt_bindings();
 }
 
@@ -68,7 +62,6 @@ unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *co
 {
    bind_to_libc();
    add_library_to_plt_update_list(map);
-   add_library_to_calloc_list(map);
    return 0;
 }
 

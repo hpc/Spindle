@@ -32,17 +32,22 @@ static signed int binding_offset;
 static void *dl_runtime_profile_ptr;
 static void *dl_runtime_resolve_ptr;
 
-#if defined(arch_x86_64) || defined(arch_ppc64le)
+#if defined(arch_x86_64)
 #define GOT_resolve_offset 16
 typedef Elf64_Addr funcptr_t;
 #define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
-#elif defined(arch_ppc64)
+#elif defined(arch_ppc64) || defined(arch_ppc64le)
 #define GOT_resolve_offset 0
+#if _CALL_ELF != 2
 typedef struct {
    Elf64_Addr func;
    Elf64_Addr toc;   
 } *funcptr_t;
 #define ASSIGN_FPTR(TO, FROM) *((funcptr_t) TO) = *((funcptr_t) FROM)
+#else
+typedef Elf64_Addr funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
+#endif
 #else
 #error Unknown architecture
 #endif

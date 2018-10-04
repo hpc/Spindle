@@ -102,8 +102,13 @@ static struct link_map *get_libc()
 {
    struct link_map *l;
    for (l = _r_debug.r_map; l != NULL; l = l->l_next) {
-      if (l->l_name && (strstr(l->l_name, "libc-") || strstr(l->l_name, "libc.")))
-          return l;
+      debug_printf3("Looking for libc: is it %s?\n", 
+            (l->l_name != NULL) ? l->l_name : "No Name");
+      if (l->l_name && (strstr(l->l_name, "libc-") || strstr(l->l_name, "libc."))) {
+         debug_printf3("libc found %s\n", 
+               (l->l_name != NULL) ? l->l_name : "No Name");
+         return l;
+      }
    }
    return NULL;
 }

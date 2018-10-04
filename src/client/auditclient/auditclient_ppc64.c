@@ -182,9 +182,13 @@ static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
 
 #if _CALL_ELF != 2
    func = (struct ppc64_funcptr_t *) target;
+   debug_printf3("%s: Old GOT Entry %p -- New GOT Entry %p\n",
+                             symname, (void*)(*got_entry), (void*)func->fptr);
    got_entry[0] = func->fptr;
    got_entry[1] = func->toc;
 #else
+   debug_printf3("%s: Old GOT Entry %p -- New GOT Entry %p\n",
+                             symname, (void*)(*got_entry), (void*)target);
    *got_entry = target;
 #endif
 
