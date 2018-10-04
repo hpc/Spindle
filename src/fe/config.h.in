@@ -139,6 +139,9 @@
 /* The file for storing usage logs */
 #undef USAGE_LOGGING_FILE
 
+/* Use subaudit by default */
+#undef USE_SUBAUDIT_BY_DEFAULT
+
 /* Version number of package */
 #undef VERSION
 
