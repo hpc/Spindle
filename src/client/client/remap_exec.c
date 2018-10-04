@@ -206,6 +206,12 @@ void remap_executable(int ldcsid)
       foffset = page_align(foffset);
       fsize += vaddr + aout_base - addr;
 
+      if (flags & PROT_WRITE) {
+         debug_printf3("Not remapping segment at %p because it is writable\n",
+               (void*) vaddr);
+         continue;
+      }
+
 #if defined(REMAP_LEAVE_FIRST_PAGE)
       if (!p->p_offset) {
          //The Linux kernel gets /proc/pid/exe from a FD that it opened during process startup.
