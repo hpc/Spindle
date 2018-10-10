@@ -80,6 +80,11 @@ static int readLoadableFileSections(FILE *f, unsigned char *buffer, size_t *size
       readUpTo(f, buffer, &cur_pos, filesize);
       return NOT_ELF;
    }
+   if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
+      readUpTo(f, buffer, &cur_pos, filesize);
+      return NOT_ELF;
+   }
+
 
    //Collect info on program headers and read them into memory
    // (if they weren't read in the last read).

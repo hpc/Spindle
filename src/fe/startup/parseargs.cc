@@ -90,10 +90,14 @@ using namespace std;
 #error No security model available
 #endif
 
+#if !defined(USE_SUBAUDIT_BY_DEFAULT)  /* May be defined via configure */
 #if defined(os_bluegene)
 #define DEFAULT_USE_SUBAUDIT 1
 #else
 #define DEFAULT_USE_SUBAUDIT 0
+#endif
+#else
+#define DEFAULT_USE_SUBAUDIT 1
 #endif
 
 #define DEFAULT_PERSIST 0

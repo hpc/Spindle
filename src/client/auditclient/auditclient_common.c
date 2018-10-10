@@ -132,6 +132,7 @@ void la_preinit(uintptr_t *cookie)
    debug_printf3("la_preinit(): %p\n", cookie);
 }
 
+extern unsigned int spindle_la_objclose(uintptr_t *cookie);
 unsigned int la_objclose (uintptr_t *cookie)
 {
   debug_printf3("la_objclose() %p\n", cookie);
@@ -139,6 +140,6 @@ unsigned int la_objclose (uintptr_t *cookie)
      client_done();
   }
 
-  return 0;
+  return spindle_la_objclose(cookie);
 }
 

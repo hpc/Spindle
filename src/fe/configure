@@ -825,6 +825,7 @@ enable_cobo
 with_python_prefix
 with_usage_logging
 enable_cleanup_process
+enable_subaudit_as_default
 enable_sec_munge
 enable_sec_keydir
 enable_sec_launchmon
@@ -1492,6 +1493,8 @@ Optional Features:
   --enable-cobo           Use msocket for inter-server communication
   --enable-cleanup-process
                           Use a dedicated process to clean relocated files
+  --enable-subaudit-as-default
+                          Enable subaudit option as defaulted to on
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
@@ -16695,6 +16698,13 @@ if test "x$OS_BUILD" == "xbluegene"; then
   CLEANUP_PROC="true"
 fi
 
+#Audit options
+# Check whether --enable-subaudit-as-default was given.
+if test "${enable_subaudit_as_default+set}" = set; then :
+  enableval=$enable_subaudit_as_default; USE_SUBAUDIT_BY_DEFAULT="true"
+fi
+
+
 #Security options
 
 $as_echo "#define KEY_SIZE_BYTES 32" >>confdefs.h
@@ -16739,6 +16749,8 @@ fi
 if test "${enable_remap_pageone+set}" = set; then :
   enableval=$enable_remap_pageone; SET_REMAP_FIRST_PAGE=$enableval
 fi
+
+
 
 
 
@@ -16994,6 +17006,26 @@ $as_echo "$as_me: Enabling NULL encryption" >&6;};
 $as_echo "#define ENABLE_NULL_ENCRYPTION 1" >>confdefs.h
 
         fi
+
+   ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking set subaudit as defaulted to on..." >&5
+$as_echo_n "checking set subaudit as defaulted to on...... " >&6; }
+   if test "x$USE_SUBAUDIT_BY_DEFAULT" != "x"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: yes" >&5
+$as_echo "$as_me: yes" >&6;}
+
+$as_echo "#define USE_SUBAUDIT_BY_DEFAULT 1" >>confdefs.h
+
+   else
+     { $as_echo "$as_me:${as_lineno-$LINENO}: no" >&5
+$as_echo "$as_me: no" >&6;}
+   fi
+
 
 #Include LaunchMON
 #Launchmon processing

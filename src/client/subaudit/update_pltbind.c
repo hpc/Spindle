@@ -32,17 +32,22 @@ static signed int binding_offset;
 static void *dl_runtime_profile_ptr;
 static void *dl_runtime_resolve_ptr;
 
-#if defined(arch_x86_64) || defined(arch_ppc64le)
-#define GOT_resolve_offset 16
+#define GOT_resolve_offset 0
+
+#if defined(arch_x86_64)
 typedef Elf64_Addr funcptr_t;
 #define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
-#elif defined(arch_ppc64)
-#define GOT_resolve_offset 0
+#elif defined(arch_ppc64) || defined(arch_ppc64le)
+#if _CALL_ELF != 2
 typedef struct {
    Elf64_Addr func;
    Elf64_Addr toc;   
 } *funcptr_t;
 #define ASSIGN_FPTR(TO, FROM) *((funcptr_t) TO) = *((funcptr_t) FROM)
+#else
+typedef Elf64_Addr funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
+#endif
 #else
 #error Unknown architecture
 #endif
@@ -187,6 +192,24 @@ void add_library_to_plt_update_list(struct link_map *lmap)
 
    grow_update_list();
    update_list[update_list_cur++] = lmap;
+}
+
+void remove_library_from_plt_update_list(struct link_map *lmap)
+{
+   int i, found = -1;
+   if (!update_list_cur)
+      return;
+
+   for (i = 0; i < update_list_cur; i++) {
+      if (lmap == update_list[i]) {
+         found = i;
+         break;
+      }
+   }
+
+   debug_printf3("Removing library from update list\n");
+   update_list[found] = update_list[update_list_cur-1];
+   update_list_cur--;
 }
 
 int update_plt_bindings()

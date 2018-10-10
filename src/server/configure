@@ -830,6 +830,7 @@ enable_cobo
 with_python_prefix
 with_usage_logging
 enable_cleanup_process
+enable_subaudit_as_default
 enable_sec_munge
 enable_sec_keydir
 enable_sec_launchmon
@@ -1494,6 +1495,8 @@ Optional Features:
   --enable-cobo           Use msocket for inter-server communication
   --enable-cleanup-process
                           Use a dedicated process to clean relocated files
+  --enable-subaudit-as-default
+                          Enable subaudit option as defaulted to on
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
@@ -16694,6 +16697,13 @@ if test "x$OS_BUILD" == "xbluegene"; then
   CLEANUP_PROC="true"
 fi
 
+#Audit options
+# Check whether --enable-subaudit-as-default was given.
+if test "${enable_subaudit_as_default+set}" = set; then :
+  enableval=$enable_subaudit_as_default; USE_SUBAUDIT_BY_DEFAULT="true"
+fi
+
+
 #Security options
 
 $as_echo "#define KEY_SIZE_BYTES 32" >>confdefs.h
@@ -16738,6 +16748,8 @@ fi
 if test "${enable_remap_pageone+set}" = set; then :
   enableval=$enable_remap_pageone; SET_REMAP_FIRST_PAGE=$enableval
 fi
+
+
 
 
 

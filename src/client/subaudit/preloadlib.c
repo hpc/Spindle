@@ -57,6 +57,8 @@ SPINDLE_EXPORT int __lxstat64(int vers, const char *path, struct stat *buf);
 SPINDLE_EXPORT int fstat(int fd, struct stat *buf);
 SPINDLE_EXPORT int fxstat(int vers, int fd, struct stat *buf);
 SPINDLE_EXPORT int fxstat64(int vers, int fd, struct stat *buf);
+SPINDLE_EXPORT int __fxstat(int vers, int fd, struct stat *buf);
+SPINDLE_EXPORT int __fxstat64(int vers, int fd, struct stat *buf);
 SPINDLE_EXPORT int execl(const char *path, const char *arg0, ...);
 SPINDLE_EXPORT int execv(const char *path, char *const argv[]);
 SPINDLE_EXPORT int execle(const char *path, const char *arg0, ...);
@@ -64,6 +66,8 @@ SPINDLE_EXPORT int execve(const char *path, char *const argv[], char *const envp
 SPINDLE_EXPORT int execlp(const char *path, const char *arg0, ...);
 SPINDLE_EXPORT int execvp(const char *path, char *const argv[]);
 SPINDLE_EXPORT pid_t vfork();
+SPINDLE_EXPORT ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+SPINDLE_EXPORT ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsz);
 SPINDLE_EXPORT int spindle_open(const char *pathname, int flags, ...);
 SPINDLE_EXPORT int spindle_stat(const char *path, struct stat *buf);
 SPINDLE_EXPORT int spindle_lstat(const char *path, struct stat *buf);
@@ -152,6 +156,16 @@ int fxstat64(int vers, int fd, struct stat *buf)
    return rtcache_fxstat64(vers, fd, buf);
 }
 
+int __fxstat(int vers, int fd, struct stat *buf)
+{
+   return rtcache_fxstat(vers, fd, buf);
+}
+
+int __fxstat64(int vers, int fd, struct stat *buf)
+{
+   return rtcache_fxstat64(vers, fd, buf);
+}
+
 int execl(const char *path, const char *arg0, ...)
 {
    int result;
@@ -216,6 +230,16 @@ int spindle_stat(const char *path, struct stat *buf)
 int spindle_lstat(const char *path, struct stat *buf)
 {
    return int_spindle_lstat(path, buf);
+}
+
+ssize_t readlink(const char *path, char *buf, size_t bufsiz)
+{
+   return readlink_wrapper(path, buf, bufsiz);
+}
+
+ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsz)
+{
+   return readlinkat_wrapper(dirfd, pathname, buf, bufsz);
 }
 
 FILE *spindle_fopen(const char *path, const char *mode)
