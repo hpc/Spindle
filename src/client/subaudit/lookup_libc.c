@@ -27,6 +27,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_debug.h"
 #include "subaudit.h"
 #include "intercept.h"
+#include "client.h"
+
+extern errno_location_t app_errno_location;
 
 uint32_t gnu_hash_func(const char *str) {
    uint32_t hash = 5381;
@@ -150,6 +153,18 @@ int lookup_libc_symbols()
             *binding->libc_func = (void *) (symtab[result].st_value + libc->l_addr);
             found++;
          }
+      }
+
+      result = -1;
+      if (gnu_hash)
+         result = lookup_gnu_hash_symbol("__errno_location", symtab, strtab, (struct gnu_hash_header *) gnu_hash);
+      if (elf_hash && result == -1)
+         result = lookup_elf_hash_symbol("__errno_location", symtab, strtab, (ElfW(Word) *) elf_hash);
+      if (result == -1)
+         debug_printf3("Warning, Could not bind symbol __errno_location in libc\n");
+      else {
+         app_errno_location = (void *) (symtab[result].st_value + libc->l_addr);
+         debug_printf3("Bound errno_location to %p\n", app_errno_location);
       }
    }
 
