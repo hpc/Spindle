@@ -45,3 +45,8 @@ unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *co
    patch_on_linkactivity(map);
    return LA_FLG_BINDTO | LA_FLG_BINDFROM;
 }
+
+unsigned int spindle_la_objclose(uintptr_t *cookie)
+{
+   return 0;
+}

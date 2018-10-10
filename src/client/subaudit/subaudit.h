@@ -20,6 +20,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 int protect_range(void *address, unsigned long size, int prot);
 void init_plt_binding_func(signed int binding_offset_);
 void add_library_to_plt_update_list(struct link_map *lmap);
+void remove_library_from_plt_update_list(struct link_map *lmap);
 int lookup_libc_symbols();
 int update_plt_bindings();
 

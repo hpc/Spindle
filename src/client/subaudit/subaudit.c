@@ -23,6 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "subaudit.h"
 #include "client.h"
 #include "intercept.h"
+#include "auditclient.h"
 
 unsigned int spindle_la_version(unsigned int version)
 {
@@ -62,6 +63,13 @@ unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *co
 {
    bind_to_libc();
    add_library_to_plt_update_list(map);
+   return 0;
+}
+
+unsigned int spindle_la_objclose(uintptr_t *cookie)
+{
+   struct link_map *map = get_linkmap_from_cookie(cookie);
+   remove_library_from_plt_update_list(map);
    return 0;
 }
 

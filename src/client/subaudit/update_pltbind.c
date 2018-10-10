@@ -194,6 +194,24 @@ void add_library_to_plt_update_list(struct link_map *lmap)
    update_list[update_list_cur++] = lmap;
 }
 
+void remove_library_from_plt_update_list(struct link_map *lmap)
+{
+   int i, found = -1;
+   if (!update_list_cur)
+      return;
+
+   for (i = 0; i < update_list_cur; i++) {
+      if (lmap == update_list[i]) {
+         found = i;
+         break;
+      }
+   }
+
+   debug_printf3("Removing library from update list\n");
+   update_list[found] = update_list[update_list_cur-1];
+   update_list_cur--;
+}
+
 int update_plt_bindings()
 {
    unsigned int i, j = 0;
