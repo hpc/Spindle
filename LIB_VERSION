@@ -21,12 +21,13 @@
 # History:
 # Spindle 0.9  - libspindlefe.so 0.0.0, libspindlebe.so 0.0.0, libspindle.so 0.0.0
 # Spindle 0.10 - libspindlefe.so 1.0.1, libspindlebe.so 1.0.1, libspindle.so 0.1.0
+# Spindle 0.11 - libspindlefe.so 2.0.0, libspindlebe.so 2.0.0, libspindle.so 0.1.0
 
 if test "x$1" == "xspindlefe"; then
-echo 1:0:1
+echo 2:0:0
 fi
 if test "x$1" == "xspindlebe"; then
-echo 1:0:1
+echo 2:0:0
 fi
 if test "x$1" == "xlibspindle"; then
 echo 0:1:0

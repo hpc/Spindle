@@ -9,7 +9,7 @@ Overview
 --------
 
 While Spindle comes with several mechanisms for launching (launchmon,
-hostbin, and serial as of v0.10), each of these has disadvantages such
+hostbin, slurm, and serial as of v0.11), each of these has disadvantages such
 as in-operatability with debuggers (launchmon), difficult to use
 (hostbin), or of limited scope (serial). In the ideal case Spindle
 should be integrated directly into a job launcher, which can easily

@@ -1,3 +1,13 @@
+Spindle 0.11
+------------
+  - ppc64le support
+  - Spindle sessions feature, allowing running of multiple jobs under the same spindle session
+  - Pure slurm-based launcher mode that does not require LaunchMON
+  - Fixes around stat and execve error return values in errno when running with Spindle
+  - Remap is now default, which makes debuggers operating on Spindle jobs happier
+  - Resurrected subaudit support, which is needed to work-around ld.so bugs on ppc64le
+  - Dropped BG/Q support
+
 Spindle 0.10
 -----------
   - New API for integrating Spindle with job-launchers
