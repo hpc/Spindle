@@ -136,6 +136,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define if we're compiling for an aarch64 target */
+#undef arch_aarch64
+
 /* Define if we're compiling for a ppc64 target */
 #undef arch_ppc32
 

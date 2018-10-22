@@ -24,6 +24,9 @@ endif
 if PPC64LE_BLD
 ARCH_SRCS = auditclient_ppc64.c
 endif
+if AARCH64_BLD
+ARCH_SRCS = auditclient_aarch64.c
+endif
 
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 
