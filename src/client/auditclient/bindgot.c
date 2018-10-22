@@ -126,7 +126,6 @@ static int find_refsymbol_index(uint32_t *begin, uint32_t *end,
    return -1;
 }
 
-#include <signal.h>
 Elf64_Addr doPermanentBinding_noidx(uintptr_t *refcook, uintptr_t *defcook,
                                     Elf64_Addr target, const char *symname,
                                     void *stack_begin, void *stack_end)
@@ -140,8 +139,6 @@ Elf64_Addr doPermanentBinding_noidx(uintptr_t *refcook, uintptr_t *defcook,
    Elf64_Addr *got_entry;
    Elf64_Addr base;
    struct link_map *rmap;
-
-   signal(SIGSEGV, SIG_DFL);
 
    get_section_info(refcook, &rmap, &rels, &dynsyms, &dynstr, &relsize);
    objname = (rmap->l_name && rmap->l_name[0] != '\0') 
