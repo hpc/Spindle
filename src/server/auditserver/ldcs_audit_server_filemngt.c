@@ -437,7 +437,7 @@ int filemngt_read_stat(char *localname, struct stat *buf)
    return filemngt_read_buffer(localname, (char *) buf, sizeof(*buf));
 }
 
-#if defined(arch_x86_64)
+#if defined(arch_x86_64) || defined(arch_aarch64)
 #define PROFILE_FUNC_NAME "_dl_runtime_profile"
 #define GET_ADDR_FROM_SYMVALUE(X) (X)
 #elif defined(arch_ppc64) || defined(arch_ppc64le)

@@ -461,7 +461,7 @@ static int run_exec_test(const char *prefix, const char *path, int expected)
 
 static int run_exec_sets(const char *prefix)
 {
-   int errcode, result = 0;
+   int result = 0;
 
    result |= run_exec_test(prefix, "retzero_rx", 0);
    result |= run_exec_test(prefix, "retzero_x", 0);

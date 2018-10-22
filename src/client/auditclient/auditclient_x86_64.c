@@ -22,27 +22,9 @@ Elf64_Addr la_x86_64_gnu_pltenter(Elf64_Sym *sym, unsigned int ndx,
                                   La_x86_64_regs *regs, unsigned int *flags,
                                   const char *symname, long int *framesizep) AUDIT_EXPORT;
 
-
-static Elf64_Addr doPermanentBinding(struct link_map *map,
-                                     unsigned long plt_reloc_idx,
-                                     Elf64_Addr target)
-{
-   Elf64_Dyn *dynamic_section = map->l_ld;
-   Elf64_Rela *rel = NULL;
-   Elf64_Addr *got_entry;
-   Elf64_Addr base = map->l_addr;
-   for (; dynamic_section->d_tag != DT_NULL; dynamic_section++) {
-      if (dynamic_section->d_tag == DT_JMPREL) {
-         rel = ((Elf64_Rela *) dynamic_section->d_un.d_ptr) + plt_reloc_idx;
-         break;
-      }
-   }
-   if (!rel)
-      return target;
-   got_entry = (Elf64_Addr *) (rel->r_offset + base);
-   *got_entry = target;
-   return target;
-}
+Elf64_Addr doPermanentBinding_idx(struct link_map *map,
+                                  unsigned long plt_reloc_idx,
+                                  Elf64_Addr target);
 
 Elf64_Addr la_x86_64_gnu_pltenter(Elf64_Sym *sym,
                                   unsigned int ndx,
@@ -56,6 +38,6 @@ Elf64_Addr la_x86_64_gnu_pltenter(Elf64_Sym *sym,
    struct link_map *map = get_linkmap_from_cookie(refcook);
    unsigned long reloc_index = *((unsigned long *) (regs->lr_rsp-8));
    Elf64_Addr target = client_call_binding(symname, sym->st_value);
-   return doPermanentBinding(map, reloc_index, target);
+   return doPermanentBinding_idx(map, reloc_index, target);
 }
 

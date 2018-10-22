@@ -650,6 +650,8 @@ MUNGE_LIBS
 MUNGE_CFLAGS
 GCRYPT_LIBS
 GCRYPT_CFLAGS
+AARCH64_BLD_FALSE
+AARCH64_BLD_TRUE
 PPC64LE_BLD_FALSE
 PPC64LE_BLD_TRUE
 PPC64_BLD_FALSE
@@ -16604,6 +16606,12 @@ $as_echo "#define arch_ppc32 1" >>confdefs.h
 
   ARCH_BUILD=ppc64
 fi
+if test "x$target_cpu" == "xaarch64"; then
+
+$as_echo "#define arch_aarch64 1" >>confdefs.h
+
+  ARCH_BUILD=aarch64
+fi
 
 #OS defines
  if test "x$OS_BUILD" == "xbluegene"; then
@@ -16644,6 +16652,14 @@ fi
 else
   PPC64LE_BLD_TRUE='#'
   PPC64LE_BLD_FALSE=
+fi
+
+ if test "x$ARCH_BUILD" == "xaarch64"; then
+  AARCH64_BLD_TRUE=
+  AARCH64_BLD_FALSE='#'
+else
+  AARCH64_BLD_TRUE='#'
+  AARCH64_BLD_FALSE=
 fi
 
 
@@ -17477,6 +17493,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PPC64LE_BLD_TRUE}" && test -z "${PPC64LE_BLD_FALSE}"; then
   as_fn_error $? "conditional \"PPC64LE_BLD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${AARCH64_BLD_TRUE}" && test -z "${AARCH64_BLD_FALSE}"; then
+  as_fn_error $? "conditional \"AARCH64_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${LMON_TRUE}" && test -z "${LMON_FALSE}"; then
