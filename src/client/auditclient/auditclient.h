@@ -28,6 +28,14 @@ void patch_on_linkactivity(struct link_map *lmap);
 ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue);
 struct link_map *get_linkmap_from_cookie(uintptr_t *cookie);
 
+Elf64_Addr doPermanentBinding_idx(struct link_map *map,
+                                  unsigned long plt_reloc_idx,
+                                  Elf64_Addr target);
+Elf64_Addr doPermanentBinding_noidx(uintptr_t *refcook, uintptr_t *defcook,
+                                    Elf64_Addr target, const char *symname,
+                                    void *stack_begin, void *stack_end);
+
+
 #define AUDIT_EXPORT __attribute__((__visibility__("default")))
 
 #endif

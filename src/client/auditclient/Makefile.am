@@ -14,9 +14,9 @@ AM_CFLAGS = -fvisibility=hidden
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib
 
-BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c
+BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c bindgot.c
 if X86_64_BLD
-ARCH_SRCS = auditclient_x86_64.c
+ARCH_SRCS = auditclient_x86_64.c 
 endif
 if PPC64_BLD
 ARCH_SRCS = auditclient_ppc64.c
