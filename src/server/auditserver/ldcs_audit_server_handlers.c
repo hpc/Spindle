@@ -1731,7 +1731,7 @@ static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, cha
       buffer_size = sizeof(buf);
    }
    else if (mdtype == metadata_loader) {
-      return handle_read_ldso_metadata(procdata, pathname, &ldsoinfo, &localname);
+      result = handle_read_ldso_metadata(procdata, pathname, &ldsoinfo, &localname);
       if (result == -1) {
          err_printf("Error reading ldso metadata %s\n", pathname);
          return -1;
