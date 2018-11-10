@@ -45,6 +45,7 @@ typedef struct {
 extern unsigned char *sheep_base;
 static int  sheep_ptr_equals(sheep_ptr_t a, sheep_ptr_t b) { return a.val == b.val; }
 static void *sheep_ptr(sheep_ptr_t *p) { return (p->val == 0) ? NULL : (void *) ((((uint64_t) p->val) << 3) + sheep_base); }
+static void *volatile_sheep_ptr(volatile sheep_ptr_t *p) { return (p->val == 0) ? NULL : (void *) ((((uint64_t) p->val) << 3) + sheep_base); }
 static sheep_ptr_t ptr_sheep(void *v) { sheep_ptr_t p; p.val = (v == NULL) ? 0 : (((uint64_t) v) - ((uint64_t) sheep_base)) >> 3; return p; }
 static void set_sheep_ptr(sheep_ptr_t *p, void *v) { *p = ptr_sheep(v); }
 
