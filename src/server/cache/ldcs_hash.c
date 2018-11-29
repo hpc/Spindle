@@ -36,7 +36,7 @@ ldcs_hash_key_t ldcs_hash_Val(const char *str) {
    return hash;
 }
 
-void ldcs_hash_addEntry(char *dirname, char *filename) {
+struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename) {
    struct ldcs_hash_entry_t *newentry;
    ldcs_hash_key_t key = ldcs_hash_Val(filename);
    unsigned int index = (unsigned int) key % HASH_SIZE;
@@ -62,18 +62,17 @@ void ldcs_hash_addEntry(char *dirname, char *filename) {
 
    if (is_dir) {
       newentry->dir_next = NULL;
-      return;
+      return newentry;
    }
 
    struct ldcs_hash_entry_t *dent = ldcs_hash_Lookup(dirname);
    if (!dent) {
-      ldcs_hash_addEntry(dirname, dirname);
-      dent = ldcs_hash_Lookup(dirname);
+      dent = ldcs_hash_addEntry(dirname, dirname);
    }
    newentry->dir_next = dent->dir_next;
    dent->dir_next = newentry;
 
-   return;
+   return newentry;
 }
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
