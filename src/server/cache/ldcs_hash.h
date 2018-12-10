@@ -44,7 +44,7 @@ struct ldcs_hash_entry_t
 
 int ldcs_hash_init();
 ldcs_hash_key_t ldcs_hash_Val(const char *str);
-void ldcs_hash_addEntry(char *dirname, char *filename);
+struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename);
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntryOState(char *filename, char *dirname, int ostate);
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
