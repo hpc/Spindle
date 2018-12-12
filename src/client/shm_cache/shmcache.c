@@ -51,7 +51,7 @@ static sheep_ptr_t *table;
 static shminfo_t *shminfo = NULL;
 
 
-static void print_shmcache()
+void print_shmcache()
 {
    sheep_ptr_t p;
    unsigned int i, j;

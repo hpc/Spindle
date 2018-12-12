@@ -841,7 +841,7 @@ static int collect_forkmode(int passed) {
          result = waitpid(fork_child, &status, 0);
       } while (result == -1 && errno == EINTR);
       if (WIFSIGNALED(status)) {
-         err_printf("Forked child exited with signal %d\n", WTERMSIG(status));
+         err_printf("Forked child %d exited with signal %d\n", fork_child, WTERMSIG(status));
          return -1;
       }
       else if (WIFEXITED(status)) {
@@ -849,7 +849,7 @@ static int collect_forkmode(int passed) {
             return 0;
          }
          else {
-            err_printf("Forked child exited with status %d\n", WEXITSTATUS(status));
+            err_printf("Forked child %d exited with status %d\n", fork_child, WEXITSTATUS(status));
             return -1;
          }
       }

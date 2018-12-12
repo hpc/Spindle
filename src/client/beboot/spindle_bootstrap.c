@@ -32,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "client_api.h"
 #include "exec_util.h"
+#include "shmcache.h"
 
 #include "config.h"
 
@@ -50,6 +51,7 @@ unsigned int shm_cachesize;
 
 static int rankinfo[4]={-1,-1,-1,-1};
 static int number;
+static int use_cache;
 static unsigned int cachesize;
 static char *location, *number_s;
 static char **cmdline;
@@ -133,7 +135,7 @@ static void setup_environment()
       if (preload_env) {
          free(preload);
       }
-   }  
+   }
 }
 
 static int parse_cmdline(int argc, char *argv[])
@@ -218,6 +220,7 @@ static void get_executable()
 {
    int errcode = 0;
    if (!(opts & OPT_RELOCAOUT) || (opts & OPT_REMAPEXEC)) {
+      debug_printf3("Using default executable %s\n", *cmdline);
       executable = *cmdline;
       return;
    }
@@ -262,11 +265,12 @@ static void get_clientlib()
    int errorcode;
    
    if (!(opts & OPT_RELOCAOUT)) {
+      debug_printf3("Using default client_lib %s\n", default_libstr);
       client_lib = default_libstr;
       return;
    }
 
-   send_file_query(ldcsid, default_libstr, &client_lib, &errorcode);
+   get_relocated_file(ldcsid, default_libstr, &client_lib, &errorcode);
    if (client_lib == NULL) {
       client_lib = default_libstr;
       err_printf("Failed to relocate client library %s\n", default_libstr);
@@ -309,9 +313,67 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    return 0;
 }
 
-int get_relocated_file(int fd, const char *name, char** newname, int *errcode)
+static int fetch_from_cache(const char *name, char **newname)
 {
-   return send_file_query(fd, (char *) name, newname, errcode);
+   int result;
+   char *result_name;
+   result = shmcache_lookup_or_add(name, &result_name);
+   if (result == -1)
+      return 0;
+
+   debug_printf2("Shared cache has mapping from %s (%p) to %s (%p)\n", name, name,
+                 (result_name == in_progress) ? "[IN PROGRESS]" :
+                 (result_name ? result_name : "[NOT PRESENT]"),
+                 result_name);
+   if (result_name == in_progress) {
+      debug_printf("Waiting for update to %s\n", name);
+      result = shmcache_waitfor_update(name, &result_name);
+      if (result == -1) {
+         debug_printf("Entry for %s deleted while waiting for update\n", name);
+         return 0;
+      }
+   }
+   
+   *newname = result_name ? strdup(result_name) : NULL;
+   return 1;
+}
+
+static void get_cache_name(const char *path, char *prefix, char *result)
+{
+   char cwd[MAX_PATH_LEN+1];
+
+   if (path[0] != '/') {
+      getcwd(cwd, MAX_PATH_LEN+1);
+      cwd[MAX_PATH_LEN] = '\0';
+      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s/%s", prefix, cwd, path);
+   }
+   else {
+      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s", prefix, path);
+   }
+}
+
+int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
+{
+   int found_file = 0;
+   char cache_name[MAX_PATH_LEN+1];
+
+   if (use_cache) {
+      get_cache_name(name, "", cache_name);
+      cache_name[sizeof(cache_name)-1] = '\0';
+      debug_printf2("Looking up %s in shared cache\n", name);
+      found_file = fetch_from_cache(cache_name, newname);
+      if (found_file)
+         return 0;
+   }
+
+   debug_printf2("Send file request to server: %s\n", name);
+   send_file_query(fd, (char *) name, newname, errorcode);
+   debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");
+   
+   if (use_cache)
+      shmcache_update(cache_name, *newname);
+
+   return 0;
 }
 
 /**
@@ -395,6 +457,18 @@ int main(int argc, char *argv[])
       }
    }
 
+   if ((opts & OPT_SHMCACHE) && cachesize) {
+      unsigned int shm_cache_limit;
+      cachesize *= 1024;
+#if defined(COMM_BITER)
+      shm_cache_limit = cachesize > 512*1024 ? cachesize - 512*1024 : 0;
+#else
+      shm_cache_limit = cachesize;
+#endif
+      shmcache_init(location, number, cachesize, shm_cache_limit);
+      use_cache = 1;
+   }      
+   
    get_executable();
    get_clientlib();
    adjust_script();

@@ -448,17 +448,16 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
 
    if (!found_file) {
       result = send_stat_request(fd, (char *) path, is_lstat, buffer);
-      if (result == -1) {
-         *exists = 0;
-         return -1;
-      }
-      newpath = buffer[0] != '\0' ? buffer : NULL;
+      if (result == -1)
+         newpath = NULL;
+      else
+         newpath = buffer[0] != '\0' ? buffer : NULL;
 
       if (use_cache) 
          shmcache_update(cache_name, newpath);
    }
    
-   if (newpath == NULL) {
+   if (!newpath) {
       *exists = 0;
       return 0;
    }
@@ -484,15 +483,33 @@ int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
       debug_printf2("Looking up %s in shared cache\n", name);
       get_cache_name(name, "", cache_name);
       cache_name[sizeof(cache_name)-1] = '\0';
+      
       found_file = fetch_from_cache(cache_name, newname);
+      if (found_file) {
+         if (strncmp(*newname, "ERRNO:", 6) == 0) {
+            *errorcode = atoi((*newname)+6);
+            *newname = NULL;
+         }
+         else {
+            *errorcode = 0;
+         }
+         return 0;
+      }
    }
 
-   if (!found_file) {
-      debug_printf2("Send file request to server: %s\n", name);
-      send_file_query(fd, (char *) name, newname, errorcode);
-      debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");      
-      if (use_cache)
-         shmcache_update(cache_name, *newname);
+   debug_printf2("Send file request to server: %s\n", name);
+   send_file_query(fd, (char *) name, newname, errorcode);
+   debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");
+
+   if (use_cache) {
+      if (*newname && !*errorcode) {
+         shmcache_update(cache_name, *newname);         
+      }
+      else {
+         char errstr[64];
+         snprintf(errstr, 64, "ERRNO:%d", *errorcode);
+         shmcache_update(cache_name, errstr);
+      }
    }
 
    return 0;
@@ -535,6 +552,22 @@ char *client_library_load(const char *name)
    return newname;
 }
 
+static void read_python_prefixes(int fd, char **path)
+{
+   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
+   int found_file = 0;
+
+   if (use_cache) {
+      debug_printf2("Looking up python prefixes in shared cache\n");
+      found_file = fetch_from_cache("*SPINDLE_PYTHON_PREFIXES", path);
+   }
+   if (!found_file) {
+      get_python_prefix(fd, path);
+      if (use_cache)
+         shmcache_update("*SPINDLE_PYTHON_PREFIXES", *path);
+   }
+}
+
 python_path_t *pythonprefixes = NULL;
 void parse_python_prefixes(int fd)
 {
@@ -544,7 +577,9 @@ void parse_python_prefixes(int fd)
 
    if (pythonprefixes)
       return;
-   get_python_prefix(fd, &path);
+
+   read_python_prefixes(fd, &path);
+   debug_printf3("Python prefixes are %s\n", path);
 
    num_pythonprefixes = (path[0] == '\0') ? 0 : 1;
    for (i = 0; path[i] != '\0'; i++) {
@@ -573,16 +608,30 @@ void parse_python_prefixes(int fd)
 int get_ldso_metadata(signed int *binding_offset)
 {
    ldso_info_t info;
-   int result;
+   int found_file = 0;
+   char cachename[MAX_PATH_LEN+1];
    char filename[MAX_PATH_LEN+1];
+   char *ldso_info_name = NULL;
+   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
 
    find_interp_name();
    debug_printf2("Requesting interpreter metadata for %s\n", interp_name);
-   result = send_ldso_info_request(ldcsid, interp_name, filename);
-   if (result == -1)
-      return -1;
 
-   read_ldso_metadata(filename, &info);
+   if (use_cache) {
+      debug_printf2("Looking up interpreter info in shared cache\n");
+      snprintf(cachename, MAX_PATH_LEN, "LDSOINFO:%s", interp_name);
+      cachename[MAX_PATH_LEN] = '\0';
+      found_file = fetch_from_cache(cachename, &ldso_info_name);
+   }
+
+   if (!found_file) {
+      send_ldso_info_request(ldcsid, interp_name, filename);
+      if (use_cache)
+         shmcache_update(cachename, filename);
+      ldso_info_name = filename;
+   }
+
+   read_ldso_metadata(ldso_info_name, &info);
 
    *binding_offset = info.binding_offset;
    return 0;
