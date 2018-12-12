@@ -50,6 +50,25 @@ static sheep_ptr_t *table;
 
 static shminfo_t *shminfo = NULL;
 
+
+static void print_shmcache()
+{
+   sheep_ptr_t p;
+   unsigned int i, j;
+   struct entry_t *entry;
+   debug_printf2("Shmcache state from table %p:\n", table);
+   for (i = 0; i < HASH_SIZE; i++) {
+      for (p = table[i], j = 0; !IS_SHEEP_NULL(&p); p = entry->hash_next, j++) {
+         entry = (struct entry_t *) sheep_ptr(&p);
+         bare_printf("%u:%u\t %s -> %s (key:%u pending:%u ptr:%p)\n",
+                     i, j,
+                     (char *) sheep_ptr(&entry->libname),
+                     sheep_ptr(&entry->result) == in_progress ? "INPROGRESS" : (char *) sheep_ptr(&entry->result),
+                     entry->hash_key, entry->pending_count, entry);
+      }
+   }
+}
+
 static void upgrade_to_writelock()
 {
 }
@@ -215,7 +234,7 @@ static int clean_oldest_entry()
    if (prev_hash_entry)
       prev_hash_entry->hash_next = entry->hash_next;
    else
-      table[entry->hash_key] = ptr_sheep(SHEEP_NULL);
+      table[entry->hash_key] = entry->hash_next;
 
    free_sheep_str((char *) sheep_ptr(& entry->libname));
    if (!IS_SHEEP_NULL(&entry->result)) {
