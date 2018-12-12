@@ -17,17 +17,26 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+#include "sheep.h"
+#include "spindle_debug.h"
 
 unsigned char *sheep_base = NULL;
 static unsigned char *sheep_end = NULL;
 
 #define HEAP_NULL ((void *) sheep_base)
+//#define CHECK
 
 typedef struct block_prefix_t {
    uint32_t prev_block;
    uint32_t next_free;
    uint32_t prev_free;
    uint32_t size;
+#if defined(CHECK)
+   uint32_t stamp;
+   uint32_t dummy;
+#endif
 } block_prefix_t;
 
 #define PTR(X) ((block_prefix_t *) (sheep_base + (((uint64_t) X) << 3)))
@@ -38,6 +47,10 @@ typedef struct block_prefix_t {
 #define NEXT_FREE(X) (PTR(X->next_free))
 #define PREV_FREE(X) (PTR(X->prev_free))
 #define SIZE(X) ((((uint64_t) (X)->size) & ~UINT64_C(1)) << 2)
+#if defined(CHECK)
+#define START_STAMP(X) ((X)->stamp)
+#define END_STAMP(X) *((uint32_t *) (((unsigned char *) (X)) + SIZE(X) - sizeof(uint32_t)))
+#endif
 #define VAL(V) (((unsigned long) (((unsigned char *) V) - sheep_base)) >> 3)
 
 #define SET_ALLOC(X) (X)->size |= UINT32_C(1)
@@ -55,11 +68,27 @@ typedef struct heap_header_t {
    block_prefix_t head_block;
    uint64_t heap_size;
    uint64_t initialized;
+#if defined(CHECK)
+   uint32_t num_allocations;
+   uint32_t num_blocks;
+   uint32_t stamp;
+#endif
 } heap_header_t;
 static heap_header_t *heap_header;
 static block_prefix_t *head_block;
 
 #define ALIGN8(X) (((X) & 7) ? ((((X) >> 3) + 1) << 3) : (X))
+
+#if defined(CHECK)
+void mark_freed_block(block_prefix_t *a)
+{
+   unsigned char *i, *start, *end;
+   start = (unsigned char *) (a + 1);
+   end = ((unsigned char *) a) + SIZE(a);
+   for (i = start; i < end; i++)
+      *i = 0xdd;
+}
+#endif
 
 void init_sheep(void *mem, size_t size, int use_first_fit)
 {
@@ -94,8 +123,20 @@ void init_sheep(void *mem, size_t size, int use_first_fit)
       SET_NEXT_FREE(first_block, HEAP_NULL);
       SET_PREV_FREE(first_block, HEAP_NULL);
       SET_SIZE(first_block, size - sizeof(heap_header_t));
+
+#if defined(CHECK)
+      START_STAMP(head_block) = 0xbbbbbbbb;
+      END_STAMP(head_block) = 0xcccccccc;
+      mark_freed_block(first_block);
+      heap_header->num_allocations = 0;
+      heap_header->num_blocks = 1;
+#endif
       heap_header->initialized = 1;
    }
+
+#if defined(CHECK)
+   validate_sheep();
+#endif
 }
 
 void *malloc_sheep(size_t size)
@@ -107,12 +148,20 @@ void *malloc_sheep(size_t size)
    uint32_t min_alloc_size = sizeof(block_prefix_t) + 8;
    uint32_t cur_size, new_size;
 
-   assert(size);
-   alloc_size = ((uint32_t) ALIGN8(size));
-   if (!alloc_size)
-      alloc_size = 8;
+#if defined(CHECK)
+   validate_sheep();
+#endif
 
+   assert(size);
+   alloc_size = size;
    alloc_size += sizeof(block_prefix_t);
+#if defined(CHECK)
+   alloc_size += sizeof(uint32_t);
+   min_alloc_size += sizeof(uint32_t);
+#endif
+   alloc_size = ((uint32_t) ALIGN8(alloc_size));
+   min_alloc_size = ((uint32_t) ALIGN8(min_alloc_size));
+
 
    //Find free block of sufficient size
    for (cur = NEXT_FREE(head_block); cur != HEAP_NULL; cur = NEXT_FREE(cur)) {
@@ -154,8 +203,16 @@ void *malloc_sheep(size_t size)
    SET_NEXT_FREE(cur, HEAP_NULL);
    SET_PREV_FREE(cur, HEAP_NULL);
 
+#if defined(CHECK)
+   START_STAMP(cur) = 0xbbbbbbbb;
+   heap_header->num_allocations++;
+#endif
+
    if (best_fit_diff < min_alloc_size) {
       //Just take whole block, mark it allocated and remove from free list.
+#if defined(CHECK)
+      END_STAMP(cur) = 0xcccccccc;
+#endif
       return (void *) (cur + 1);
    }
 
@@ -187,6 +244,11 @@ void *malloc_sheep(size_t size)
    if (next_free != HEAP_NULL)
       SET_PREV_FREE(next_free, new_block);
 
+#if defined(CHECK)
+   END_STAMP(cur) = 0xcccccccc;
+   heap_header->num_blocks++;
+#endif
+
    return (void *) (cur + 1);
 }
 
@@ -209,6 +271,10 @@ static block_prefix_t *merge_free_blocks(block_prefix_t *a, block_prefix_t *b)
       SET_PREV_FREE(b_next_free, a);
 
    SET_SIZE(a, a_size + b_size);
+#if defined(CHECK)
+   mark_freed_block(a);
+   heap_header->num_blocks--;
+#endif
 
    return a;
 }
@@ -218,6 +284,10 @@ void free_sheep(void *p)
    block_prefix_t *cur = ((block_prefix_t *) p) - 1;
    block_prefix_t *prev_free, *next_free, *prev_block, *next_block;
    int changed_something;
+
+#if defined(CHECK)
+   validate_sheep();
+#endif
 
    assert(cur > head_block);
    assert(cur < (block_prefix_t *) (((unsigned char *) heap_header) + heap_header->heap_size));
@@ -254,6 +324,11 @@ void free_sheep(void *p)
          changed_something = 1;
       }
    } while (changed_something);
+
+#if defined(CHECK)
+   heap_header->num_allocations--;
+   mark_freed_block(cur);
+#endif
 }
 
 size_t sheep_alloc_size(size_t size)
@@ -266,13 +341,64 @@ size_t sheep_alloc_size(size_t size)
    return alloc_size;
 }
 
-//#define UNIT_TESTS
+void sheep_check()
+{
+   block_prefix_t *prev = HEAP_NULL;
+   block_prefix_t *cur;
+   uint32_t allocations = 0;
+   uint32_t blocks = 0;
+   uint32_t freed = 0, freed2 = 0;
 
-#if defined(UNIT_TESTS)
+   assert(heap_header);
+   assert(heap_header->initialized);
+   assert(head_block);
+   for (cur = head_block; cur; cur = NEXT_BLOCK(cur)) {
+      assert(PREV_BLOCK(cur) == prev);
+      assert(SIZE(cur) < heap_header->heap_size);
+      if (IS_ALLOC(cur))
+         allocations++;
+      if (IS_FREE(cur))
+         freed++;
+      blocks++;
+#if defined(CHECK)
+      if (IS_ALLOC(cur)) {
+         assert(START_STAMP(cur) == 0xbbbbbbbb);
+         assert(END_STAMP(cur) == 0xcccccccc);
+      }
+      else if (IS_FREE(cur)) {
+         unsigned char *i, *start, *end;
+         start = (unsigned char *) (cur + 1);
+         end = start + SIZE(cur);
+         for (i = start; i < end; i++)
+            assert(*i == 0xdd);
+      }
+#endif
+   }
 
-#include <stdio.h>
-#include <sys/mman.h>
-#include <string.h>
+   prev = HEAP_NULL;
+   for (cur = NEXT_FREE(head_block); cur != HEAP_NULL; cur = NEXT_FREE(cur)) {
+      assert(prev = PREV_FREE(cur));
+      freed2++;
+#if defined(CHECK)
+      if (IS_FREE(cur)) {
+         unsigned char *i, *start, *end;
+         start = (unsigned char *) (cur + 1);
+         end = start + SIZE(cur);
+         for (i = start; i < end; i++)
+            assert(*i == 0xdd);
+      }
+#endif
+   }
+
+   assert(freed == freed2);
+   assert(freed + allocations == blocks);
+#if defined(CHECK)
+   if (heap_header->num_allocations != allocations)
+      err_printf("About to have a problem\n");
+   assert(heap_header->num_allocations == allocations);
+   assert(heap_header->num_blocks = blocks);
+#endif
+}
 
 //Function forms of macros--mostly useful for debugging
 int is_alloc(block_prefix_t *b) { return IS_ALLOC(b); }
@@ -283,11 +409,11 @@ block_prefix_t *next_free(block_prefix_t *b) { return NEXT_FREE(b); }
 block_prefix_t *prev_free(block_prefix_t *b) { return PREV_FREE(b); }
 uint32_t bsize(block_prefix_t *b) { return SIZE(b); }
 
-static void print_heap()
+void validate_sheep()
 {
    uint32_t min_alloc_size = sizeof(block_prefix_t) + 8;
    block_prefix_t *cur, *prev = NULL;
-   unsigned long num_frees = 0, num_frees2 = 0;
+   unsigned long num_frees = 0, num_frees2 = 0, allocations = 0, blocks = 0;
 
    for (cur = NEXT_BLOCK(head_block); cur != HEAP_NULL; prev = cur, cur = NEXT_BLOCK(cur)) {
 #if defined(PRINT)
@@ -301,6 +427,7 @@ static void print_heap()
          printf("0x%lx - 0x%lx\n", data - sheep_base, (data - sheep_base) + SIZE(cur));
       }
 #endif
+      blocks++;
       assert((unsigned long) cur >= (unsigned long) sheep_base);
       assert((unsigned long) cur < ((unsigned long) sheep_base) + heap_header->heap_size);
       if (prev != NULL) {
@@ -316,6 +443,7 @@ static void print_heap()
       assert(((unsigned long) NEXT_BLOCK(cur) > (unsigned long) cur) || (NEXT_BLOCK(cur) == HEAP_NULL));
       assert(((unsigned long) PREV_BLOCK(cur) < (unsigned long) cur) || (PREV_BLOCK(cur) == HEAP_NULL));
       if (IS_ALLOC(cur)) {
+         allocations++;
          assert(NEXT_FREE(cur) == HEAP_NULL || cur == head_block);
          assert(PREV_FREE(cur) == HEAP_NULL);
       }
@@ -330,6 +458,19 @@ static void print_heap()
       assert(((unsigned long) NEXT_FREE(cur) > (unsigned long) cur) || (NEXT_FREE(cur) == HEAP_NULL));
       assert(((unsigned long) PREV_FREE(cur) < (unsigned long) cur) || (PREV_FREE(cur) == HEAP_NULL));
       assert(!prev || (((unsigned char *) prev) + SIZE(prev)) == ((unsigned char *) cur));
+#if defined(CHECK)
+      if (IS_ALLOC(cur)) {
+         assert(START_STAMP(cur) == 0xbbbbbbbb);
+         assert(END_STAMP(cur) == 0xcccccccc);
+      }
+      else if (IS_FREE(cur)) {
+         unsigned char *i, *start, *end;
+         start = (unsigned char *) (cur + 1);
+         end = ((unsigned char *) cur) + SIZE(cur);
+         for (i = start; i < end; i++)
+            assert(*i == 0xdd);
+      }
+#endif
    }
    prev = NULL;
    for (cur = NEXT_FREE(head_block); cur != HEAP_NULL; prev = cur, cur = NEXT_FREE(cur)) {
@@ -349,13 +490,33 @@ static void print_heap()
       assert(((unsigned long) NEXT_FREE(cur) > (unsigned long) cur) || (NEXT_FREE(cur) == HEAP_NULL));
       assert(((unsigned long) PREV_FREE(cur) < (unsigned long) cur) || (PREV_FREE(cur) == HEAP_NULL));
       num_frees2++;
+#if defined(CHECK)
+      if (IS_FREE(cur)) {
+         unsigned char *i, *start, *end;
+         start = (unsigned char *) (cur + 1);
+         end = ((unsigned char *) cur) + SIZE(cur);
+         for (i = start; i < end; i++)
+            assert(*i == 0xdd);
+      }
+#endif
    }
 
-   assert(num_frees = num_frees2);
+   assert(num_frees == num_frees2);
+   assert(blocks == allocations + num_frees);
+#if defined(CHECK)
+   assert(heap_header->num_allocations == allocations);
+   assert(heap_header->num_blocks = blocks);
+#endif
+
 #if defined(PRINT)
    printf("\n");
 #endif
 }
+
+//#define UNIT_TESTS
+#if defined(UNIT_TESTS)
+
+#include <sys/mman.h>
 
 void test_macros()
 {
@@ -400,7 +561,6 @@ void test_macros()
 
                      if ((a && !is_alloc) ||
                          (!a && is_alloc) ||
-                         (nextblock != vals[na]) ||
                          (prevblock != vals[pa]) ||
                          (nextfree != vals[nf]) ||
                          (prevfree != vals[pf]) ||
@@ -431,8 +591,10 @@ void test_heap()
    memset(allocs, 0, sizeof(allocs));
 
    init_sheep(mem_region, size, 0);
-   print_heap();
-   
+#if !defined(CHECK)
+   validate_sheep();
+#endif   
+
    for (i = 0; i < 512*1024; i++) {
       int do_malloc = 0;
 
@@ -463,7 +625,12 @@ void test_heap()
                size = 4;
             else 
                size = rand() % 8192;
+            if (size == 0)
+               size = 8;
             spot->addr = malloc_sheep(size);
+#if !defined(CHECK)
+            validate_sheep();
+#endif
             if (!spot->addr) {
 #if defined(PRINT)
                printf("Heap full at %lu bytes allocated in %lu allocations\n", total, num);
@@ -506,6 +673,9 @@ void test_heap()
          for (q = p; q != p + spot->size; q++) assert(*q == 0xef);
          
          free_sheep(spot->addr);
+#if !defined(CHECK)
+         validate_sheep();
+#endif
          total -= spot->size;
          num--;
 #if defined(PRINT)
@@ -515,7 +685,6 @@ void test_heap()
          spot->addr = NULL;
          spot->size = 0;
       }
-      print_heap();
    }
 
    for (i = 0; i < ALLOCS_SIZE; i++) {
@@ -523,7 +692,9 @@ void test_heap()
          free_sheep(allocs[i].addr);
          allocs[i].addr = NULL;
          allocs[i].size = 0;
-         print_heap();
+#if !defined(CHECK)
+         validate_sheep();
+#endif         
       }
    }
 }

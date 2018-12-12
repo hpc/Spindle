@@ -52,6 +52,7 @@ extern void init_sheep(void *mem, size_t size, int use_first_fit);
 extern void *malloc_sheep(size_t size);
 extern void free_sheep(void *p);
 extern size_t sheep_alloc_size(size_t size);
+extern void validate_sheep();
 
 #ifdef __GNUC__
 #define UNUSED_ATTR __attribute__((unused))
@@ -59,7 +60,6 @@ extern size_t sheep_alloc_size(size_t size);
 #define UNUSED_ATTR
 #endif
 static void unused_sheep_vars() UNUSED_ATTR;
-static void unused_sheep_vars() { (void) sheep_ptr; (void) ptr_sheep; (void) set_sheep_ptr; (void) sheep_ptr_equals; }
-
+static void unused_sheep_vars() { (void) sheep_ptr; (void) ptr_sheep; (void) set_sheep_ptr; (void) sheep_ptr_equals; (void) volatile_sheep_ptr; }
 
 #endif
