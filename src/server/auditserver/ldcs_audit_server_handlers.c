@@ -272,7 +272,7 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    /* do initial check of query, parse the filename and store info */
    assert(nc != -1);
    ldcs_client_t *client = procdata->client_table + nc;
-   addCWDToDir(client->remote_cwd, dir, MAX_PATH_LEN);
+   addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
    strncpy(client->query_filename, file, MAX_PATH_LEN);
@@ -1649,7 +1649,7 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
 
    assert(nc != -1);
    client = procdata->client_table + nc;
-   addCWDToDir(client->remote_cwd, dir, MAX_PATH_LEN);
+   addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
    strncpy(client->query_filename, file, MAX_PATH_LEN);

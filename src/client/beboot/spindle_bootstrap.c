@@ -92,9 +92,7 @@ static int establish_connection()
    if (ldcsid == -1) 
       return -1;
 
-   send_cwd(ldcsid);
    send_pid(ldcsid);
-   send_location(ldcsid, location);
    send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
 
    return 0;
@@ -104,7 +102,6 @@ static void setup_environment()
 {
    char rankinfo_str[256];
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
-
    
    char *connection_str = NULL;
    if (opts & OPT_RELOCAOUT) 

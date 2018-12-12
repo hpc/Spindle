@@ -58,7 +58,7 @@ ldcs_message_t *parsePreloadFile(string filename)
       parseFilenameNoAlloc(pathname, file, dir, MAX_PATH_LEN);
       file[MAX_PATH_LEN] = '\0';
       dir[MAX_PATH_LEN] = '\0';
-      addCWDToDir(cwd, dir, MAX_PATH_LEN);
+      addCWDToDir(getpid(), dir, MAX_PATH_LEN);
       reducePath(dir);
    
       all_dirs.insert(string(dir));

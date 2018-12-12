@@ -297,25 +297,6 @@ void test_log(const char *name)
 
 void sync_cwd()
 {
-   char cwd[MAX_PATH_LEN+1];
-   char *result;
-   
-   result = getcwd(cwd, MAX_PATH_LEN+1);
-   if (!result) {
-      err_printf("Failure to get CWD: %s\n", strerror(errno));
-      return;
-   }
-
-   if (strcmp(cwd, old_cwd) == 0) {
-      /* Diretory hasn't changed since last check. No actions needed. */
-      return;
-   }
-
-   debug_printf("Client changed directory to %s\n", cwd);
-   strncpy(old_cwd, cwd, MAX_PATH_LEN);
-   old_cwd[MAX_PATH_LEN] = '\0';
-
-   send_dir_cwd(ldcsid, old_cwd);
 }
 
 void set_errno(int newerrno)
