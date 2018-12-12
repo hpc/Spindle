@@ -2131,11 +2131,16 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
  * If all of our clients are exited, and all of our child servers have
  * sent an exit_ready, then send an exit_ready to our parent
  **/
+extern void stopprofile();
 static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
 {
    ldcs_message_t msg;
    debug_printf2("Checking if we need to send an exit ready message\n");
 
+   if (!procdata->clients_live) {
+      stopprofile();
+   }
+   
    if (procdata->opts & OPT_PERSIST) {
        debug_printf2("Bottom-up exit has been disabled\n");
        return 0;

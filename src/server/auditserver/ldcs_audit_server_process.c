@@ -31,6 +31,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "ldcs_audit_server_requestors.h"
 
+//#define GPERFTOOLS
+#if defined(GPERFTOOLS)
+#include <gperftools/profiler.h>
+#endif
+
 ldcs_process_data_t ldcs_process_data;
 unsigned int opts;
 
@@ -92,9 +97,40 @@ int ldcs_audit_server_network_setup(unsigned int port, unsigned int num_ports, u
    return 0;
 }
 
+#if defined(GPERFTOOLS)
+void startprofile(spindle_args_t *args)
+{
+   char filename[4096];
+   char hostname[257];
+   char *home = getenv("HOME");
+   if (!home || !*home)
+      home = ldcs_process_data.location;
+   gethostname(hostname, sizeof(hostname));
+   snprintf(filename, 4096, "%s/spindled.%d.%s.%d.prof", home, args->number, hostname, getpid());
+   ProfilerStart(filename);
+}
+
+void stopprofile()
+{
+   ProfilerFlush();
+   ProfilerStop();
+}
+#else
+void startprofile(spindle_args_t *args)
+{
+   (void) args;
+}
+
+void stopprofile()
+{
+}
+#endif
+
 int ldcs_audit_server_process(spindle_args_t *args)
 {
    int serverid, fd;
+
+   startprofile(args);
 
    debug_printf3("Initializing server data structures\n");
    ldcs_process_data.location = args->location;
