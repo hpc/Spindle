@@ -21,6 +21,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/inotify.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "ldcs_api.h"
 #include "ldcs_api_listen.h"
@@ -216,6 +219,13 @@ int ldcs_audit_server_run()
    /* destroy file cache */
    if (!(ldcs_process_data.opts & OPT_NOCLEAN)) {
       ldcs_audit_server_filemngt_clean();
+   }
+
+   /* Clean shm segment */
+   if (ldcs_process_data.opts & OPT_SHMCACHE) {
+      char shm_name[128];
+      snprintf(shm_name, sizeof(shm_name), "biter_shm.%u", ldcs_process_data.number);
+      shm_unlink(shm_name);
    }
   
    return 0;
