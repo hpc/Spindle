@@ -375,7 +375,6 @@ static int init_cache_locks()
 {
    cache_lock.lock = shminfo->shared_header->shmcache.locks + 0;
    cache_lock.held_by = shminfo->shared_header->shmcache.locks + 1;
-   cache_lock.id = -1;
 
    return init_heap_lock(shminfo);
 }
@@ -387,7 +386,6 @@ static int setup_cache_ids()
    if (result == -1)
       return -1;
    
-   cache_lock.id = shminfo->id;
    return 0;
 }
 
@@ -522,12 +520,6 @@ int shmcache_init(const char *tmpdir, int unique_number, size_t shm_size, size_t
 
    debug_printf2("Successfully initialized shmcache to size %lu with limit %lu\n",
                  shm_size, hlimit);
-   return 0;
-}
-
-int shmcache_post_fork()
-{
-   update_shm_id(shminfo);
    return 0;
 }
 

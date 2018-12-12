@@ -78,13 +78,10 @@ static int init_locks(biterc_session_t *session)
    biter_header_t *header = &shm->shared_header->biter;
    session->pipe_lock.lock = header->locks + 0;
    session->pipe_lock.held_by = header->locks + 1;
-   session->pipe_lock.id = -1;
    session->queue_lock.lock = header->locks + 2;
    session->queue_lock.held_by = header->locks + 3;
-   session->queue_lock.id = -1;
    session->write_lock.lock = header->locks + 4;
    session->write_lock.held_by = header->locks + 5;
-   session->write_lock.id = -1;
    return init_heap_lock(shm);
 }
 
@@ -95,9 +92,6 @@ static int setup_biter_ids(biterc_session_t *session)
    if (result == -1)
       return -1;
 
-   session->pipe_lock.id = session->shm->id;
-   session->queue_lock.id = session->shm->id;
-   session->write_lock.id = session->shm->id;
    return 0;
 }
 

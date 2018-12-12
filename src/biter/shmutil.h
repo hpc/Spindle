@@ -22,7 +22,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 typedef struct {
    volatile unsigned long *lock;
    volatile unsigned long *held_by;
-   int id;
    int ref_count;
 } lock_t;
 
