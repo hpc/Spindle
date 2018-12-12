@@ -529,6 +529,7 @@ int shmcache_waitfor_update(const char *libname, char **result)
    int set_pending_count = 0;
    char *sresult;
    struct entry_t *entry;
+   volatile sheep_ptr_t* entry_result; 
    if (!table)
       return -1;
 
@@ -547,7 +548,8 @@ int shmcache_waitfor_update(const char *libname, char **result)
    release_reader_lock();
 
    debug_printf3("Blocking until %s is updated in shmcache\n", libname);
-   while (sheep_ptr(&entry->result) == in_progress);
+   entry_result = &entry->result;
+   while (volatile_sheep_ptr(entry_result) == in_progress);
 
    sresult = sheep_ptr(&entry->result);
    
