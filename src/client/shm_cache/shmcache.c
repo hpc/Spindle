@@ -204,25 +204,29 @@ static void mark_recently_used(struct entry_t *entry, int have_write_lock)
 
 static int clean_oldest_entry()
 {
-   sheep_ptr_t pentry, i;
-   struct entry_t *entry, *prev_hash_entry;
+   sheep_ptr_t i;
+   struct entry_t *entry, *prev_hash_entry = NULL;
+   struct entry_t *lru_pentry = NULL, *lru_nentry = NULL;
 
    debug_printf3("Cleaning oldest entries from shmcache for more space\n");
-   if (IS_SHEEP_NULL(lru_end))
+   if (IS_SHEEP_NULL(lru_end)) {
+      err_printf("Reporting that the shared heap is empty, but has no space.  Is it too small?\n");
       return -1;
+   }
+
    entry = (struct entry_t *) sheep_ptr(lru_end);
-
-   if (sheep_ptr(&entry->result) == in_progress) {
-      debug_printf("Tried to delete in_progress shmcache entry.  Not cleaning\n");
+   while (entry && (sheep_ptr(&entry->result) == in_progress || entry->pending_count)) {
+      debug_printf3("Entry %s is pending or in progress, not deleting\n", (char *) sheep_ptr(&entry->libname));
+      entry = (struct entry_t *) sheep_ptr(&entry->lru_prev);
+   }
+   if (!entry) {
+      /* All entries are either pending or in-progress.  We can't free anything from the shmcache */
+      err_printf("Spindle's shared memory cache is too small and no more space can be cleaned.  Major error\n");
       return -1;
    }
-   if (entry->pending_count) {
-      debug_printf("Tried to delete pending shmcache entry.  Not cleaning\n");
-      return -1;
-   }
-   pentry = entry->lru_prev;
+   lru_pentry = (struct entry_t *) sheep_ptr(&entry->lru_prev);
+   lru_nentry = (struct entry_t *) sheep_ptr(&entry->lru_next);
 
-   prev_hash_entry = NULL;
    debug_printf3("Cleaning entry %s -> %s\n",
                  ((char *) sheep_ptr(&entry->libname)) ? : "[NULL]", 
                  (((char *) sheep_ptr(&entry->result)) ? 
@@ -236,20 +240,21 @@ static int clean_oldest_entry()
    else
       table[entry->hash_key] = entry->hash_next;
 
+   if (entry == sheep_ptr(lru_head))
+      *lru_head = ptr_sheep(lru_nentry);
+   if (sheep_ptr(lru_end) == entry)
+      *lru_end = ptr_sheep(lru_pentry);
+   if (lru_pentry)
+      lru_pentry->lru_next = ptr_sheep(lru_nentry);
+   if (lru_nentry)
+      lru_nentry->lru_prev = ptr_sheep(lru_pentry);
+
    free_sheep_str((char *) sheep_ptr(& entry->libname));
    if (!IS_SHEEP_NULL(&entry->result)) {
       free_sheep_str((char *) sheep_ptr(&entry->result));
    }
    free_sheep_entry(entry);
 
-   if (entry == sheep_ptr(lru_head)) {
-      *lru_head = ptr_sheep(SHEEP_NULL);
-      *lru_end = ptr_sheep(SHEEP_NULL);
-   }
-   else {
-      *lru_end = pentry;
-      ((struct entry_t *) sheep_ptr(lru_end))->lru_next = ptr_sheep(SHEEP_NULL);
-   }
 
    return 0;
 }
