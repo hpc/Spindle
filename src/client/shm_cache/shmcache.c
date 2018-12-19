@@ -457,6 +457,17 @@ static int init_cache(size_t hlimit)
    return 0;
 }
 
+int shmcache_lookup(const char *libname, char **result)
+{
+   int iresult;
+   if (!table)
+      return -1;
+   take_reader_lock();
+   iresult = shmcache_lookup_worker(libname, result, 0, NULL);
+   release_reader_lock();
+   return iresult;
+}
+
 int shmcache_lookup_or_add(const char *libname, char **result)
 {
    int iresult;

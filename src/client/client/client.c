@@ -350,171 +350,6 @@ int client_done()
    return 0;
 }
 
-extern int read_buffer(char *localname, char *buffer, int size);
-
-static int read_stat(char *localname, struct stat *buf)
-{
-   return read_buffer(localname, (char *) buf, sizeof(*buf));
-}
-
-static int read_ldso_metadata(char *localname, ldso_info_t *ldsoinfo)
-{
-   return read_buffer(localname, (char *) ldsoinfo, sizeof(*ldsoinfo));
-}
-
-static int fetch_from_cache(const char *name, char **newname)
-{
-   int result;
-   char *result_name;
-   result = shmcache_lookup_or_add(name, &result_name);
-   if (result == -1)
-      return 0;
-
-   debug_printf2("Shared cache has mapping from %s (%p) to %s (%p)\n", name, name,
-                 (result_name == in_progress) ? "[IN PROGRESS]" :
-                 (result_name ? result_name : "[NOT PRESENT]"),
-                 result_name);
-   if (result_name == in_progress) {
-      debug_printf("Waiting for update to %s\n", name);
-      result = shmcache_waitfor_update(name, &result_name);
-      if (result == -1) {
-         debug_printf("Entry for %s deleted while waiting for update\n", name);
-         return 0;
-      }
-   }
-   
-   *newname = result_name ? spindle_strdup(result_name) : NULL;
-   return 1;
-}
-
-static void get_cache_name(const char *path, char *prefix, char *result)
-{
-   char cwd[MAX_PATH_LEN+1];
-
-   if (path[0] != '/') {
-      getcwd(cwd, MAX_PATH_LEN+1);
-      cwd[MAX_PATH_LEN] = '\0';
-      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s/%s", prefix, cwd, path);
-   }
-   else {
-      snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s", prefix, path);
-   }
-}
-
-int get_existance_test(int fd, const char *path, int *exists)
-{
-   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
-   int found_file, result;
-   char cache_name[MAX_PATH_LEN+2];
-   char *exist_str;
-
-   if (use_cache) {
-      debug_printf2("Looking up file existance for %s in shared cache\n", path);
-      get_cache_name(path, "&", cache_name);
-      cache_name[sizeof(cache_name)-1] = '\0';
-      found_file = fetch_from_cache(cache_name, &exist_str);
-      if (found_file) {
-         *exists = (exist_str[0] == 'y');
-         return 0;
-      }
-   }
-
-   result = send_existance_test(fd, (char *) path, exists);
-   if (result == -1)
-      return -1;
-
-   if (use_cache) {
-      exist_str = *exists ? "y" : "n";
-      shmcache_update(cache_name, exist_str);
-   }
-   return 0;
-}
-
-int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf)
-{
-   int result;
-   char buffer[MAX_PATH_LEN+1];
-   char cache_name[MAX_PATH_LEN+3];
-   char *newpath;
-   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
-   int found_file = 0;
-
-   if (use_cache) {
-      debug_printf2("Looking up %sstat for %s in shared cache\n", is_lstat ? "l" : "", path);
-      get_cache_name(path, is_lstat ? "**" : "*", cache_name);
-      cache_name[sizeof(cache_name)-1] = '\0';
-      found_file = fetch_from_cache(cache_name, &newpath);
-   }
-
-   if (!found_file) {
-      result = send_stat_request(fd, (char *) path, is_lstat, buffer);
-      if (result == -1)
-         newpath = NULL;
-      else
-         newpath = buffer[0] != '\0' ? buffer : NULL;
-
-      if (use_cache) 
-         shmcache_update(cache_name, newpath);
-   }
-   
-   if (!newpath) {
-      *exists = 0;
-      return 0;
-   }
-   *exists = 1;
-
-   test_log(newpath);
-   result = read_stat(newpath, buf);
-   if (result == -1) {
-      err_printf("Failed to read stat info for %s from %s\n", path, newpath);
-      *exists = 0;
-      return -1;
-   }
-   return 0;
-}
-
-int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
-{
-   int found_file = 0;
-   int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
-   char cache_name[MAX_PATH_LEN+1];
-
-   if (use_cache) {
-      debug_printf2("Looking up %s in shared cache\n", name);
-      get_cache_name(name, "", cache_name);
-      cache_name[sizeof(cache_name)-1] = '\0';
-      
-      found_file = fetch_from_cache(cache_name, newname);
-      if (found_file) {
-         if (strncmp(*newname, "ERRNO:", 6) == 0) {
-            *errorcode = atoi((*newname)+6);
-            *newname = NULL;
-         }
-         else {
-            *errorcode = 0;
-         }
-         return 0;
-      }
-   }
-
-   debug_printf2("Send file request to server: %s\n", name);
-   send_file_query(fd, (char *) name, newname, errorcode);
-   debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");
-
-   if (use_cache) {
-      if (*newname && !*errorcode) {
-         shmcache_update(cache_name, *newname);         
-      }
-      else {
-         char errstr[64];
-         snprintf(errstr, 64, "ERRNO:%d", *errorcode);
-         shmcache_update(cache_name, errstr);
-      }
-   }
-
-   return 0;
-}
-
 char *client_library_load(const char *name)
 {
    char *newname;
@@ -603,6 +438,11 @@ void parse_python_prefixes(int fd)
 
    for (i = 0; pythonprefixes[i].path != NULL; i++)
       debug_printf3("Python path # %d = %s\n", i, pythonprefixes[i].path);
+}
+
+static int read_ldso_metadata(char *localname, ldso_info_t *ldsoinfo)
+{
+   return read_buffer(localname, (char *) ldsoinfo, sizeof(*ldsoinfo));
 }
 
 int get_ldso_metadata(signed int *binding_offset)

@@ -119,7 +119,7 @@ libspindlec_biter_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_biter.la \
 	$(top_builddir)/logging/libspindleclogc.la \
 	$(top_builddir)/shm_cache/libshmcache.la
-am__objects_2 = client.lo should_intercept.lo exec_util.lo \
+am__objects_2 = client.lo lookup.lo should_intercept.lo exec_util.lo \
 	remap_exec.lo rogot.lo parseloc.lo
 am_libspindlec_biter_la_OBJECTS = $(am__objects_2)
 libspindlec_biter_la_OBJECTS = $(am_libspindlec_biter_la_OBJECTS)
@@ -329,7 +329,7 @@ noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1) \
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c
-BASE_SRCS = client.c should_intercept.c exec_util.c remap_exec.c rogot.c $(top_srcdir)/../utils/parseloc.c
+BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c rogot.c $(top_srcdir)/../utils/parseloc.c
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 libspindlec_pipe_la_SOURCES = $(BASE_SRCS)
@@ -410,6 +410,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_readlink.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_spindleapi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindle_audit_la-intercept_stat.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lookup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parseloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remap_exec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rogot.Plo@am__quote@

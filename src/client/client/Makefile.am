@@ -17,7 +17,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_s
 
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c
 
-BASE_SRCS = client.c should_intercept.c exec_util.c remap_exec.c rogot.c $(top_srcdir)/../utils/parseloc.c
+BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c rogot.c $(top_srcdir)/../utils/parseloc.c
 
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
