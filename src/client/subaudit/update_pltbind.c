@@ -206,6 +206,8 @@ void remove_library_from_plt_update_list(struct link_map *lmap)
          break;
       }
    }
+   if (found == -1)
+      return;
 
    debug_printf3("Removing library from update list\n");
    update_list[found] = update_list[update_list_cur-1];
