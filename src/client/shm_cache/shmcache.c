@@ -50,6 +50,25 @@ static sheep_ptr_t *table;
 
 static shminfo_t *shminfo = NULL;
 
+
+void print_shmcache()
+{
+   sheep_ptr_t p;
+   unsigned int i, j;
+   struct entry_t *entry;
+   debug_printf2("Shmcache state from table %p:\n", table);
+   for (i = 0; i < HASH_SIZE; i++) {
+      for (p = table[i], j = 0; !IS_SHEEP_NULL(&p); p = entry->hash_next, j++) {
+         entry = (struct entry_t *) sheep_ptr(&p);
+         bare_printf("%u:%u\t %s -> %s (key:%u pending:%u ptr:%p)\n",
+                     i, j,
+                     (char *) sheep_ptr(&entry->libname),
+                     sheep_ptr(&entry->result) == in_progress ? "INPROGRESS" : (char *) sheep_ptr(&entry->result),
+                     entry->hash_key, entry->pending_count, entry);
+      }
+   }
+}
+
 static void upgrade_to_writelock()
 {
 }
@@ -185,25 +204,29 @@ static void mark_recently_used(struct entry_t *entry, int have_write_lock)
 
 static int clean_oldest_entry()
 {
-   sheep_ptr_t pentry, i;
-   struct entry_t *entry, *prev_hash_entry;
+   sheep_ptr_t i;
+   struct entry_t *entry, *prev_hash_entry = NULL;
+   struct entry_t *lru_pentry = NULL, *lru_nentry = NULL;
 
    debug_printf3("Cleaning oldest entries from shmcache for more space\n");
-   if (IS_SHEEP_NULL(lru_end))
+   if (IS_SHEEP_NULL(lru_end)) {
+      err_printf("Reporting that the shared heap is empty, but has no space.  Is it too small?\n");
       return -1;
+   }
+
    entry = (struct entry_t *) sheep_ptr(lru_end);
-
-   if (sheep_ptr(&entry->result) == in_progress) {
-      debug_printf("Tried to delete in_progress shmcache entry.  Not cleaning\n");
+   while (entry && (sheep_ptr(&entry->result) == in_progress || entry->pending_count)) {
+      debug_printf3("Entry %s is pending or in progress, not deleting\n", (char *) sheep_ptr(&entry->libname));
+      entry = (struct entry_t *) sheep_ptr(&entry->lru_prev);
+   }
+   if (!entry) {
+      /* All entries are either pending or in-progress.  We can't free anything from the shmcache */
+      err_printf("Spindle's shared memory cache is too small and no more space can be cleaned.  Major error\n");
       return -1;
    }
-   if (entry->pending_count) {
-      debug_printf("Tried to delete pending shmcache entry.  Not cleaning\n");
-      return -1;
-   }
-   pentry = entry->lru_prev;
+   lru_pentry = (struct entry_t *) sheep_ptr(&entry->lru_prev);
+   lru_nentry = (struct entry_t *) sheep_ptr(&entry->lru_next);
 
-   prev_hash_entry = NULL;
    debug_printf3("Cleaning entry %s -> %s\n",
                  ((char *) sheep_ptr(&entry->libname)) ? : "[NULL]", 
                  (((char *) sheep_ptr(&entry->result)) ? 
@@ -215,7 +238,16 @@ static int clean_oldest_entry()
    if (prev_hash_entry)
       prev_hash_entry->hash_next = entry->hash_next;
    else
-      table[entry->hash_key] = ptr_sheep(SHEEP_NULL);
+      table[entry->hash_key] = entry->hash_next;
+
+   if (entry == sheep_ptr(lru_head))
+      *lru_head = ptr_sheep(lru_nentry);
+   if (sheep_ptr(lru_end) == entry)
+      *lru_end = ptr_sheep(lru_pentry);
+   if (lru_pentry)
+      lru_pentry->lru_next = ptr_sheep(lru_nentry);
+   if (lru_nentry)
+      lru_nentry->lru_prev = ptr_sheep(lru_pentry);
 
    free_sheep_str((char *) sheep_ptr(& entry->libname));
    if (!IS_SHEEP_NULL(&entry->result)) {
@@ -223,14 +255,6 @@ static int clean_oldest_entry()
    }
    free_sheep_entry(entry);
 
-   if (entry == sheep_ptr(lru_head)) {
-      *lru_head = ptr_sheep(SHEEP_NULL);
-      *lru_end = ptr_sheep(SHEEP_NULL);
-   }
-   else {
-      *lru_end = pentry;
-      ((struct entry_t *) sheep_ptr(lru_end))->lru_next = ptr_sheep(SHEEP_NULL);
-   }
 
    return 0;
 }
@@ -375,7 +399,6 @@ static int init_cache_locks()
 {
    cache_lock.lock = shminfo->shared_header->shmcache.locks + 0;
    cache_lock.held_by = shminfo->shared_header->shmcache.locks + 1;
-   cache_lock.id = -1;
 
    return init_heap_lock(shminfo);
 }
@@ -387,7 +410,6 @@ static int setup_cache_ids()
    if (result == -1)
       return -1;
    
-   cache_lock.id = shminfo->id;
    return 0;
 }
 
@@ -433,6 +455,17 @@ static int init_cache(size_t hlimit)
    table = sheep_ptr(hash_ptr);
 
    return 0;
+}
+
+int shmcache_lookup(const char *libname, char **result)
+{
+   int iresult;
+   if (!table)
+      return -1;
+   take_reader_lock();
+   iresult = shmcache_lookup_worker(libname, result, 0, NULL);
+   release_reader_lock();
+   return iresult;
 }
 
 int shmcache_lookup_or_add(const char *libname, char **result)
@@ -525,18 +558,13 @@ int shmcache_init(const char *tmpdir, int unique_number, size_t shm_size, size_t
    return 0;
 }
 
-int shmcache_post_fork()
-{
-   update_shm_id(shminfo);
-   return 0;
-}
-
 int shmcache_waitfor_update(const char *libname, char **result)
 {
    int iresult;
    int set_pending_count = 0;
    char *sresult;
    struct entry_t *entry;
+   volatile sheep_ptr_t* entry_result; 
    if (!table)
       return -1;
 
@@ -555,7 +583,8 @@ int shmcache_waitfor_update(const char *libname, char **result)
    release_reader_lock();
 
    debug_printf3("Blocking until %s is updated in shmcache\n", libname);
-   while (sheep_ptr(&entry->result) == in_progress);
+   entry_result = &entry->result;
+   while (volatile_sheep_ptr(entry_result) == in_progress);
 
    sresult = sheep_ptr(&entry->result);
    

@@ -53,8 +53,10 @@ static int fetchPhdrs(ElfW(Addr) *aout_base, ElfW(Phdr) **phdrs, unsigned int *p
    auxvpath[63] = '\0';
    fd = open(auxvpath, O_RDONLY);
    if (fd == -1) {
+      int error = errno;
+      //This happens in the testsuite for retzero_x
       err_printf("Could not open auxv at %s, skipping exec remapping: %s\n",
-                 auxvpath, strerror(errno));
+                 auxvpath, strerror(error));
       return -1;
    }
 

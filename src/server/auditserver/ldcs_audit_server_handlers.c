@@ -52,6 +52,7 @@ typedef enum {
    FOUND_FILE,
    FOUND_ERRCODE,
    NO_FILE,
+   NO_DIR,
    READ_DIRECTORY,
    READ_FILE,
    REQ_DIRECTORY,
@@ -80,6 +81,8 @@ typedef enum {
    metadata_stat,
    metadata_loader
 } metadata_t;
+
+#define SPINDLE_ENODIR -68
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -272,7 +275,7 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    /* do initial check of query, parse the filename and store info */
    assert(nc != -1);
    ldcs_client_t *client = procdata->client_table + nc;
-   addCWDToDir(client->remote_cwd, dir, MAX_PATH_LEN);
+   addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
    strncpy(client->query_filename, file, MAX_PATH_LEN);
@@ -374,7 +377,7 @@ static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, cha
    }
    if (dir_result == NO_FILE) {
       /* Directory doesn't exist */
-      return NO_FILE;
+      return NO_DIR;
    }
    /* Do whatever is needed to load the directory */
    return dir_result;
@@ -406,8 +409,10 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
    switch (result) {
       case FOUND_FILE:
          return handle_client_fulfilled_query(procdata, nc);
+      case NO_DIR:
+         return handle_client_rejected_query(procdata, nc, SPINDLE_ENODIR);
       case NO_FILE:
-         return handle_client_rejected_query(procdata, nc, ENOENT);         
+         return handle_client_rejected_query(procdata, nc, ENOENT);
       case FOUND_ERRCODE:
          return handle_client_rejected_query(procdata, nc, errcode);
       case READ_DIRECTORY:
@@ -1035,6 +1040,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
          add_requestor(procdata->pending_requests, pathname, from);         
          return handle_broadcast_errorcode(procdata, pathname, errcode);
       case NO_FILE:
+      case NO_DIR:
          return handle_create_selfload_file(procdata, pathname);
       case READ_DIRECTORY:
          result = handle_read_and_broadcast_dir(procdata, dirname);
@@ -1104,7 +1110,7 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath)
    char buffer_out[MAX_PATH_LEN+1];
    int bytes_written;
 
-   debug_printf2("Sending directory request for %s up network\n", fullpath);
+   debug_printf2("Sending file request for %s up network\n", fullpath);
    out_msg.header.type = LDCS_MSG_FILE_REQUEST;
    out_msg.data = buffer_out;
 
@@ -1612,6 +1618,7 @@ static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc)
       case FOUND_ERRCODE:
          return handle_report_fileexist_result(procdata, nc, exists);
       case NO_FILE:
+      case NO_DIR:
          return handle_report_fileexist_result(procdata, nc, not_exists);
       case READ_DIRECTORY:
          /* We should read the directory.  After that is done, restart this operation */
@@ -1649,7 +1656,7 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
 
    assert(nc != -1);
    client = procdata->client_table + nc;
-   addCWDToDir(client->remote_cwd, dir, MAX_PATH_LEN);
+   addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
    strncpy(client->query_filename, file, MAX_PATH_LEN);
@@ -2131,11 +2138,16 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
  * If all of our clients are exited, and all of our child servers have
  * sent an exit_ready, then send an exit_ready to our parent
  **/
+extern void stopprofile();
 static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
 {
    ldcs_message_t msg;
    debug_printf2("Checking if we need to send an exit ready message\n");
 
+   if (!procdata->clients_live) {
+      stopprofile();
+   }
+   
    if (procdata->opts & OPT_PERSIST) {
        debug_printf2("Bottom-up exit has been disabled\n");
        return 0;

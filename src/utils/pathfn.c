@@ -18,14 +18,28 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "ldcs_api.h"
 
-int addCWDToDir(const char *cwd, char *dir, int result_size)
+int addCWDToDir(pid_t pid, char *dir, int result_size)
 {
-   int cwd_len, dir_len, i;
+   int cwd_len, dir_len, i, result;
+   char cwd[MAX_PATH_LEN+1];
+   char cwd_loc[64];
+   
    if (dir[0] == '/')
       return 0;
+
+   memset(cwd, 0, sizeof(cwd));
+   snprintf(cwd_loc, sizeof(cwd_loc)-1, "/proc/%d/cwd", pid);
+   result = readlink(cwd_loc, cwd, sizeof(cwd)-1);
+   if (result == -1) {
+      int error = errno;
+      err_printf("Could not read CWD from %s: %s\n", cwd_loc, strerror(error));
+   }
+   cwd[MAX_PATH_LEN] = '\0';
+   
    cwd_len = strlen(cwd);
    dir_len = strlen(dir);
    if (!cwd_len)

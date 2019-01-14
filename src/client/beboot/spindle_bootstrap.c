@@ -32,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "client_api.h"
 #include "exec_util.h"
+#include "shmcache.h"
 
 #include "config.h"
 
@@ -50,6 +51,7 @@ unsigned int shm_cachesize;
 
 static int rankinfo[4]={-1,-1,-1,-1};
 static int number;
+static int use_cache;
 static unsigned int cachesize;
 static char *location, *number_s;
 static char **cmdline;
@@ -92,9 +94,7 @@ static int establish_connection()
    if (ldcsid == -1) 
       return -1;
 
-   send_cwd(ldcsid);
    send_pid(ldcsid);
-   send_location(ldcsid, location);
    send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
 
    return 0;
@@ -104,7 +104,6 @@ static void setup_environment()
 {
    char rankinfo_str[256];
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
-
    
    char *connection_str = NULL;
    if (opts & OPT_RELOCAOUT) 
@@ -136,7 +135,7 @@ static void setup_environment()
       if (preload_env) {
          free(preload);
       }
-   }  
+   }
 }
 
 static int parse_cmdline(int argc, char *argv[])
@@ -221,6 +220,7 @@ static void get_executable()
 {
    int errcode = 0;
    if (!(opts & OPT_RELOCAOUT) || (opts & OPT_REMAPEXEC)) {
+      debug_printf3("Using default executable %s\n", *cmdline);
       executable = *cmdline;
       return;
    }
@@ -265,11 +265,12 @@ static void get_clientlib()
    int errorcode;
    
    if (!(opts & OPT_RELOCAOUT)) {
+      debug_printf3("Using default client_lib %s\n", default_libstr);
       client_lib = default_libstr;
       return;
    }
 
-   send_file_query(ldcsid, default_libstr, &client_lib, &errorcode);
+   get_relocated_file(ldcsid, default_libstr, &client_lib, &errorcode);
    if (client_lib == NULL) {
       client_lib = default_libstr;
       err_printf("Failed to relocate client library %s\n", default_libstr);
@@ -280,41 +281,8 @@ static void get_clientlib()
    }
 }
 
-extern int read_buffer(char *localname, char *buffer, int size);
-int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct stat *buf)
+void test_log(const char *name)
 {
-   int result;
-   char buffer[MAX_PATH_LEN+1];
-   char *newpath;
-   int found_file = 0;
-
-   if (!found_file) {
-      result = send_stat_request(fd, (char *) path, is_lstat, buffer);
-      if (result == -1) {
-         *exists = 0;
-         return -1;
-      }
-      newpath = buffer[0] != '\0' ? buffer : NULL;
-   }
-   
-   if (newpath == NULL) {
-      *exists = 0;
-      return 0;
-   }
-   *exists = 1;
-
-   result = read_buffer(newpath, (char *) buf, sizeof(*buf));
-   if (result == -1) {
-      err_printf("Failed to read stat info for %s from %s\n", path, newpath);
-      *exists = 0;
-      return -1;
-   }
-   return 0;
-}
-
-int get_relocated_file(int fd, const char *name, char** newname, int *errcode)
-{
-   return send_file_query(fd, (char *) name, newname, errcode);
 }
 
 /**
@@ -398,6 +366,18 @@ int main(int argc, char *argv[])
       }
    }
 
+   if ((opts & OPT_SHMCACHE) && cachesize) {
+      unsigned int shm_cache_limit;
+      cachesize *= 1024;
+#if defined(COMM_BITER)
+      shm_cache_limit = cachesize > 512*1024 ? cachesize - 512*1024 : 0;
+#else
+      shm_cache_limit = cachesize;
+#endif
+      shmcache_init(location, number, cachesize, shm_cache_limit);
+      use_cache = 1;
+   }      
+   
    get_executable();
    get_clientlib();
    adjust_script();

@@ -98,8 +98,9 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libaudit_server_cobo_la_DEPENDENCIES = $(LDADD) libserverbase.la \
-	$(COD)/libldcs_cobo.la
+am__DEPENDENCIES_1 = $(top_builddir)/cache/libldcs_cache.la
+libaudit_server_cobo_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	libserverbase.la $(COD)/libldcs_cobo.la
 am_libaudit_server_cobo_la_OBJECTS = ldcs_audit_server_md_cobo.lo
 libaudit_server_cobo_la_OBJECTS =  \
 	$(am_libaudit_server_cobo_la_OBJECTS)
@@ -319,7 +320,7 @@ top_srcdir = @top_srcdir@
 #noinst_LTLIBRARIES = libaudit_server_msocket.la libaudit_server_cobo.la libserverbase.la
 noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(pkglibexecdir)\"
-LDADD = $(top_builddir)/cache/libldcs_cache.la
+LDADD = $(top_builddir)/cache/libldcs_cache.la -lrt
 #AM_LDFLAGS = -all-static
 libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c
 

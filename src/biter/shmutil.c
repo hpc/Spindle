@@ -21,10 +21,17 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include "shm_wrappers.h"
 #include "shmutil.h"
 #include "sheep.h"
+
+static pid_t gettid()
+{
+   return syscall(SYS_gettid);   
+}
 
 extern char *spindle_strdup(const char *s);
 extern void *spindle_malloc(size_t s);
@@ -34,7 +41,7 @@ int take_lock(lock_t *lock)
    unsigned long one = 1, result = 0;
    unsigned long count = 0;
 
-   if (lock->id != -1 && *lock->lock == 1 && *lock->held_by == lock->id) {
+   if (*lock->lock == 1 && *lock->held_by == gettid()) {
       lock->ref_count++;
       return 0;
    }
@@ -49,10 +56,9 @@ int take_lock(lock_t *lock)
       result = __sync_lock_test_and_set(lock->lock, one);
    } while (result == 1);
 
-   if (lock->id != -1) {
-      *lock->held_by = lock->id;
-      lock->ref_count = 1;
-   }
+   *lock->held_by = gettid();
+   lock->ref_count = 1;
+
 
    return 0;
 }
@@ -61,7 +67,7 @@ int test_lock(lock_t *lock)
 {
    unsigned long one = 1, result = 0;
 
-   if (lock->id != -1 && *lock->lock == 1 && *lock->held_by == lock->id) {
+   if (*lock->lock == 1 && *lock->held_by == gettid()) {
       lock->ref_count++;
       return 1;
    }
@@ -73,17 +79,15 @@ int test_lock(lock_t *lock)
    if (result == 1)
       return 0;
 
-   if (lock->id != -1) {
-      *lock->held_by = lock->id;
-      lock->ref_count = 1;
-   }
+   *lock->held_by = gettid();
+   lock->ref_count = 1;
 
    return 1;
 }
 
 int release_lock(lock_t *lock)
 {
-   if (lock->id != -1 && *lock->held_by != lock->id) {
+   if (*lock->held_by != gettid()) {
       return -1;
    }
 
@@ -182,7 +186,6 @@ int init_heap_lock(shminfo_t *shminfo)
 
    shminfo->mem_lock.lock = shminfo->shared_header->base.locks + 0;
    shminfo->mem_lock.held_by = shminfo->shared_header->base.locks + 1;
-   shminfo->mem_lock.id = -1;
    return 0;
 }
 
@@ -196,8 +199,6 @@ int setup_ids(shminfo_t *shminfo)
    take_lock(&shminfo->mem_lock);
    shminfo->id = shminfo->shared_header->base.cur_id++;
    release_lock(&shminfo->mem_lock);
-
-   shminfo->mem_lock.id = shminfo->id;
 
    return 0;
 }

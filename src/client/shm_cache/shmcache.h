@@ -22,9 +22,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 int shmcache_lookup_or_add(const char *libname, char **result);
 int shmcache_add(const char *libname, const char *mapped_name);
 int shmcache_update(const char *libname, const char *mapped_name);
-int shmcache_post_fork();
 int shmcache_init(const char *tmpdir, int unique_number, size_t shm_size, size_t hlimit);
 int shmcache_waitfor_update(const char *libname, char **result);
+int shmcache_lookup(const char *libname, char **result);
 void shmcache_take_lock();
 void shmcache_release_lock();
 
