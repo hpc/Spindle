@@ -75,7 +75,6 @@ struct ldcs_server_stat_struct
 };
 typedef struct ldcs_server_stat_struct ldcs_server_stat_t;
 
-
 struct ldcs_client_struct
 {
   int                  connid;
@@ -97,6 +96,14 @@ struct ldcs_client_struct
 };
 typedef struct ldcs_client_struct ldcs_client_t;
 
+typedef struct msgbundle_entry_t {
+   unsigned char *cache;
+   int position;
+   void* node;
+   struct msgbundle_entry_t *next;
+   char name[16];
+} msgbundle_entry_t;
+   
 struct ldcs_process_data_struct
 {
   int client_table_size;
@@ -113,6 +120,10 @@ struct ldcs_process_data_struct
   char *location;
   char *hostname;
   char *pythonprefix;
+  msgbundle_entry_t *msgbundle_entries;
+  int msgbundle_cache_size_kb;
+  int msgbundle_timeout_ms;
+  int handling_bundle;
   int number;
   int preload_done;
   opt_t opts;

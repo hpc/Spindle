@@ -50,7 +50,7 @@ extern "C" {
 #define OPT_PERSIST    (1 << 18)            /* Spindle servers should not exit when all clients exit. */
 #define OPT_SEC        (7 << 19)            /* Security mode, one of the below OPT_SEC_* values */
 #define OPT_SESSION    (1 << 22)            /* Session mode, where Spindle lifetime spans jobs */
-
+#define OPT_MSGBUNDLE  (1 << 23)            /* Message bundling, which can improve high-latency network performance */
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
 #define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */
@@ -113,6 +113,12 @@ typedef struct {
 
    /* Name of a white-space delimited file containing a list of files that will be preloaded */
    char *preloadfile;
+
+   /* The timeout when bundling messages before one is sent */
+   unsigned int bundle_timeout_ms;
+
+   /* The max size of a set of bundled messages before they are sent */
+   unsigned int bundle_cachesize_kb;
 } spindle_args_t;
 
 /* Functions used to startup Spindle on the front-end. Init returns after finishing start-up,

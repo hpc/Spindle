@@ -169,26 +169,43 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
    return 0;
 }
 
-int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, size_t *filesize)
+int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, size_t *filesize, int *bytes_read)
 {
-   /* We've delayed the file read from the network.  Just read the filename and size here.
-      We'll later get the file contents latter by reading directly to mapped memory */
    int filename_len = 0;
    int result;
-   
-   result = ldcs_audit_server_md_complete_msg_read(peer, msg, &filename_len, sizeof(filename_len));
-   if (result == -1)
-      return -1;
-   assert(filename_len > 0 && filename_len <= MAX_PATH_LEN+1);
 
-   result = ldcs_audit_server_md_complete_msg_read(peer, msg, filesize, sizeof(*filesize));
-   if (result == -1)
-      return -1;
+   if (!msg->data) {
+      /* We've delayed the file read from the network.  Just read the filename and size here.
+         We'll later get the file contents latter by reading directly to mapped memory */
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, &filename_len, sizeof(filename_len));
+      if (result == -1)
+         return -1;
+      assert(filename_len > 0 && filename_len <= MAX_PATH_LEN+1);
+      
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, filesize, sizeof(*filesize));
+      if (result == -1)
+         return -1;
+      
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, filename, filename_len);
+      if (result == -1)
+         return -1;
 
-   result = ldcs_audit_server_md_complete_msg_read(peer, msg, filename, filename_len);
-   if (result == -1)
-      return -1;
+      *bytes_read = sizeof(filename_len) + sizeof(*filesize) + filename_len;
+   }
+   else {
+      int pos = 0;
+      unsigned char *data = (unsigned char *) msg->data;
+      filename_len = *((int *) (data+pos));
+      pos += sizeof(int);
+      assert(filename_len > 0 && filename_len <= MAX_PATH_LEN+1);
+      
+      *filesize = *((size_t *) (data+pos));
+      pos += sizeof(size_t);
 
+      memcpy(filename, data+pos, filename_len);
+      pos += filename_len;
+      *bytes_read = pos;
+   }
    return 0;
 }
 
@@ -516,12 +533,12 @@ static int filemngt_ldso_elfX(unsigned char *base, ldso_info_t *ldsoinfo) \
    }                                                                    \
                                                                         \
    if (!resolve_offset) {                                               \
-      err_printf("Could not find symbol _dl_runtime_resolve in dynamic linker\n"); \
+      debug_printf("WARNING: Could not find symbol _dl_runtime_resolve in dynamic linker\n"); \
       return -1;                                                        \
    }                                                                    \
                                                                         \
    if (!profile_offset) {                                               \
-      err_printf("Could not find symbol _dl_runtime_profile in dynamic linker\n"); \
+      debug_printf("WARNING: Could not find symbol _dl_runtime_profile in dynamic linker\n"); \
       return -1;                                                        \
    }                                                                    \
                                                                         \

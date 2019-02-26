@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_cache.h"
 #include "spindle_launch.h"
 #include "ldcs_audit_server_requestors.h"
+#include "msgbundle.h"
 
 //#define GPERFTOOLS
 #if defined(GPERFTOOLS)
@@ -141,11 +142,14 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.md_port = args->port;
    ldcs_process_data.opts = args->opts;
+   ldcs_process_data.msgbundle_cache_size_kb = args->bundle_cachesize_kb;
+   ldcs_process_data.msgbundle_timeout_ms = args->bundle_timeout_ms;
    ldcs_process_data.pending_requests = new_requestor_list();
    ldcs_process_data.completed_requests = new_requestor_list();
    ldcs_process_data.pending_metadata_requests = new_requestor_list();
    ldcs_process_data.completed_metadata_requests = new_requestor_list();
-
+   ldcs_process_data.handling_bundle = 0;
+   
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");
       ldcs_process_data.dist_model = LDCS_PULL;
@@ -191,6 +195,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    debug_printf3("Initializing cache\n");
    ldcs_cache_init();
 
+   msgbundle_init(&ldcs_process_data);
+
    return 0;
 }  
 
@@ -215,7 +221,9 @@ int ldcs_audit_server_run()
   
    /* destroy md support (multi-daemon) */
    ldcs_audit_server_md_destroy(&ldcs_process_data);
-  
+
+   msgbundle_done(&ldcs_process_data);
+   
    /* destroy file cache */
    if (!(ldcs_process_data.opts & OPT_NOCLEAN)) {
       ldcs_audit_server_filemngt_clean();

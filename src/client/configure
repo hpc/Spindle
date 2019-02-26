@@ -12427,7 +12427,7 @@ $as_echo_n "checking for -Wall... " >&6; }
 OCFLAGS=$CFLAGS
 OCXXFLAGS=$CXXFLAGS
 CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXLAGS -Wall"
+CXXFLAGS="$CXXFLAGS -Wall"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

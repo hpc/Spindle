@@ -60,7 +60,7 @@ void pack_param<char*>(char *value, char *buffer, unsigned int &pos)
 
 static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
 {  
-   buffer_size = sizeof(unsigned int) * 6;
+   buffer_size = sizeof(unsigned int) * 8;
    buffer_size += sizeof(opt_t);
    buffer_size += sizeof(unique_id_t);
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
@@ -80,6 +80,8 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->location, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);
+   pack_param(args->bundle_timeout_ms, buf, pos);
+   pack_param(args->bundle_cachesize_kb, buf, pos);
    assert(pos == buffer_size);
 
    buffer = (void *) buf;
