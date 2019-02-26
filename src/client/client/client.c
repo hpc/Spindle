@@ -176,6 +176,7 @@ void int_spindle_test_log_msg(char *buffer)
 static int init_server_connection()
 {
    char *connection, *rankinfo_s, *opts_s, *cachesize_s;
+   int old_ldcsid;
 
    debug_printf("Initializing connection to server\n");
 
@@ -226,7 +227,7 @@ static int init_server_connection()
       if (ldcsid == -1)
          return -1;
       assert(rankinfo_s);
-      sscanf(rankinfo_s, "%d %d %d %d", rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
+      sscanf(rankinfo_s, "%d %d %d %d %d", &old_ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
       unsetenv("LDCS_CONNECTION");
    }
    else {

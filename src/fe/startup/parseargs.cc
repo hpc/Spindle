@@ -65,10 +65,14 @@ using namespace std;
 #define NOMPI 273
 #define HOSTBIN 274
 #define PERSIST 275
+
 #define STARTSESSION 276
 #define RUNSESSION 277
 #define ENDSESSION 278
 #define LAUNCHERSTARTUP 279
+
+#define MSGCACHE_BUFFER 280
+#define MSGCACHE_TIMEOUT 281
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -132,6 +136,10 @@ static char *hostbin_path = NULL;
 #define SHM_MIN_SIZE 0
 #endif
 
+#define DEFAULT_MSGCACHE_BUFFER_KB 1024
+#define DEFAULT_MSGCACHE_TIMEOUT_MS 100
+#define DEFAULT_MSGCACHE_ON 0
+
 static opt_t enabled_opts = 0;
 static opt_t disabled_opts = 0;
 
@@ -146,6 +154,9 @@ static int startup_type = 0;
 static int shm_cache_size = SHM_DEFAULT_SIZE;
 static opt_t use_subaudit = DEFAULT_USE_SUBAUDIT;
 static const opt_t persist = DEFAULT_PERSIST;
+static int msgcache_buffer_kb = DEFAULT_MSGCACHE_BUFFER_KB;
+static int msgcache_timeout_ms = DEFAULT_MSGCACHE_TIMEOUT_MS;
+static int msgcache_set = DEFAULT_MSGCACHE_ON;
 
 static session_status_t session_status = sstatus_unused;
 static string session_id;
@@ -289,6 +300,10 @@ struct argp_option options[] = {
      "Don't hide spindle file descriptors from application", GROUP_MISC },
    { "persist", PERSIST, YESNO, 0,
      "Allow spindle servers to persist after the last client job has exited. Default: " DEFAULT_PERSIST_STR, GROUP_MISC },
+   { "msgcache-buffer", MSGCACHE_BUFFER, "size", 0,
+     "Enables message buffering if size is non-zero, otherwise sets the size of the buffer in kilobytes", GROUP_MISC },
+   { "msgcache-timeout", MSGCACHE_TIMEOUT, "timeout", 0,
+     "Enables message buffering if size is non-zero, otherwise sets the buffering timeout in milliseconds", GROUP_MISC },   
    {0}
 };
 
@@ -321,6 +336,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 {
    struct argp_state *state = (struct argp_state *) vstate;
    struct argp_option *entry;
+   int msgbuffer_arg;
    opt_t opt = 0;
 
    if (done && key != ARGP_KEY_END)
@@ -384,6 +400,22 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       if (shm_cache_size < 8) {
          argp_error(state, "shmcache-size argument must be at least 8 if non-zero");
       }
+      return 0;
+   }
+   else if (entry->key == MSGCACHE_BUFFER || entry->key == MSGCACHE_TIMEOUT) {
+      if (!arg) {
+         argp_error(state, "msgcache settings must have an argument");
+      }
+      msgbuffer_arg = atoi(arg);
+      if (!msgbuffer_arg) {
+         msgcache_set = 0;
+         return 0;
+      }
+      msgcache_set = 1;
+      if (entry->key == MSGCACHE_BUFFER)
+         msgcache_buffer_kb = msgbuffer_arg;
+      else
+         msgcache_timeout_ms = msgbuffer_arg;
       return 0;
    }
    else if (entry->key == AUDITTYPE) {
@@ -519,6 +551,20 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opts |= logging_enabled ? OPT_LOGUSAGE : 0;
       opts |= shm_cache_size > 0 ? OPT_SHMCACHE : 0;
 
+      /* Set message buffer options */
+      if (msgcache_set) {
+         opts |= OPT_MSGBUNDLE;
+         if (!msgcache_buffer_kb)
+            msgcache_buffer_kb = DEFAULT_MSGCACHE_BUFFER_KB;
+         if (!msgcache_timeout_ms)
+            msgcache_timeout_ms = DEFAULT_MSGCACHE_TIMEOUT_MS;
+      }
+      else {
+         msgcache_buffer_kb = 0;
+         msgcache_timeout_ms = 0;
+      }
+           
+      /* Set session options */
       if (opts & OPT_SESSION) { 
          opts |= OPT_PERSIST;
          if (startup_type == startup_lmon || startup_type == startup_hostbin) {
@@ -526,6 +572,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
             startup_type = startup_mpi;
          }
       }
+     
       return 0;
    }
    else if (key == ARGP_KEY_NO_ARGS && 
@@ -711,6 +758,8 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->location = strdup(getLocation(args->number).c_str());
    args->pythonprefix = strdup(getPythonPrefixes().c_str());
    args->preloadfile = getPreloadFile();
+   args->bundle_timeout_ms = msgcache_timeout_ms;
+   args->bundle_cachesize_kb = msgcache_buffer_kb;
 
    debug_printf("Spindle options bitmask: %lu\n", (unsigned long) opts);
 }

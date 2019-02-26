@@ -27,17 +27,30 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include <vector>
 using namespace std;
+
+static void mark_closeonexec(int fd)
+{
+   int flags = 0;
+
+   flags = fcntl(fd, F_GETFD);
+   fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+}
 
 Launcher::Launcher(spindle_args_t *params_) :
    params(params_)
 {
    int fds[2];
+
    pipe(fds);
    jobfinish_read_fd = fds[0];
    jobfinish_write_fd = fds[1];
+   mark_closeonexec(jobfinish_read_fd);
+   mark_closeonexec(jobfinish_write_fd);
+   fflush(stdout);
 }
 
 Launcher::~Launcher()

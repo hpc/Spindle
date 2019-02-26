@@ -87,6 +87,9 @@ static int check_cache(const char *path, const char *prefix, char *cache_name, c
    debug_printf3("File %s exist in cache as %s\n", cache_name, *result_name);
    if (strncmp(*result_name, "ERRNO:", 6) == 0) {
       *errcode = atoi((*result_name)+6);
+      if (*errcode == SPINDLE_ENODIR)
+         *errcode = nodir_errcode;
+      
       spindle_free(*result_name);
       *result_name = NULL;
    }
@@ -96,23 +99,23 @@ static int check_cache(const char *path, const char *prefix, char *cache_name, c
    return 1;
 }
 
-static int update_cache(char *cache_name, char *dir_name, char *result_name, int errcode, int nodir_errcode)
+static int update_cache(char *cache_name, char *dir_name, char *result_name, int *errcode, int nodir_errcode)
 {
    char errstr[64];
 
-   if (result_name && !errcode) {
+   if (result_name && !*errcode) {
       debug_printf3("Updating cache value %s to %s\n", cache_name, result_name);
       shmcache_update(cache_name, result_name);
       return 0;
    }
 
-   if (errcode == SPINDLE_ENODIR) {
+   if (*errcode == SPINDLE_ENODIR) {
       debug_printf3("Setting directory %s to not exist in shmcache\n", dir_name);
       shmcache_add(dir_name, SPINDLE_ENODIR_STR);
-      errcode = nodir_errcode;
+      *errcode = nodir_errcode;
    }
 
-   snprintf(errstr, sizeof(errstr), "ERRNO:%d", errcode);
+   snprintf(errstr, sizeof(errstr), "ERRNO:%d", *errcode);
    shmcache_update(cache_name, errstr);
    return 0;
 }
@@ -141,7 +144,7 @@ int get_existance_test(int fd, const char *path, int *exists)
 
    if (use_cache) {
       exist_str = *exists ? "y" : "n";
-      update_cache(cache_name, dir_name, exist_str, errcode, ENOENT);
+      update_cache(cache_name, dir_name, exist_str, &errcode, ENOENT);
       spindle_free(exist_str);
    }
 
@@ -179,7 +182,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
          buffer[0] = '\0';
 
       if (use_cache)
-         update_cache(cache_name, dir_name, buffer, errcode, ENOENT);
+         update_cache(cache_name, dir_name, buffer, &errcode, ENOENT);
    }
 
    if (buffer[0] == '\0') {
@@ -188,7 +191,7 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
    }
    *exists = 1;
 
-   test_log(newpath);
+   test_log(buffer);
    result = read_stat(buffer, buf);
    if (result == -1) {
       err_printf("Failed to read stat info for %s from %s\n", path, newpath);
@@ -216,8 +219,10 @@ int get_relocated_file(int fd, const char *name, char** newname, int *errorcode)
    debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");
 
    if (use_cache) {
-      update_cache(cache_name, dir_name, *newname, *errorcode, ENOENT);
+      update_cache(cache_name, dir_name, *newname, errorcode, ENOENT);
    }
+   if (*errorcode == SPINDLE_ENODIR)
+      *errorcode = ENOENT;
 
    return result;
 }

@@ -43,7 +43,7 @@ endif
 
 if LMON
 if LMON_DYNAMIC
-spindle_be_LDADD += $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt
+spindle_be_LDADD += $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt -lpthread
 else
 spindle_be_LDADD += $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
 endif

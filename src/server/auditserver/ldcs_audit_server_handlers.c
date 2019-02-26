@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_requestors.h"
 #include "spindle_launch.h"
 #include "pathfn.h"
+#include "msgbundle.h"
 
 /** 
  * This file contains the "brains" of Spindle.  It's public interface,
@@ -156,6 +157,7 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
 static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf, char **localname);
 static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int file_exists,
                              ldso_info_t *ldsoinfo, char **localname);
+static int handle_msgbundle(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg);
 
 
 /**
@@ -889,7 +891,8 @@ static int handle_exit_broadcast(ldcs_process_data_t *procdata)
    out_msg.header.len = 0;
    out_msg.data = NULL;
 
-   ldcs_audit_server_md_broadcast(procdata, &out_msg);
+   spindle_broadcast(procdata, &out_msg);
+   msgbundle_force_flush(procdata);
 
    mark_exit();
    return 0;
@@ -1097,7 +1100,7 @@ static int handle_send_directory_query(ldcs_process_data_t *procdata, char *dire
    bytes_written = snprintf(out_msg.data, MAX_PATH_LEN+1, "D%s", directory);
    out_msg.header.len = bytes_written+1;
 
-   ldcs_audit_server_md_forward_query(procdata, &out_msg);
+   spindle_forward_query(procdata, &out_msg);
    return 0;
 }
 
@@ -1117,7 +1120,7 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath)
    bytes_written = snprintf(out_msg.data, MAX_PATH_LEN+1, "F%s", fullpath);
    out_msg.header.len = bytes_written+1;
 
-   ldcs_audit_server_md_forward_query(procdata, &out_msg);
+   spindle_forward_query(procdata, &out_msg);
    return 0;
 }
 
@@ -1159,16 +1162,19 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    char pathname[MAX_PATH_LEN+1], *localname;
    char *buffer = NULL;
    size_t size = 0;
-   int result, global_error = 0, already_loaded, fd = -1;
+   int result, global_error = 0, already_loaded, fd = -1, bytes_read = 0;
    pathname[MAX_PATH_LEN] = '\0';
 
-   assert(!msg->data); /* If this hits, then the network layer read a entire FILE_DATA packet
-                          rather than just the header */
+   /* If this hits, then the network layer read a entire FILE_DATA packet
+      rather than just the header */
+   assert(!msg->data || procdata->handling_bundle);
 
-   /* We haven't read the file data off the network.  We'll postpone doing that
-      until we have the memory allocated for it in a mapped region of our address
-      space.  The decode packet will just read the pathname and size. */
-   result = filemngt_decode_packet(peer, msg, pathname, &size);
+
+   /* If msg->data is empty, then we haven't read the file data off the network.  
+      We'll postpone doing that until we have the memory allocated for it in a 
+      mapped region of our address space.  The decode packet will just read the 
+      pathname and size. */
+   result = filemngt_decode_packet(peer, msg, pathname, &size, &bytes_read);
    if (result == -1) {
       global_error = -1;
       goto done;
@@ -1193,11 +1199,16 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
       goto done;
    }
 
-   /* No we'll go ahead and read the file data */
-   result = ldcs_audit_server_md_complete_msg_read(peer, msg, buffer, size);
-   if (result == -1) {
-      global_error = -1;
-      goto done;
+   /* Now we'll go ahead and read the file data */
+   if (!msg->data) {
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, buffer, size);
+      if (result == -1) {
+         global_error = -1;
+         goto done;
+      }
+   }
+   else {
+      memcpy(buffer, ((unsigned char *) msg->data) + bytes_read, size);
    }
 
    /* Syncs the file contents to disk and sets local access permissions */
@@ -1279,7 +1290,7 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
 
    if (procdata->dist_model == LDCS_PUSH || force_broadcast) {
       debug_printf3("Pushing message to all children\n");
-      result = ldcs_audit_server_md_broadcast_noncontig(procdata, msg, secondary_data, secondary_size);
+      result = spindle_broadcast_noncontig(procdata, msg, secondary_data, secondary_size);
       if (result == -1)
          global_result = -1;
       have_done_broadcast = 1;
@@ -1302,7 +1313,7 @@ int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
             debug_printf2("Not sending message for %s to child, because it's already been sent\n", key);
             continue;
          }
-         result = ldcs_audit_server_md_send_noncontig(procdata, msg, nodes[i], secondary_data, secondary_size);
+         result = spindle_send_noncontig(procdata, msg, nodes[i], secondary_data, secondary_size);
          if (result == -1)
             global_result = -1;
          else
@@ -1351,6 +1362,35 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
 }
 
 /**
+ * Handle a bundle of messages that just arrived from a server
+ **/
+static int handle_msgbundle(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg)
+{
+   size_t buffer_size = msg->header.len, cur = 0;
+   unsigned char *buffer_base = (unsigned char *) msg->data;
+   ldcs_message_t submsg;
+   int had_error = 0, result = 0;
+
+   procdata->handling_bundle = 1;
+   debug_printf2("Received message bundle of size %lu\n", buffer_size);
+   while (cur < buffer_size) {
+      submsg.header = *((ldcs_message_header_t *) (buffer_base + cur));
+      debug_printf2("Handling message of size %lu from message bundle of size %lu at position %lu\n",
+                    (unsigned long) submsg.header.len, buffer_size, cur);
+      cur += sizeof(ldcs_message_header_t);
+      submsg.data = (void *) (buffer_base + cur);
+
+      result = handle_server_message(procdata, peer, &submsg);
+      if (result == -1)
+         had_error = -1;
+      cur += submsg.header.len;
+   }
+   procdata->handling_bundle = 0;
+
+   return had_error;
+}
+
+/**
  * Handle a message that just arrived from a server
  **/
 int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg)
@@ -1388,6 +1428,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_exit_ready_msg(procdata, msg);
       case LDCS_MSG_EXIT_CANCEL:
          return handle_exit_cancel_msg(procdata, msg);
+      case LDCS_MSG_BUNDLE:
+         return handle_msgbundle(procdata, peer, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -1510,7 +1552,7 @@ static int handle_preload_done(ldcs_process_data_t *procdata)
    done_msg.header.len = 0;
    done_msg.data = NULL;
 
-   result = ldcs_audit_server_md_broadcast(procdata, &done_msg);
+   result = spindle_broadcast(procdata, &done_msg);
    if (result == -1) {
       err_printf("Error broadcasting done message during preload\n");
       return -1;
@@ -2053,7 +2095,7 @@ static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname
    msg.header.len = pathlen;
    msg.data = pathname;
 
-   return ldcs_audit_server_md_forward_query(procdata, &msg);
+   return spindle_forward_query(procdata, &msg);
 }
 
 /**
@@ -2142,6 +2184,7 @@ extern void stopprofile();
 static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
 {
    ldcs_message_t msg;
+   int result;
    debug_printf2("Checking if we need to send an exit ready message\n");
 
    if (!procdata->clients_live) {
@@ -2180,7 +2223,9 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
    }
    else {
       debug_printf2("Sending exit ready message to parent\n");
-      return ldcs_audit_server_md_forward_query(procdata, &msg);
+      result = spindle_forward_query(procdata, &msg);
+      msgbundle_force_flush(procdata);
+      return result;
    }
 }
 
@@ -2235,5 +2280,5 @@ static int handle_send_exit_cancel(ldcs_process_data_t *procdata)
    msg.header.len = 0;
    msg.data = NULL;
 
-   return ldcs_audit_server_md_forward_query(procdata, &msg);
+   return spindle_forward_query(procdata, &msg);
 }
