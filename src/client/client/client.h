@@ -96,6 +96,8 @@ extern int intercept_close;
 extern int intercept_fork;
 extern void int_spindle_test_log_msg(char *buffer);
 
+int lookup_libc_symbols();
+
 /* ERRNO_NAME currently refers to a glibc internal symbol. */
 #define ERRNO_NAME "__errno_location"
 typedef int *(*errno_location_t)(void);

@@ -132,26 +132,28 @@ int lookup_libc_symbols()
 
    {
       INIT_DYNAMIC(libc);
-
       assert(gnu_hash || elf_hash);
-      for (binding = get_bindings(); binding->name != NULL; binding++) {
-         if (binding->name[0] == '\0' || !binding->libc_func)
-            continue;
 
-         result = -1;
-         if (gnu_hash)
-            result = lookup_gnu_hash_symbol(binding->name, symtab, strtab, (struct gnu_hash_header *) gnu_hash);
-         if (elf_hash && result == -1)
-            result = lookup_elf_hash_symbol(binding->name, symtab, strtab, (ElfW(Word) *) elf_hash);
-
-         if (result == -1) {
-            debug_printf3("Warning, Could not bind symbol %s in libc\n", binding->name);
-            *binding->libc_func = NULL;
-            not_found++;
-         }
-         else {
-            *binding->libc_func = (void *) (symtab[result].st_value + libc->l_addr);
-            found++;
+      if (opts & OPT_SUBAUDIT) { //These bindings only need manual lookups for subaudit
+         for (binding = get_bindings(); binding->name != NULL; binding++) {
+            if (binding->name[0] == '\0' || !binding->libc_func)
+               continue;
+            
+            result = -1;
+            if (gnu_hash)
+               result = lookup_gnu_hash_symbol(binding->name, symtab, strtab, (struct gnu_hash_header *) gnu_hash);
+            if (elf_hash && result == -1)
+               result = lookup_elf_hash_symbol(binding->name, symtab, strtab, (ElfW(Word) *) elf_hash);
+            
+            if (result == -1) {
+               debug_printf3("Warning, Could not bind symbol %s in libc\n", binding->name);
+               *binding->libc_func = NULL;
+               not_found++;
+            }
+            else {
+               *binding->libc_func = (void *) (symtab[result].st_value + libc->l_addr);
+               found++;
+            }
          }
       }
 
@@ -160,11 +162,14 @@ int lookup_libc_symbols()
          result = lookup_gnu_hash_symbol("__errno_location", symtab, strtab, (struct gnu_hash_header *) gnu_hash);
       if (elf_hash && result == -1)
          result = lookup_elf_hash_symbol("__errno_location", symtab, strtab, (ElfW(Word) *) elf_hash);
-      if (result == -1)
+      if (result == -1) {        
          debug_printf3("Warning, Could not bind symbol __errno_location in libc\n");
+         not_found++;
+      }
       else {
          app_errno_location = (void *) (symtab[result].st_value + libc->l_addr);
          debug_printf3("Bound errno_location to %p\n", app_errno_location);
+         found++;
       }
    }
 
