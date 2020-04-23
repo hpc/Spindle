@@ -43,60 +43,6 @@ Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym, unsigned int ndx,
                                  SPINDLE_PPC_REGS *regs, unsigned int *flags,
                                  const char *symname, long int *framesizep) AUDIT_EXPORT;
 
-static Elf64_Addr doPermanentBinding(uintptr_t *refcook, uintptr_t *defcook,
-                                     Elf64_Addr target, const char *symname,
-                                     void *stack_begin, void *stack_end)
-{
-   int plt_reloc_idx;
-   Elf64_Rela *rels = NULL, *rel;
-   Elf64_Xword relsize = 0;
-   Elf64_Sym *dynsyms = NULL;
-   char *dynstr = NULL;
-   char *objname;
-   Elf64_Addr *got_entry;
-   Elf64_Addr base;
-   struct link_map *rmap;
-#if _CALL_ELF != 2
-   struct ppc64_funcptr_t *func; 
-#endif
-
-   get_section_info(refcook, &rmap, &rels, &dynsyms, &dynstr, &relsize);
-   objname = (rmap->l_name && rmap->l_name[0] != '\0') 
-                                    ? rmap->l_name : "EXECUTABLE";
-   base = rmap->l_addr;
-
-   if (!rels || !dynsyms) {
-      err_printf("Object %s does not have proper elf structures\n", objname);
-      return target;
-   }
-   plt_reloc_idx = find_refsymbol_index((uint32_t *) stack_begin, 
-                                        (uint32_t *) stack_end, symname, 
-                                        rels, dynstr, dynsyms, 
-                                        relsize, objname);
-   if (plt_reloc_idx == -1) {
-      err_printf("Failed to bind symbol %s.  "
-                  "All future calls will bounce through Spindle.\n", symname);
-      return target;
-   }
-   rel = rels + plt_reloc_idx;
-
-   got_entry = (Elf64_Addr *) (rel->r_offset + base);
-
-#if _CALL_ELF != 2
-   func = (struct ppc64_funcptr_t *) target;
-   debug_printf3("%s: Old GOT Entry %p -- New GOT Entry %p\n",
-                             symname, (void*)(*got_entry), (void*)func->fptr);
-   got_entry[0] = func->fptr;
-   got_entry[1] = func->toc;
-#else
-   debug_printf3("%s: Old GOT Entry %p -- New GOT Entry %p\n",
-                             symname, (void*)(*got_entry), (void*)target);
-   *got_entry = target;
-#endif
-
-   return target;
-}
-
 Elf64_Addr SPINDLE_PLTENTER(Elf64_Sym *sym,
                                  unsigned int ndx,
                                  uintptr_t *refcook,

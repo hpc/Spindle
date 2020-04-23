@@ -140,7 +140,8 @@ static int connect_to_session()
 
    struct sockaddr_un server;
    server.sun_family = AF_UNIX;
-   strncpy(server.sun_path, session_socket.c_str(), sizeof(server.sun_path));
+   strncpy(server.sun_path, session_socket.c_str(), sizeof(server.sun_path)-1);
+   server.sun_path[sizeof(server.sun_path)-1] = '\0';
    int len = sizeof(struct sockaddr_un);
    
    int result = connect(sock, (const struct sockaddr *) &server, len);

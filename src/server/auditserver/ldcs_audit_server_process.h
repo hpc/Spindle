@@ -81,16 +81,16 @@ struct ldcs_client_struct
   int                  lrank;
   int                  null_msg_cnt;
   ldcs_client_status_t state;
-  char                 remote_location[MAX_PATH_LEN];
+  char                 remote_location[MAX_PATH_LEN+1];
   int                  remote_pid;
-  char                 remote_cwd[MAX_PATH_LEN];
+  char                 remote_cwd[MAX_PATH_LEN+1];
   int                  query_open;
   int                  existance_query;
   int                  is_stat;
   int                  is_loader;
-  char                 query_filename[MAX_PATH_LEN];    /* hash 1st key */
-  char                 query_dirname[MAX_PATH_LEN];     /* hast 2nd key */
-  char                 query_globalpath[MAX_PATH_LEN];  /* path to file in global fs (dirname+filename) */
+  char                 query_filename[MAX_PATH_LEN+1];    /* hash 1st key */
+  char                 query_dirname[MAX_PATH_LEN+1];     /* hast 2nd key */
+  char                 query_globalpath[MAX_PATH_LEN+2];  /* path to file in global fs (dirname+filename) */
   char                 *query_localpath;                /* path to file in local temporary fs (dirname+filename) */
   double               query_arrival_time;
 };

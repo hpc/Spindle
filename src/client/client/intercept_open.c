@@ -31,6 +31,7 @@
 #include "client_heap.h"
 #include "client_api.h"
 #include "should_intercept.h"
+#include "ccwarns.h"
 
 #define INTERCEPT_OPEN
 #if defined(INSTR_LIB)
@@ -75,6 +76,10 @@ static int do_check_file(const char *path, char **newpath) {
    }
 }
 
+//GCC correctly warns about undefined behavior when passing NULL to path.  But
+// we're trying to keep the original program's undefined behavior, so we allow it.
+GCC_DISABLE_WARNING("-Wnonnull");
+
 static int call_orig_open(const char *path, int oflag, mode_t mode, int is_64)
 {
    test_log(path);
@@ -93,6 +98,8 @@ static int call_orig_open(const char *path, int oflag, mode_t mode, int is_64)
       }
    }
 }
+
+GCC_ENABLE_WARNING;
 
 int open_worker(const char *path, int oflag, mode_t mode, int is_64)
 {

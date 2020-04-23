@@ -485,7 +485,7 @@ int shmcache_lookup_or_add(const char *libname, char **result)
    if (strresult == in_progress)
       *result = in_progress;
    else if (strresult) {
-      *result = strncpy(return_name, strresult, sizeof(return_name));
+      *result = strncpy(return_name, strresult, sizeof(return_name)-1);
       return_name[sizeof(return_name)-1] = '\0';
    }
    else {
@@ -591,7 +591,7 @@ int shmcache_waitfor_update(const char *libname, char **result)
    if (sresult == NULL)
       *result = NULL;
    else {
-      *result = strncpy(return_name, (char *) sheep_ptr(&entry->result), sizeof(return_name));
+      *result = strncpy(return_name, (char *) sheep_ptr(&entry->result), sizeof(return_name)-1);
       return_name[sizeof(return_name)-1] = '\0';
    }
    

@@ -30,6 +30,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/wait.h>
 
 #include "spindle.h"
+#include "ccwarns.h"
 
 #if !defined(LPATH)
 #error LPATH must be defined
@@ -108,6 +109,8 @@ static int getUniqueHostPerNode();
 static int collectResults();
 static int collect_forkmode(int passed);
 static void setup_forkmode();
+
+GCC7_DISABLE_WARNING("-Wformat-truncation");
 
 open_libraries_t libraries[] = {
    { "libtest10.so", NULL, NULL, UNLOADED, FLAGS_MUSTOPEN },
@@ -327,7 +330,7 @@ void api_mode()
          }
       }
 
-      uint32_t sig;
+      uint32_t sig = 0;
 
       if (i % 2 == 0) {
          int fd = spindle_open(path, O_RDONLY);
@@ -981,3 +984,4 @@ static int collectResults()
    return global_test_passed;
 }
    
+GCC7_ENABLE_WARNING

@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cassert>
 
 extern "C" {
-   int cxxexceptionA_calc();
+   int cxxexceptA_calc();
 }
 extern int cxxexception_B();
 static int value;

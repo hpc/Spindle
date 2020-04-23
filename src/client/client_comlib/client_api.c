@@ -195,7 +195,7 @@ int send_orig_path_request(int fd, const char *path, char *newpath)
       err_printf("Got unexpected message after existance test: %d\n", (int) message.header.type);
       assert(0);
    }
-   strncpy(newpath, buffer, MAX_PATH_LEN);
+   strncpy(newpath, buffer, MAX_PATH_LEN+1);
 
    return 0;
 }

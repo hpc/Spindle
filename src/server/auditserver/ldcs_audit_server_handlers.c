@@ -35,6 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "pathfn.h"
 #include "msgbundle.h"
+#include "ccwarns.h"
 
 /** 
  * This file contains the "brains" of Spindle.  It's public interface,
@@ -167,7 +168,8 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
 {
    ldcs_client_t *client = procdata->client_table + nc;
    if(msg->header.type == LDCS_MSG_CWD) {
-      strncpy(client->remote_cwd, msg->data, MAX_PATH_LEN);
+      strncpy(client->remote_cwd, msg->data, sizeof(client->remote_cwd)-1);
+      client->remote_cwd[sizeof(client->remote_cwd)-1] = '\0';
       debug_printf2("Server recvd CWD %s from %d\n", msg->data, nc);
    } 
    else if(msg->header.type == LDCS_MSG_PID) {
@@ -177,7 +179,8 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       debug_printf2("Server recvd pid %d from %d\n", mypid, nc);
    } 
    else if(msg->header.type == LDCS_MSG_LOCATION) {
-      strncpy(client->remote_location, msg->data, MAX_PATH_LEN);
+      strncpy(client->remote_location, msg->data, sizeof(client->remote_location)-1);
+      client->remote_location[sizeof(client->remote_location)-1] = '\0';
       debug_printf2("Server recvd location %s from %d\n", msg->data, nc);
    }
    return 0;
@@ -280,11 +283,16 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
-   strncpy(client->query_filename, file, MAX_PATH_LEN);
-   strncpy(client->query_dirname, dir, MAX_PATH_LEN);
-   snprintf(client->query_globalpath, MAX_PATH_LEN, "%s%s/%s", 
-            is_special_char ? special_char : "",
-            client->query_dirname, client->query_filename);
+   GCC7_DISABLE_WARNING("-Wformat-truncation");
+   GCC7_DISABLE_WARNING("-Wstringop-overflow");
+   strncpy(client->query_filename, file, MAX_PATH_LEN+1);
+   strncpy(client->query_dirname, dir, MAX_PATH_LEN+1);
+   snprintf(client->query_globalpath, MAX_PATH_LEN+1, "%s%s/%s", 
+                         is_special_char ? special_char : "",
+                         client->query_dirname, client->query_filename);
+   GCC7_ENABLE_WARNING;
+   GCC7_ENABLE_WARNING;
+   
    client->query_localpath = NULL;
    
    client->query_open = 1;
@@ -833,7 +841,8 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    out_msg.header.type = LDCS_MSG_FILE_QUERY_ANSWER;
    out_msg.data = (void *) buffer_out;
    memcpy(out_msg.data, &zero, sizeof(int));
-   strncpy(out_msg.data+sizeof(int), client->query_localpath, MAX_PATH_LEN+1);
+   strncpy(out_msg.data+sizeof(int), client->query_localpath, MAX_PATH_LEN);
+   buffer_out[sizeof(buffer_out)-1] = '\0';
    out_msg.header.len = strlen(client->query_localpath) + 1 + sizeof(int);
 
    ldcs_send_msg(connid, &out_msg);
@@ -1701,9 +1710,13 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
    addCWDToDir(client->remote_pid, dir, MAX_PATH_LEN);
    reducePath(dir);
 
+   GCC7_DISABLE_WARNING("-Wformat-truncation");
    strncpy(client->query_filename, file, MAX_PATH_LEN);
    strncpy(client->query_dirname, dir, MAX_PATH_LEN);
+
    snprintf(client->query_globalpath, MAX_PATH_LEN, "%s/%s", client->query_dirname, client->query_filename);
+   GCC7_ENABLE_WARNING
+      
    client->query_localpath = NULL;
 
    client->query_open = 1;

@@ -327,7 +327,7 @@ top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1) \
 	$(am__append_2) $(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c
 BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c rogot.c lookup_libc.c $(top_srcdir)/../utils/parseloc.c 
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)

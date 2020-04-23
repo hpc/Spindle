@@ -167,7 +167,7 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    }
    check_for_fork();
    if (ldcsid < 0 || !use_ldcs) {
-      strncpy(newpath, filepath, newpath_size);
+      strncpy(newpath, filepath, (newpath_size-1));
       newpath[newpath_size-1] = '\0';
       return 0;
    }

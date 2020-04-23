@@ -132,7 +132,7 @@ static void logUser()
 
    FILE *f = fopen(logging_file, "a");
    if (!f) {
-      err_printf("Could not open logging file %s\n", logging_file);
+      err_printf("Could not open logging file %s\n", logging_file ? logging_file : "NONE");
       return;
    }
    fprintf(f, "%s\n", log_message.c_str());

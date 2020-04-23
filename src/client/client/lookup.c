@@ -5,6 +5,7 @@
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
+#include "ccwarns.h"
 
 #define SPINDLE_ENODIR -68
 #define SPINDLE_ENODIR_STR "NODR"
@@ -42,6 +43,7 @@ int fetch_from_cache(const char *name, char **newname)
    return 1;
 }
 
+GCC7_DISABLE_WARNING("-Wformat-truncation")
 static void get_cache_name(const char *path, const char *prefix, char *result, char *dirresult)
 {
    char cwd[MAX_PATH_LEN+1];
@@ -61,6 +63,7 @@ static void get_cache_name(const char *path, const char *prefix, char *result, c
    if (last_slash)
       *last_slash = '\0';
 }
+GCC7_ENABLE_WARNING
 
 static int check_cache(const char *path, const char *prefix, char *cache_name, char *dir_name,
                        int nodir_errcode, int *errcode, char **result_name)
@@ -167,7 +170,8 @@ int get_stat_result(int fd, const char *path, int is_lstat, int *exists, struct 
                                ENOENT, &errcode, &newpath);
       if (found_file) {
          debug_printf3("Found stat for %s in cache\n", path);
-         strncpy(buffer, newpath, sizeof(buffer));
+         strncpy(buffer, newpath, (sizeof(buffer)-1));
+         buffer[sizeof(buffer)-1] = '\0';
          spindle_free(newpath);
          newpath = NULL;
       }

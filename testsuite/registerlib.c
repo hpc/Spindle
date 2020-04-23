@@ -24,11 +24,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define STR(x) STR2(x)
 #define STR2(x) #x
 
-extern int FUNC_NAME();
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
+extern int FUNC_NAME();
 
 extern void register_calc_function(int (*func)(void), char *);
 
