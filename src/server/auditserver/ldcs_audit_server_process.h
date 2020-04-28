@@ -60,6 +60,7 @@ struct ldcs_server_stat_struct
 
   ldcs_server_stat_entry_t libread;
   ldcs_server_stat_entry_t libstore;
+  ldcs_server_stat_entry_t metadata;
   ldcs_server_stat_entry_t libdist;
   ldcs_server_stat_entry_t procdir;
   ldcs_server_stat_entry_t distdir;

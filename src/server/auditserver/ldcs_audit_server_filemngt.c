@@ -137,12 +137,13 @@ int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, in
    return result;
 }
 
-int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize, 
+int filemngt_encode_packet(char *filename, char *alias_to, void *filecontents, size_t filesize, 
                            char **buffer, size_t *buffer_size)
 {
    int cur_pos = 0;
    int filename_len = strlen(filename) + 1;
-   *buffer_size = filename_len + sizeof(filename_len) + sizeof(filesize) + filesize;
+   int alias_to_len = alias_to ? strlen(alias_to) + 1 : 0;
+   *buffer_size = filename_len + sizeof(filename_len) + alias_to_len + sizeof(alias_to_len) + sizeof(filesize) + filesize;
    *buffer = (char *) malloc(*buffer_size);
    if (!*buffer) {
       err_printf("Failed to allocate memory for file contents packet for %s\n", filename);
@@ -151,6 +152,9 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
    
    memcpy(*buffer + cur_pos, &filename_len, sizeof(filename_len));
    cur_pos += sizeof(filename_len);
+
+   memcpy(*buffer + cur_pos, &alias_to_len, sizeof(alias_to_len));
+   cur_pos += sizeof(alias_to_len);
    
    memcpy(*buffer + cur_pos, &filesize, sizeof(filesize));
    cur_pos += sizeof(filesize);
@@ -158,10 +162,15 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
    memcpy(*buffer + cur_pos, filename, filename_len);
    cur_pos += filename_len;
 
+   if (alias_to_len) {
+      memcpy(*buffer + cur_pos, alias_to, alias_to_len);
+      cur_pos += alias_to_len;
+   }
+
    /* Explicitely removing the memcpy that puts the file contents into the
       packet.  In order to keep file contents zero-copy we won't add them
       to the packet, but will instead send them with a second write command.
-   memcpy(*buffer + cur_pos, filecontents, filesize);
+      memcpy(*buffer + cur_pos, filecontents, filesize);
    */
    cur_pos += filesize;
 
@@ -169,9 +178,10 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
    return 0;
 }
 
-int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, size_t *filesize, int *bytes_read)
+int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, char *alias_to, size_t *filesize, int *bytes_read)
 {
    int filename_len = 0;
+   int alias_to_len = 0;
    int result;
 
    if (!msg->data) {
@@ -181,7 +191,12 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
       if (result == -1)
          return -1;
       assert(filename_len > 0 && filename_len <= MAX_PATH_LEN+1);
-      
+
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, &alias_to_len, sizeof(alias_to_len));
+      if (result == -1)
+         return -1;
+      assert(alias_to_len >= 0 && alias_to_len <= MAX_PATH_LEN+1);
+
       result = ldcs_audit_server_md_complete_msg_read(peer, msg, filesize, sizeof(*filesize));
       if (result == -1)
          return -1;
@@ -190,7 +205,16 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
       if (result == -1)
          return -1;
 
-      *bytes_read = sizeof(filename_len) + sizeof(*filesize) + filename_len;
+      if (alias_to_len) {
+         result = ldcs_audit_server_md_complete_msg_read(peer, msg, alias_to, alias_to_len);
+         if (result == -1)
+            return -1;      
+      }
+      else {
+         alias_to[0] = '\0';
+      }
+      
+      *bytes_read = sizeof(filename_len) + sizeof(*filesize) + filename_len + sizeof(alias_to_len) + alias_to_len;
    }
    else {
       int pos = 0;
@@ -198,12 +222,24 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
       filename_len = *((int *) (data+pos));
       pos += sizeof(int);
       assert(filename_len > 0 && filename_len <= MAX_PATH_LEN+1);
+
+      alias_to_len = *((int *) (data+pos));
+      pos += sizeof(int);      
+      assert(alias_to_len  >= 0 && alias_to_len < MAX_PATH_LEN+1);
       
       *filesize = *((size_t *) (data+pos));
       pos += sizeof(size_t);
 
       memcpy(filename, data+pos, filename_len);
       pos += filename_len;
+
+      if (alias_to_len) {
+         memcpy(alias_to, data+pos, alias_to_len);
+         pos += alias_to_len;
+      }
+      else {
+         alias_to[0] = '\0';
+      }
       *bytes_read = pos;
    }
    return 0;
@@ -664,3 +700,14 @@ int filemngt_get_ldso_metadata(char *pathname, ldso_info_t *ldsoinfo)
    return -1;
 }
 
+int filemngt_realpath(char *pathname, char *realfile)
+{
+   char *result;
+   result = realpath(pathname, realfile);
+   if (!result) {
+      debug_printf("Warning: Could not resolve realpath of file %s\n", pathname);
+      return -1;
+   }
+
+   return (strcmp(pathname, realfile) == 0) ? 0 : 1;
+}

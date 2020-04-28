@@ -254,8 +254,9 @@ int ldcs_audit_server_run()
    server_stat->num_connections=0;
    server_stat->starttime=-1;
 
-   _ldcs_server_stat_init_entry(&server_stat->libread);
+   _ldcs_server_stat_init_entry(&server_stat->libread);   
    _ldcs_server_stat_init_entry(&server_stat->libstore);
+   _ldcs_server_stat_init_entry(&server_stat->metadata);   
    _ldcs_server_stat_init_entry(&server_stat->libdist);
    _ldcs_server_stat_init_entry(&server_stat->procdir);
    _ldcs_server_stat_init_entry(&server_stat->distdir);
@@ -295,6 +296,12 @@ int ldcs_audit_server_run()
 	  server_stat->libstore.cnt,
 	  server_stat->libstore.bytes/1024.0/1024.0,
 	  server_stat->libstore.time );
+
+  debug_printf(MYFORMAT,
+	  server_stat->md_rank,"metadata",
+	  server_stat->metadata.cnt,
+	  server_stat->metadata.bytes/1024.0/1024.0,
+	  server_stat->metadata.time );
 
   debug_printf(MYFORMAT,
 	  server_stat->md_rank,"libdist",

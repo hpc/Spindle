@@ -56,6 +56,7 @@ struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename) {
    newentry->state = HASH_ENTRY_STATUS_NEW;
    newentry->ostate = 0;
    newentry->localpath = NULL;
+   newentry->alias_to = NULL;
    newentry->buffer = NULL;
    newentry->buffer_size = 0;
    newentry->next = NULL;
@@ -76,18 +77,19 @@ struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename) {
 }
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
-                                                void *buffer, size_t buffer_size, int errcode)
+                                                void *buffer, size_t buffer_size, char *alias_to, int errcode)
 {
    struct ldcs_hash_entry_t *entry;
 
-   debug_printf3("Update cache entry dir='%s' fn='%s' ln='%s', buffer='%p', size='%lu', errcode='%d'\n", 
-                 dirname, filename, localname, buffer, (unsigned long) buffer_size, errcode);
+   debug_printf3("Update cache entry dir='%s' fn='%s' ln='%s', buffer='%p', size='%lu', alias_to='%s', errcode='%d'\n", 
+                 dirname, filename, localname, buffer, (unsigned long) buffer_size, alias_to, errcode);
 
    entry = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
    assert(entry);
    entry->localpath = localname;
    entry->buffer = buffer;
    entry->buffer_size = buffer_size;
+   entry->alias_to = alias_to ? strdup(alias_to) : NULL;
    entry->errcode = errcode;
    return entry;
 }

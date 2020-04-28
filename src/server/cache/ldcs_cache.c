@@ -58,6 +58,17 @@ ldcs_cache_result_t ldcs_cache_findFileDirInCache(char *filename, char *dirname,
    }
 }
 
+ldcs_cache_result_t ldcs_cache_getAlias(char *filename, char *dirname, char **alias)
+{
+  struct ldcs_hash_entry_t *e = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
+  if (e) {
+     *alias = e->alias_to;
+     return LDCS_CACHE_FILE_FOUND;
+  }
+  *alias = NULL;
+  return LDCS_CACHE_FILE_NOT_FOUND;
+}
+
 ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread) {
   if (bytesread) *bytesread = 0;
   debug_printf3("Processing directory %s\n", dirname);
@@ -71,9 +82,9 @@ ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread
 }
 
 ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname, 
-                                           char *localname, void *buffer, size_t buffer_size, int errcode)
+                                           char *localname, void *buffer, size_t buffer_size, char *alias_to, int errcode)
 {
-   struct ldcs_hash_entry_t *e = ldcs_hash_updateEntry(filename, dirname, localname, buffer, buffer_size, errcode);
+   struct ldcs_hash_entry_t *e = ldcs_hash_updateEntry(filename, dirname, localname, buffer, buffer_size, alias_to, errcode);
    if(e) { 
       e->ostate = LDCS_CACHE_OBJECT_STATUS_LOCAL_PATH;
       return(LDCS_CACHE_FILE_FOUND);
@@ -94,7 +105,7 @@ ldcs_hash_object_status_t ldcs_cache_getStatus(char *filename) {
   else  {    return(LDCS_CACHE_OBJECT_STATUS_UNKNOWN); }
 }
 
-int ldcs_cache_get_buffer(char *dirname, char *filename, void **buffer, size_t *size)
+int ldcs_cache_get_buffer(char *dirname, char *filename, void **buffer, size_t *size, char **alias_to)
 {
    struct ldcs_hash_entry_t *e = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
    if (!e) {
@@ -103,6 +114,9 @@ int ldcs_cache_get_buffer(char *dirname, char *filename, void **buffer, size_t *
 
    *buffer = e->buffer;
    *size = e->buffer_size;
+   if (alias_to)
+      *alias_to = e->alias_to;
+   
    return 0;
 }
 
