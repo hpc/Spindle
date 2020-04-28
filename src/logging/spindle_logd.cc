@@ -224,6 +224,12 @@ private:
                found = true;
                break;
             }
+            if ((strstr(loaded.c_str(), "libsymlink.so") != NULL) &&
+                (strstr(target.c_str(), "libtest10.so") != NULL))
+            {
+               found = true;
+               break;
+            }
          }
          if (!found) {
             char proc_s[16];

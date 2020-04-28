@@ -94,6 +94,7 @@ typedef struct {
 #define FLAGS_NOEXIST  (1 << 1)
 #define FLAGS_SYMLINK  (1 << 2)
 #define FLAGS_SKIP     (1 << 3)
+#define FLAGS_WONTLOAD (1 << 4)
 int abort_mode = 0;
 int fork_mode = 0;
 int fork_child = 0;
@@ -126,7 +127,7 @@ open_libraries_t libraries[] = {
    { "libdepA.so", NULL, NULL, UNLOADED, 0 },
    { "libcxxexceptA.so", NULL, NULL, UNLOADED, 0 },
    { "libnoexist.so", NULL, NULL, UNLOADED, FLAGS_NOEXIST },
-   { "libsymlink.so", NULL, NULL, UNLOADED, FLAGS_SYMLINK | FLAGS_SKIP },
+   { "libsymlink.so", NULL, NULL, UNLOADED, FLAGS_SYMLINK | FLAGS_SKIP | FLAGS_WONTLOAD },
    { NULL, NULL, NULL, 0, 0 }
 };
 int num_libraries;
@@ -163,7 +164,8 @@ char *libpath(char *s) {
 static void open_library(int i)
 {
    char *fullpath, *result;
-   test_printf("dlstart %s\n", libraries[i].libname);
+   if (!(libraries[i].flags & FLAGS_WONTLOAD))
+      test_printf("dlstart %s\n", libraries[i].libname);
    fullpath = libpath(libraries[i].libname);
    result = dlopen(fullpath, RTLD_LAZY | RTLD_GLOBAL);
    if (libraries[i].flags & FLAGS_NOEXIST) {
@@ -198,7 +200,7 @@ void dependency_mode()
    /* Should be auto loaded */
    int i;
    for (i = 0; i<num_libraries; i++) {
-      if (libraries[i].flags & FLAGS_NOEXIST || libraries[i].flags & FLAGS_SKIP)
+      if (libraries[i].flags & FLAGS_NOEXIST || libraries[i].flags & FLAGS_SKIP || libraries[i].flags & FLAGS_WONTLOAD)
          continue;
       libraries[i].opened = STARTUP_LOAD;
       test_printf("dlstart %s\n", libraries[i].libname);
@@ -667,6 +669,8 @@ void call_funcs()
    }
 }
 
+extern int get_liblist_error();
+
 void check_libraries()
 {
    int i;
@@ -687,6 +691,10 @@ void check_libraries()
       if (!libraries[i].calc_func) {
          err_printf("Failed to run library constructor in %s\n", libraries[i].libname);
       }
+   }
+
+   if (get_liblist_error()) {
+      err_printf("Loaded some libraries multiple times\n");
    }
 }
 
