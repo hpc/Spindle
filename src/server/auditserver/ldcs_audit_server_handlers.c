@@ -36,6 +36,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "pathfn.h"
 #include "msgbundle.h"
 #include "ccwarns.h"
+#include "parse_mounts.h"
 
 /** 
  * This file contains the "brains" of Spindle.  It's public interface,
@@ -2068,12 +2069,31 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    ldcs_message_t msg;
    int pathname_len = strlen(pathname) + 1;
    int pos = 0;
+   struct stat *sbuf = (struct stat *) buf;
+   const char *mount;
+   int mount_len;
 
    debug_printf2("Broadcasting metadata result for %s to network (%s)\n", pathname, file_exists ? "exists" : "no exist");
 
+   /* Devices may be different on different nodes.  Add the mount point, which can be 
+      remapped to another device after recv */
+   mount_len = 0;
+   if (file_exists && sbuf && mdtype == metadata_stat) {
+      result = dev_to_mount(sbuf->st_dev, &mount);
+      if (result == 0) {
+         debug_printf3("Will send stat of %s with mount point %s, device %x\n", pathname, mount, (int) sbuf->st_dev);
+         mount_len = strlen(mount) + 1;
+      }
+   }
+   if (!mount_len)
+      debug_printf3("Stat send of %s does not have mountpoint\n", pathname);
+   
    /* Allocate and encode packet */
    packet_size = sizeof(int);
+   packet_size += sizeof(int);
+   packet_size += sizeof(int);   
    packet_size += pathname_len;
+   packet_size += mount_len;
    packet_size += file_exists ? buf_size : 0;
    packet_buffer = (char *) malloc(packet_size);
    if (!packet_buffer) {
@@ -2084,8 +2104,17 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    memcpy(packet_buffer + pos, &file_exists, sizeof(int));
    pos += sizeof(int);
 
+   memcpy(packet_buffer + pos, &pathname_len, sizeof(int));
+   pos += sizeof(int);
+
+   memcpy(packet_buffer + pos, &mount_len, sizeof(int));
+   pos += sizeof(int);
+
    memcpy(packet_buffer + pos, pathname, pathname_len);
    pos += pathname_len;
+
+   memcpy(packet_buffer + pos, mount, mount_len);
+   pos += mount_len;
 
    if (file_exists) {
       memcpy(packet_buffer + pos, buf, buf_size);
@@ -2117,18 +2146,30 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
    char pathname[MAX_PATH_LEN+1], *localpath;
    struct stat buf;
    ldso_info_t ldsoinfo;
-   int pos = 0, pathlen, result, payload_size = 0;
+   int pos = 0, pathlen, result, payload_size = 0, mount_len = 0;
    char *buffer = (char *) msg->data;
    unsigned char *payload = NULL;
+   char mount[MAX_PATH_LEN+1];
+   mount[0] = '\0';
 
    /* Decode packet from network */
    memcpy(&file_exists, buffer + pos, sizeof(int));
    pos += sizeof(int);
 
-   pathlen = strlen(buffer + pos);
-   assert(pathlen < MAX_PATH_LEN);
-   strncpy(pathname, buffer + pos, MAX_PATH_LEN+1);
-   pos += pathlen+1;
+   memcpy(&pathlen, buffer + pos, sizeof(int));
+   pos += sizeof(int);
+   assert(pathlen >= 0 && pathlen <= MAX_PATH_LEN);
+
+   memcpy(&mount_len, buffer + pos, sizeof(int));
+   pos += sizeof(int);
+   assert(mount_len >= 0 && mount_len <= MAX_PATH_LEN);
+   
+   memcpy(pathname, buffer + pos, pathlen);
+   pos += pathlen;
+
+   memcpy(mount, buffer + pos, mount_len);
+   pos += mount_len;
+
    if (file_exists) {
       payload = (unsigned char *) (buffer + pos);
       if (mdtype == metadata_stat) {
@@ -2143,6 +2184,17 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
       }
    }
    assert(pos == msg->header.len);
+
+   if (mount_len) {
+      dev_t dev;
+      assert(mdtype == metadata_stat && file_exists);
+      result = mount_to_dev(mount, &dev);
+      if (result == 0) {
+         debug_printf3("Setting device to %x from mountpoint %s for stat recv of %s\n", (int) dev, mount, pathname);
+         buf.st_dev = dev;
+         payload = (unsigned char *) &buf;
+      }
+   }
 
    debug_printf2("Received packet with stat for %s (%s)\n", pathname,
                  file_exists ? "file exists" : "nonexistant file");
