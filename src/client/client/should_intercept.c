@@ -75,10 +75,14 @@ static int is_dso(const char *pathname, char *last_slash, char *last_dot)
 
 static int is_lib_prefix(const char *pathname, char *last_slash)
 {
-   if (last_slash && 
-       strncmp(last_slash, "/lib", 4) == 0)
-      return 1;
-   return 0;
+   if (last_slash && strncmp(last_slash, "/lib", 4) != 0)
+      return 0;
+   if (!last_slash && strncmp(pathname, "lib", 3) != 0)
+      return 0;
+   int len = strlen(pathname);
+   if (!strstr(last_slash, ".so.") && len > 3 && strncmp(pathname + len - 3, ".so", 3) != 0)
+      return 0;
+   return 1;
 }
 
 #define open_for_write(X) ((X & O_WRONLY) == O_WRONLY || (X & O_RDWR) == O_RDWR)
