@@ -201,11 +201,15 @@ int ll_write(int fd, void *buf, size_t count)
                     result > 6 ? ((int) cbuf[pos+6]) : 0,
                     result > 7 ? ((int) cbuf[pos+7]) : 0) ;                         
 
-      if (result == -1 || result == 0) {
+      if (result == -1) {
          if (errno == EINTR || errno == EAGAIN)
             continue;
          error = errno;
          err_printf("Error writing to cobo FD %d: %s\n", fd, strerror(error));
+         return -1;
+      }
+      else if (result == 0) {
+         err_printf("Unexpected exit from peer\n");
          return -1;
       }
       pos += result;

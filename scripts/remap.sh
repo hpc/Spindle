@@ -28,7 +28,7 @@ void get_relocated_file(int ldcs_id, char *orig_exec, char **reloc_exec, int *er
 int dowork()
 {
    char buffer[4097];
-   buffer[4096] = '\0';
+   memset(buffer, 0, 4096);
    remap_executable(0);
    if (readlink("/proc/self/exe", buffer, 4096) == -1)
       return -1;

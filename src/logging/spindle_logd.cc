@@ -20,6 +20,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <map>
 #include <cstring>
 #include <cassert>
+#include <utility>
 
 #include <strings.h>
 #include <unistd.h>
@@ -35,14 +36,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <signal.h>
 #include <pthread.h>
 
-using namespace std;
-
 //Seconds to live without a child
 #define TIMEOUT 10
 
-string tmpdir;
-string debug_fname;
-string test_fname;
+std::string tmpdir;
+std::string debug_fname;
+std::string test_fname;
 
 
 void clean();
@@ -68,13 +67,13 @@ class UniqueProcess
 {
 private:
    int fd;
-   string logFileLock;
+   std::string logFileLock;
    bool unique;
 public:
    UniqueProcess()
    {
       unique = false;
-      logFileLock = tmpdir + string("/spindle_log_lock");
+      logFileLock = tmpdir + std::string("/spindle_log_lock");
       fd = open(logFileLock.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
       if (fd != -1) {
          char pid_str[32];
@@ -149,9 +148,9 @@ public:
 class OutputLog : public OutputInterface
 {
    int fd;
-   string output_file;
+   std::string output_file;
 public:
-   OutputLog(string fname) :
+   OutputLog(std::string fname) :
       output_file(fname)
    {
       char hostname[1024];
@@ -159,12 +158,12 @@ public:
       int result = gethostname(hostname, 1024);
       hostname[1023] = '\0';
       if (result != -1) {
-         output_file += string(".");
-         output_file += string(hostname);
+         output_file += std::string(".");
+         output_file += std::string(hostname);
       }
       snprintf(pid, 16, "%d", getpid());
-      output_file += string(".");
-      output_file += string(pid);
+      output_file += std::string(".");
+      output_file += std::string(pid);
       
       fd = creat(output_file.c_str(), 0660);
       if (fd == -1) {
@@ -197,12 +196,12 @@ public:
 class TestVerifier
 {
 private:
-   vector<string> err_strings;
-   set<pair<int, string> > target_libs;
-   set<pair<int, string> > libs_loaded;
-   string tmp_dir;
+   std::vector<std::string> err_strings;
+   std::set<std::pair<int, std::string> > target_libs;
+   std::set<std::pair<int, std::string> > libs_loaded;
+   std::string tmp_dir;
 
-   void logerror(string s)
+   void logerror(std::string s)
    {
       if (debug_log)
          debug_log->writeMessage(0, s.c_str(), s.size(), "\n", 1);
@@ -210,16 +209,16 @@ private:
    }
    
    void checkLoadedVsTarget() {
-      set<pair<int, string> >::iterator i, j;
+      std::set<std::pair<int, std::string> >::iterator i, j;
       for (i = target_libs.begin(); i != target_libs.end(); i++) {
-         const string &target = i->second;
+         const std::string &target = i->second;
          if (strstr(target.c_str(), "libnoexist.so") != NULL)
             continue;
          bool found = false;
          for (j = libs_loaded.begin(); j != libs_loaded.end(); j++) {
             if (i->first != j->first)
                continue;
-            const string &loaded = j->second;
+            const std::string &loaded = j->second;
             if (strstr(loaded.c_str(), target.c_str()) != NULL) {
                found = true;
                break;
@@ -234,7 +233,7 @@ private:
          if (!found) {
             char proc_s[16];
             snprintf(proc_s, 16, "%d", i->first);
-            logerror(string("Error: Didn't load target: ") + i->second + string(" on proc ") + string(proc_s));
+            logerror(std::string("Error: Didn't load target: ") + i->second + std::string(" on proc ") + std::string(proc_s));
          }
       }
    }
@@ -256,7 +255,7 @@ public:
 
    bool parseOpenNotice(int proc, char *filename)
    {
-      target_libs.insert(make_pair(proc, string(filename))).second;
+      target_libs.insert(std::make_pair(proc, std::string(filename)));
       return true;
    }
 
@@ -269,19 +268,19 @@ public:
       bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL);
 
       if (is_from_temp && ret_code == -1) {
-         string msg = string("Error: Failed to load from ramdisk: ") + string(filename);
+         std::string msg = std::string("Error: Failed to load from ramdisk: ") + std::string(filename);
          logerror(msg);
          return false;
       }
       
       if (!is_from_temp && ret_code != -1 && strstr(filename, "libc.so") == NULL) {
-         string msg = string("Error: Read shared object from non-ramdisk: ") + string(filename);
+         std::string msg = std::string("Error: Read shared object from non-ramdisk: ") + std::string(filename);
          logerror(msg);
          return false;
       }
 
       if (ret_code != -1 || strstr(filename, "retzero_x")) {
-         libs_loaded.insert(make_pair(proc, string(filename)));
+         libs_loaded.insert(std::make_pair(proc, std::string(filename)));
       }
 
       return true;
@@ -321,11 +320,11 @@ public:
       }
       if (strcmp(s, "done\n") == 0) {
          checkLoadedVsTarget();
-         string fname;
+         std::string fname;
          if (err_strings.empty())
-            fname = tmpdir + string("/spindle_test_passed");
+            fname = tmpdir + std::string("/spindle_test_passed");
          else
-            fname = tmpdir + string("/spindle_test_failed");
+            fname = tmpdir + std::string("/spindle_test_failed");
          int result = creat(fname.c_str(), 0600);
          if (result == -1) {
             fprintf(stderr, "Error created test result file %s: %s\n", fname.c_str(), strerror(errno));
@@ -365,9 +364,9 @@ public:
          return;
       }
       
-      string s(msg1, msg1_size);
+      std::string s(msg1, msg1_size);
       if (msg2)
-         s += string(msg2, msg2_size);
+         s += std::string(msg2, msg2_size);
       test_verifier->parseLine(proc, s.c_str());
    }
 };
@@ -386,11 +385,10 @@ private:
    };
 
    int sockfd;
-   map<int, Connection *> conns;
+   std::map<int, Connection *> conns;
    char recv_buffer[MAX_MESSAGE];
-   size_t recv_buffer_size, named_buffer_size;
    bool error;
-   string socket_path;
+   std::string socket_path;
    pthread_t thrd;
    OutputInterface *log;
 
@@ -410,7 +408,7 @@ private:
       fcntl(con->fd, F_SETFL, flags | O_NONBLOCK);
 
       con->unfinished_msg[0] = '\0';
-      conns.insert(make_pair(con->fd, con));
+      conns.insert(std::make_pair(con->fd, con));
       return true;
    }
    
@@ -425,7 +423,7 @@ private:
             max_fd = sockfd;
          }
          
-         for (map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
+         for (std::map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
             int fd = i->first;
             FD_SET(fd, &rset);
             if (fd > max_fd)
@@ -442,18 +440,18 @@ private:
 
          int result = select(max_fd+1, &rset, NULL, NULL, conns.empty() ? &timeout : NULL);
          if (result == 0) {
-            return NULL;
+            return false;
          }
          if (result == -1) {
             fprintf(stderr, "[%s:%u] - Error calling select: %s\n", __FILE__, __LINE__, strerror(errno));
-            return NULL;
+            return false;
          }
 
          if (sockfd != -1 && FD_ISSET(sockfd, &rset)) {
             addNewConnection();
          }
 
-         for (map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
+         for (std::map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
             int fd = i->first;
             if (FD_ISSET(fd, &rset)) {
                readMessage(i->second);
@@ -463,7 +461,7 @@ private:
          bool foundShutdownProc;
          do {
             foundShutdownProc = false;
-            for (map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
+            for (std::map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
                if (i->second->shutdown) {
                   conns.erase(i);
                   foundShutdownProc = true;
@@ -485,7 +483,7 @@ private:
 
       if (result == 0) {
          //A client shutdown
-         map<int, Connection *>::iterator i = conns.find(con->fd);
+         std::map<int, Connection *>::iterator i = conns.find(con->fd);
          assert(i != conns.end());
          i->second->shutdown = true;
          if (con->unfinished_msg[0] != '\0')
@@ -536,7 +534,7 @@ private:
 
 public:
    
-   MsgReader(string socket_suffix, OutputInterface *log_) :
+   MsgReader(std::string socket_suffix, OutputInterface *log_) :
       log(log_)
    {
       error = true;
@@ -550,7 +548,7 @@ public:
       struct sockaddr_un saddr;
       bzero(&saddr, sizeof(saddr));
       int pathsize = sizeof(saddr.sun_path);
-      socket_path = tmpdir + string("/spindle_") + socket_suffix;
+      socket_path = tmpdir + std::string("/spindle_") + socket_suffix;
       saddr.sun_family = AF_UNIX;
       if (socket_path.length() > (unsigned) pathsize-1) {
          fprintf(stderr, "[%s:%u] - Socket path overflows AF_UNIX size (%d): %s\n",
@@ -578,7 +576,7 @@ public:
 
    ~MsgReader()
    {
-      for (map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
+      for (std::map<int, Connection *>::iterator i = conns.begin(); i != conns.end(); i++) {
          int fd = i->first;
          close(fd);
       }
@@ -704,7 +702,7 @@ int main(int argc, char *argv[])
    }
    if (runTests) {
       test_log = new TestLog();
-      test_reader = new MsgReader(string("test"), test_log);
+      test_reader = new MsgReader(std::string("test"), test_log);
       if (test_reader->hadError()) {
          fprintf(stderr, "Test reader error termination\n");
          return -1;

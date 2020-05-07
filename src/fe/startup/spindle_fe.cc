@@ -30,6 +30,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <time.h>
 
 #if defined(USAGE_LOGGING_FILE)
 static const char *logging_file = USAGE_LOGGING_FILE;

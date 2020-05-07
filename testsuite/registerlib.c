@@ -45,7 +45,6 @@ static void onload()
 {
    register_calc_function(FUNC_NAME, (char *) STR(SO_NAME));
 }
-
 #endif
 
 typedef struct libs_list_t {

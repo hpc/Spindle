@@ -153,7 +153,6 @@ static int launcher = 0;
 static int startup_type = 0;
 static int shm_cache_size = SHM_DEFAULT_SIZE;
 static opt_t use_subaudit = DEFAULT_USE_SUBAUDIT;
-static const opt_t persist = DEFAULT_PERSIST;
 static int msgcache_buffer_kb = DEFAULT_MSGCACHE_BUFFER_KB;
 static int msgcache_timeout_ms = DEFAULT_MSGCACHE_TIMEOUT_MS;
 static int msgcache_set = DEFAULT_MSGCACHE_ON;

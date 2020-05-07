@@ -14,6 +14,9 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <set>
+#include "../startup/launcher.h"
+
 #include "lmon_api/common.h"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_fe.h"
@@ -21,7 +24,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_debug.h"
 #include "config.h"
 #include "spindle_launch.h"
-#include "../startup/launcher.h"
 
 #include <set>
 #include <algorithm>

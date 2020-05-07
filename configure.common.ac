@@ -11,24 +11,6 @@ CFLAGS="$CFLAGS -Wall"
 CXXFLAGS="$CXXFLAGS -Wall"
 AC_TRY_COMPILE([], [], AC_MSG_RESULT(yes), [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
 
-AC_MSG_CHECKING([for -Wno-unused-result])
-OCFLAGS=$CFLAGS
-OCXXFLAGS=$CXXFLAGS
-CFLAGS="$CFLAGS -Wunused-result"
-CXXFLAGS="$CXXFLAGS -Wunused-result"
-AC_TRY_COMPILE([], [],
-               [AC_MSG_RESULT(yes); CFLAGS="$OCFLAGS -Wno-unused-result"; CXXFLAGS="$OCXXFLAGS -Wno-unused-result"],
-               [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
-
-AC_MSG_CHECKING([for -Wno-portability])
-OCFLAGS=$CFLAGS
-OCXXFLAGS=$CXXFLAGS
-CFLAGS="$CFLAGS -Wportability"
-CXXFLAGS="$CXXFLAGS -Wportability"
-AC_TRY_COMPILE([], [],
-               [AC_MSG_RESULT(yes); CFLAGS="$OCFLAGS -Wno-portability"; CXXFLAGS="$OCXXFLAGS -Wno-portability"],
-               [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
-
 AC_SUBST([AR_FLAGS], [cr])
 
 AC_ARG_WITH(default-port,

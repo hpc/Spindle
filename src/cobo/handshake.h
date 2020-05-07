@@ -43,9 +43,11 @@ typedef struct {
    handshake_security_t mechanism;
    union {
       struct {
+         int unused;
          //No data needed for none
       } none;
       struct {
+         int unused;         
          //No data needed for munge
       } munge;
       struct {
