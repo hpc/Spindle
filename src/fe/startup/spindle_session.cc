@@ -42,10 +42,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_session.h"
 #include "spindle_debug.h"
 
-using namespace std;
 static int pipefd[2];
-static string session_socket;
-static string session_id;
+static std::string session_socket;
+static std::string session_id;
 static int sock = -1;
 
 #define SOCKET_MAX_CONNECTIONS 128
@@ -62,18 +61,18 @@ static void create_session_id()
    int socket_prefix_len = strlen(SOCKET_PREFIX);
    const char *id = strstr(socket_name, SOCKET_PREFIX) + MIN(socket_prefix_len, 5);
 
-   session_id = string(id);
-   session_socket = string(socket_name);
+   session_id = std::string(id);
+   session_socket = std::string(socket_name);
    free(socket_name);
 }
 
-static void set_session_id(string id)
+static void set_session_id(std::string id)
 {
    session_id = id;
    char *socket_name = tempnam(NULL, NULL);
    char *dir = strrchr(socket_name, '/') + 1;
    *dir = '\0';
-   session_socket = string(socket_name) + SOCKET_PREFIX + id;
+   session_socket = std::string(socket_name) + SOCKET_PREFIX + id;
 }
 
 static int create_unixsocket()
@@ -329,7 +328,7 @@ static void finish_session_startup(bool err)
    close(pipefd[1]);
 }
 static app_id_t next_app_id = 1;
-static map<app_id_t, int> socket_ids;
+static std::map<app_id_t, int> socket_ids;
 
 int get_session_runcmds(app_id_t &appid, int &app_argc, char** &app_argv, bool &session_complete)
 {
@@ -504,7 +503,7 @@ int init_session(spindle_args_t *args)
 
 void mark_session_job_done(app_id_t appid, int rc)
 {
-   map<app_id_t, int>::iterator i = socket_ids.find(appid);
+   std::map<app_id_t, int>::iterator i = socket_ids.find(appid);
    debug_printf("Marking session %lu done with rc %d\n", appid, rc);
    assert(i != socket_ids.end());
    int client = i->second;
@@ -518,7 +517,7 @@ void mark_session_job_done(app_id_t appid, int rc)
 
 int return_session_cmd(app_id_t appid, int app_argc, char **app_argv)
 {
-   map<app_id_t, int>::iterator i = socket_ids.find(appid);
+   std::map<app_id_t, int>::iterator i = socket_ids.find(appid);
    assert(i != socket_ids.end());
    int client = i->second;
    int cmd = RET_RUN_CMD;

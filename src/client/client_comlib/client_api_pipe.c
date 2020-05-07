@@ -41,10 +41,6 @@ static int get_new_fd_pipe()
    return 0;
 }
 
-static void free_fd_pipe()
-{
-}
-
 static int ldcs_mkfifo(char *fifo)
 {
    int result;
@@ -402,7 +398,5 @@ int client_close_connection_pipe(int fd)
       err_printf("Error while closing fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, errno, strerror(errno));
    }
 
-   free_fd_pipe(fd);
-  
    return 0;
 }

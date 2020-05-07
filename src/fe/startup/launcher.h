@@ -17,6 +17,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(LAUNCHER_H_)
 #define LAUNCHER_H_
 
+#include <set>
 #include <vector>
 #include <utility>
 #include <map>

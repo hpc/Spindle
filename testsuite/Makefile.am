@@ -16,12 +16,12 @@ libgenerator_SOURCES = libgenerator.c
 test_driverSOURCES = $(top_srcdir)/testsuite/test_driver.c
 test_driverCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall
 test_driverLDADD = -ldl -ltestoutput -lfuncdict -lspindle
-test_driverLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) -L. $(DYNAMIC_FLAG) -no-install
+test_driverLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) $(LDFLAGS) -L. $(DYNAMIC_FLAG) -no-install
 
 test_driver_libsSOURCES = $(top_srcdir)/testsuite/test_driver.c
 test_driver_libsCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall
 test_driver_libsLDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
-test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install
+test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install $(LDFLAGS)
 
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
@@ -104,14 +104,20 @@ libdepB.so: libdepB.c libdepC.so $(REGLIB_SRC)
 libdepC.so: libdepC.c $(REGLIB_SRC)
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
 
-libcxxexceptA.so: libcxxexceptA.cc $(REGLIB_SRC) libcxxexceptB.so libfuncdict.so
-	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -lcxxexceptB -DSO_NAME=$@ -DFUNC_NAME=cxxexceptA_calc $(LD_FUNCDICT)
+registerlib_exceptA.o: $(REGLIB_SRC)
+	$(AM_V_CC)$(MPICC) -c -o $@ -fPIC -Wall $< -DSO_NAME=libcxxexceptA.so -DFUNC_NAME=cxxexceptA_calc
 
-libcxxexceptB.so: libcxxexceptB.cc $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
+registerlib_exceptB.o: $(REGLIB_SRC)
+	$(AM_V_CC)$(MPICC) -c -o $@ -fPIC -Wall $< -DSO_NAME=libcxxexceptB.so
+
+libcxxexceptA.so: libcxxexceptA.cc registerlib_exceptA.o libcxxexceptB.so libfuncdict.so
+	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< registerlib_exceptA.o -shared -L. -lcxxexceptB -DSO_NAME=$@ -DFUNC_NAME=cxxexceptA_calc $(LD_FUNCDICT)
+
+libcxxexceptB.so: libcxxexceptB.cc registerlib_exceptB.o 
+	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< registerlib_exceptB.o -shared -DSO_NAME=$@
 
 libtestoutput.so: testoutput.c $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
+	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
 
 libfuncdict.so: funcdict.c $(REGLIB_SRC)
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared

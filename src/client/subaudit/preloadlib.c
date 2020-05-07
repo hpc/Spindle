@@ -16,45 +16,33 @@
 
 #define SPINDLE_DO_EXPORT 1
 
+#include "spindle_launch.h"
+
+struct stat;
+SPINDLE_EXPORT int stat(const char *path, struct stat *buf);
+SPINDLE_EXPORT int fstat(int fd, struct stat *buf);
+SPINDLE_EXPORT int lstat(const char *path, struct stat *buf);
+
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "handle_vararg.h"
 #include "intercept.h"
-#include "spindle_launch.h"
 
-static void *spindle_malloc(size_t size)
-{
-   return malloc(size);
-}
-
-static void spindle_free(void *b)
-{
-   free(b);
-}
-
-static void *spindle_realloc(void *b, size_t size)
-{
-   return realloc(b, size);
-}
- 
 SPINDLE_EXPORT int open(const char *pathname, int flags, ...);
 SPINDLE_EXPORT int open64(const char *pathname, int flags, mode_t mode);
 SPINDLE_EXPORT FILE *fopen(const char *pathname, const char *mode);
 SPINDLE_EXPORT FILE *fopen64(const char *pathname, const char *mode);
 SPINDLE_EXPORT int close(int fd);
-SPINDLE_EXPORT int stat(const char *path, struct stat *buf);
-SPINDLE_EXPORT int lstat(const char *path, struct stat *buf);
 SPINDLE_EXPORT int __xstat(int vers, const char *path, struct stat *buf);
 SPINDLE_EXPORT int __xstat64(int vers, const char *path, struct stat *buf);
 SPINDLE_EXPORT int __lxstat(int vers, const char *path, struct stat *buf);
 SPINDLE_EXPORT int __lxstat64(int vers, const char *path, struct stat *buf);
-SPINDLE_EXPORT int fstat(int fd, struct stat *buf);
 SPINDLE_EXPORT int fxstat(int vers, int fd, struct stat *buf);
 SPINDLE_EXPORT int fxstat64(int vers, int fd, struct stat *buf);
 SPINDLE_EXPORT int __fxstat(int vers, int fd, struct stat *buf);
@@ -78,6 +66,21 @@ SPINDLE_EXPORT int spindle_is_enabled();
 SPINDLE_EXPORT int spindle_is_present();
 SPINDLE_EXPORT void spindle_test_log_msg(char *msg);
 
+static void *spindle_malloc(size_t size)
+{
+   return malloc(size);
+}
+
+static void spindle_free(void *b)
+{
+   free(b);
+}
+
+static void *spindle_realloc(void *b, size_t size)
+{
+   return realloc(b, size);
+}
+ 
 int open(const char *pathname, int flags, ...)
 {
    int mode = 0;

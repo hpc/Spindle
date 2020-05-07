@@ -1,3 +1,12 @@
+Spindle 0.12
+-----------
+  - Fixes for handling libraries with aliases, such as the same library loaded twice under two different symlink paths
+  - Fixes for working with older glibc's.
+  - Support for building Spindle with clang
+  - Fix network performance issues seen on IBM systems
+  - Fix bug causing incorrect device in some stat calls
+  - Move spindle testsuite to Python 3
+
 Spindle 0.11
 ------------
   - ppc64le support

@@ -755,7 +755,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    /* Read file size from disk */
    size = filemngt_get_file_size(pathname, &errcode);
    if (size == (size_t) -1) {
-      size = 0;
+      newsize = size = 0;
       goto readdone;
    }
    newsize = size;

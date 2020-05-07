@@ -137,7 +137,6 @@ bool Launcher::setupDaemons()
    assert(i < DAEMON_OPTS_SIZE);
 
    daemon_argc = i;
-   daemon_argv = daemon_argv;
 
    debug_printf2("Daemon CmdLine: ");
    for (int j = 0; j < daemon_argc; j++) {

@@ -806,7 +806,7 @@ static int cobo_open_tree()
         socklen_t parent_len = sizeof(parent_addr);
         cobo_parent_fd = accept(sockfd, (struct sockaddr *) &parent_addr, &parent_len);
 
-        _cobo_opt_socket(sockfd);
+        _cobo_opt_socket(cobo_parent_fd);
 
         /* handshake/authenticate our connection to make sure it one of our processes */
         int result = spindle_handshake_server(cobo_parent_fd, &cobo_handshake, cobo_sessionid);
