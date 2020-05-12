@@ -144,9 +144,9 @@ static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char 
 static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, broadcast_t bcast);
 static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, 
                              struct stat *buf, char **localname);
-static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype);
+static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype, broadcast_t bcast);
 static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathname, int errcode);
-static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer);
+static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer, broadcast_t bcast);
 static int handle_client_metadata(ldcs_process_data_t *procdata, int nc);
 static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc, metadata_t mdtype);
 static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, node_peer_t from);
@@ -1550,11 +1550,15 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_SELFLOAD_FILE:
          return handle_recv_selfload_file(procdata, msg);
       case LDCS_MSG_STAT_NET_RESULT:
-         return handle_metadata_recv(procdata, msg, metadata_stat, peer);
+         return handle_metadata_recv(procdata, msg, metadata_stat, peer, request_broadcast);
+      case LDCS_MSG_PRELOAD_STAT_NET_RESULT:
+         return handle_metadata_recv(procdata, msg, metadata_stat, peer, preload_broadcast);
       case LDCS_MSG_STAT_NET_REQUEST:
          return handle_metadata_request_recv(procdata, msg, metadata_stat, peer);
-       case LDCS_MSG_LOADER_DATA_NET_RESP:
-         return handle_metadata_recv(procdata, msg, metadata_loader, peer);
+      case LDCS_MSG_LOADER_DATA_NET_RESP:
+         return handle_metadata_recv(procdata, msg, metadata_loader, peer, request_broadcast);
+      case LDCS_MSG_PRELOAD_LOADER_DATA_NET_RESP:
+         return handle_metadata_recv(procdata, msg, metadata_loader, peer, preload_broadcast);
       case LDCS_MSG_LOADER_DATA_NET_REQ:
          return handle_metadata_request_recv(procdata, msg, metadata_loader, peer);
      case LDCS_MSG_EXIT_READY:
@@ -1609,8 +1613,17 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
    int cur = 0, global_result = 0, result;
    int num_dirs, num_files, i;
    char *data = (char *) msg->data;
-   char *pathname;
-   
+   char *pathname, *stat_pathname;
+   static int is_stat_enabled = -1;
+
+   if( is_stat_enabled < 0 ) {
+       const char *envar = getenv("SPINDLE_DISABLE_PRELOAD_STAT");
+       is_stat_enabled = 1; // Default
+       if( NULL != envar && '1' == envar[0] ) {
+           is_stat_enabled = 0;
+       }
+   }
+
    debug_printf2("At top of handle_preload_filelist\n");
 
    memcpy(&num_dirs, data + cur, sizeof(int));
@@ -1653,6 +1666,22 @@ static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t
       if (!ldcs_audit_server_md_is_responsible(procdata, pathname)) {
          debug_printf3("I am not responsible for preloading file %s\n", pathname);
          continue;
+      }
+
+      if( 0 != is_stat_enabled ) {
+          debug_printf2("Preload stat of file %s\n", pathname);
+          stat_pathname = malloc(sizeof(char) * (strlen(pathname) + 2) );
+          stat_pathname[0] = '\0';
+          strcat(stat_pathname, "*"); // See client_api.c:send_stat_request - '*'             denotes stat() vs lstat()
+          strcat(stat_pathname, pathname);
+          result = handle_metadata_and_broadcast_file(procdata, stat_pathname, metadata_stat, preload_broadcast);
+          if (result == -1) {
+              err_printf("Error broadcasting file stat during preload\n");
+              global_result = -1;
+              free( stat_pathname );
+              continue;
+          }
+          free( stat_pathname );
       }
 
       debug_printf2("Preload read of file %s\n", pathname);
@@ -1933,7 +1962,7 @@ static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, cha
       return 0;
    }
 
-   result = handle_broadcast_metadata(procdata, pathname, localname != NULL, buffer, buffer_size, mdtype);
+   result = handle_broadcast_metadata(procdata, pathname, localname != NULL, buffer, buffer_size, mdtype, bcast);
    if (result == -1) {
       err_printf("Error broadcasting stat data for %s\n", pathname);
       return -1;
@@ -2060,7 +2089,7 @@ static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int 
 /**
  * Distributes stat contents onto the network
  **/
-static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype)
+static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype, broadcast_t bcast)
 {
    char *packet_buffer = NULL;
    size_t packet_size;
@@ -2072,6 +2101,7 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    struct stat *sbuf = (struct stat *) buf;
    const char *mount;
    int mount_len;
+   int force_broadcast = 0;
 
    debug_printf2("Broadcasting metadata result for %s to network (%s)\n", pathname, file_exists ? "exists" : "no exist");
 
@@ -2123,12 +2153,20 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    assert(pos == packet_size);
 
    msg.header.type = (mdtype == metadata_stat) ? LDCS_MSG_STAT_NET_RESULT : LDCS_MSG_LOADER_DATA_NET_RESP;
+   if (bcast == preload_broadcast) {
+       if( LDCS_MSG_STAT_NET_RESULT == msg.header.type ) {
+           msg.header.type = LDCS_MSG_PRELOAD_STAT_NET_RESULT;
+       } else {
+           msg.header.type = LDCS_MSG_PRELOAD_LOADER_DATA_NET_RESP;
+       }
+       force_broadcast = 1;
+   }
    msg.header.len = packet_size;
    msg.data = packet_buffer;
 
    /* Send packet on network */
    starttime = ldcs_get_time();
-   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, 1);
+   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, force_broadcast, 1);
    procdata->server_stat.libdist.cnt++;
    procdata->server_stat.libdist.bytes += packet_size;
    procdata->server_stat.libdist.time += (ldcs_get_time() - starttime);      
@@ -2140,7 +2178,7 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
 /**
  * Received a stat contents packet.  Decode, cache, and broadcast.
  **/
-static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer)
+static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer, broadcast_t bcast)
 {
    int file_exists;
    char pathname[MAX_PATH_LEN+1], *localpath;
@@ -2209,7 +2247,7 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
       return -1;
    }
  
-   result = handle_broadcast_metadata(procdata, pathname, file_exists, payload, payload_size, mdtype);
+   result = handle_broadcast_metadata(procdata, pathname, file_exists, payload, payload_size, mdtype, bcast);
    if (result == -1) {
       err_printf("Error broadcast stat results for %s\n", pathname);
       return -1;
@@ -2355,7 +2393,7 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
       }
    }
    
-   result = handle_broadcast_metadata(procdata, pathname, localpath != NULL, buffer, buffer_size, mdtype);
+   result = handle_broadcast_metadata(procdata, pathname, localpath != NULL, buffer, buffer_size, mdtype, request_broadcast);
    if (result == -1) {
       err_printf("Failure broadcast stat results for %s\n", pathname);
       return -1;
