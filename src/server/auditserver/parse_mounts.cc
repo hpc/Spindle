@@ -19,6 +19,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "parse_mounts.h"
 
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 
 #include <map>
 #include <utility>
