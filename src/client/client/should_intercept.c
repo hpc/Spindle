@@ -187,8 +187,7 @@ int stat_filter(const char *fname)
    last_slash = strrchr(fname, '/');
 
    if (is_dso(fname, last_slash, last_dot) ||
-       is_python(fname, last_dot) || 
-       is_lib_prefix(fname, last_slash))
+       is_python(fname, last_dot))
       return REDIRECT;
    else
       return ORIG_CALL;
