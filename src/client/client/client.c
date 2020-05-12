@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_api.h"
 #include "spindle_launch.h"
 #include "shmcache.h"
+#include "should_intercept.h"
 
 errno_location_t app_errno_location;
 
@@ -375,7 +376,13 @@ char *client_library_load(const char *name)
       test_log(name);
       return (char *) name;
    }
-   
+
+   /* Do not relocate if the file is to be excluded (e.g., on the local file system) */
+   if( is_excluded_path(name) ) {
+      test_log(name);
+      return (char *) name;
+   }
+
    sync_cwd();
 
    get_relocated_file(ldcsid, name, &newname, &errcode);
