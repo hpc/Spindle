@@ -9,12 +9,12 @@ Overview
 --------
 
 While Spindle comes with several mechanisms for launching (launchmon,
-hostbin, slurm, and serial as of v0.11), each of these has disadvantages such
+hostbin, slurm, and serial as of v0.13), each of these has disadvantages such
 as in-operatability with debuggers (launchmon), difficult to use
 (hostbin), or of limited scope (serial). In the ideal case Spindle
 should be integrated directly into a job launcher, which can easily
 perform the necessary actions of starting the servers, managing the job
-lifetime, and helping Spindle estabilish connections. This document
+lifetime, and helping Spindle establish connections. This document
 describes the API for integrating Spindle into job launchers.
 
 API
@@ -108,7 +108,11 @@ we have to break ABI compatibility.
             bitfield specified by OPT.
    -    'OPT_SESSION' - Run in session mode, where spindle caches persist
         between runs.
-
+   -    'OPT_MSGBUNDLE' - Enable message bundling, which bundles spindle's
+        small network packets into larger packets.  Can be useful for
+        high-latency networks.
+   -    'OPT_BEEXIT' - Spindle will block its exit until each BE has
+        had 'spindleExitBE()' called on it.
 
 - `typedef struct { ... } spindle_args_t`
 
@@ -142,6 +146,7 @@ we have to break ABI compatibility.
         -   `external_launcher` - An external job launcher is handling the
             application. *This is the value that should be used with this
             API*.
+        -   `slurm_plugin_launcher` - Spindle was launched by the Slurm plugin.
     -   `unsigned int startup_type` - A field specifying how spindle servers
         are being launched. It should be one of the following values:
         -   `startup_serial` - The job is non-parallel and Spindle should
@@ -161,9 +166,9 @@ we have to break ABI compatibility.
         storage, such as a RAMDISK or SSD. You can use environment variables
         in this string by encoding them with a `$`. i.e.,
         `$TMPDIR/spindle`
-    -   `char *pythonprefix` - Spindle can do more effecient Python loading
+    -   `char *pythonprefix` - Spindle can do more efficient Python loading
         if it knows the install prefix of Python. This string should be a
-        ':' separated list of diretories that are prefixes of Python
+        ':' separated list of directories that are prefixes of Python
         installs. It is legal to use a prefix at an arbitrary point above
         Python in the directory tree (e.g, `/usr` will capture the python
         install in `/usr/lib64/python2.7/`), but the job should never be
@@ -193,6 +198,37 @@ of hostnames used in the job. The FE API functions are:
     rely on this function to fill-in options and then overwrite any
     important values, or just manually fill in the entire
     `spindle_args_t` structure.
+
+-   `int fillInSpindleArgsCmdLineFE(spindle_args_t *params, unsigned int options,
+     int sargc, char *sargv[], char **errstr)`
+
+    This function is similar to fillInSpindleArgsFE, but it takes extra options
+    and command line arguments.
+
+    The command line arguments are specified by `sargs` and `sargv`, and are a
+    set of command line options that could be validly passed to the 'spindle'
+    executable.  The `params` will be filled out with values from these
+    arguments.  For example, passing ["--port", "1000", "--pull"] will fill
+    in the `params` to use port 1000 and run spindle in it's pull mode.  An
+    executable name, which would normally be passed in sargv[0], should not be
+    included when calling this function.
+
+    The `options` argument is a bitfield of arguments that control how the
+    `params` argument is filled in.  Valid values are:
+
+     - `SPINDLE_FILLARGS_NOUNIQUEID` - The uniqueid field of `params`
+       field will not be filled in.
+     - `SPINDLE_FILLARGS_NONUMBER` - The number field of `params` will not
+        be filled in.  Since other fields in params may depend on number,
+        the `params->number` field should be filled in before calling
+        `fillInSpindleArgsCmdLineFE()`
+
+    These values can be bitwise or'd together.
+
+    The `errstr` parameter will be set to a error message string if there
+    is a problem parsing the arguments passed in sargv and sargc.
+
+    This function return 0 on success, and non-zero on error.    
 
 -   `int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char spindle_argv)`
 
@@ -234,6 +270,15 @@ of hostnames used in the job. The FE API functions are:
 
     This function return 0 on success and non-0 on error.
 
+-   `int spindleWaitForCloseFE(spindle_args_t *params)`
+
+    This function blocks the calling thread until the spindle session
+    associated with the `params` argument is ready to exit.  This
+    function can be optionally used to block a thread between `spindleInitFE()`
+    and `spindleCloseFE()`, if no other work was needed by that thread.
+
+    This function return 0 on success and non-0 on error.
+    
 -   `int spindleCloseFE(spindle_args_t *params)`
 
     This function both shuts down and cleans the current Spindle
@@ -255,7 +300,8 @@ server. The inputs to the the BE API can be found in the
 to be broadcast from the FE to each node by the job launcher. The BE API
 function is:
 
--   `int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type, int (*post_setup)(spindle_args_t *))`
+-   `int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t
+     unique_id, int security_type, int (*post_setup)(spindle_args_t *))`
 
     This function starts the spindle server running. As input it takes
     the `port`, `num_ports`, `unique_id`, which should have the same-named
@@ -274,4 +320,74 @@ function is:
     The `SpindleRunBE` function does not return until the Spindle server
     terminates, which will likely happen at job completion. Therefore
     `SpindleRunBE` should be invoked in either a forked process or
-    seperate thread if the job launcher does not want to remain blocked.
+    separate thread if the job launcher does not want to remain blocked.
+
+    This function return 0 on success and non-0 on error.
+    
+-   `int spindleHookSpindleArgsIntoExecBE(int spindle_argc, char **spindle_argv,
+     char *execfilter)`
+
+    This optional function can be used to auto-magically insert spindle's
+    bootstrap arguments into a future `exec()`/`execv()`/`execve()`/... call
+    that would invoke an application.
+
+    This function is useful if a resource manager does not provide a way to
+    insert Spindle's bootstrap arguments into an application `exec()` call.
+    Spindle will use its function wrapping capabilities to modify the current
+    process and intercept any calls to the `exec()` family.  If that call
+    is `exec()`'ing the application, then spindle will insert its bootstrap
+    arguments into the exec.
+    
+    The `spindle_argc` and `spindle_argv` arguments should be the values 
+    returned from `getApplicationArgsFE()`.
+
+    The `execfilter` string controls which applications should be wrapped.
+    If `execfilter` is non-NULL, Spindle will only insert bootstrap
+    arguments when the executable part of the name matches `execfilter`.
+    For example, if the `exec()` call is invoking `/usr/bin/ls`, and
+    `execfilter` is `ls`, then spindle will insert bootstrap arguments.
+    If `execfilter` is NULL, then all `exec()` calls will be bootstrapped by
+    spindle.
+
+    This function return 0 on success and non-0 on error.
+    
+-  `int spindleExitBE(const char *location)`
+
+    This optional call is used with the `OPT_BEEXIT` option.  When `OPT_BEEXIT`
+    is enabled, spindle will block BE servers from exiting until each one
+    has had `spindleExitBE()` called on it.  `spindleExitBE()` can be called
+    from a different process/thread from the thread running `spindleRunBE()`,
+    but it needs to be called on the same host.
+
+    The `location` parameter should be the value of the `location` field
+    of the `spindle_args_t` associated with the session.
+
+    This function return 0 on success and non-0 on error.
+
+Common API Functions
+---------------
+
+-  `int spindle_debug_printf(int priority, const char *format, ...)`
+
+   This routine inserts printf-style messages into Spindle's debug logs.
+
+   Debug logs are typically enabled by setting the SPINDLE_DEBUG environment
+   variable to "1", "2", or "3" (where "1" produces less output, and "3" produces
+   more output).  This causes a single-file-per-host of debug info to be written
+   into $PWD.  Any messages printed through `spindle_debug_printf()` will be
+   interleaved into these logs, if they are being generated.
+
+   The `priority` parameter signifies the verbosity level of the current message.
+   The message will be added to the logs if SPINDLE_DEBUG is equal-or-greater-than
+   `priority`.  It should be a value of 1, 2, or 3 with higher-level less-verbose
+   debug messages getting 1 and lower-level more-verbose messages getting 3.
+
+   The 'format' and 'varargs' have the same semantics as the system's underlying
+   'printf()' routine.
+
+   This function returns the number of characters printed, similar to printf.  Spindle
+   may add extra provenance characters, which will be included in the return value. 
+
+   
+
+   

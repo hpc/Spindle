@@ -365,7 +365,7 @@ top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = libspindleint.la $(am__append_1) $(am__append_2) \
 	$(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient -I$(top_srcdir)/../utils
 BASE_SRCS = subaudit.c intercept_malloc.c update_pltbind.c ../auditclient/auditclient_common.c ../auditclient/patch_linkmap.c
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 libspindleint_la_SOURCES = preloadlib.c

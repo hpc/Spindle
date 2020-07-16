@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define _GNU_SOURCE
 
 #include "spindle_logc.h"
+#include "spindle_launch.h"
 #include "config.h"
 
 #include <sys/socket.h>
@@ -31,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <fcntl.h>
 #include <errno.h>
 #include <execinfo.h>
+#include <stdarg.h>
 
 #if !defined(LIBEXEC)
 #error Expected to have LIBEXEC defined
@@ -85,7 +87,6 @@ void spawnLogDaemon(char *tempdir)
             params[cur++] = "spindle_test";
          }
          params[cur++] = NULL;
-         
          execv(spindle_log_daemon_name, params);
          fprintf(stderr, "Error executing %s: %s\n", spindle_log_daemon_name, strerror(errno));
          exit(0);
@@ -147,11 +148,25 @@ int clearDaemon(char *tmpdir)
 int connectToLogDaemon(char *path)
 {
    int result, pathsize, sockfd;
+   int newfd;
    struct sockaddr_un saddr;
 
    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sockfd == -1)
       return -1;
+
+   //Some programs have expectations of FD order.  Move the connection to
+   // a high-number FD to avoid breaking their unsafe expectations.
+   for (newfd = 317; newfd < 317+10; newfd++) {
+      if (fcntl(newfd, F_GETFD) == newfd)
+         continue;
+      result = dup2(sockfd, newfd);
+      if (result != -1) {
+         close(sockfd);
+         sockfd = newfd;
+      }
+      break;
+   }
    
    bzero(&saddr, sizeof(saddr));
    pathsize = sizeof(saddr.sun_path);
@@ -229,7 +244,6 @@ static int setup_connection(char *connection_name)
             return -1;
          }
       }
-
       /* Establish connection to daemon */
       fd = connectToLogDaemon(socket_file);
       if (fd != -1)
@@ -345,4 +359,45 @@ void fini_spindle_debugging()
 int is_debug_fd(int fd)
 {
    return (fd == debug_fd || fd == test_fd);
+}
+
+int spindle_debug_printf_impl(int priority, const char *file, unsigned int line, const char *func, const char *format, ...)
+{
+   va_list ap;
+   static int initialized = 0;
+   char buffer[4096];
+   int pos;
+   int result;
+   char *last_slash;
+   
+   if (!initialized) {
+      if (strcmp(spindle_debug_name, "UNKNOWN") == 0) {
+         spindle_debug_name = "Launcher";
+      }
+      init_spindle_debugging(spindle_debug_name, 0);
+      initialized = 1;
+   }
+
+   if (!spindle_debug_prints || spindle_debug_prints < priority)
+      return 0;
+   if (!spindle_debug_output_f)
+      return 0;
+
+   last_slash = strrchr(file, '/');
+   result = snprintf(buffer, sizeof(buffer), "[%s.%d@%s:%u] %s - ", spindle_debug_name, getpid(),
+                     last_slash ? last_slash+1 : file, line, func);
+   if (result < 0)
+      return -1;
+   pos = result;
+   
+   va_start(ap, format);
+   result = vsnprintf(buffer+pos, sizeof(buffer)-pos, format, ap);
+   va_end(ap);
+   if (result < 0)
+      return -1;
+   pos += result;
+
+   result = fwrite(buffer, 1, pos, spindle_debug_output_f);
+   fflush(spindle_debug_output_f);
+   return result;
 }

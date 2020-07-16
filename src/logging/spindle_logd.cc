@@ -245,7 +245,7 @@ public:
       if (!tmp_s)
          tmp_s = getenv("TEMPDIR");
       if (!tmp_s)
-         tmp_s = getenv("/tmp");
+         tmp_s = "/tmp";
       tmp_dir = tmp_s;
    }
 
@@ -676,6 +676,7 @@ void registerCrashHandlers()
 
 int main(int argc, char *argv[])
 {
+   int i;
    registerCrashHandlers();
    parseArgs(argc, argv);
 
@@ -686,10 +687,11 @@ int main(int argc, char *argv[])
    //When running a spindle session we need all stdout closed
    // or a backtick'd `spindle --start-session` may not return.
    // since the output daemon could have forked from the spindle
-   // session we may have its pipe from the backticks open.  
-   close(0);
+   // session we may have its pipe from the backticks open.
+   for (i = 0; i < 255; i++)
+      close(i);
    open("/dev/null", O_RDONLY);
-   close(1);
+   open("/dev/null", O_WRONLY);
    open("/dev/null", O_WRONLY);
 
    if (runDebug) {

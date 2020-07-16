@@ -1178,8 +1178,8 @@ int cobo_get_num_childs(int* num_childs) {
 int cobo_get_parent_socket(int* fd)
 {
     if (cobo_parent_fd != -1) {
-	*fd = cobo_parent_fd;
-        return COBO_SUCCESS;
+       *fd = cobo_parent_fd;
+       return COBO_SUCCESS;
     }
 
     return -1; /* failure RCs? */ 

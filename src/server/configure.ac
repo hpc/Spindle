@@ -90,6 +90,5 @@ CPPFLAGS="$CPPFLAGS -DSPINDLEBE"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 AC_SUBST([SPINDLEBE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlebe`])
-
 AC_OUTPUT
 

@@ -156,6 +156,7 @@ int ldcs_listen() {
     
       /* do select if sckets avail */
       if(nfds>0) {
+         debug_printf3("Blocking for new messages in select\n");
          r = select(nfds + 1, &rd, &wr, &er, NULL);
       
          /* signal caught, do nothing */

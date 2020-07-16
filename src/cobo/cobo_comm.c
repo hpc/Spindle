@@ -157,7 +157,7 @@ int ldcs_cobo_write_fd(int fd, void* buf, int size)
 
 int ll_read(int fd, void *buf, size_t count)
 {
-   int result;
+   int result, error;
    size_t pos = 0;
    unsigned char *cbuf = (unsigned char *) buf;
 
@@ -175,7 +175,8 @@ int ll_read(int fd, void *buf, size_t count)
       if (result == -1 || result == 0) {
          if (errno == EINTR || errno == EAGAIN)
             continue;
-         err_printf("Error reading from cobo FD %d\n", fd);
+         error = errno;
+         err_printf("Error reading from cobo FD %d with return result %d: %s\n", fd, result, strerror(error));
          return -1;
       }
       pos += result;
@@ -233,4 +234,3 @@ int write_msg(int fd, ldcs_message_t *msg)
 
    return 0;
 }
-

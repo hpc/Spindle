@@ -17,6 +17,18 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#if !defined(USE_PLUGIN_DEBUG)
+#include "spindle_debug.h"
+#else
+#include "plugin_utils.h"
+#define SPINDLE_DEBUG_H_
+#endif
+
 #include "ldcs_api.h"
 #include "ccwarns.h"
 
@@ -28,6 +40,9 @@ extern "C" {
 }
 #endif
 
+#if defined(CUSTOM_GETENV)
+extern char *custom_getenv();
+#endif
 #define IS_ENVVAR_CHAR(X) ((X >= 'a' && X <= 'z') || (X >= 'A' && X <= 'Z') || (X == '_'))
 
 /* Expand the user specified location with environment variable values */
@@ -79,8 +94,11 @@ char *parse_location(char *loc)
          }
          strncpy(envvar, env_start, envvar_len);
          envvar[envvar_len] = '\0';
-
+#if defined(CUSTOM_GETENV)
+         env_value = custom_getenv(envvar);
+#else
          env_value = getenv(envvar);
+#endif         
          if (!env_value) {
             fprintf(stderr, "Spindle Error: No environment variable '%s' defined, from specified location %s\n",
                     envvar, loc);
@@ -100,6 +118,9 @@ char *parse_location(char *loc)
          GCC9_ENABLE_WARNING; 
          i += envvar_len + 1;
          j += env_value_len;
+#if defined(CUSTOM_GETENV) && defined(CUSTOM_GETENV_FREE)
+         free(env_value);
+#endif
       }
       else {
          newloc[j] = loc[i];
@@ -112,3 +133,52 @@ char *parse_location(char *loc)
    return strdup(newloc);
 }
 
+/**
+ * Realize takes the 'realpath' of a non-existant location.
+ * If later directories in the path don't exist, it'll cut them
+ * off, take the realpath of the ones that do, then append them
+ * back to the resulting realpath.
+ **/
+char *realize(char *path)
+{
+   char *result;
+   char *origpath, *cur_slash = NULL, *trailing;
+   struct stat buf;
+   char newpath[MAX_PATH_LEN+1];
+   int lastpos;
+   newpath[MAX_PATH_LEN] = '\0';
+
+   origpath = strdup(path);
+   for (;;) {
+      if (stat(origpath, &buf) != -1)
+         break;
+      if (cur_slash)
+         *cur_slash = '/';
+      cur_slash = strrchr(origpath, '/');
+      if (!cur_slash)
+         break;
+      *cur_slash = '\0';
+   }
+   if (cur_slash)
+      trailing = cur_slash + 1;
+   else
+      trailing = "";
+
+   result = realpath(origpath, newpath);
+   if (!result) {
+      free(origpath);
+      return path;
+   }
+
+   strncat(newpath, "/", MAX_PATH_LEN);
+   strncat(newpath, trailing, MAX_PATH_LEN);
+   newpath[MAX_PATH_LEN] = '\0';
+   free(origpath);
+
+   lastpos = strlen(newpath)-1;
+   if (lastpos >= 0 && newpath[lastpos] == '/')
+      newpath[lastpos] = '\0';
+
+   debug_printf2("Realized %s to %s\n", path, newpath);
+   return strdup(newpath);
+}

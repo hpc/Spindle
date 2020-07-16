@@ -33,3 +33,6 @@ fi
 if test "x$1" == "xlibspindle"; then
 echo 0:1:0
 fi
+if test "x$1" == "xspindleslurm"; then
+echo 0:0:0
+fi

@@ -27,8 +27,6 @@ typedef enum {
    sstatus_end
 } session_status_t;
 
-void parseCommandLine(int argc, char *argv[], spindle_args_t *args);
-
 opt_t parseArgs(int argc, char *argv[]);
 char *getPreloadFile();
 unsigned int getPort();
@@ -42,6 +40,13 @@ int getShmCacheSize();
 unique_id_t get_unique_id();
 std::string get_arg_session_id();
 session_status_t get_session_status();
+
+
+#define PARSECMD_FLAG_NOEXIT (1<<0)
+#define PARSECMD_FLAG_NOUNIQUEID (1<<1)
+#define PARSECMD_FLAG_CAPTUREIO (1<<2)
+#define PARSECMD_FLAG_NONUMBER (1<<3)
+int parseCommandLine(int argc, char *argv[], spindle_args_t *args, unsigned int flags, char **errstring);
 
 int getAppArgs(int *argc, char ***argv);
 

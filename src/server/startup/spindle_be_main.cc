@@ -37,7 +37,8 @@ enum startup_type_t {
    lmon,
    serial,
    hostbin,
-   mpilaunch
+   mpilaunch,
+   selflaunch
 };
 startup_type_t startup_type;
 static int security_type;
@@ -129,6 +130,10 @@ static int parseCommandLine(int argc, char *argv[])
          startup_type = mpilaunch;
          break;
       }
+      else if (strcmp(argv[i], "--spindle_selflaunch") == 0) {
+         startup_type = selflaunch;
+         break;
+      }
    }
 
    if (++i >= argc) return -1;   
@@ -137,7 +142,7 @@ static int parseCommandLine(int argc, char *argv[])
    if (++i >= argc) return -1;   
    number = atoi(argv[i]);
 
-   if (startup_type == hostbin || startup_type == mpilaunch) {
+   if (startup_type == hostbin || startup_type == mpilaunch || startup_type == selflaunch) {
       if (++i >= argc) return -1;
       port = atoi(argv[i]);
       if (++i >= argc) return -1;

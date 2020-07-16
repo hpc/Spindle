@@ -143,8 +143,9 @@ am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindledlogc.la \
 libspindlebe_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1)
 am__objects_1 = libspindlebe_la-spindle_be.lo \
-	libspindlebe_la-parseloc.lo libspindlebe_la-keyfile.lo \
-	libspindlebe_la-spindle_mkdir.lo
+	libspindlebe_la-hookexec.lo libspindlebe_la-parseloc.lo \
+	libspindlebe_la-keyfile.lo libspindlebe_la-spindle_mkdir.lo \
+	libspindlebe_la-exitnote.lo
 am_libspindlebe_la_OBJECTS = $(am__objects_1)
 libspindlebe_la_OBJECTS = $(am_libspindlebe_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -157,8 +158,10 @@ libspindlebe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(LDFLAGS) -o $@
 PROGRAMS = $(pkglibexec_PROGRAMS)
 am__objects_2 = spindle_be-spindle_be.$(OBJEXT) \
-	spindle_be-parseloc.$(OBJEXT) spindle_be-keyfile.$(OBJEXT) \
-	spindle_be-spindle_mkdir.$(OBJEXT)
+	spindle_be-hookexec.$(OBJEXT) spindle_be-parseloc.$(OBJEXT) \
+	spindle_be-keyfile.$(OBJEXT) \
+	spindle_be-spindle_mkdir.$(OBJEXT) \
+	spindle_be-exitnote.$(OBJEXT)
 am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
 	spindle_be-spindle_be_serial.$(OBJEXT) \
 	spindle_be-spindle_be_hostbin.$(OBJEXT) \
@@ -395,9 +398,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libspindlebe.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
-CORE_SOURCES = spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
+CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la \
+CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la -ldl \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(GCRYPT_LIBS)
 libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB
@@ -544,11 +547,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-exitnote.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-hookexec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-keyfile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-parseloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_be.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_mkdir.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-cleanup_proc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-exitnote.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-hookexec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-keyfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-parseloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-spindle_be.Po@am__quote@
@@ -579,6 +586,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
+libspindlebe_la-hookexec.lo: hookexec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-hookexec.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-hookexec.Tpo -c -o libspindlebe_la-hookexec.lo `test -f 'hookexec.c' || echo '$(srcdir)/'`hookexec.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-hookexec.Tpo $(DEPDIR)/libspindlebe_la-hookexec.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='hookexec.c' object='libspindlebe_la-hookexec.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-hookexec.lo `test -f 'hookexec.c' || echo '$(srcdir)/'`hookexec.c
+
 libspindlebe_la-parseloc.lo: $(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-parseloc.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-parseloc.Tpo -c -o libspindlebe_la-parseloc.lo `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-parseloc.Tpo $(DEPDIR)/libspindlebe_la-parseloc.Plo
@@ -599,6 +613,27 @@ libspindlebe_la-spindle_mkdir.lo: $(top_srcdir)/../utils/spindle_mkdir.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/spindle_mkdir.c' object='libspindlebe_la-spindle_mkdir.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-spindle_mkdir.lo `test -f '$(top_srcdir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/spindle_mkdir.c
+
+libspindlebe_la-exitnote.lo: $(top_srcdir)/../utils/exitnote.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libspindlebe_la-exitnote.lo -MD -MP -MF $(DEPDIR)/libspindlebe_la-exitnote.Tpo -c -o libspindlebe_la-exitnote.lo `test -f '$(top_srcdir)/../utils/exitnote.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/exitnote.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlebe_la-exitnote.Tpo $(DEPDIR)/libspindlebe_la-exitnote.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/exitnote.c' object='libspindlebe_la-exitnote.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlebe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libspindlebe_la-exitnote.lo `test -f '$(top_srcdir)/../utils/exitnote.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/exitnote.c
+
+spindle_be-hookexec.o: hookexec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-hookexec.o -MD -MP -MF $(DEPDIR)/spindle_be-hookexec.Tpo -c -o spindle_be-hookexec.o `test -f 'hookexec.c' || echo '$(srcdir)/'`hookexec.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-hookexec.Tpo $(DEPDIR)/spindle_be-hookexec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='hookexec.c' object='spindle_be-hookexec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-hookexec.o `test -f 'hookexec.c' || echo '$(srcdir)/'`hookexec.c
+
+spindle_be-hookexec.obj: hookexec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-hookexec.obj -MD -MP -MF $(DEPDIR)/spindle_be-hookexec.Tpo -c -o spindle_be-hookexec.obj `if test -f 'hookexec.c'; then $(CYGPATH_W) 'hookexec.c'; else $(CYGPATH_W) '$(srcdir)/hookexec.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-hookexec.Tpo $(DEPDIR)/spindle_be-hookexec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='hookexec.c' object='spindle_be-hookexec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-hookexec.obj `if test -f 'hookexec.c'; then $(CYGPATH_W) 'hookexec.c'; else $(CYGPATH_W) '$(srcdir)/hookexec.c'; fi`
 
 spindle_be-parseloc.o: $(top_srcdir)/../utils/parseloc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-parseloc.o -MD -MP -MF $(DEPDIR)/spindle_be-parseloc.Tpo -c -o spindle_be-parseloc.o `test -f '$(top_srcdir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/parseloc.c
@@ -641,6 +676,20 @@ spindle_be-spindle_mkdir.obj: $(top_srcdir)/../utils/spindle_mkdir.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/spindle_mkdir.c' object='spindle_be-spindle_mkdir.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-spindle_mkdir.obj `if test -f '$(top_srcdir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/spindle_mkdir.c'; fi`
+
+spindle_be-exitnote.o: $(top_srcdir)/../utils/exitnote.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-exitnote.o -MD -MP -MF $(DEPDIR)/spindle_be-exitnote.Tpo -c -o spindle_be-exitnote.o `test -f '$(top_srcdir)/../utils/exitnote.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/exitnote.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-exitnote.Tpo $(DEPDIR)/spindle_be-exitnote.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/exitnote.c' object='spindle_be-exitnote.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-exitnote.o `test -f '$(top_srcdir)/../utils/exitnote.c' || echo '$(srcdir)/'`$(top_srcdir)/../utils/exitnote.c
+
+spindle_be-exitnote.obj: $(top_srcdir)/../utils/exitnote.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_be-exitnote.obj -MD -MP -MF $(DEPDIR)/spindle_be-exitnote.Tpo -c -o spindle_be-exitnote.obj `if test -f '$(top_srcdir)/../utils/exitnote.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/exitnote.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/exitnote.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-exitnote.Tpo $(DEPDIR)/spindle_be-exitnote.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/../utils/exitnote.c' object='spindle_be-exitnote.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_be-exitnote.obj `if test -f '$(top_srcdir)/../utils/exitnote.c'; then $(CYGPATH_W) '$(top_srcdir)/../utils/exitnote.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../utils/exitnote.c'; fi`
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

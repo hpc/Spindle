@@ -14,16 +14,19 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef _COBO_COMM_H
-#define _COBO_COMM_H
+#if !defined(EXITNOTE_H_)
+#define EXITNOTE_H_
 
-#define COBO_SUCCESS (0)
-
-#include "ldcs_api.h"
-
-int ldcs_cobo_read_fd(int fd, void* buf, int size);
-int ldcs_cobo_write_fd(int fd, void* buf, int size);
-int ll_write(int fd, void *buf, size_t count);
-int ll_read(int fd, void *buf, size_t count);
-int write_msg(int fd, ldcs_message_t *msg);
-#endif /* _COBO_COMM_H */
+#if defined(__cplusplus)
+extern "C" {
+#endif
+   
+int createExitNote(const char *location);
+int pingExitNote(const char *location);
+int handleExitNote(int sockfd, const char *location);
+   
+#if defined(__cplusplus)
+}
+#endif
+   
+#endif

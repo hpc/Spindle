@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
    setupLogging(argc, argv);
 
    spindle_args_t *params = (spindle_args_t *) malloc(sizeof(spindle_args_t));;
-   parseCommandLine(argc, argv, params);
+   parseCommandLine(argc, argv, params, 0, NULL);
 
    init_session(params);
 

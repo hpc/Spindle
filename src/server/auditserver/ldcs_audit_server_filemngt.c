@@ -277,6 +277,7 @@ int ldcs_audit_server_filemngt_clean()
          debug_printf3("Not cleaning file %s\n", path);
          continue;
       }
+      debug_printf3("Cleaning file %s\n", path);
       unlink(path);
    }
 

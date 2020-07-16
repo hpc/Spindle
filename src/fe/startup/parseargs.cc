@@ -338,6 +338,9 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    int msgbuffer_arg;
    opt_t opt = 0;
 
+   state->err_stream = (FILE *) state->input;
+   state->out_stream = (FILE *) state->input;
+
    if (done && key != ARGP_KEY_END)
       return 0;
 
@@ -356,6 +359,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
          disabled_opts |= opt;
       else {
          argp_error(state, "%s must be 'yes' or 'no'", entry->name);
+         return ARGP_ERR_UNKNOWN;
       }
       return 0;
    }
@@ -372,6 +376,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       spindle_port = atoi(arg);
       if (!spindle_port) {
          argp_error(state, "Port was given a 0 value");
+         return ARGP_ERR_UNKNOWN;         
       }
       char *second_port = strchr(arg, '-');
       if (second_port == NULL) {
@@ -381,9 +386,11 @@ static int parse(int key, char *arg, struct argp_state *vstate)
          unsigned int port2 = atoi(second_port+1);
          if (spindle_port > port2) {
             argp_error(state, "port2 must be larger than port1");
+            return ARGP_ERR_UNKNOWN;
          }
          if (spindle_port + 128 < port2) {
             argp_error(state, "port2 must be within 128 of port1");
+            return ARGP_ERR_UNKNOWN;
          }
          num_ports = port2 - spindle_port + 1;
       }
@@ -395,15 +402,18 @@ static int parse(int key, char *arg, struct argp_state *vstate)
          shm_cache_size = SHM_MIN_SIZE;
       if (shm_cache_size % 4 != 0) {
          argp_error(state, "shmcache-size argument must be a multiple of 4");
+         return ARGP_ERR_UNKNOWN;
       }
       if (shm_cache_size < 8) {
          argp_error(state, "shmcache-size argument must be at least 8 if non-zero");
+         return ARGP_ERR_UNKNOWN;
       }
       return 0;
    }
    else if (entry->key == MSGCACHE_BUFFER || entry->key == MSGCACHE_TIMEOUT) {
       if (!arg) {
          argp_error(state, "msgcache settings must have an argument");
+         return ARGP_ERR_UNKNOWN;
       }
       msgbuffer_arg = atoi(arg);
       if (!msgbuffer_arg) {
@@ -426,6 +436,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       }
       else {
          argp_error(state, "audit-type argument must be 'audit' or 'subaudit'");
+         return ARGP_ERR_UNKNOWN;
       }
       return 0;
    }
@@ -510,12 +521,14 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (key == ARGP_KEY_END) {
       if (enabled_opts & disabled_opts) {
          argp_error(state, "Cannot have the same option both enabled and disabled");
+         return ARGP_ERR_UNKNOWN;
       }
 
       /* Set one and only one network option */
       opt_t enabled_network_opts = enabled_opts & all_network_opts;
       if (multi_bits_set(enabled_network_opts)) {
          argp_error(state, "Cannot enable multiple network options");
+         return ARGP_ERR_UNKNOWN;
       }
       opts |= enabled_network_opts ? enabled_network_opts : default_network_opts;
 
@@ -523,6 +536,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       opt_t enabled_pushpull_opts = enabled_opts & all_pushpull_opts;
       if (multi_bits_set(enabled_pushpull_opts)) {
          argp_error(state, "Cannot enable both push and pull options");
+         return ARGP_ERR_UNKNOWN;
       }
       opts |= enabled_pushpull_opts ? enabled_pushpull_opts : default_pushpull_opts;
 
@@ -533,8 +547,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       if (startup_type == 0) {
          if (launcher == serial_launcher)
             startup_type = startup_serial;
-         else if (hostbin_path != NULL)
+         else if (hostbin_path != NULL) {
             startup_type = startup_hostbin;
+            opts |= OPT_SELFLAUNCH;
+         }
          else
             startup_type = DEFAULT_MPI_STARTUP;
       }
@@ -577,6 +593,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (key == ARGP_KEY_NO_ARGS && 
             !(session_status == sstatus_start || session_status == sstatus_end)) {
       argp_error(state, "No MPI command line found");
+      return ARGP_ERR_UNKNOWN;
    }
    else {
       return 0;
@@ -585,21 +602,26 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    return -1;
 }
 
-opt_t parseArgs(int argc, char *argv[])
+opt_t parseArgs(int argc, char *argv[], unsigned int flags, FILE *io)
 {
    error_t result;
+   unsigned int argflags = 0;
+   struct argp arg_parser;
+   
    argp_program_version = PACKAGE_VERSION;
    argp_program_bug_address = PACKAGE_BUGREPORT;
    
    done = false;
-   struct argp arg_parser;
    bzero(&arg_parser, sizeof(arg_parser));
    arg_parser.options = options;
    arg_parser.parser = parse;
    arg_parser.args_doc = "mpi_command";
- 
-   result = argp_parse(&arg_parser, argc, argv, ARGP_IN_ORDER, NULL, NULL);
-   assert(result == 0);
+   argflags = ARGP_IN_ORDER;
+   argflags |= flags & PARSECMD_FLAG_NOEXIT ? ARGP_NO_EXIT : 0;
+   
+   result = argp_parse(&arg_parser, argc, argv, argflags, NULL, io);
+   if (result != 0)
+      return (opt_t) 0;
 
    if (opts & OPT_DEBUG) {
       //Debug mode overrides other settings
@@ -703,11 +725,12 @@ static unsigned int str_hash(const char *str)
    return (unsigned int) hash;
 }
 
-unique_id_t get_unique_id()
+unique_id_t get_unique_id(FILE *err_io)
 {
    static unique_id_t unique_id = 0;
-   if (unique_id != 0)
+   if (unique_id != 0) {
       return unique_id;
+   }
 
    /* This needs only needs to be unique between overlapping Spindle instances
       actively running on the same node.  Grab 16-bit pid, 16-bits hostname hash,
@@ -724,33 +747,50 @@ unique_id_t get_unique_id()
    if (fd == -1)
       fd = open("/dev/random", O_RDONLY);
    if (fd == -1) {
-      fprintf(stderr, "Error: Could not open /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");
-      exit(-1);
+      fprintf(err_io, "Error: Could not open /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");      
+      return 0;
    }
    uint32_t random;
    ssize_t result = read(fd, &random, sizeof(random));
    close(fd);
    if (result == -1) {
-      fprintf(stderr, "Error: Could not read from /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");
-      exit(EXIT_FAILURE);
+      fprintf(err_io, "Error: Could not read from /dev/urandom or /dev/random for unique_id. Aborting Spindle\n");            
+      return 0;
    }
 
    unique_id = (uint16_t) pid;
    unique_id |= ((uint64_t) hostname_hash) << 16;
    unique_id |= ((uint64_t) random) << 32;
-
+   if (!unique_id)
+      unique_id = 1;
+   
    return unique_id;
 }
 
-void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
+int parseCommandLine(int argc, char *argv[], spindle_args_t *args, unsigned int flags, char **errstring)
 {
-   opt_t opts = parseArgs(argc, argv);
+   opt_t opts;
+   FILE *io = NULL;
+   char *captured_io = NULL;
+   size_t captured_io_size = 0;
+   int result = -1;
+   
+   if (flags & PARSECMD_FLAG_CAPTUREIO) {
+      io = open_memstream(&captured_io, &captured_io_size);
+   }
+   if (!io) {
+      io = stderr;
+   }
+   
+   opts = parseArgs(argc, argv, flags, io);
+   if (opts == (opt_t) 0)
+      goto done;
 
-   args->number = getpid();
+   if (!(flags & PARSECMD_FLAG_NONUMBER))
+      args->number = getpid();
    args->port = getPort();
    args->num_ports = getNumPorts();
    args->opts = opts;
-   args->unique_id = get_unique_id();
    args->use_launcher = getLauncher();
    args->startup_type = getStartupType();
    args->shm_cache_size = getShmCacheSize();
@@ -759,8 +799,27 @@ void parseCommandLine(int argc, char *argv[], spindle_args_t *args)
    args->preloadfile = getPreloadFile();
    args->bundle_timeout_ms = msgcache_timeout_ms;
    args->bundle_cachesize_kb = msgcache_buffer_kb;
+   args->unique_id = 0;
+   if (!(flags & PARSECMD_FLAG_NOUNIQUEID)) {
+      args->unique_id = get_unique_id(io);
+      if (!args->unique_id)
+         goto done;
+   }
 
    debug_printf("Spindle options bitmask: %lu\n", (unsigned long) opts);
+   result = 0;
+  done:
+   if (io && io != stderr)
+      fclose(io);
+   
+   if (errstring && captured_io_size)
+      *errstring = captured_io;
+   else if (errstring && !captured_io_size)
+      *errstring = NULL;
+   else if (!errstring && captured_io_size)
+      free(captured_io);
+
+   return result;   
 }
 
 string get_arg_session_id()

@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <elf.h>
 #include <link.h>
+#include "config.h"
 
 #if __WORDSIZE == 64
 #define R_SYM(X) ELF64_R_SYM(X)
@@ -114,5 +115,23 @@ Place, Suite 330, Boston, MA 02111-1307 USA
       }                                         \
    }
 
+
+#if defined(arch_x86_64) || defined(arch_aarch64)
+typedef Elf64_Addr funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
+#elif defined(arch_ppc64) || defined(arch_ppc64le)
+#if _CALL_ELF != 2
+typedef struct {
+   Elf64_Addr func;
+   Elf64_Addr toc;   
+} *funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((funcptr_t) TO) = *((funcptr_t) FROM)
+#else
+typedef Elf64_Addr funcptr_t;
+#define ASSIGN_FPTR(TO, FROM) *((Elf64_Addr *) TO) = (Elf64_Addr) FROM
+#endif
+#else
+#error Unknown architecture
+#endif
 
 #endif

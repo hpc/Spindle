@@ -86,6 +86,7 @@ static char *default_subaudit_libstr = libstr_biter_subaudit;
 
 extern int spindle_mkdir(char *path);
 extern char *parse_location(char *loc);
+extern char *realize(char *path);
 
 static int establish_connection()
 {
@@ -283,56 +284,6 @@ static void get_clientlib()
 
 void test_log(const char *name)
 {
-}
-
-/**
- * Realize takes the 'realpath' of a non-existant location.
- * If later directories in the path don't exist, it'll cut them
- * off, take the realpath of the ones that do, then append them
- * back to the resulting realpath.
- **/
-static char *realize(char *path)
-{
-   char *result;
-   char *origpath, *cur_slash = NULL, *trailing;
-   struct stat buf;
-   char newpath[MAX_PATH_LEN+1];
-   int lastpos;
-   newpath[MAX_PATH_LEN] = '\0';
-
-   origpath = strdup(path);
-   for (;;) {
-      if (stat(origpath, &buf) != -1)
-         break;
-      if (cur_slash)
-         *cur_slash = '/';
-      cur_slash = strrchr(origpath, '/');
-      if (!cur_slash)
-         break;
-      *cur_slash = '\0';
-   }
-   if (cur_slash)
-      trailing = cur_slash + 1;
-   else
-      trailing = "";
-
-   result = realpath(origpath, newpath);
-   if (!result) {
-      free(origpath);
-      return path;
-   }
-
-   strncat(newpath, "/", MAX_PATH_LEN);
-   strncat(newpath, trailing, MAX_PATH_LEN);
-   newpath[MAX_PATH_LEN] = '\0';
-   free(origpath);
-
-   lastpos = strlen(newpath)-1;
-   if (lastpos >= 0 && newpath[lastpos] == '/')
-      newpath[lastpos] = '\0';
-
-   debug_printf2("Realized %s to %s\n", path, newpath);
-   return strdup(newpath);
 }
 
 int main(int argc, char *argv[])

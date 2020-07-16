@@ -183,22 +183,41 @@ static void setupSecurity(spindle_args_t *params)
 
 int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spindle_argv)
 {
-   char number_s[32];
-   char opt_s[32];
-   char cachesize_s[32];
+   char number_s[32], opt_s[32], cachesize_s[32], security_s[32];
+   char port_s[32], numports_s[32], uniqueid_s[32], daemonargc_s[32];
+   int n = 0;
 
+   LOGGING_INIT(const_cast<char *>("FE"));
+      
    snprintf(number_s, sizeof(number_s), "%u", params->number);
    snprintf(opt_s, sizeof(opt_s), "%lu", (unsigned long) params->opts);
    snprintf(cachesize_s, sizeof(cachesize_s), "%u", params->shm_cache_size);
+   snprintf(security_s, sizeof(security_s), "%u", (unsigned int) OPT_GET_SEC(params->opts));
+   snprintf(port_s, sizeof(port_s), "%u", params->port);
+   snprintf(numports_s, sizeof(numports_s), "%u", params->num_ports);
+   snprintf(uniqueid_s, sizeof(uniqueid_s), "%lu", params->unique_id);
+   snprintf(daemonargc_s, sizeof(daemonargc_s), "6");
    
-   *spindle_argv = (char **) malloc(sizeof(char*) * 6);
-   (*spindle_argv)[0] = strdup(spindle_bootstrap);
-   (*spindle_argv)[1] = strdup(params->location);
-   (*spindle_argv)[2] = strdup(number_s);
-   (*spindle_argv)[3] = strdup(opt_s);
-   (*spindle_argv)[4] = strdup(cachesize_s);
-   (*spindle_argv)[5] = NULL;
-   *spindle_argc = 5;
+   #define MAX_ARGS 16
+   *spindle_argv = (char **) malloc(sizeof(char*) * MAX_ARGS);
+   (*spindle_argv)[n++] = strdup(spindle_bootstrap);
+   if (params->opts & OPT_SELFLAUNCH) {
+      (*spindle_argv)[n++] = strdup("-daemon_args");
+      (*spindle_argv)[n++] = strdup(daemonargc_s);
+      (*spindle_argv)[n++] = strdup("--spindle_selflaunch");
+      (*spindle_argv)[n++] = strdup(security_s);
+      (*spindle_argv)[n++] = strdup(number_s);
+      (*spindle_argv)[n++] = strdup(port_s);
+      (*spindle_argv)[n++] = strdup(numports_s);
+      (*spindle_argv)[n++] = strdup(uniqueid_s);
+   }
+   (*spindle_argv)[n++] = strdup(params->location);
+   (*spindle_argv)[n++] = strdup(number_s);
+   (*spindle_argv)[n++] = strdup(opt_s);
+   (*spindle_argv)[n++] = strdup(cachesize_s);
+   (*spindle_argv)[n] = NULL;
+   *spindle_argc = n;
+   assert(n < MAX_ARGS);
 
    return 0;
 }
@@ -213,16 +232,46 @@ void fillInSpindleArgsFE(spindle_args_t *params)
    fake_argv[0] = const_cast<char *>("spindle");
    fake_argv[1] = const_cast<char *>("launcher");
    fake_argv[2] = NULL;
-   parseCommandLine(2, fake_argv, params);
+   parseCommandLine(2, fake_argv, params, 0, NULL);
 
    params->use_launcher = external_launcher;
    params->startup_type = startup_external;
+}
+
+int fillInSpindleArgsCmdlineFE(spindle_args_t *params, unsigned int options, int sargc, char *sargv[], char **errstr)
+{
+   int mod_argc, i, result;
+   char **mod_argv;
+   unsigned int opts;
+   
+   LOGGING_INIT(const_cast<char *>("FE"));
+
+   mod_argc = sargc + 3;
+   mod_argv = (char **) malloc(mod_argc * sizeof(char *));
+   mod_argv[0] = const_cast<char *>("spindle");
+   for (i = 0; i < sargc && sargv[i] != NULL; i++) {
+      mod_argv[i+1] = sargv[i];
+   }
+   mod_argv[i+1] = const_cast<char*>("launcher");
+   mod_argv[i] = NULL;
+
+   opts = PARSECMD_FLAG_NOEXIT;
+   opts |= PARSECMD_FLAG_CAPTUREIO;
+   opts |= (options & SPINDLE_FILLARGS_NOUNIQUEID) ? PARSECMD_FLAG_NOUNIQUEID : 0;
+   opts |= (options & SPINDLE_FILLARGS_NONUMBER) ? PARSECMD_FLAG_NONUMBER : 0;
+   result = parseCommandLine(i, mod_argv, params, opts, errstr);
+
+   params->use_launcher = external_launcher;
+   params->startup_type = startup_external;
+   free(mod_argv);
+   return result;
 }
 
 static void *md_data_ptr;
 
 int spindleInitFE(const char **hosts, spindle_args_t *params)
 {
+   LOGGING_INIT(const_cast<char *>("FE"));
    debug_printf("Called spindleInitFE\n");
 
    if (params->opts & OPT_LOGUSAGE)
@@ -273,13 +322,24 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    return 0;   
 }
 
+int spindleWaitForCloseFE(spindle_args_t *params)
+{
+   LOGGING_INIT(const_cast<char *>("FE"));
+   if (params->opts & OPT_PERSIST) {
+      debug_printf("Warning: blocking for close on a spindle network marked as persistant.  This may permanently hang\n");
+   }
+   return ldcs_audit_server_fe_md_waitfor_close();
+}
+
 int spindleCloseFE(spindle_args_t *params)
 {
+   LOGGING_INIT(const_cast<char *>("FE"));
+   
+   ldcs_audit_server_fe_md_close(md_data_ptr);
+
    if (OPT_GET_SEC(params->opts) == OPT_SEC_KEYFILE) {
       clean_keyfile(params->unique_id);
    }
-
-   ldcs_audit_server_fe_md_close(md_data_ptr);
 
    if (params->startup_type == startup_external)
       LOGGING_FINI;

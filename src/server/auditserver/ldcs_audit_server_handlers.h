@@ -24,5 +24,7 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
 int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 int handle_client_start(ldcs_process_data_t *procdata, int nc);
 int handle_client_end(ldcs_process_data_t *procdata, int nc);
+int exit_note_cb(int infd, int serverid, void *data);
+
 
 #endif

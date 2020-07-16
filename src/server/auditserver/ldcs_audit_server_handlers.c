@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "msgbundle.h"
 #include "ccwarns.h"
 #include "parse_mounts.h"
+#include "exitnote.h"
 
 /** 
  * This file contains the "brains" of Spindle.  It's public interface,
@@ -1557,7 +1558,7 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_metadata_recv(procdata, msg, metadata_loader, peer);
       case LDCS_MSG_LOADER_DATA_NET_REQ:
          return handle_metadata_request_recv(procdata, msg, metadata_loader, peer);
-     case LDCS_MSG_EXIT_READY:
+      case LDCS_MSG_EXIT_READY:
          return handle_exit_ready_msg(procdata, msg);
       case LDCS_MSG_EXIT_CANCEL:
          return handle_exit_cancel_msg(procdata, msg);
@@ -2388,12 +2389,17 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
       debug_printf2("Already sent an exit message.  Not sending another\n");
       return 0;
    }
-   
+
    if (procdata->clients_live > 0) {
       debug_printf2("Still have live clients (%d).  Not exiting\n", procdata->clients_live);
       return 0;
    }
 
+   if ((procdata->opts & OPT_BEEXIT) && (!procdata->exit_note_done)) {
+      debug_printf2("BE Exit enable, and not signaled with spindleExitBE.  Not exiting\n");
+      return 0;
+   }
+   
    int num_children = ldcs_audit_server_md_get_num_children(procdata);
    if (procdata->exit_readys_recvd < num_children) {
       debug_printf2("Not all child servers are ready to exit.\n");
@@ -2406,6 +2412,8 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
    procdata->sent_exit_ready = 1;
 
    if (ldcs_audit_server_md_is_responsible(procdata, "")) {
+      debug_printf2("Messaging FE that we're ready to exit\n");
+      ldcs_audit_server_md_to_frontend(procdata, &msg);
       debug_printf("Exit globally ready.  Sending exit broadcast.\n");
       return handle_exit_broadcast(procdata);
    }
@@ -2469,4 +2477,33 @@ static int handle_send_exit_cancel(ldcs_process_data_t *procdata)
    msg.data = NULL;
 
    return spindle_forward_query(procdata, &msg);
+}
+
+/**
+ * We got pinged via the spindleExitBE launch API call.
+ **/
+int exit_note_cb(int fd, int serverid, void *data)
+{
+   int result;
+   ldcs_process_data_t *procdata = (ldcs_process_data_t *) data;
+   int eresult = 0;
+
+   debug_printf2("Setting exit_note_done from callback\n");
+   procdata->exit_note_done = 1;
+
+   result = handle_send_exit_ready_if_done(procdata);
+   if (result == -1) {
+      debug_printf("Failure in handle_send_exit_ready_if_done\n");
+      eresult = -1;
+   }
+
+   result = handleExitNote(fd, procdata->location);
+   if (result == -1) {
+      debug_printf("handleExitNote failed\n");
+      eresult = -1;
+   }
+
+   ldcs_listen_unregister_fd(fd);
+   
+   return eresult;
 }

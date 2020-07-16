@@ -316,15 +316,7 @@ void ModifyArgv::modifyCmdLine()
          char **a_argv;
          int a_argc;
          getApplicationArgsFE(params, &a_argc, &a_argv);
-         new_argv[n++] = a_argv[0];
-         if (params->startup_type == startup_hostbin) {
-            new_argv[n++] = strdup("-daemon_args");
-            new_argv[n++] = strdup(daemon_argc_str);
-            for (int k = 0; k < daemon_argc; k++) {
-               new_argv[n++] = strdup(daemon_argv[k]);
-            }
-         }
-         for (int i = 1; i < a_argc; i++) 
+         for (int i = 0; i < a_argc; i++) 
             new_argv[n++] = a_argv[i];
          (void) default_libstr; (void) intercept_libstr; //Not needed on linux
 #endif

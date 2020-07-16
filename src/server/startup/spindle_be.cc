@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "keyfile.h"
 #include "handshake.h"
 #include "ldcs_cobo.h"
+#include "exitnote.h"
 
 #include <cstdlib>
 #include <cassert>
@@ -169,4 +170,10 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
       LOGGING_FINI;
 
    return 0;
+}
+
+int spindleExitBE(const char *location)
+{
+   debug_printf("User called spindleExitBE(%s)\n", location);
+   return pingExitNote(location);
 }

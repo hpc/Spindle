@@ -82,6 +82,9 @@ int ldcs_audit_server_md_trash_bytes(node_peer_t peer, size_t size);
 /* Send a message to the parent server */
 int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, ldcs_message_t* msg);
 
+/* Send a message to the FE */
+int ldcs_audit_server_md_to_frontend(ldcs_process_data_t *ldcs_process_data, ldcs_message_t  *msg);
+   
 /* This function should read some remainder of a partially read message.  Used by the zero-copy
    file mechanism. */
 int ldcs_audit_server_md_complete_msg_read(node_peer_t peer, ldcs_message_t *msg, void *mem, size_t size);

@@ -51,6 +51,8 @@ extern "C" {
 #define OPT_SEC        (7 << 19)            /* Security mode, one of the below OPT_SEC_* values */
 #define OPT_SESSION    (1 << 22)            /* Session mode, where Spindle lifetime spans jobs */
 #define OPT_MSGBUNDLE  (1 << 23)            /* Message bundling, which can improve high-latency network performance */
+#define OPT_SELFLAUNCH (1 << 24)            /* Use a startup mode where the clients launch the daemon */
+#define OPT_BEEXIT     (1 << 25)            /* Block exit until each backend calls spindleExitBE */
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
 #define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */
@@ -66,6 +68,7 @@ extern "C" {
 #define marker_launcher (1 << 4)            /* Unknown job launcher with Spindle markers in launch line */
 #define external_launcher (1 << 5)          /* An external mechanism starts application */
 #define unknown_launcher (1 << 5)           /* Deprecated alias for external launcher */
+#define slurm_plugin_launcher (1 << 6)      /* Launched via a SLURM spank plugin */
 
 /* Possible values for startup_type, describe how Spindle servers are started */
 #define startup_serial 0                    /* Job is non-parallel app, and server is forked/exec */
@@ -128,8 +131,25 @@ typedef struct {
 SPINDLE_EXPORT int spindleInitFE(const char **hosts, spindle_args_t *params);
 SPINDLE_EXPORT int spindleCloseFE(spindle_args_t *params);
 
+/* Optional call that blocks the FE thread until spindle servers indicate ready to exit.
+   Mixing this with OPT_PERSIST could hang spindle */
+SPINDLE_EXPORT int spindleWaitForCloseFE(spindle_args_t *params);
+   
 /* Fill in a spindle_args_t with default values */
 SPINDLE_EXPORT void fillInSpindleArgsFE(spindle_args_t *params);
+
+/* Similar to fillInSpindleArgsFE, but take overrides from a command line.  The command
+     line options are the same ones that are seen under 'spindle --help'. 
+   The sargc and sargv are an array and array length of command line arguments.  They
+     can be empty.
+   The options parameter is a bitfield of the below SPINDLE_FILLARGS_* arguments.  
+   If parsing command arguments produces an error, then *errstr will be set to a malloc'd 
+     string containing the error message.  
+   Return 0 on success, and -1 if an error occurs.*/
+#define SPINDLE_FILLARGS_NOUNIQUEID (1 << 0)  //Do not fill in the unique_id field
+#define SPINDLE_FILLARGS_NONUMBER (1 << 1) //Do not fill in the number field
+SPINDLE_EXPORT int fillInSpindleArgsCmdlineFE(spindle_args_t *params, unsigned int options, int sargc, char *sargv[],
+                                              char **errstr);
 
 /* Given a filled in spindle_args_t, getApplicationArgsFE gets the
    array of arguments that should be inserted into the application
@@ -153,7 +173,30 @@ SPINDLE_EXPORT int getApplicationArgsFE(spindle_args_t *params, int *spindle_arg
 SPINDLE_EXPORT int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
                                 int (*post_setup)(spindle_args_t *));
 
-/* Bitmask of values for the test_launchers parameter */
+/* Optional interface, uses spindle to hook a subsequent exec to add the spindle args to the command line.
+   Useful for resource managers that don't have hooks for changing application command lines.  The 
+   execfilter string, if non-NULL, will only add args to execs where the executable has execfilter as
+   a substring. */
+SPINDLE_EXPORT int spindleHookSpindleArgsIntoExecBE(int spindle_argc, char **spindle_argv, char *execfilter);
+
+/* Optional interface. If the opts parameter has OPT_BEEXIT set then shutdown will not trigger until
+   each BE process/thread has had this call made on it.  This call does not need to be made on the same 
+   process/thread as the one invoking spindleRunBE, but it does need to be made on the same host
+   and with the 'location' from the spindle_args_t. */
+SPINDLE_EXPORT int spindleExitBE(const char *location);
+
+
+/* Adds output to spindle's debug loggging, if enabled, using printf-style interface.
+   priority can be 1, 2, or 3.  More-verbose debugging output should be a higher 
+   priority.
+   Use the macro spindle_debug_printf rather than the spindle_debug_printf_impl function.
+ */
+#define spindle_debug_printf(PRIORITY, FORMAT, ...) \
+   spindle_debug_printf_impl(PRIORITY, __FILE__, __LINE__, __func__, FORMAT, ## __VA_ARGS__)
+     
+SPINDLE_EXPORT int spindle_debug_printf_impl(int priority, const char *file, unsigned int line, const char *func, const char *format, ...);
+   
+/* Bitmask of values for the test_launchers parameter (no longer used) */
 #define TEST_PRESETUP 1<<0
 #define TEST_SERIAL   1<<1
 #define TEST_SLURM    1<<2

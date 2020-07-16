@@ -20,9 +20,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 #include <errno.h>
 
-#include "ldcs_api.h"
+#if !defined(USE_PLUGIN_DEBUG)
 #include "spindle_debug.h"
+#else
+#include "plugin_utils.h"
+#define SPINDLE_DEBUG_H_
+#endif
+
+#include "ldcs_api.h"
 #include "config.h"
+
 
 #if defined(USE_CLEANUP_PROC)
 extern void add_cleanup_dir(const char *dir);
@@ -135,10 +142,10 @@ int spindle_mkdir(char *orig_path)
    if (!do_mkdir) {
       //We never did any mkdirs.  Ensure that the final directory in the existing path 
       // is exclusively ours.
-      if (checkdir(path) == -1)
+      if (checkdir(path) == -1) {
          return -1;
+      }
    }
-   
    return 0;
 }
 

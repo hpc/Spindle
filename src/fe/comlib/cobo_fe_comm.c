@@ -49,6 +49,27 @@ int ldcs_audit_server_fe_md_open ( char **hostlist, int numhosts, unsigned int p
    return(rc);
 }
 
+int ldcs_audit_server_fe_md_waitfor_close()
+{
+   int root_fd, result;
+   ldcs_message_t out_msg;
+
+   debug_printf2("Blocking while waiting for spindle exit\n");
+
+   cobo_server_get_root_socket(&root_fd);
+   for (;;) {
+      memset(&out_msg, 0, sizeof(out_msg));
+      result = read_msg(root_fd, &out_msg);
+      if (result == -1) {
+         err_printf("ERROR reading message while waiting for server close\n");
+         return -1;
+      }
+      if (out_msg.header.type == LDCS_MSG_EXIT_READY)
+         return 0;
+      err_printf("Unexpected message of type %d\n", (int) out_msg.header.type);
+   }
+}
+
 int ldcs_audit_server_fe_md_close ( void *data  ) {
   
    ldcs_message_t out_msg;
@@ -74,3 +95,25 @@ int ldcs_audit_server_fe_broadcast(ldcs_message_t *msg, void *data)
    return write_msg(root_fd, msg);
 }
 
+int read_msg(int fd, ldcs_message_t *msg)
+{
+   int result;
+
+   result = ll_read(fd, msg, sizeof(*msg));
+   if (result == -1)
+      return -1;
+
+   if (msg->header.len) {
+      msg->data = (char *) malloc(msg->header.len);
+      result = ll_read(fd, msg->data, msg->header.len);
+      if (result == -1) {
+         free(msg->data);
+         return -1;
+      }
+   }
+   else {
+      msg->data = NULL;
+   }
+
+   return 0;
+}

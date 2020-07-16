@@ -184,6 +184,30 @@ int ldcs_audit_server_md_is_responsible ( ldcs_process_data_t *ldcs_process_data
    }
 }
 
+int ldcs_audit_server_md_to_frontend(ldcs_process_data_t *ldcs_process_data, ldcs_message_t  *msg) {
+   int fe_fd = -1;
+   int result;
+
+   if (ldcs_process_data->md_rank != 0) {
+      /* Only root of tree can send to FE */
+      err_printf("Tried to send to FE from non-root rank\n");
+      return -1;
+   }
+   
+   cobo_get_parent_socket(&fe_fd);
+   if (fe_fd == -1) {
+      err_printf("Could not get FE fd\n");
+      return -1;
+   }
+   result = write_msg(fe_fd, msg);
+   if (result < 0) {
+      err_printf("Problem writing message to parent, result is %d\n", result);
+      return -1;
+   }
+  
+   return 0;   
+}
+
 int ldcs_audit_server_md_forward_query(ldcs_process_data_t *ldcs_process_data, ldcs_message_t* msg) {
    int parent_fd;
    int result;

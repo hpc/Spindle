@@ -3,9 +3,9 @@ lib_LTLIBRARIES = libspindlebe.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
-CORE_SOURCES = spindle_be.cc $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c
+CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo
-CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la
+CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la -ldl
 if COBO
 CORE_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la
 endif

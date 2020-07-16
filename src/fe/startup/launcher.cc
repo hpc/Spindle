@@ -112,15 +112,9 @@ bool Launcher::setupDaemons()
    daemon_argv[i++] = spindle_daemon;
    daemon_argv[i++] = const_cast<char *>(getDaemonArg());
 
-#define STR2(X) #X
-#define STR(X) STR2(X)
-#define STR_CASE(X) case X: daemon_argv[i++] = const_cast<char *>(STR(X)); break
-   switch (OPT_GET_SEC(params->opts)) {
-      STR_CASE(OPT_SEC_MUNGE);
-      STR_CASE(OPT_SEC_KEYLMON);
-      STR_CASE(OPT_SEC_KEYFILE);
-      STR_CASE(OPT_SEC_NULL);
-   }
+   char security_s[32];
+   snprintf(security_s, 32, "%u", (unsigned int) OPT_GET_SEC(params->opts));
+   daemon_argv[i++] = strdup(security_s);
 
    char number_s[32];
    snprintf(number_s, 32, "%d", params->number);

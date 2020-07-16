@@ -9,7 +9,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_SED
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([doc/Makefile testsuite/Makefile Makefile])
+AC_CONFIG_FILES([src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile])
 AC_PROG_LIBTOOL
 AC_PROG_LN_S
 LT_INIT
@@ -54,6 +54,30 @@ AC_MSG_ERROR([Incompatible automake version.  This automake does not generate co
 fi
 fi
 AC_MSG_RESULT([yes])
+
+if test "x$ENABLE_SLURM_PLUGIN" == "xtrue"; then
+  OCPPFLAGS=$CPPFLAGS
+  if test "x$SLURM_DIR" != "x"; then
+    CPPFLAGS="-I$SLURM_DIR/include $CPPFLAGS"
+  fi
+  AC_CHECK_HEADER([slurm/spank.h],
+                  [],
+                  [AC_MSG_ERROR([Could not find slurm/spank.h])])
+  CPPFLAGS=$OCPPFLAGS
+
+  OPATH=$PATH
+  if test "x$SLURM_DIR" != "x"; then
+     PATH=$SLURM_DIR/bin:$PATH
+  fi
+  AC_PATH_PROG([SCONTROL_ABSPATH], [scontrol], [notfound])
+  if test "x$SCONTROL_ABSPATH" == "xnotfound"; then
+    AC_MSG_ERROR([Could not find scontrol])
+  fi
+  PATH=$OPATH
+fi
+
+AM_CONDITIONAL([BLD_SLURMPLUGIN], [test "x$ENABLE_SLURM_PLUGIN" == "xtrue"])
+AC_SUBST(SCONTROL_ABSPATH, $SCONTROL_ABSPATH)
 
 AC_OUTPUT
 
@@ -115,4 +139,3 @@ RUN_CONFIG_W_COMPILER([src/client], [$CLIENT_CC], [$CLIENT_CFLAGS], [$CLIENT_LDF
 RUN_CONFIG_W_COMPILER([src/server], [$SERVER_CC], [$SERVER_CFLAGS], [$SERVER_LDFLAGS], [$SERVER_LIBS], [$SERVER_CPPFLAGS], [$SERVER_CXX], [$SERVER_CXXFLAGS], [$SERVER_CPP], [$SERVER_CXXCPP], [$SERVER_STRIP], [$SERVER_AR], [$SERVER_host])
 
 RUN_CONFIG_W_COMPILER([src/fe], [$FE_CC], [$FE_CFLAGS], [$FE_LDFLAGS], [$FE_LIBS], [$FE_CPPFLAGS], [$FE_CXX], [$FE_CXXFLAGS], [$FE_CPP], [$FE_CXXCPP], [$FE_STRIP], [$FE_AR], [$FE_host])
-

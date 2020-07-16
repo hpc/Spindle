@@ -30,10 +30,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
+#include "ldcs_audit_server_handlers.h"
 #include "ldcs_cache.h"
 #include "spindle_launch.h"
 #include "ldcs_audit_server_requestors.h"
 #include "msgbundle.h"
+#include "exitnote.h"
 
 //#define GPERFTOOLS
 #if defined(GPERFTOOLS)
@@ -149,6 +151,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.pending_metadata_requests = new_requestor_list();
    ldcs_process_data.completed_metadata_requests = new_requestor_list();
    ldcs_process_data.handling_bundle = 0;
+   ldcs_process_data.exit_note_done = 0;
    
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");
@@ -191,6 +194,13 @@ int ldcs_audit_server_process(spindle_args_t *args)
    /* register server listen fd to listener */
    if (fd != -1)
       ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
+
+   if (args->opts & OPT_BEEXIT) {
+      fd = createExitNote(args->location);
+      if (fd != -1) {
+         ldcs_listen_register_fd(fd, serverid, exit_note_cb, (void *) &ldcs_process_data);
+      }
+   }
   
    debug_printf3("Initializing cache\n");
    ldcs_cache_init();

@@ -127,6 +127,7 @@ struct ldcs_process_data_struct
   int handling_bundle;
   int number;
   int preload_done;
+  int exit_note_done;
   opt_t opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
