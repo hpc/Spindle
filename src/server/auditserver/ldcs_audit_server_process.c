@@ -148,8 +148,12 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.msgbundle_timeout_ms = args->bundle_timeout_ms;
    ldcs_process_data.pending_requests = new_requestor_list();
    ldcs_process_data.completed_requests = new_requestor_list();
-   ldcs_process_data.pending_metadata_requests = new_requestor_list();
-   ldcs_process_data.completed_metadata_requests = new_requestor_list();
+   ldcs_process_data.pending_stat_requests = new_requestor_list();
+   ldcs_process_data.completed_stat_requests = new_requestor_list();
+   ldcs_process_data.pending_lstat_requests = new_requestor_list();
+   ldcs_process_data.completed_lstat_requests = new_requestor_list();
+   ldcs_process_data.pending_ldso_requests = new_requestor_list();
+   ldcs_process_data.completed_ldso_requests = new_requestor_list();
    ldcs_process_data.handling_bundle = 0;
    ldcs_process_data.exit_note_done = 0;
    
@@ -370,3 +374,26 @@ int ldcs_audit_server_run()
   return(rc);
 }
 
+requestor_list_t metadata_pending_requests(ldcs_process_data_t *procdata, metadata_t mdtype)
+{
+   switch (mdtype) {
+      case metadata_none: break;
+      case metadata_stat: return procdata->pending_stat_requests;
+      case metadata_lstat: return procdata->pending_lstat_requests;
+      case metadata_loader: return procdata->pending_ldso_requests;
+   }
+   assert(0);
+   return (requestor_list_t) NULL;
+}
+
+requestor_list_t metadata_completed_requests(ldcs_process_data_t *procdata, metadata_t mdtype)
+{
+   switch (mdtype) {
+      case metadata_none: break;
+      case metadata_stat: return procdata->completed_stat_requests;
+      case metadata_lstat: return procdata->completed_lstat_requests;
+      case metadata_loader: return procdata->completed_ldso_requests;
+   }
+   assert(0);
+   return (requestor_list_t) NULL;
+}

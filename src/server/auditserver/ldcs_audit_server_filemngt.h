@@ -39,7 +39,7 @@ int filemngt_clear_file_space(void *buffer, size_t size, int fd);
 size_t filemngt_get_file_size(char *pathname, int *errcode);
 
 char* ldcs_is_a_localfile(char* filename);
-int filemngt_stat(char *pathname, struct stat *buf);
+int filemngt_stat(char *pathname, struct stat *buf, int is_lstat);
 int filemngt_write_stat(char *localname, struct stat *buf);
 int filemngt_read_stat(char *localname, struct stat *buf);
 int filemngt_write_ldsometadata(char *localname, ldso_info_t *ldsoinfo);

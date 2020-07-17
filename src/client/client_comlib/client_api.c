@@ -95,18 +95,18 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
       return -1;
    }
 
-   /* Regular stats are sent with a preceeding '*', lstats are not */
-   snprintf(newpath, MAX_PATH_LEN+1, "%s%s", is_lstat ? "" : "*", path);
+   strncpy(newpath, path, MAX_PATH_LEN+1);
+   newpath[MAX_PATH_LEN] = '\0';
    
    /* Setup packet */
-   message.header.type = LDCS_MSG_STAT_QUERY;
+   message.header.type = is_lstat ? LDCS_MSG_LSTAT_QUERY : LDCS_MSG_STAT_QUERY;
    message.header.len = path_len;
    message.data = newpath;
    
    COMM_LOCK;
 
-   debug_printf3("sending message of type: stat_query len=%d data='%s' ...(%s)\n",
-                 message.header.len, message.data, path);  
+   debug_printf3("sending message of type: %sstat_query len=%d data='%s' ...(%s)\n",
+                 is_lstat ? "l" : "", message.header.len, message.data, path);  
    client_send_msg(fd, &message);
 
    /* get new filename */
@@ -273,14 +273,10 @@ int send_location(int fd, char *location) {
 int send_ldso_info_request(int fd, const char *ldso_path, char *result_path)
 {
    ldcs_message_t message;
-   char buffer[MAX_PATH_LEN+1];
 
    message.header.type = LDCS_MSG_LOADER_DATA_REQ;
    message.header.len = strlen(ldso_path)+2;
-   message.data = buffer;
-   buffer[0] = '$';
-   strncpy(buffer+1, ldso_path, MAX_PATH_LEN-1);
-   buffer[MAX_PATH_LEN] = '\0';
+   message.data = (void *) ldso_path;
    
    COMM_LOCK;
    client_send_msg(fd, &message);

@@ -17,10 +17,24 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(STAT_CACHE_H_)
 #define STAT_CACHE_H_
 
-int init_stat_cache();
+#if defined(__cplusplus)
+extern "C" {
+#endif
+   
+typedef enum {
+   metadata_none,
+   metadata_stat,
+   metadata_lstat,
+   metadata_loader
+} metadata_t;
 
 /* data can be NULL if file doesn't exist */
-void add_stat_cache(char *pathname, char *data);
-int lookup_stat_cache(char *pathname, char **data);
+int init_stat_cache();
+void add_stat_cache(char *pathname, char *data, metadata_t stattype);
+int lookup_stat_cache(char *pathname, char **data, metadata_t stattype);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

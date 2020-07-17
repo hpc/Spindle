@@ -402,11 +402,11 @@ size_t filemngt_get_file_size(char *pathname, int *errcode)
    return (size_t) st.st_size;
 }
 
-int filemngt_stat(char *pathname, struct stat *buf)
+int filemngt_stat(char *pathname, struct stat *buf, int is_lstat)
 {
    int result;
-   if (*pathname == '*') {
-      result = stat(pathname+1, buf);
+   if (!is_lstat) {
+      result = stat(pathname, buf);
       debug_printf3("stat(%s) = %d\n", pathname, result);
    }
    else {

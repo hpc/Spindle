@@ -23,6 +23,7 @@ extern "C" {
 
 #include "ldcs_api.h"
 #include "spindle_launch.h"
+#include "stat_cache.h"   
 
 typedef void* requestor_list_t;
 
@@ -88,6 +89,7 @@ struct ldcs_client_struct
   int                  query_open;
   int                  existance_query;
   int                  is_stat;
+  int                  is_lstat;   
   int                  is_loader;
   char                 query_filename[MAX_PATH_LEN+1];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN+1];     /* hast 2nd key */
@@ -131,8 +133,12 @@ struct ldcs_process_data_struct
   opt_t opts;
   requestor_list_t pending_requests;
   requestor_list_t completed_requests;
-  requestor_list_t pending_metadata_requests;
-  requestor_list_t completed_metadata_requests;
+  requestor_list_t pending_stat_requests;
+  requestor_list_t completed_stat_requests;
+  requestor_list_t pending_lstat_requests;
+  requestor_list_t completed_lstat_requests;
+  requestor_list_t pending_ldso_requests;
+  requestor_list_t completed_ldso_requests;
 
   /* multi daemon support */
   int md_rank;
@@ -160,6 +166,9 @@ int _ldcs_client_process_clients_requests_after_end ( ldcs_process_data_t *ldcs_
 int _ldcs_server_stat_init ( ldcs_server_stat_t *server_stat );
 int _ldcs_server_stat_print ( ldcs_server_stat_t *server_stat );
 
+requestor_list_t metadata_pending_requests(ldcs_process_data_t *procdata, metadata_t mdtype);
+requestor_list_t metadata_completed_requests(ldcs_process_data_t *procdata, metadata_t mdtype);
+   
 #if defined(__cplusplus)
 }
 #endif

@@ -60,16 +60,12 @@ void add_global_name(char* pathname, char* localpath)
     return;
   }
 
-  char path[MAX_PATH_LEN+1];
-
-  sprintf(path, "%s%s", (*pathname == '*') ? "" : "*", pathname);
-
-  debug_printf3("Adding %s, %s, index=%lx\n", localpath, path, global_name_array_index);
+  debug_printf3("Adding %s, %s, index=%lx\n", localpath, pathname, global_name_array_index);
 
   if (global_name_array_index > hiwat_global_name_array_size)
     grow_global_name_list();
 
-  global_name_array[global_name_array_index++].global_name = strdup(path);
+  global_name_array[global_name_array_index++].global_name = strdup(pathname);
 }
 
 static int get_global_file_index(char* file)
@@ -109,9 +105,7 @@ char* lookup_global_name(char* localpath)
   char *rval;
   int index;
 
-  debug_printf3("localpath=%s\n", localpath);
   if (fname == NULL) {
-    debug_printf3("Returning early since %s is not a local name\n", localpath);
     return NULL;      /* Not a local name */
   }
 
@@ -122,7 +116,7 @@ char* lookup_global_name(char* localpath)
     return NULL;
   }
 
-  rval = (*localpath == '*') ? global_name_array[index].global_name : global_name_array[index].global_name+1;
+  rval = global_name_array[index].global_name;
 
   debug_printf3("global name %s for local name %s found at index %x\n", rval, localpath, index);
   return rval;

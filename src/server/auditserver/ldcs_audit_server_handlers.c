@@ -81,11 +81,6 @@ typedef enum {
    not_exists
 } exist_t;
 
-typedef enum {
-   metadata_stat,
-   metadata_loader
-} metadata_t;
-
 #define SPINDLE_ENODIR -68
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -95,6 +90,7 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
 static handle_file_result_t handle_howto_directory(ldcs_process_data_t *procdata, char *dir);
 static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, char *pathname,
                                               char *file, char *dir, char **localpath, int *errcode);
+static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype);
 static int handle_client_progress(ldcs_process_data_t *procdata, int nc);
 static int handle_progress(ldcs_process_data_t *procdata);
 
@@ -131,7 +127,7 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
 static int handle_exit_broadcast(ldcs_process_data_t *procdata);
 static int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
                                    void *secondary_data, size_t secondary_size, int force_broadcast,
-                                   int is_metadata);
+                                   metadata_t mdtype);
 static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_preload_done(ldcs_process_data_t *procdata);
 static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *filename);
@@ -141,10 +137,10 @@ static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc,
 static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
-static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf);
+static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, char **localname, struct stat *buf);
 static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, broadcast_t bcast);
-static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, 
-                             struct stat *buf, char **localname);
+static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, metadata_t mdtype,
+                                 struct stat *buf, char **localname);
 static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype);
 static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathname, int errcode);
 static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer);
@@ -158,13 +154,13 @@ static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *
 static int handle_exit_cancel_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_send_exit_cancel(ldcs_process_data_t *procdata);
 static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathname, ldso_info_t *ldsoinfo, char **result_file);
-static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf, char **localname);
 static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int file_exists,
                              ldso_info_t *ldsoinfo, char **localname);
 static int handle_msgbundle(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg);
 static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to,
                               int *existing, size_t *existing_size, int *existing_errcode,
                               void **existing_buffer, char **existing_localname);
+
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
  **/
@@ -253,21 +249,14 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    char *pathname;
    char file[MAX_PATH_LEN];
    char dir[MAX_PATH_LEN];
-   int is_stat;
-   int is_loader, is_special_char;
-   char special_char[2];
+   int is_stat, is_lstat;
+   int is_loader;
 
    file[0] = '\0'; dir[0] = '\0';
    pathname = msg->data;
-   is_stat = (msg->header.type == LDCS_MSG_STAT_QUERY);
+   is_stat = (msg->header.type == LDCS_MSG_STAT_QUERY) || (msg->header.type == LDCS_MSG_LSTAT_QUERY);
+   is_lstat = (msg->header.type == LDCS_MSG_LSTAT_QUERY);
    is_loader = (msg->header.type == LDCS_MSG_LOADER_DATA_REQ);
-
-   is_special_char = (pathname[0] == '*' || pathname[0] == '$');
-   if (is_special_char) {
-      special_char[0] = pathname[0];
-      special_char[1] = '\0';
-      pathname++;
-   }
 
    if ( is_stat ) {
      /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
@@ -291,9 +280,8 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    GCC7_DISABLE_WARNING("-Wstringop-overflow");
    strncpy(client->query_filename, file, MAX_PATH_LEN+1);
    strncpy(client->query_dirname, dir, MAX_PATH_LEN+1);
-   snprintf(client->query_globalpath, MAX_PATH_LEN+1, "%s%s/%s", 
-                         is_special_char ? special_char : "",
-                         client->query_dirname, client->query_filename);
+   snprintf(client->query_globalpath, MAX_PATH_LEN+1, "%s/%s", 
+            client->query_dirname, client->query_filename);
    GCC7_ENABLE_WARNING;
    GCC7_ENABLE_WARNING;
    
@@ -301,7 +289,8 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    
    client->query_open = 1;
    client->is_stat = is_stat;
-   client->is_loader = is_loader;
+   client->is_lstat = is_lstat;
+   client->is_loader = is_loader;   
    
    debug_printf2("Server recvd query %s%s for %s.  Dir = %s, File = %s\n", 
                  is_loader ? "loader " : "",
@@ -536,7 +525,7 @@ static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir, broadc
    msg.data = data;
    msg.header.len = data_len;
    
-   result = handle_send_msg_to_keys(procdata, &msg, dir, NULL, 0, force_broadcast, 0);
+   result = handle_send_msg_to_keys(procdata, &msg, dir, NULL, 0, force_broadcast, metadata_none);
 
    free(data);
    return result;
@@ -865,7 +854,7 @@ static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, 
    
    starttime = ldcs_get_time();
    
-   result = handle_send_msg_to_keys(procdata, &msg, pathname, buffer, size, force_broadcast, 0);
+   result = handle_send_msg_to_keys(procdata, &msg, pathname, buffer, size, force_broadcast, metadata_none);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -913,7 +902,7 @@ static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathn
    msg.data = packet_buffer;
 
    starttime = ldcs_get_time();
-   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, 0);
+   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, metadata_none);
    procdata->server_stat.libdist.cnt++;
    procdata->server_stat.libdist.bytes += packet_size;
    procdata->server_stat.libdist.time += (ldcs_get_time() - starttime);      
@@ -1064,12 +1053,12 @@ static int handle_request_directory(ldcs_process_data_t *procdata, node_peer_t f
 /**
  * We've receieved a request for stat data from a client.  Decide what to do with it
  **/
-static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procdata, char *pathname)
+static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype)
 {
    char *localname;
    int result, responsible;
 
-   result = lookup_stat_cache(pathname, &localname);
+   result = lookup_stat_cache(pathname, &localname, mdtype);
    if (result != -1)
       return REPORT_METADATA;
 
@@ -1077,10 +1066,10 @@ static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procd
    if (responsible)
       return METADATA_FILE;
 
-   if (been_requested(procdata->pending_metadata_requests, pathname)) {
+   if (been_requested(metadata_pending_requests(procdata, mdtype), pathname)) {
       return METADATA_IN_PROGRESS;
    }
-      
+
    return REQUEST_METADATA;
 }
 
@@ -1092,19 +1081,21 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
    int broadcast_result, client_result;
    metadata_t mdtype;
 
-   if (client->is_stat)
+   if (client->is_lstat)
+      mdtype = metadata_lstat;
+   else if (client->is_stat)
       mdtype = metadata_stat;
    else if (client->is_loader)
       mdtype = metadata_loader;
    else
       assert(0);
       
-   stat_result = handle_howto_metadata(procdata, pathname);
+   stat_result = handle_howto_metadata(procdata, pathname, mdtype);
    switch (stat_result) {
       case REQUEST_METADATA:
          return handle_metadata_request(procdata, pathname, mdtype, NODE_PEER_CLIENT);
       case METADATA_FILE:
-         add_requestor(procdata->pending_metadata_requests, pathname, NODE_PEER_CLIENT);
+         add_requestor(metadata_pending_requests(procdata, mdtype), pathname, NODE_PEER_CLIENT);
          broadcast_result = handle_metadata_and_broadcast_file(procdata, pathname, mdtype, request_broadcast);
          client_result = handle_client_metadata_result(procdata, nc, mdtype);
          if (broadcast_result == -1 || client_result == -1)
@@ -1113,7 +1104,7 @@ static int handle_client_metadata(ldcs_process_data_t *procdata, int nc)
       case REPORT_METADATA:
          return handle_client_metadata_result(procdata, nc, mdtype);
       case METADATA_IN_PROGRESS:
-         add_requestor(procdata->pending_metadata_requests, pathname, NODE_PEER_CLIENT);
+         add_requestor(metadata_pending_requests(procdata, mdtype), pathname, NODE_PEER_CLIENT);
          return 0;
    }
    err_printf("Unexpected result from handle_howto_metadata: %d\n", (int) stat_result);
@@ -1406,13 +1397,13 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
  **/
 int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
                             void *secondary_data, size_t secondary_size, int force_broadcast,
-                            int is_stat)
+                            metadata_t mdtype)
 {
    int result, global_result = 0;
    static int have_done_broadcast = 0;
 
-   requestor_list_t pending_reqs = !is_stat ? procdata->pending_requests : procdata->pending_metadata_requests;
-   requestor_list_t completed_reqs = !is_stat ? procdata->completed_requests : procdata->completed_metadata_requests;
+   requestor_list_t pending_reqs = (mdtype == metadata_none) ? procdata->pending_requests : metadata_pending_requests(procdata, mdtype);
+   requestor_list_t completed_reqs = (mdtype == metadata_none) ? procdata->completed_requests : metadata_completed_requests(procdata, mdtype);
 
    if (have_done_broadcast) {
       /* Test whether this file has already been broadcast to all */
@@ -1480,6 +1471,7 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
       case LDCS_MSG_FILE_QUERY:
       case LDCS_MSG_FILE_QUERY_EXACT_PATH:
       case LDCS_MSG_STAT_QUERY:
+      case LDCS_MSG_LSTAT_QUERY:
       case LDCS_MSG_LOADER_DATA_REQ:
          return handle_client_file_request(procdata, nc, msg);
       case LDCS_MSG_EXISTS_QUERY:
@@ -1552,9 +1544,13 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_recv_selfload_file(procdata, msg);
       case LDCS_MSG_STAT_NET_RESULT:
          return handle_metadata_recv(procdata, msg, metadata_stat, peer);
+      case LDCS_MSG_LSTAT_NET_RESULT:
+         return handle_metadata_recv(procdata, msg, metadata_lstat, peer);         
       case LDCS_MSG_STAT_NET_REQUEST:
          return handle_metadata_request_recv(procdata, msg, metadata_stat, peer);
-       case LDCS_MSG_LOADER_DATA_NET_RESP:
+      case LDCS_MSG_LSTAT_NET_REQUEST:
+         return handle_metadata_request_recv(procdata, msg, metadata_lstat, peer);
+      case LDCS_MSG_LOADER_DATA_NET_RESP:
          return handle_metadata_recv(procdata, msg, metadata_loader, peer);
       case LDCS_MSG_LOADER_DATA_NET_REQ:
          return handle_metadata_request_recv(procdata, msg, metadata_loader, peer);
@@ -1704,7 +1700,7 @@ static int handle_create_selfload_file(ldcs_process_data_t *procdata, char *file
    msg.header.len = strlen(filename) + 1;
    msg.data = filename;
 
-   return handle_send_msg_to_keys(procdata, &msg, filename, NULL, 0, request_broadcast, 0);
+   return handle_send_msg_to_keys(procdata, &msg, filename, NULL, 0, request_broadcast, metadata_none);
 }
 
 static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message_t *msg)
@@ -1713,7 +1709,7 @@ static int handle_recv_selfload_file(ldcs_process_data_t *procdata, ldcs_message
    int result, nc, global_result = 0, found_client = 0;
 
    debug_printf("Recieved notice to selfload file %s\n", filename);
-   result = handle_send_msg_to_keys(procdata, msg, filename, NULL, 0, request_broadcast, 0);
+   result = handle_send_msg_to_keys(procdata, msg, filename, NULL, 0, request_broadcast, metadata_none);
    if (result == -1) {
       err_printf("Could not send selfload file message\n");
       global_result = -1;
@@ -1908,8 +1904,8 @@ static int handle_metadata_and_broadcast_file(ldcs_process_data_t *procdata, cha
 
    debug_printf2("Stating and broadcasting file %s\n", pathname);
    
-   if (mdtype == metadata_stat) {
-      result = handle_stat_file(procdata, pathname, &localname, &buf);
+   if (mdtype == metadata_stat || mdtype == metadata_lstat) {
+      result = handle_stat_file(procdata, pathname, mdtype, &localname, &buf);
       if (result == -1) {
          err_printf("Error stat'ing file %s\n", pathname);
          return -1;
@@ -1948,7 +1944,7 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
    char *read_path;
 
    debug_printf2("Reading and caching ldso metadata for %s\n", pathname);
-   result = lookup_stat_cache(pathname, result_file);
+   result = lookup_stat_cache(pathname, result_file, metadata_loader);
    if (result != -1) {
       debug_printf3("LDSO metadata for %s was already cached in %s\n", pathname, *result_file);
       return 0;
@@ -1971,13 +1967,13 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
 /**
  * Stats a file on disk and puts the results into a cache
  **/
-static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char **localname, struct stat *buf)
+static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype, char **localname, struct stat *buf)
 {
    double starttime;
    int result, file_exists;
 
    /* Don't read if already cached */
-   result = lookup_stat_cache(pathname, localname);
+   result = lookup_stat_cache(pathname, localname, mdtype);
    if (result != -1) {
       debug_printf3("File %s was already cached at %s.  Not re-stating\n",
                     pathname, *localname ? *localname : "NULL");
@@ -1985,21 +1981,21 @@ static int handle_stat_file(ldcs_process_data_t *procdata, char *pathname, char 
    }
    
    /* Stat file from disk */
-   debug_printf3("Stating file %s\n", pathname);
+   debug_printf3("%sstating file %s\n", (mdtype == metadata_lstat) ? "l" : "", pathname);
    starttime = ldcs_get_time();
-   result = filemngt_stat(pathname, buf);
+   result = filemngt_stat(pathname, buf, (mdtype == metadata_lstat) ? 1 : 0);
    file_exists = (result != -1);
    procdata->server_stat.libread.cnt++;
    procdata->server_stat.libread.bytes += file_exists ? sizeof(struct stat) : 0;
    procdata->server_stat.libread.time += (ldcs_get_time() - starttime);
    
-   return handle_cache_metadata(procdata, pathname, file_exists, buf, localname);
+   return handle_cache_metadata(procdata, pathname, file_exists, mdtype, buf, localname);
 }
 
 /**
  * Puts the results of a stat into the cache
  **/
-static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, struct stat *buf, char **localname)
+static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, metadata_t mdtype, struct stat *buf, char **localname)
 {
    double starttime;
    int result;
@@ -2014,7 +2010,7 @@ static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, 
       *localname = filemngt_calc_localname(pathname);
       add_global_name(pathname, *localname);
    }
-   add_stat_cache(pathname, *localname);
+   add_stat_cache(pathname, *localname, mdtype);
 
    if (!file_exists)
       return 0;
@@ -2043,7 +2039,7 @@ static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int 
    }
    else
       *localname = NULL;
-   add_stat_cache(pathname, *localname);
+   add_stat_cache(pathname, *localname, metadata_loader);
 
    if (!file_exists)
       return 0;
@@ -2079,7 +2075,7 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    /* Devices may be different on different nodes.  Add the mount point, which can be 
       remapped to another device after recv */
    mount_len = 0;
-   if (file_exists && sbuf && mdtype == metadata_stat) {
+   if (file_exists && sbuf && (mdtype == metadata_stat || mdtype == metadata_lstat)) {
       result = dev_to_mount(sbuf->st_dev, &mount);
       if (result == 0) {
          debug_printf3("Will send stat of %s with mount point %s, device %x\n", pathname, mount, (int) sbuf->st_dev);
@@ -2123,13 +2119,18 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
    }
    assert(pos == packet_size);
 
-   msg.header.type = (mdtype == metadata_stat) ? LDCS_MSG_STAT_NET_RESULT : LDCS_MSG_LOADER_DATA_NET_RESP;
+   switch (mdtype) {
+      case metadata_none: assert(0); break;
+      case metadata_stat: msg.header.type = LDCS_MSG_STAT_NET_RESULT; break;
+      case metadata_lstat: msg.header.type = LDCS_MSG_LSTAT_NET_RESULT; break;
+      case metadata_loader: msg.header.type = LDCS_MSG_LOADER_DATA_NET_RESP; break;
+   }
    msg.header.len = packet_size;
    msg.data = packet_buffer;
 
    /* Send packet on network */
    starttime = ldcs_get_time();
-   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, 1);
+   result = handle_send_msg_to_keys(procdata, &msg, pathname, NULL, 0, 0, mdtype);
    procdata->server_stat.libdist.cnt++;
    procdata->server_stat.libdist.bytes += packet_size;
    procdata->server_stat.libdist.time += (ldcs_get_time() - starttime);      
@@ -2173,7 +2174,7 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
 
    if (file_exists) {
       payload = (unsigned char *) (buffer + pos);
-      if (mdtype == metadata_stat) {
+      if (mdtype == metadata_stat || mdtype == metadata_lstat) {
          memcpy(&buf, buffer + pos, sizeof(buf));
          pos += sizeof(buf);
          payload_size = sizeof(buf);
@@ -2188,7 +2189,7 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
 
    if (mount_len) {
       dev_t dev;
-      assert(mdtype == metadata_stat && file_exists);
+      assert((mdtype == metadata_stat || mdtype == metadata_lstat) && file_exists);
       result = mount_to_dev(mount, &dev);
       if (result == 0) {
          debug_printf3("Setting device to %x from mountpoint %s for stat recv of %s\n", (int) dev, mount, pathname);
@@ -2201,8 +2202,8 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
                  file_exists ? "file exists" : "nonexistant file");
 
    /* Cache the stat results */
-   if (mdtype == metadata_stat)
-      result = handle_cache_metadata(procdata, pathname, file_exists, &buf, &localpath);
+   if (mdtype == metadata_stat || mdtype == metadata_lstat)
+      result = handle_cache_metadata(procdata, pathname, file_exists, mdtype, &buf, &localpath);
    else
       result = handle_cache_ldso(procdata, pathname, file_exists, &ldsoinfo, &localpath);
    if (result == -1) {
@@ -2238,13 +2239,13 @@ static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc, 
    if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
       return 0;
 
-   result = lookup_stat_cache(client->query_globalpath, &localpath);
+   result = lookup_stat_cache(client->query_globalpath, &localpath, mdtype);
    if (result == -1) {
       debug_printf3("File %s does not yet have stat results\n", client->query_globalpath);
       return 0;
    }
    
-   msg.header.type = (mdtype == metadata_stat) ? LDCS_MSG_STAT_ANSWER : LDCS_MSG_LOADER_DATA_RESP;
+   msg.header.type = (mdtype == metadata_stat || mdtype == metadata_lstat) ? LDCS_MSG_STAT_ANSWER : LDCS_MSG_LOADER_DATA_RESP;
    msg.header.len = localpath ? strlen(localpath)+1 : 0;
    msg.data = localpath;
    
@@ -2266,20 +2267,24 @@ static int handle_metadata_request(ldcs_process_data_t *procdata, char *pathname
    ldcs_message_t msg;
    int pathlen;
 
-   if (been_requested(procdata->pending_metadata_requests, pathname)) {
+   if (been_requested(metadata_pending_requests(procdata, mdtype), pathname)) {
       debug_printf2("Metadata %s has already been requested.  Not resending request\n", pathname);
       return 0;
    }
    debug_printf2("Request metadata of %s from up the network\n", pathname);
 
-   add_requestor(procdata->pending_metadata_requests, pathname, from);
+   add_requestor(metadata_pending_requests(procdata, mdtype), pathname, from);
    
    pathlen = strlen(pathname) + 1;
-   
+
    if (mdtype == metadata_stat)
       msg.header.type = LDCS_MSG_STAT_NET_REQUEST;
-   else
+   else if (mdtype == metadata_lstat)
+      msg.header.type = LDCS_MSG_LSTAT_NET_REQUEST;
+   else if (mdtype == metadata_loader)
       msg.header.type = LDCS_MSG_LOADER_DATA_NET_REQ;
+   else
+      assert(0);
 
    msg.header.len = pathlen;
    msg.data = pathname;
@@ -2300,18 +2305,18 @@ static int handle_metadata_request_recv(ldcs_process_data_t *procdata, ldcs_mess
    assert(strlen(pathname)+1 == msg->header.len);
 
    /* Handle packet */
-   stat_result = handle_howto_metadata(procdata, pathname);
+   stat_result = handle_howto_metadata(procdata, pathname, mdtype);
    switch (stat_result) {
       case REQUEST_METADATA:
          return handle_metadata_request(procdata, pathname, mdtype, peer);
       case METADATA_FILE:
-         add_requestor(procdata->pending_metadata_requests, pathname, peer);
+         add_requestor(metadata_pending_requests(procdata, mdtype), pathname, peer);
          return handle_metadata_and_broadcast_file(procdata, pathname, mdtype, request_broadcast);
       case REPORT_METADATA:
-         add_requestor(procdata->pending_metadata_requests, pathname, peer);
+         add_requestor(metadata_pending_requests(procdata, mdtype), pathname, peer);
          return handle_load_and_broadcast_metadata(procdata, pathname, mdtype);
       case METADATA_IN_PROGRESS:
-         add_requestor(procdata->pending_metadata_requests, pathname, peer);
+         add_requestor(metadata_pending_requests(procdata, mdtype), pathname, peer);
          return 0;
    }
    err_printf("Unexpected result from handle_howto_metadata: %d\n", (int) stat_result);
@@ -2332,14 +2337,14 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
    size_t buffer_size = 0;
 
    debug_printf2("Loading existing metadata result for %s and broadcasting it\n", pathname);
-   result = lookup_stat_cache(pathname, &localpath);
+   result = lookup_stat_cache(pathname, &localpath, mdtype);
    if (result == -1) {
       err_printf("Failure locating local file with metadata data for %s\n", pathname);
       return -1;
    }
 
    if (localpath) {
-      if (mdtype == metadata_stat) {
+      if (mdtype == metadata_stat || metadata_lstat) {
          result = filemngt_read_stat(localpath, &buf);
          buffer = (unsigned char *) &buf;
          buffer_size = sizeof(buf);
