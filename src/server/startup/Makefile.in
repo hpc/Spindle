@@ -165,8 +165,7 @@ am__objects_2 = spindle_be-spindle_be.$(OBJEXT) \
 am_spindle_be_OBJECTS = spindle_be-spindle_be_main.$(OBJEXT) \
 	spindle_be-spindle_be_serial.$(OBJEXT) \
 	spindle_be-spindle_be_hostbin.$(OBJEXT) \
-	spindle_be-spindle_be_mpilaunch.$(OBJEXT) \
-	spindle_be-cleanup_proc.$(OBJEXT) $(am__objects_2)
+	spindle_be-spindle_be_mpilaunch.$(OBJEXT) $(am__objects_2)
 spindle_be_OBJECTS = $(am_spindle_be_OBJECTS)
 @LMON_DYNAMIC_TRUE@@LMON_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/launchmon/libbelmon.la \
 @LMON_DYNAMIC_TRUE@@LMON_TRUE@	$(am__DEPENDENCIES_1) \
@@ -399,17 +398,17 @@ top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libspindlebe.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c
-CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo 
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DTRACK_MKDIR -DLOOKUP_PREV_MKDIR
 CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la -ldl \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(GCRYPT_LIBS)
-libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB
+libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB 
 libspindlebe_la_SOURCES = $(CORE_SOURCES)
 libspindlebe_la_LIBADD = $(CORE_LDADD) $(MUNGE_DYN_LIB)
 libspindlebe_la_LDFLAGS = -version-info $(SPINDLEBE_LIB_VERSION)
 spindle_be_LDFLAGS = -static $(am__append_6)
 spindle_be_CPPFLAGS = $(CORE_CPPFLAGS)
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be_mpilaunch.cc cleanup_proc.cc $(CORE_SOURCES)
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be_mpilaunch.cc $(CORE_SOURCES)
 spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS) $(am__append_7) \
 	$(am__append_8)
 @LINK_LIBSTDCXX_STATIC_TRUE@CLEANFILES = ./libstdc++.a
@@ -553,7 +552,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-parseloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_be.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlebe_la-spindle_mkdir.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-cleanup_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-exitnote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-hookexec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_be-keyfile.Po@am__quote@
@@ -774,20 +772,6 @@ spindle_be-spindle_be_mpilaunch.obj: spindle_be_mpilaunch.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='spindle_be_mpilaunch.cc' object='spindle_be-spindle_be_mpilaunch.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_be-spindle_be_mpilaunch.obj `if test -f 'spindle_be_mpilaunch.cc'; then $(CYGPATH_W) 'spindle_be_mpilaunch.cc'; else $(CYGPATH_W) '$(srcdir)/spindle_be_mpilaunch.cc'; fi`
-
-spindle_be-cleanup_proc.o: cleanup_proc.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-cleanup_proc.o -MD -MP -MF $(DEPDIR)/spindle_be-cleanup_proc.Tpo -c -o spindle_be-cleanup_proc.o `test -f 'cleanup_proc.cc' || echo '$(srcdir)/'`cleanup_proc.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-cleanup_proc.Tpo $(DEPDIR)/spindle_be-cleanup_proc.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='cleanup_proc.cc' object='spindle_be-cleanup_proc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_be-cleanup_proc.o `test -f 'cleanup_proc.cc' || echo '$(srcdir)/'`cleanup_proc.cc
-
-spindle_be-cleanup_proc.obj: cleanup_proc.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-cleanup_proc.obj -MD -MP -MF $(DEPDIR)/spindle_be-cleanup_proc.Tpo -c -o spindle_be-cleanup_proc.obj `if test -f 'cleanup_proc.cc'; then $(CYGPATH_W) 'cleanup_proc.cc'; else $(CYGPATH_W) '$(srcdir)/cleanup_proc.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_be-cleanup_proc.Tpo $(DEPDIR)/spindle_be-cleanup_proc.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='cleanup_proc.cc' object='spindle_be-cleanup_proc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle_be-cleanup_proc.obj `if test -f 'cleanup_proc.cc'; then $(CYGPATH_W) 'cleanup_proc.cc'; else $(CYGPATH_W) '$(srcdir)/cleanup_proc.cc'; fi`
 
 spindle_be-spindle_be.o: spindle_be.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_be_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle_be-spindle_be.o -MD -MP -MF $(DEPDIR)/spindle_be-spindle_be.Tpo -c -o spindle_be-spindle_be.o `test -f 'spindle_be.cc' || echo '$(srcdir)/'`spindle_be.cc

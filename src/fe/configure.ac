@@ -29,5 +29,9 @@ CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 
 AC_SUBST([SPINDLEFE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlefe`])
 
+if test "x$CLEANUP_PROC" == "xtrue"; then
+  AC_DEFINE([DEFAULT_CLEANUP_PROC],[1],[Default to using a dedicated process to clean data files])
+fi
+
 AC_OUTPUT
 

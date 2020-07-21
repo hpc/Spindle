@@ -53,6 +53,8 @@ extern "C" {
 #define OPT_MSGBUNDLE  (1 << 23)            /* Message bundling, which can improve high-latency network performance */
 #define OPT_SELFLAUNCH (1 << 24)            /* Use a startup mode where the clients launch the daemon */
 #define OPT_BEEXIT     (1 << 25)            /* Block exit until each backend calls spindleExitBE */
+#define OPT_PROCCLEAN  (1 << 26)            /* Use a dedicated process to run cleanup routines after Spindle exits */
+
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
 #define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */

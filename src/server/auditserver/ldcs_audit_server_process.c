@@ -36,6 +36,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_requestors.h"
 #include "msgbundle.h"
 #include "exitnote.h"
+#include "cleanup_proc.h"
 
 //#define GPERFTOOLS
 #if defined(GPERFTOOLS)
@@ -181,6 +182,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
 
    debug_printf3("Initializing file cache location %s\n", ldcs_process_data.location);
    ldcs_audit_server_filemngt_init(ldcs_process_data.location);
+   if (ldcs_process_data.opts & OPT_PROCCLEAN)
+      init_cleanup_proc(ldcs_process_data.location);
 
    debug_printf3("Initializing connections for clients at %s and %u\n",
                  ldcs_process_data.location, ldcs_process_data.number);

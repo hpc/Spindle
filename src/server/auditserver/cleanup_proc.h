@@ -18,9 +18,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 extern "C" {
 #endif
 
-extern void init_cleanup_proc();
-extern void add_cleanup_dir(const char *dir);
-
+void init_cleanup_proc(const char *location_dir);
+void track_mkdir(const char *dir);
+int lookup_prev_mkdir(const char *dir);   
+void cleanup_created_dirs(const char *location_dir);
+   
 #if defined(__cplusplus)
 }
 #endif

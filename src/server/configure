@@ -1498,7 +1498,8 @@ Optional Features:
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-cleanup-process
-                          Use a dedicated process to clean relocated files
+                          Default to using a dedicated process to clean
+                          relocated files
   --enable-subaudit-as-default
                           Enable subaudit option as defaulted to on
   --enable-slurm-plugin   Build a spindle plugin for slurm
@@ -17349,12 +17350,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
       fi
     fi
   fi
-fi
-
-if test "x$CLEANUP_PROC" == "xtrue"; then
-
-$as_echo "#define USE_CLEANUP_PROC 1" >>confdefs.h
-
 fi
 
 

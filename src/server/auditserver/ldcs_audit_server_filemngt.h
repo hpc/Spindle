@@ -29,7 +29,16 @@ int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, in
 int filemngt_encode_packet(char *filename, char *alias_to, void *filecontents, size_t filesize, 
                            char **buffer, size_t *buffer_size);
 int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename, char *alias_to, size_t *buffer_size, int *bytes_read);
-char *filemngt_calc_localname(char *global_name);
+
+typedef enum {
+   clt_unknown,
+   clt_stat,
+   clt_lstat,
+   clt_ldso,
+   clt_file
+} calc_local_t;
+
+char *filemngt_calc_localname(char *global_name, calc_local_t reqtype);
 
 int ldcs_audit_server_filemngt_clean();
 

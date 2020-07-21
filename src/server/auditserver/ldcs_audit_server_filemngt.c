@@ -37,6 +37,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_elf_read.h"
 #include "config.h"
+#include "ccwarns.h"
+#include "cleanup_proc.h"
 
 #if !defined(LIBEXECDIR)
 #error LIBEXECDIR must be defined
@@ -65,13 +67,10 @@ int ldcs_audit_server_filemngt_init (char* location) {
    return(rc);
 }
 
-/* Returns NULL if not a local file. Otherwise, returns pointer to file portion of string */
+/* Returns NULL if not a local file. Otherwise, returns pointer to global portion of string */
 char* ldcs_is_a_localfile (char* filename) {
   int len = strlen(_ldcs_audit_server_tmpdir);
   int norm_len = strlen(normalized_tmpdir);
-
-  if ( *filename == '*' )
-    filename++;           /* Skip preceeding '*' if present for stat */
 
   if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) == 0 )
      return filename + len + 1;
@@ -80,40 +79,74 @@ char* ldcs_is_a_localfile (char* filename) {
   return NULL;
 }
 
-char *filemngt_calc_localname(char *global_name)
+
+#define MAX_FILENAME_LEN 256
+char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
 {
+   //The naming decisions here need to be cordinated with name parsing in
+   // cache/global_name.c
    static unsigned int unique_str_num = 0;
    char target[MAX_NAME_LEN+1];
-   char *s, *newname;
-   int global_name_len = strlen(global_name);
-   int space_used = 0, newname_size = 0;
-   target[MAX_NAME_LEN] = '\0';
+   char dirpart[MAX_NAME_LEN+1];
+   char filepart[MAX_FILENAME_LEN+1];
+   char *endslash, *lastslash;
+   const char *prefix;
+   size_t dirpart_size, filepart_size;
+   int cut_dirpart_slash;
+
+   lastslash = strrchr(_ldcs_audit_server_tmpdir, '/');
+   if (lastslash && lastslash[1] == '\0')
+      endslash = "";
+   else
+      endslash = "/";
+
+   GCC7_DISABLE_WARNING("-Wformat-truncation");
    
-   space_used += snprintf(target, MAX_NAME_LEN, "%x-", unique_str_num);
-   unique_str_num++;
-   
-   if (global_name_len + space_used <= MAX_NAME_LEN) {
-      strncpy(target + space_used, global_name, MAX_NAME_LEN - space_used);
+   lastslash = strrchr(global_name, '/');
+   if (!lastslash) {
+      debug_printf("WARNING: Got global name without a slash: %s\n", global_name);
+      snprintf(dirpart, sizeof(dirpart), "unknown_path");
+      dirpart[sizeof(dirpart)-1] = '\0';
+      strncpy(filepart, global_name, sizeof(filepart));
+      filepart[sizeof(filepart)-1] = '\0';
    }
    else {
-      strncpy(target + space_used,
-              global_name + (global_name_len - MAX_NAME_LEN) + space_used,
-              MAX_NAME_LEN - space_used);
-   }
-   for (s = target; *s; s++) {
-      if (*s == '/')
-         *s = '_';
-      if (*s == '*') 
-         *s = '_';
-      if (*s == '$')
-         *s = '_';
+      dirpart_size = lastslash - global_name;
+      filepart_size = strlen(lastslash+1);
+      assert(filepart_size < sizeof(filepart));
+      assert(dirpart_size < sizeof(dirpart));
+      
+      strncpy(dirpart, global_name, dirpart_size);
+      dirpart[dirpart_size] = '\0';
+      strncpy(filepart, lastslash+1, sizeof(filepart));
+      filepart[filepart_size] = '\0';
    }
 
-   newname_size = strlen(target) + strlen(_ldcs_audit_server_tmpdir) + 2;
-   newname = (char *) malloc(newname_size);
-   snprintf(newname, newname_size, "%s/%s", _ldcs_audit_server_tmpdir, target);
+   switch(reqtype) {
+      case clt_unknown: prefix = "spindlens-unknown"; break;
+      case clt_stat: prefix = "spindlens-stat"; break;
+      case clt_lstat: prefix = "spindlens-fstat"; break;
+      case clt_ldso: prefix = "spindlens-ldso"; break;
+      case clt_file: prefix = "spindlens-file"; break;
+   }
+   
+   snprintf(target, sizeof(target), "%x-%s-%s",
+            unique_str_num++,
+            prefix,
+            filepart);
+   strncpy(filepart, target, sizeof(filepart));
+   filepart[sizeof(filepart)-1] = '\0';
 
-   return newname;
+   cut_dirpart_slash = (dirpart[0] == '/') ? 1 : 0;
+   
+   snprintf(target, sizeof(target), "%s%s%s", _ldcs_audit_server_tmpdir, endslash, dirpart+cut_dirpart_slash);
+   spindle_mkdir(target);
+
+   snprintf(target, sizeof(target), "%s%s%s/%s", _ldcs_audit_server_tmpdir, endslash, dirpart+cut_dirpart_slash, filepart);
+
+   GCC7_ENABLE_WARNING;
+      
+   return strdup(target);
 }
 
 int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, int *errcode)
@@ -250,40 +283,7 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
  **/
 int ldcs_audit_server_filemngt_clean()
 {
-#if !defined(USE_CLEANUP_PROC)
-   DIR *tmpdir;
-   struct dirent *dp;
-   char path[MAX_PATH_LEN];
-   struct stat finfo;
-   int result;
-
-   debug_printf("Cleaning tmpdir %s\n", _ldcs_audit_server_tmpdir);
-
-   tmpdir = opendir(_ldcs_audit_server_tmpdir);
-   if (!tmpdir) {
-      err_printf("Failed to open %s for cleaning: %s\n", _ldcs_audit_server_tmpdir,
-                 strerror(errno));
-      return -1;
-   }
-   
-   while ((dp = readdir(tmpdir))) {
-      snprintf(path, MAX_PATH_LEN, "%s/%s", _ldcs_audit_server_tmpdir, dp->d_name);
-      result = lstat(path, &finfo);
-      if (result == -1) {
-         err_printf("Failed to stat %s\n", path);
-         continue;
-      }
-      if (!S_ISREG(finfo.st_mode)) {
-         debug_printf3("Not cleaning file %s\n", path);
-         continue;
-      }
-      debug_printf3("Cleaning file %s\n", path);
-      unlink(path);
-   }
-
-   closedir(tmpdir);
-   rmdir(_ldcs_audit_server_tmpdir);
-#endif
+   cleanup_created_dirs(_ldcs_audit_server_tmpdir);
    return 0;
 }
 

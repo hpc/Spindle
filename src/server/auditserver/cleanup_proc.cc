@@ -16,16 +16,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cleanup_proc.h"
 #include "config.h"
-
-#if defined(USE_CLEANUP_PROC)
-
 #include "spindle_debug.h"
+
 #include "ldcs_api.h"
 
 #include <set>
 #include <string>
 #include <cstring>
 #include <cassert>
+#include <vector>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,37 +39,86 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 using namespace std;
 
 static bool hit_sigterm = false;
+
 static void on_sigterm(int sig)
 {
-   hit_sigterm = true;
+   hit_sigterm = true;   
+}
+
+static bool longest_str_first(const string &a, const string &b)
+{
+   return a.size() > b.size();
+}
+
+static void rmDirSet(const set<string> &dirs, const char *prefix_dir)
+{
+   string path_sep("/");
+   size_t prefix_size = strlen(prefix_dir);
+   
+   for (set<string>::const_iterator i = dirs.begin(); i != dirs.end(); i++) {
+      DIR *dir = opendir(i->c_str());
+      if (!dir)
+         continue;
+      struct dirent *dp;
+      while ((dp = readdir(dir))) {
+         if (dp->d_name[0] == '.' && dp->d_name[1] == '\0')
+            continue;
+         if (dp->d_name[0] == '.' && dp->d_name[1] == '.' && dp->d_name[2] == '\0')
+            continue;
+
+         string componentpath = *i + path_sep + dp->d_name;
+         if (dirs.find(componentpath) != dirs.end())
+            continue;
+
+         if (strncmp(prefix_dir, componentpath.c_str(), prefix_size) != 0) {
+            err_printf("Tried to clean a file %s that wasn't in our prefix %s\n", componentpath.c_str(), prefix_dir);
+            continue;
+         }
+         unlink(componentpath.c_str());
+      }
+   }
+
+   vector<string> ordered_dirs(dirs.begin(), dirs.end());
+   sort(ordered_dirs.begin(), ordered_dirs.end(), longest_str_first);
+   for (vector<string>::iterator i = ordered_dirs.begin(); i != ordered_dirs.end(); i++) {
+      if (strncmp(prefix_dir, i->c_str(), prefix_size) != 0) {
+         err_printf("Tried to rmdir directory %s that wasn't in our prefix %s\n", i->c_str(), prefix_dir);
+         continue;
+      }      
+      rmdir(i->c_str());
+   }   
 }
 
 class CleanupProc
 {
-   friend void init_cleanup_proc();
+   friend void init_cleanup_proc(const char *);
 private:
    set<string> dirs;
    int write_dir_fd;
    int read_dir_fd;
    bool has_error;
+   pid_t child_pid;
+   const char *prefix_dir;
 
-   CleanupProc();
+   CleanupProc(const char *pd);
    void rmDirs();
    void cleanupMain();
-   void rmRecursive(string path);
 public:
    void addDir(const char *dir);
+   void triggerCleanup();
    bool hadError();
 };
 
-CleanupProc::CleanupProc() :
+CleanupProc::CleanupProc(const char *pd) :
    write_dir_fd(-1),
    read_dir_fd(-1),
-   has_error(false)
+   has_error(false),
+   prefix_dir(pd)
 {
    int fds[2];
    int result;
 
+   debug_printf("Enabling dedicated process for file cleanup\n");
    result = pipe2(fds, O_CLOEXEC);
    if (result == -1) {
       err_printf("Spindle error creating pipes for cleanup proc\n");
@@ -78,26 +127,16 @@ CleanupProc::CleanupProc() :
    }
    read_dir_fd = fds[0];
    write_dir_fd = fds[1];
-   
-   //Do a gchild fork to reparent to init.
-   pid_t child_pid = fork();
-   if (child_pid == 0) {
-      pid_t gchild_pid = fork();
-      if (gchild_pid != 0) {
-         _exit(0);
-      }
-   }
-   else {
+
+   child_pid = fork();
+   if (child_pid) {
       close(read_dir_fd);
-      int status;
-      waitpid(child_pid, &status, 0);
       return;
    }
    
    //Create a new session so kills directed at tool process don't
    // automatically hit us.
    setsid();
-
    close(write_dir_fd);
 
    struct sigaction act;
@@ -119,47 +158,33 @@ CleanupProc::CleanupProc() :
    cleanupMain();
 }
 
+void CleanupProc::triggerCleanup()
+{
+   debug_printf("Cleaning up BE files using dedicated cleanup process\n");
+   close(write_dir_fd);
+
+   int status, result;
+   for (;;) {
+      result = waitpid(child_pid, &status, 0);
+      if (result == -1) {
+         int error = errno;
+         err_printf("Could not waitpid for cleanup proc: %s\n", strerror(error));
+         return;
+      }
+      if (WIFEXITED(status) || WIFSIGNALED(status)) {
+         return;
+      }
+   }   
+}
+
 bool CleanupProc::hadError()
 {
    return has_error;
 }
 
-void CleanupProc::rmRecursive(string path)
-{
-   struct stat buf;
-   int result = stat(path.c_str(), &buf);
-
-   if (result == -1)
-      return;
-   else if ((buf.st_mode & S_IFLNK) || (!(buf.st_mode & S_IFDIR))) {
-      result = unlink(path.c_str());
-      if (result == -1) {
-         //Something's wrong, we shouldn't fail to unlink.  Stop deleting.
-         _exit(0);
-      }
-      return;
-   }
-   else {
-      DIR *dir = opendir(path.c_str());
-      if (!dir) 
-         return;
-      struct dirent *dp;
-      while ((dp = readdir(dir))) {
-         if ((strcmp(dp->d_name, ".") == 0) || (strcmp(dp->d_name, "..") == 0))
-            continue;
-         string newpath = path + string("/") + dp->d_name;
-         rmRecursive(newpath);
-      }
-      closedir(dir);
-      rmdir(path.c_str());
-   }
-}
-
 void CleanupProc::rmDirs()
 {
-   for (set<string>::iterator i = dirs.begin(); i != dirs.end(); i++) {
-      rmRecursive(*i);
-   }
+   rmDirSet(dirs, prefix_dir);
 }
 
 void CleanupProc::cleanupMain()
@@ -212,32 +237,44 @@ void CleanupProc::addDir(const char *dir)
 }
 
 static CleanupProc *proc = NULL;
-void init_cleanup_proc()
+static set<string> local_dircache;
+
+void init_cleanup_proc(const char *location_dir)
 {
    assert(!proc);
-   proc = new CleanupProc();
+   proc = new CleanupProc(location_dir);
    if (proc->hadError()) {
       delete proc;
       proc = NULL;
       return;
    }
+
+   for (set<string>::iterator i = local_dircache.begin(); i != local_dircache.end(); i++) {
+      proc->addDir(i->c_str());
+   }
 }
 
-void add_cleanup_dir(const char *dir)
+void track_mkdir(const char *dir)
 {
-   if (!proc)
-      return;
-   proc->addDir(dir);
+   if (proc)
+      proc->addDir(dir);
+   local_dircache.insert(string(dir));
 }
 
-#else
-
-void init_cleanup_proc()
+int lookup_prev_mkdir(const char *dir)
 {
+   string s(dir);
+   set<string>::iterator i = local_dircache.find(s);
+   return (i != local_dircache.end()) ? 1 : 0;
 }
 
-void add_cleanup_dir(const char *dir)
+void cleanup_created_dirs(const char *prefix_dir)
 {
+   if (proc) {
+      proc->triggerCleanup();
+   }
+   else {
+      debug_printf("Cleaning files with local unlink/rmdirs.\n");
+      rmDirSet(local_dircache, prefix_dir);
+   }      
 }
-
-#endif

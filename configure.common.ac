@@ -182,7 +182,7 @@ fi
 
 #Dedicated cleanup process
 AC_ARG_ENABLE(cleanup-process,
-             [AS_HELP_STRING([--enable-cleanup-process],[Use a dedicated process to clean relocated files])],
+             [AS_HELP_STRING([--enable-cleanup-process],[Default to using a dedicated process to clean relocated files])],
              [CLEANUP_PROC="true"],)
 if test "x$OS_BUILD" == "xbluegene"; then
   CLEANUP_PROC="true"

@@ -130,9 +130,6 @@
 /* The file for storing usage logs */
 #undef USAGE_LOGGING_FILE
 
-/* Use a dedicated process to clean data files */
-#undef USE_CLEANUP_PROC
-
 /* Version number of package */
 #undef VERSION
 

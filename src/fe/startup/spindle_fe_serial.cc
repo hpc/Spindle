@@ -34,7 +34,6 @@ class SerialLauncher : public ForkLauncher
    friend Launcher *createSerialLauncher(spindle_args_t *params);
 private:
    bool initError;
-   pid_t daemon_pid;
    static SerialLauncher *slauncher;
 
    SerialLauncher(spindle_args_t *params_);

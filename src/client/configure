@@ -1464,7 +1464,8 @@ Optional Features:
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-cleanup-process
-                          Use a dedicated process to clean relocated files
+                          Default to using a dedicated process to clean
+                          relocated files
   --enable-subaudit-as-default
                           Enable subaudit option as defaulted to on
   --enable-slurm-plugin   Build a spindle plugin for slurm

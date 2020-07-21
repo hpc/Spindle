@@ -31,9 +31,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "config.h"
 
 
-#if defined(USE_CLEANUP_PROC)
-extern void add_cleanup_dir(const char *dir);
+#if defined(TRACK_MKDIR)
+extern void track_mkdir(const char *dir);
 #endif
+#if defined(LOOKUP_PREV_MKDIR)
+extern int lookup_prev_mkdir(const char *dir);
+#endif
+
 
 static int checkdir(char *path)
 {
@@ -91,17 +95,22 @@ int spindle_mkdir(char *orig_path)
          continue;
       orig_char = path[i];
       path[i] = '\0';
-      
+
+#if defined(LOOKUP_PREV_MKDIR)
+      if (!do_mkdir) {
+         result = lookup_prev_mkdir(path);
+         if (result == 1) {
+            do_mkdir = 1;
+         }
+      }
+#endif
       if (!do_mkdir) {
          //Run a stat on an existing path component.  As long as a directory
-         //component already exists, we won't be too picky about its ownership.
+         //component already exists, we won't be too picky about its ownership.         
          result = stat(path, &buf);
          if (result == -1) {
             error = errno;
             if (error == ENOENT) {
-#if defined(USE_CLEANUP_PROC)
-               add_cleanup_dir(path);
-#endif
                do_mkdir = 1;
             }
             else {
@@ -130,6 +139,12 @@ int spindle_mkdir(char *orig_path)
             //by us with appropriate permissions.
             if (checkdir(path) == -1)
                return -1;
+         }
+         else {
+            debug_printf3("Did a mkdir(%s)\n", path);
+#if defined(TRACK_MKDIR)
+            track_mkdir(path);
+#endif            
          }
       }
       path[i] = orig_char;

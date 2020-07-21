@@ -258,16 +258,13 @@ static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldc
    is_lstat = (msg->header.type == LDCS_MSG_LSTAT_QUERY);
    is_loader = (msg->header.type == LDCS_MSG_LOADER_DATA_REQ);
 
-   if ( is_stat ) {
-     /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
-     char *globalname = lookup_global_name(pathname);
-
-     if (globalname != NULL) {
-       debug_printf3("Remapping stat of %s --> %s\n", pathname, globalname);
-       pathname = globalname;
-     }
+   /* check to see if pathname is a local name (possibly from fstat()) and switch to global name if needed */
+   char *globalname = lookup_global_name(pathname);
+   if (globalname != NULL) {
+      debug_printf3("Remapping request of %s --> %s\n", pathname, globalname);
+      pathname = globalname;
    }
-
+   
    parseFilenameNoAlloc(pathname, file, dir, MAX_PATH_LEN);
 
    /* do initial check of query, parse the filename and store info */
@@ -593,7 +590,7 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
    /**
     * Set up mapped memory for on the local disk for storing the file.
     **/
-   *localname = filemngt_calc_localname(pathname);
+   *localname = filemngt_calc_localname(pathname, clt_file);
    assert(*localname);
    add_global_name(pathname, *localname);
 
@@ -1999,6 +1996,14 @@ static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, 
 {
    double starttime;
    int result;
+   calc_local_t nametype;
+
+   switch (mdtype) {
+      case metadata_stat: nametype = clt_stat; break;
+      case metadata_lstat: nametype = clt_lstat; break;
+      case metadata_loader: nametype = clt_ldso; break;
+      default: nametype = clt_unknown; break;
+   }
 
    /* Store stat contents in cache */
    if (!file_exists) {
@@ -2007,7 +2012,7 @@ static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, 
    }
    else {
       debug_printf3("Successfully stat'd file %s\n", pathname);
-      *localname = filemngt_calc_localname(pathname);
+      *localname = filemngt_calc_localname(pathname, nametype);
       add_global_name(pathname, *localname);
    }
    add_stat_cache(pathname, *localname, mdtype);
@@ -2034,7 +2039,7 @@ static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int 
    double starttime;
 
    if (file_exists) {
-      *localname = filemngt_calc_localname(pathname);
+      *localname = filemngt_calc_localname(pathname, clt_ldso);
       add_global_name(pathname, *localname);
    }
    else

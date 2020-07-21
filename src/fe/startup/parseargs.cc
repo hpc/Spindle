@@ -65,14 +65,13 @@ using namespace std;
 #define NOMPI 273
 #define HOSTBIN 274
 #define PERSIST 275
-
 #define STARTSESSION 276
 #define RUNSESSION 277
 #define ENDSESSION 278
 #define LAUNCHERSTARTUP 279
-
 #define MSGCACHE_BUFFER 280
 #define MSGCACHE_TIMEOUT 281
+#define CLEANUPPROC 282
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -104,6 +103,14 @@ using namespace std;
 #define DEFAULT_USE_SUBAUDIT 1
 #endif
 
+#if defined(DEFAULT_CLEANUP_PROC)
+#define DEFAULT_CLEAN_PROC_STR "yes"
+#define DEFAULT_CLEAN_PROC_INT 1
+#else
+#define DEFAULT_CLEAN_PROC_STR "no"
+#define DEFAULT_CLEAN_PROC_INT 0
+#endif
+
 #define DEFAULT_PERSIST 0
 
 static const char *YESNO = "yes|no";
@@ -112,13 +119,13 @@ static const opt_t all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC 
                                             OPT_RELOCPY | OPT_FOLLOWFORK;
 static const opt_t all_network_opts = OPT_COBO;
 static const opt_t all_pushpull_opts = OPT_PUSH | OPT_PULL;
-static const opt_t all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST;
+static const opt_t all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST | OPT_PROCCLEAN;
 
 static const opt_t default_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC |
                                                 OPT_RELOCPY | OPT_FOLLOWFORK;
 static const opt_t default_network_opts = OPT_COBO;
 static const opt_t default_pushpull_opts = OPT_PUSH;
-static const opt_t default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST) | OPT_DEBUG;
+static const opt_t default_misc_opts = OPT_STRIP | (DEFAULT_PERSIST * OPT_PERSIST) | OPT_DEBUG | (DEFAULT_CLEAN_PROC_INT * OPT_PROCCLEAN);
 static const opt_t default_sec = DEFAULT_SEC;
 
 #if defined(HOSTBIN_PATH)
@@ -302,7 +309,9 @@ struct argp_option options[] = {
    { "msgcache-buffer", MSGCACHE_BUFFER, "size", 0,
      "Enables message buffering if size is non-zero, otherwise sets the size of the buffer in kilobytes", GROUP_MISC },
    { "msgcache-timeout", MSGCACHE_TIMEOUT, "timeout", 0,
-     "Enables message buffering if size is non-zero, otherwise sets the buffering timeout in milliseconds", GROUP_MISC },   
+     "Enables message buffering if size is non-zero, otherwise sets the buffering timeout in milliseconds", GROUP_MISC },
+   { "cleanup-proc", CLEANUPPROC, YESNO, 0,
+     "Fork a dedicated process to clean-up files post-spindle.  Useful for high-fault situations. Default: " DEFAULT_CLEAN_PROC_STR, GROUP_MISC },
    {0}
 };
 
@@ -322,6 +331,7 @@ static opt_t opt_key_to_code(int key)
       case RELOCPY: return OPT_RELOCPY;
       case NOCLEAN: return OPT_NOCLEAN;
       case PERSIST: return OPT_PERSIST;
+      case CLEANUPPROC: return OPT_PROCCLEAN;
       default: return 0;
    }
 }

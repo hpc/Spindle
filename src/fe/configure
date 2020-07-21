@@ -1496,7 +1496,8 @@ Optional Features:
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-cleanup-process
-                          Use a dedicated process to clean relocated files
+                          Default to using a dedicated process to clean
+                          relocated files
   --enable-subaudit-as-default
                           Enable subaudit option as defaulted to on
   --enable-slurm-plugin   Build a spindle plugin for slurm
@@ -17279,6 +17280,12 @@ CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 
 SPINDLEFE_LIB_VERSION=`$srcdir/../../LIB_VERSION spindlefe`
 
+
+if test "x$CLEANUP_PROC" == "xtrue"; then
+
+$as_echo "#define DEFAULT_CLEANUP_PROC 1" >>confdefs.h
+
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

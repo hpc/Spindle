@@ -78,10 +78,6 @@ if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
   fi
 fi
 
-if test "x$CLEANUP_PROC" == "xtrue"; then
-  AC_DEFINE([USE_CLEANUP_PROC],[1],[Use a dedicated process to clean data files])
-fi
-
 AC_SUBST(STATIC_LIBGCC_OPT)
 AC_SUBST(STATIC_LIBSTDCXX)
 AM_CONDITIONAL([LINK_LIBSTDCXX_STATIC], [test "$LINK_LIBSTDCXX_STATIC" == "yes"])
