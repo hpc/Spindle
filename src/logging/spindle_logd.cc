@@ -265,7 +265,7 @@ public:
           strstr(filename, "retzero") == NULL &&
           strstr(filename, ".py") == NULL)
          return true;
-      bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL);
+      bool is_from_temp = (strstr(filename, tmp_dir.c_str()) != NULL) && (strncmp(filename, "/__not_exist", 12) != 0);
 
       if (is_from_temp && ret_code == -1) {
          std::string msg = std::string("Error: Failed to load from ramdisk: ") + std::string(filename);

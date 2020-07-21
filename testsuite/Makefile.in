@@ -313,7 +313,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
+BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so origin_dir/liboriginlib.so origin_dir/origin_subdir/liborigintarget.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
 @BGQ_BLD_FALSE@DYNAMIC_FLAG = 
 @BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
 @BGQ_BLD_FALSE@IS_BLUEGENE = false
@@ -325,8 +325,8 @@ test_driverLDADD = -ldl -ltestoutput -lfuncdict -lspindle
 test_driverLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) $(LDFLAGS) -L. $(DYNAMIC_FLAG) -no-install
 test_driver_libsSOURCES = $(top_srcdir)/testsuite/test_driver.c
 test_driver_libsCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall
-test_driver_libsLDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
-test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install $(LDFLAGS)
+test_driver_libsLDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -loriginlib -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
+test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install $(LDFLAGS) -Wl,-rpath,$(PWD)/origin_dir -L$(PWD)/origin_dir -Wl,-rpath-link,$(PWD)/origin_dir/origin_subdir
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
 CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
@@ -625,7 +625,7 @@ uninstall-am:
 test_driver: $(test_driverSOURCES) $(REGLIB_SRC) libtestoutput.so libfuncdict.so
 	$(AM_V_CCLD) $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(MPICC) -o $@ $(test_driverSOURCES) $(REGLIB_SRC) -DSO_NAME=$@ $(test_driverCFLAGS) $(test_driverLDFLAGS) $(test_driverLDADD)
 
-test_driver_libs: $(test_driverSOURCES) $(REGLIB_SRC) libtestoutput.so libfuncdict.so libtest10.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepA.so libcxxexceptA.so libdepB.so libdepC.so libcxxexceptB.so
+test_driver_libs: $(test_driverSOURCES) $(REGLIB_SRC) libtestoutput.so libfuncdict.so libtest10.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepA.so libcxxexceptA.so libdepB.so libdepC.so libcxxexceptB.so origin_dir/liboriginlib.so
 	$(AM_V_CCLD) $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(MPICC) -o $@ $(test_driver_libsSOURCES) $(REGLIB_SRC) -DSO_NAME=$@ $(test_driver_libsCFLAGS) $(test_driver_libsLDFLAGS) $(test_driver_libsLDADD)
 
 libtest10.c: libgenerator
@@ -717,6 +717,15 @@ libtestoutput.so: testoutput.c $(REGLIB_SRC)
 
 libfuncdict.so: funcdict.c $(REGLIB_SRC)
 	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
+
+origin_dir/origin_subdir:
+	$(AM_V_GEN) mkdir -p origin_dir/origin_subdir
+
+origin_dir/origin_subdir/liborigintarget.so: origintarget.c origin_dir/origin_subdir
+	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< -shared
+
+origin_dir/liboriginlib.so: originlib.c $(REGLIB_SRC) origin_dir/origin_subdir/liborigintarget.so
+	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=liboriginlib.so -DFUNC_NAME=origin_calc -shared '-Wl,-rpath,$$ORIGIN/origin_subdir' -Lorigin_dir/origin_subdir -lorigintarget
 
 retzero_rx: retzero.c
 	$(AM_V_CCLD)$(MPICC) -o $@ $<

@@ -84,6 +84,7 @@ typedef struct {
    int (*calc_func)(void);
    int opened;
    int flags;
+   char *subdir;
 } open_libraries_t;
 
 #define UNLOADED 0
@@ -114,20 +115,21 @@ static void setup_forkmode();
 GCC7_DISABLE_WARNING("-Wformat-truncation");
 
 open_libraries_t libraries[] = {
-   { "libtest10.so", NULL, NULL, UNLOADED, FLAGS_MUSTOPEN },
-   { "libtest50.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest100.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest500.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest1000.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest2000.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest4000.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest6000.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest8000.so", NULL, NULL, UNLOADED, 0 },
-   { "libtest10000.so", NULL, NULL, UNLOADED, 0 },
-   { "libdepA.so", NULL, NULL, UNLOADED, 0 },
-   { "libcxxexceptA.so", NULL, NULL, UNLOADED, 0 },
-   { "libnoexist.so", NULL, NULL, UNLOADED, FLAGS_NOEXIST },
-   { "libsymlink.so", NULL, NULL, UNLOADED, FLAGS_SYMLINK | FLAGS_SKIP | FLAGS_WONTLOAD },
+   { "libtest10.so", NULL, NULL, UNLOADED, FLAGS_MUSTOPEN, NULL },
+   { "libtest50.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest100.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest500.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest1000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest2000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest4000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest6000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest8000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libtest10000.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libdepA.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libcxxexceptA.so", NULL, NULL, UNLOADED, 0, NULL },
+   { "libnoexist.so", NULL, NULL, UNLOADED, FLAGS_NOEXIST, NULL },
+   { "libsymlink.so", NULL, NULL, UNLOADED, FLAGS_SYMLINK | FLAGS_SKIP | FLAGS_WONTLOAD, NULL },
+   { "liboriginlib.so", NULL, NULL, UNLOADED, 0, "origin_dir/" },
    { NULL, NULL, NULL, 0, 0 }
 };
 int num_libraries;
@@ -152,12 +154,14 @@ extern void setup_func_callback(cb_func_t);
 
 static char oldcwd[4096];
 
-char *libpath(char *s) {
+char *libpath(char *s, char *subdir) {
    static char path[4096];
+   if (!subdir)
+      subdir = "";
    if (chdir_mode)
-      snprintf(path, 4096, "%s/%s", oldcwd, s);
+      snprintf(path, 4096, "%s/%s%s", oldcwd, subdir, s);
    else
-      snprintf(path, 4096, "%s/%s", STR(LPATH), s);
+      snprintf(path, 4096, "%s/%s%s", STR(LPATH), subdir, s);
    return path;
 }
 
@@ -166,7 +170,7 @@ static void open_library(int i)
    char *fullpath, *result;
    if (!(libraries[i].flags & FLAGS_WONTLOAD))
       test_printf("dlstart %s\n", libraries[i].libname);
-   fullpath = libpath(libraries[i].libname);
+   fullpath = libpath(libraries[i].libname, libraries[i].subdir);
    result = dlopen(fullpath, RTLD_LAZY | RTLD_GLOBAL);
    if (libraries[i].flags & FLAGS_NOEXIST) {
       if (result != 0)
@@ -281,7 +285,7 @@ void api_mode()
    for (i = 0; libraries[i].libname; i++) {
       int result;
       struct stat buf1, buf2;
-      char *path = libpath(libraries[i].libname);
+      char *path = libpath(libraries[i].libname, libraries[i].subdir);
       
       result = spindle_stat(path, &buf1);
       if (libraries[i].flags & FLAGS_NOEXIST) {
