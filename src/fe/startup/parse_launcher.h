@@ -115,6 +115,24 @@ class OpenMPIParser : public LauncherParser
    virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;
 };
 
+class JSRunParser : public LauncherParser
+{
+  public:
+   JSRunParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_);
+   virtual ~JSRunParser();
+
+   virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;   
+};
+
+class LRunParser : public LauncherParser
+{
+  public:
+   LRunParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_);
+   virtual ~LRunParser();
+
+   virtual bool parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const;   
+};
+
 class MarkerParser : public LauncherParser
 {
   public:
@@ -131,6 +149,8 @@ extern SRunParser *srunparser;
 extern SerialParser *serialparser;
 extern OpenMPIParser *openmpiparser;
 extern WreckRunParser *wreckrunparser;
+extern JSRunParser *jsrunparser;
+extern LRunParser *lrunparser;
 extern MarkerParser *markerparser;
 
 void initParsers(int parsers_enabled, std::set<LauncherParser *> &all_parsers);

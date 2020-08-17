@@ -40,6 +40,7 @@ int getShmCacheSize();
 unique_id_t get_unique_id();
 std::string get_arg_session_id();
 session_status_t get_session_status();
+int getUseRSH();
 
 
 #define PARSECMD_FLAG_NOEXIT (1<<0)

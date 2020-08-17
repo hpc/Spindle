@@ -72,6 +72,7 @@ using namespace std;
 #define MSGCACHE_BUFFER 280
 #define MSGCACHE_TIMEOUT 281
 #define CLEANUPPROC 282
+#define RSHMODE 283
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -188,6 +189,15 @@ static char *user_python_prefixes = NULL;
 #else
 #define DEFAULT_PERSIST_STR "No"
 #endif
+
+#if defined(RSHLAUNCH_ENABLED)
+#define DEFAULT_RSHMODE 1
+#define DEFAULT_RSHMODE_STR "Yes"
+#else
+#define DEFAULT_RSHMODE 0
+#define DEFAULT_RSHMODE_STR "No"
+#endif
+static int use_rsh = DEFAULT_RSHMODE;
 
 #if defined(USAGE_LOGGING_FILE)
 #define DEFAULT_LOGGING_ENABLED true
@@ -312,6 +322,8 @@ struct argp_option options[] = {
      "Enables message buffering if size is non-zero, otherwise sets the buffering timeout in milliseconds", GROUP_MISC },
    { "cleanup-proc", CLEANUPPROC, YESNO, 0,
      "Fork a dedicated process to clean-up files post-spindle.  Useful for high-fault situations. Default: " DEFAULT_CLEAN_PROC_STR, GROUP_MISC },
+   { "enable-rsh", RSHMODE, YESNO, 0,
+     "Enable startint daemons with an rsh tree, if the startup mode supports it. Default: " DEFAULT_RSHMODE_STR, GROUP_MISC },
    {0}
 };
 
@@ -361,7 +373,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    }
    opt = opt_key_to_code(key);   
 
-   if (entry->arg == YESNO) {
+   if (entry->arg == YESNO && opt) {
       if (strcmp(arg, "yes") == 0 || strcmp(arg, "y") == 0) {
          enabled_opts |= opt;
       }
@@ -522,6 +534,19 @@ static int parse(int key, char *arg, struct argp_state *vstate)
 #endif
       return 0;
    }
+   else if (entry->key == RSHMODE) {
+      if (strcmp(arg, "yes") == 0 || strcmp(arg, "y") == 0) {
+         use_rsh = 1;
+      }
+      else if (strcmp(arg, "no") == 0 || strcmp(arg, "n") == 0) {
+         use_rsh = 0;
+      }
+      else {
+         argp_error(state, "%s must be 'yes' or 'no'", entry->name);
+         return ARGP_ERR_UNKNOWN;
+      }
+      return 0;
+   }   
    else if (key == ARGP_KEY_ARGS) {
       mpi_argv = state->argv + state->next;
       mpi_argc = state->argc - state->next;
@@ -841,4 +866,9 @@ string get_arg_session_id()
 session_status_t get_session_status()
 {
    return session_status;
+}
+
+int getUseRSH()
+{
+   return use_rsh;
 }

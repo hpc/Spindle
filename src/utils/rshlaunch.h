@@ -14,17 +14,24 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef _COBO_COMM_H
-#define _COBO_COMM_H
+#if !defined(RSHLAUNCH_H_)
+#define RSHLAUNCH_H_
 
-#define COBO_SUCCESS (0)
+#include "spindle_launch.h"
 
-#include "ldcs_api.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
+   
+void init_rsh_launch_fe(spindle_args_t *args);
+int collect_rsh_pid_fe();
+void init_rsh_launch_be(int argc, char **argv);
+char *get_rsh_launcher();
+pid_t get_fe_rsh_pid();
+void clear_fe_rsh_pid();
 
-int ldcs_cobo_read_fd(int fd, void* buf, int size);
-int ldcs_cobo_write_fd(int fd, void* buf, int size);
-int ll_write(int fd, void *buf, size_t count);
-int ll_read(int fd, void *buf, size_t count);
-int write_msg(int fd, ldcs_message_t *msg);
+#if defined(__cplusplus)
+}
+#endif
 
-#endif /* _COBO_COMM_H */
+#endif

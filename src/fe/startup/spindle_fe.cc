@@ -23,6 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "config.h"
 #include "spindle_debug.h"
 #include "ldcs_cobo.h"
+#include "rshlaunch.h"
 
 #include <string>
 #include <cassert>
@@ -294,6 +295,11 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    unsigned int hosts_size = 0;
    for (const char **h = hosts; *h != NULL; h++, hosts_size++);
 
+   /* Start RSH launchers */
+   if (params->opts & OPT_RSHLAUNCH) {
+      init_rsh_launch_fe(params);
+   }
+   
    /* Start FE server */
    debug_printf("Starting FE servers with hostlist of size %u on port %u\n", hosts_size, params->port);
    ldcs_audit_server_fe_md_open(const_cast<char **>(hosts), hosts_size, 
@@ -333,7 +339,10 @@ int spindleWaitForCloseFE(spindle_args_t *params)
 
 int spindleCloseFE(spindle_args_t *params)
 {
+   pid_t rshpid;
    LOGGING_INIT(const_cast<char *>("FE"));
+
+   debug_printf("Called spindleCloseFE\n");
    
    ldcs_audit_server_fe_md_close(md_data_ptr);
 
@@ -341,8 +350,26 @@ int spindleCloseFE(spindle_args_t *params)
       clean_keyfile(params->unique_id);
    }
 
+   if (params->opts & OPT_RSHLAUNCH) {
+      rshpid = get_fe_rsh_pid();
+      if (rshpid != (pid_t) -1) {
+         collect_rsh_pid_fe();
+         clear_fe_rsh_pid();
+      }
+   }
+   debug_printf("Finishing call to spindleCloseFE\n");   
    if (params->startup_type == startup_external)
       LOGGING_FINI;
 
    return 0;
+}
+
+pid_t getRSHPidFE()
+{
+   return get_fe_rsh_pid();
+}
+
+void markRSHPidReapedFE()
+{
+   clear_fe_rsh_pid();
 }

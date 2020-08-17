@@ -198,13 +198,15 @@ bool ForkLauncher::getReturnCodes(bool &daemon_done, int &daemon_ret,
          daemon_ret = -1;
       }
       else {
-         err_printf("Unexpected return from wait.  result = %d, status = %d\n", result, status);
+         err_printf("Unexpected return from wait.  result = %d, status = %d (daemon_pid = %d)\n",
+                    result, status, (int) daemon_pid);
          return false;
       }
    }
 }
 
 extern Launcher *createSlurmLauncher(spindle_args_t *params);
+extern Launcher *createLSFLauncher(spindle_args_t *params);
 
 Launcher *createMPILauncher(spindle_args_t *params)
 {
@@ -216,12 +218,19 @@ Launcher *createMPILauncher(spindle_args_t *params)
    {
       if (strcmp(TESTRM, "slurm") == 0)
          launcher = srun_launcher;
+      if (strcmp(TESTRM, "jsrun") == 0)
+         launcher = jsrun_launcher;
+      if (strcmp(TESTRM, "lrun") == 0)
+         launcher = lrun_launcher;      
    }
 #endif
 
    switch (launcher) {
       case srun_launcher:
          return createSlurmLauncher(params);
+      case lrun_launcher:
+      case jsrun_launcher:
+         return createLSFLauncher(params);
       case openmpi_launcher:
       case wreckrun_launcher:
          err_printf("Unsupported launcher %d\n", launcher);
@@ -230,7 +239,7 @@ Launcher *createMPILauncher(spindle_args_t *params)
          break;
       default:
          err_printf("Could not identify a launcher: %d\n", launcher);
-         fprintf(stderr, "Error: Could not identify system job launcher");
+         fprintf(stderr, "Spindle Error: Could not identify system job launcher in command line\n");
          exit(-1);
          break;
    }

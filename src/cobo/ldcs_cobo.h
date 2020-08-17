@@ -63,6 +63,8 @@ extern "C" {
 #define cobo_bcast_down COMBINE(COBO_NAMESPACE, cobo_bcast_down)
 #define cobo_get_child_socket COMBINE(COBO_NAMESPACE, cobo_get_child_socket)
 #define cobo_set_handshake COMBINE(COBO_NAMESPACE, cobo_set_handshake)
+#define cobo_preconnect_cb_t COMBINE(COBO_NAMESPACE, cobo_preconnect_cb_t)
+#define cobo_register_preconnect_cb COMBINE(COBO_NAMESPACE, cobo_register_preconnect_cb)
 #endif
 
 /*
@@ -105,7 +107,7 @@ int cobo_allgather(void* sendbuf, int sendcount, void* recvbuf);
 
 /* each task sends N*sendcount bytes from sendbuf and receives N*sendcount bytes into recvbuf */
 int cobo_alltoall (void* sendbuf, int sendcount, void* recvbuf);
-
+   
 /*
  * Perform MPI-like Allgather of NULL-terminated strings (whose lengths may vary
  * from task to task).
@@ -158,6 +160,9 @@ void cobo_set_handshake(handshake_protocol_t *hs);
 void handle_security_error(const char *msg);
 int initialize_handshake_security(handshake_protocol_t *protocol);
 
+typedef int (*cobo_preconnect_cb_t)(const char *);
+void cobo_register_preconnect_cb(cobo_preconnect_cb_t f);
+   
 #if defined(__cplusplus)
 }
 #endif

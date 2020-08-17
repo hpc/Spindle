@@ -18,6 +18,12 @@
 /* Default to using a dedicated process to clean data files */
 #undef DEFAULT_CLEANUP_PROC
 
+/* Enable support for jsrun */
+#undef ENABLE_JSRUN_LAUNCHER
+
+/* Enable support for lrun */
+#undef ENABLE_LRUN_LAUNCHER
+
 /* Allow NULL encryption */
 #undef ENABLE_NULL_ENCRYPTION
 
@@ -27,7 +33,7 @@
 /* Enable support for srun */
 #undef ENABLE_SRUN_LAUNCHER
 
-/* Enable support for srun */
+/* Enable support for wreckrun */
 #undef ENABLE_WRECKRUN_LAUNCHER
 
 /* Enable gcrypt for authentication */
@@ -117,6 +123,12 @@
 
 /* Python installation prefixes */
 #undef PYTHON_INST_PREFIX
+
+/* RSH command */
+#undef RSHLAUNCH_CMD
+
+/* Default mode for rsh launch */
+#undef RSHLAUNCH_ENABLED
 
 /* Use LaunchMON for authentication" */
 #undef SECLMON

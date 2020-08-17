@@ -49,6 +49,7 @@ extern Launcher *createLaunchmonLauncher(spindle_args_t *params);
 extern Launcher *createSerialLauncher(spindle_args_t *params);
 extern Launcher *createHostbinLauncher(spindle_args_t *params);
 extern Launcher *createMPILauncher(spindle_args_t *params);
+extern Launcher *createLSFLauncher(spindle_args_t *params);
 
 Launcher *newLauncher(spindle_args_t *params)
 {
@@ -73,6 +74,10 @@ Launcher *newLauncher(spindle_args_t *params)
    else if (params->startup_type == startup_mpi) {
       debug_printf("Starting application with MPI startup\n");
       return createMPILauncher(params);
+   }
+   else if (params->startup_type == startup_lsf) {
+      debug_printf("Starting application with MPI startup\n");
+      return createLSFLauncher(params);      
    }
    err_printf("Mis-set use_launcher value: %d\n", (int) params->use_launcher);
    return NULL;
@@ -114,10 +119,24 @@ int main(int argc, char *argv[])
          fprintf(stderr, "Internal error while getting next spindle job\n");
          return -1;
       }
+      debug_printf2("Got %lu tasks.  Handling all\n", (unsigned long) tasks.size());
       
       for (vector<JobTask*>::iterator t = tasks.begin(); t != tasks.end(); t++) {
          JobTask *task = *t;
-         if (task->isJobDone()) {
+         debug_printf2("Handling task %s\n", task->task_str());
+         
+         if (task->isInit() && !initialized_spindle) {
+            debug_printf("Calling spindleInitFE\n");
+            const char **hosts = launcher->getProcessTable();
+            int iresult = spindleInitFE(hosts, params);
+            if (iresult == -1) {
+               err_printf("spindleInitFE returned an error\n");
+               return -1;
+            }
+            debug_printf("Done calling spindleInitFE\n");
+            initialized_spindle = true;            
+         }
+         else if (task->isJobDone()) {
             debug_printf("Job completed\n");
             app_id_t appid = task->getJobDoneID();
             int rc = task->getReturnCode();
@@ -167,10 +186,12 @@ int main(int argc, char *argv[])
             }
          }
          else if (task->isSessionShutdown()) {
-            debug_printf("Shutdown requested\n");
             if (session_shutdown) {
                debug_printf("Second shutdown request.  Forcing shutdown despite num_live_jobs = %d\n", num_live_jobs);
                do_shutdown = true;
+            }
+            else {
+               debug_printf("Shutdown requested for after current task\n");               
             }
             session_shutdown = true;            
          }
@@ -222,7 +243,13 @@ static bool getNextTask(Launcher *launcher, spindle_args_t *params, vector<JobTa
    int app_argc;
    char **app_argv;      
    static bool init_done = false;
-   if (!(params->opts & OPT_SESSION) && !init_done) {   
+
+   if (!init_done) {
+      JobTask *init = new JobTask();
+      init->setInit();
+      tasks.push_back(init);
+   }
+   if (!(params->opts & OPT_SESSION) && !init_done) {
       JobTask *runapp = new JobTask();
       getAppArgs(&app_argc, &app_argv);
       runapp->setLaunch(1, app_argc, app_argv);
@@ -236,6 +263,7 @@ static bool getNextTask(Launcher *launcher, spindle_args_t *params, vector<JobTa
       init_done = true;
       return true;
    }
+      
 
    int launcher_fd = launcher->getJobFinishFD();
    int session_fd = get_session_fd();

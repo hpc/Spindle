@@ -25,6 +25,7 @@ class JobTask
 private:
    enum {
       jt_none,
+      jt_init,
       jt_launch,
       jt_jobdone,
       jt_sessiondone,
@@ -53,7 +54,12 @@ public:
          free(app_argv);
       }      
    }
- 
+
+   void setInit()
+   {
+      task = jt_init;
+   }
+   
    void setLaunch(int appid_, int app_argc_, char **app_argv_) {
       task = jt_launch;
       app_argc = app_argc_;
@@ -76,6 +82,10 @@ public:
       returncode = rc;
    }
 
+   bool isInit() {
+      return task == jt_init;
+   }
+   
    bool isLaunch() {
       return (task == jt_launch);
    }
@@ -110,6 +120,18 @@ public:
    void setNoClean() {
       noclean = true;
    }
+
+   const char *task_str() {
+      switch (task) {
+         case jt_none: return "none";
+         case jt_init: return "init";
+         case jt_launch: return "launch";
+         case jt_jobdone: return "jobdone";
+         case jt_sessiondone: return "sessiondone";
+         case jt_daemondone: return "daemon_done";
+      }
+      return "<Unknown Task ID>";
+   }        
 };
 
 #endif

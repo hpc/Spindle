@@ -91,6 +91,12 @@
 /* Python installation prefixes */
 #undef PYTHON_INST_PREFIX
 
+/* RSH command */
+#undef RSHLAUNCH_CMD
+
+/* Default mode for rsh launch */
+#undef RSHLAUNCH_ENABLED
+
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
 

@@ -33,11 +33,11 @@ AC_DEFINE_UNQUOTED([SPINDLE_LOC],"[$SPINDLE_LOC]",[The default local directory f
 
 TESTRM=unknown
 AC_ARG_WITH(testrm,
-       [AS_HELP_STRING([--with-testrm=ARM],[])],
+       [AS_HELP_STRING([--with-testrm=ARG],[])],
        [TESTRM=${withval}],
        [])
 AC_ARG_WITH(rm,
-        [AS_HELP_STRING([--with-rm=ARG],[Default resource manager (valid options are 'slurm' and 'flux')])],
+        [AS_HELP_STRING([--with-rm=ARG],[Default resource manager (valid options are 'slurm', 'lrun', 'jsrun', and 'flux')])],
         [TESTRM=${withval}],
         [])
 if test "x$TESTRM" == "xunknown"; then
@@ -61,6 +61,15 @@ AC_ARG_WITH(hostbin,
             [AS_HELP_STRING([--with-hostbin=EXE],[Executable for returning host lists for jobs])],
             [AC_DEFINE_UNQUOTED([HOSTBIN_PATH],"[${withval}]",[Hostbin executable])],)
 
+#RSH mode settings
+AC_ARG_WITH(rsh-launch,
+            [AS_HELP_STRING([--with-rsh-launch],[Enable rsh launch mode by default for startup modes that support it])],
+            [AC_DEFINE_UNQUOTED([RSHLAUNCH_ENABLED],[1],[Default mode for rsh launch])],)
+
+AC_ARG_WITH(rsh-cmd,
+            [AS_HELP_STRING([--with-rsh-cmd=EXE],[Executable to use for rsh/ssh when running in rsh launch mode])],
+            [AC_DEFINE_UNQUOTED([RSHLAUNCH_CMD],"[${withval}]",[RSH command])],)
+            
 #Runmode detection (pipe/socket or cobo/msocket communications)
 if test "x$OS_BUILD" == "xlinux"; then
   CLIENT_SERVER_COM=pipes

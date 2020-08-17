@@ -446,7 +446,7 @@ static int run_exec_test(const char *prefix, const char *path, int expected)
          execvp(newpath, args);
       else
          execv(newpath, args);
-      exit(errno);
+      _exit(errno);
    }
 
    int status, result;
@@ -842,13 +842,13 @@ static void setup_forkmode() {
       newargv[gargc] = NULL;
       execv(newargv[0], newargv);
       err_printf("Failed to exec: %s\n", newargv[0]);
-      exit(-1);
+      _exit(-1);
    }
 }
 
 static int collect_forkmode(int passed) {
    if (!fork_child) {
-      exit(passed ? 0 : -1);
+      _exit(passed ? 0 : -1);
    }
    else {
       int status, result;

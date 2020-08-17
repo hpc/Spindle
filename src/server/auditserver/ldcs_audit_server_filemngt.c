@@ -90,7 +90,7 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
    char dirpart[MAX_NAME_LEN+1];
    char filepart[MAX_FILENAME_LEN+1];
    char *endslash, *lastslash;
-   const char *prefix;
+   const char *prefix = NULL;
    size_t dirpart_size, filepart_size;
    int cut_dirpart_slash;
 
@@ -456,7 +456,8 @@ int filemngt_write_ldsometadata(char *localname, ldso_info_t *ldsoinfo)
 
 static int filemngt_read_buffer(char *localname, char *buffer, size_t size)
 {
-   int result, bytes_read, fd;
+   int result, bytes_read, fd, error;
+   int eexist_count = 3;
 
    fd = open(localname, O_RDONLY);
    if (fd == -1) {
@@ -467,11 +468,13 @@ static int filemngt_read_buffer(char *localname, char *buffer, size_t size)
    bytes_read = 0;
 
    while (bytes_read != size) {
+      errno = 0;
       result = read(fd, buffer + bytes_read, size - bytes_read);
-      if (result <= 0) {
-         if (errno == EAGAIN || errno == EINTR)
+      if (result == -1) {
+         error = errno;
+         if (error == EAGAIN || error == EINTR)
             continue;
-         err_printf("Failed to read from file %s: %s\n", localname, strerror(errno));
+         err_printf("Failed to read from file %s of size %lu (already read %d): %s\n", localname, size, bytes_read, strerror(error));
          close(fd);
          return -1;
       }

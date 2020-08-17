@@ -130,6 +130,14 @@ static struct timeval tree_start, tree_end;
 #include "sion_debug.h"
 #endif
 
+static cobo_preconnect_cb_t preconnect_cb = NULL;
+
+void cobo_register_preconnect_cb(cobo_preconnect_cb_t f)
+{
+   preconnect_cb = f;
+}
+
+
 /* Return the number of secs as a double between two timeval structs (tv2-tv1) */
 static double cobo_getsecs(struct timeval* tv2, struct timeval* tv1)
 {
@@ -924,11 +932,24 @@ static int cobo_open_tree()
     cobo_compute_children();  
     /* cobo_compute_children_root_C1(); */
 
+    char **child_names = (char **) malloc(sizeof(char *) * cobo_num_child);
+    for (i = 0; i < cobo_num_child; i++) {
+       int c = cobo_child[i];
+       child_names[i] = cobo_expand_hostname(c);
+    }
+
+    /* Spindle can register a pre-connect callback, which can be used to
+       spawn daemons */
+    if (preconnect_cb) {
+       for (i = 0; i < cobo_num_child; i++)
+          preconnect_cb(child_names[i]);
+    }
+
     /* for each child, open socket connection and forward hostname table */
     for(i=0; i < cobo_num_child; i++) {
         /* get rank and hostname for this child */
         int c = cobo_child[i];
-        char* child_hostname = cobo_expand_hostname(c);
+        char* child_hostname = child_names[i];
 
         debug_printf3("%d: on COBO%02d: connect to child #%02d (%s)\n",i,cobo_me,c,child_hostname);
 
@@ -952,6 +973,8 @@ static int cobo_open_tree()
         /* free the child hostname string */
         free(child_hostname);
     }
+
+    free(child_names);
 
     return COBO_SUCCESS;
 }
@@ -1548,6 +1571,11 @@ int cobo_server_open(uint64_t sessionid, char** hostlist, int num_hosts, int* po
         offset += strlen(hostlist[i]) + 1;
     }
 
+    /* Spindle can register a pre-connect callback, which can be used to
+       spawn daemons */
+    if (preconnect_cb)
+       preconnect_cb(hostlist[0]);
+            
     /* copy the portlist */
     cobo_num_ports = num_ports;
     cobo_ports = cobo_int_dup(portlist, num_ports);

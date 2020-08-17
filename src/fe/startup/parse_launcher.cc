@@ -68,6 +68,8 @@ SRunParser *srunparser;
 SerialParser *serialparser;
 OpenMPIParser *openmpiparser;
 WreckRunParser *wreckrunparser;
+JSRunParser *jsrunparser;
+LRunParser *lrunparser;
 MarkerParser *markerparser;
 
 unsigned int default_launchers_enabled = 0
@@ -79,6 +81,12 @@ unsigned int default_launchers_enabled = 0
 #endif
 #if defined(ENABLE_WRECKRUN_LAUNCHER)
    | wreckrun_launcher
+#endif
+#if defined(ENABLE_JSRUN_LAUNCHER)
+   | jsrun_launcher
+#endif
+#if defined(ENABLE_LRUN_LAUNCHER)
+   | lrun_launcher
 #endif
    | marker_launcher;
 

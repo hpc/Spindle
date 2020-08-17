@@ -125,6 +125,8 @@ static cmdoption_t openmpi_options[] = {
    { "-xml-file", NULL,              FL_OPTIONAL_DASH | FL_PARAM },
    { "-xterm", NULL,                 FL_OPTIONAL_DASH | FL_PARAM }
 };
+
+
 static const char *openmpi_bg_env_str = "-x LD_AUDIT=%s -x LDCS_LOCATION=%s -x LDCS_NUMBER=%s -x LDCS_OPTIONS=%s LDCS_CACHESIZE=%s";
 static const unsigned int openmpi_size = (sizeof(openmpi_options) / sizeof(cmdoption_t));
 
@@ -231,6 +233,88 @@ static cmdoption_t wreckrun_options[] = {
 };
 static const char *wreck_bg_env_str = "";
 static const unsigned int wreckrun_size = (sizeof(wreckrun_options) / sizeof(cmdoption_t));
+
+#define JSRUN_OPTIONS                                 \
+   { "-a", "--tasks_per_rs",        FL_GNU_PARAM },   \
+   { "-p", "--np",                  FL_GNU_PARAM },   \
+   { "-c", "--cpu_per_rs",          FL_GNU_PARAM },   \
+   { "-d", "--launch_distribution", FL_GNU_PARAM },   \
+   { "-g", "--gpu_per_rs",          FL_GNU_PARAM },   \
+   { "-K", "--rs_per_socket",       FL_GNU_PARAM },   \
+   { "-l", "--latency_priority",    FL_GNU_PARAM },   \
+   { "-m", "--memory_per_rs",       FL_GNU_PARAM },   \
+   { "-n", "--nrs",                 FL_GNU_PARAM },   \
+   { "-r", "--rs_per_host",         FL_GNU_PARAM },   \
+   { "-e", "--stdio_mode",          FL_GNU_PARAM },   \
+   { "-f", "--appfile",             FL_GNU_PARAM | FL_CUSTOM_OPTION}, \
+   { "-I", "--stdin_rank",          FL_GNU_PARAM },   \
+   { "-k", "--stdio_stderr",        FL_GNU_PARAM },   \
+   { "-o", "--stdio_stdout",        FL_GNU_PARAM },   \
+   { "-t", "--stdio_input",         FL_GNU_PARAM },   \
+   { "-h", "--chdir",               FL_GNU_PARAM },   \
+   { "-A", "--allocate_only",       FL_GNU_PARAM },   \
+   { NULL, "--erf_input",           FL_GNU_PARAM },   \
+   { NULL, "--erf_output",          FL_GNU_PARAM },   \
+   { NULL, "--erf_output_pidx",     FL_GNU_PARAM },   \
+   { "-H", "--launch_node_task",    FL_GNU_PARAM },   \
+   { "-i", "--immediate",           0},               \
+   { "-J", "--use_reservation",     FL_GNU_PARAM },   \
+   { "-L", "--use_spindle",         FL_GNU_PARAM | FL_CUSTOM_OPTION }, \
+   { "-M", "--smpiargs",            FL_GNU_PARAM },   \
+   { "-P", "--pre_post_exec",       FL_GNU_PARAM },   \
+   { "-S", "--save_resources",      FL_GNU_PARAM },   \
+   { "-U", "--use_resources",       FL_GNU_PARAM },   \
+   { "-x", "--exclude_hosts",       FL_GNU_PARAM },   \
+   { "-X", "--exit_on_error",       FL_GNU_PARAM },   \
+   { "-Z", "--progress",            FL_GNU_PARAM },   \
+   { NULL, "--print_placement",     FL_GNU_PARAM },   \
+   { "-b", "--bind",                FL_GNU_PARAM },   \
+   { "-D", "--env_no_propagate",    FL_GNU_PARAM },   \
+   { "-E", "--env",                 FL_GNU_PARAM },   \
+   { "-F", "--env_eval",            FL_GNU_PARAM },   \
+   { "-?", "--help",                0},               \
+   { NULL, "--usage",               0},               \
+   { "-V", "--version",             0}
+
+static cmdoption_t jsrun_options[] = {
+   { "jsrun", NULL,                 FL_LAUNCHER },
+   JSRUN_OPTIONS
+};
+
+static const char *jsrun_bg_env_str = "";
+static const unsigned int jsrun_size = (sizeof(jsrun_options) / sizeof(cmdoption_t));
+
+static cmdoption_t lrun_options[] = {
+   { "lrun", NULL,                 FL_LAUNCHER },
+   { "-n", NULL,                   FL_GNU_PARAM },
+   { "-T", NULL,                   FL_GNU_PARAM },
+   { "-1", NULL,                   0 },
+   { "-N", NULL,                   FL_GNU_PARAM },
+   { NULL, "--adv_map",            0 },
+   { NULL, "--threads",            FL_GNU_PARAM },
+   { NULL, "--smt",                FL_GNU_PARAM },
+   { NULL, "--pack",               0 },
+   { NULL, "--mpibind",            FL_GNU_PARAM },
+   { "-c", NULL,                   FL_GNU_PARAM },
+   { "-g", NULL,                   FL_GNU_PARAM },
+   { "-W", NULL,                   FL_GNU_PARAM },
+   { NULL, "--bind",               FL_GNU_PARAM },
+   { NULL, "--mpibind",            FL_GNU_PARAM },
+   { NULL, "--gpubind",            FL_GNU_PARAM },
+   { NULL, "--core",               FL_GNU_PARAM },
+   { NULL, "--core_delay",         FL_GNU_PARAM },
+   { NULL, "--core_cpu",           FL_GNU_PARAM },
+   { NULL, "--core_gpu",           FL_GNU_PARAM },
+   { NULL, "--core_kill",          FL_GNU_PARAM },
+   { "-X", NULL,                   FL_GNU_PARAM },
+   { "-v", NULL,                   0 },
+   { "-vv", NULL,                  0 },
+   { "-vvv", NULL,                 0 },
+   JSRUN_OPTIONS
+};
+
+static const char *lrun_bg_env_str = "";
+static const unsigned int lrun_size = (sizeof(lrun_options) / sizeof(cmdoption_t));
 
 static cmdoption_t marker_options[] = {
    { NULL, NULL, 0 }
@@ -604,6 +688,48 @@ bool OpenMPIParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_
    exit(-1);
 }
 
+JSRunParser::JSRunParser(cmdoption_t *options, size_t options_size, string bg_string, string name_, int code_) :
+   LauncherParser(options, options_size, bg_string, name_, code_)
+{
+}
+
+JSRunParser::~JSRunParser()
+{
+}
+
+bool JSRunParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const
+{
+   if (strcmp(argv[arg_pos], "--use_spindle") == 0 || (strcmp(argv[arg_pos], "-L") == 0)) {
+      fprintf(stderr, "Error: Do not mix spindle job launch wrapper with the jsrun spindle option %s. "
+              "Use one or the other.\n", argv[arg_pos]);
+   }
+   else {
+      fprintf(stderr, "%s under jsrun is not yet supported by Spindle\n", argv[arg_pos]);
+   }
+   exit(-1);
+}
+
+LRunParser::LRunParser(cmdoption_t *options, size_t options_size, string bg_string, string name_, int code_) :
+   LauncherParser(options, options_size, bg_string, name_, code_)
+{
+}
+
+LRunParser::~LRunParser()
+{
+}
+
+bool LRunParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const
+{
+   if (strcmp(argv[arg_pos], "--use_spindle") == 0 || (strcmp(argv[arg_pos], "-L") == 0)) {
+      fprintf(stderr, "Error: Do not mix spindle job launch wrapper with the lrun spindle option %s. "
+              "Use one or the other.\n", argv[arg_pos]);
+   }
+   else {
+      fprintf(stderr, "%s under lrun is not yet supported by Spindle\n", argv[arg_pos]);
+   }
+   exit(-1);
+}
+
 MarkerParser::MarkerParser(cmdoption_t *options, size_t options_size, std::string bg_string, std::string name_, int code_) :
    LauncherParser(options, options_size, bg_string, name_, code_)
 {
@@ -674,6 +800,16 @@ void initParsers(int parsers_enabled, set<LauncherParser *> &all_parsers)
       if (!wreckrunparser)
          wreckrunparser = new WreckRunParser(wreckrun_options, wreckrun_size, wreck_bg_env_str, "wreckrun", wreckrun_launcher);
       all_parsers.insert(wreckrunparser);
+   }
+   if (parsers_enabled & jsrun_launcher) {
+      if (!jsrunparser)
+         jsrunparser = new JSRunParser(jsrun_options, jsrun_size, jsrun_bg_env_str, "jsrun", jsrun_launcher);
+      all_parsers.insert(jsrunparser);
+   }
+   if (parsers_enabled & lrun_launcher) {
+      if (!lrunparser)
+         lrunparser = new LRunParser(lrun_options, lrun_size, lrun_bg_env_str, "lrun", lrun_launcher);
+      all_parsers.insert(lrunparser);
    }
    if (parsers_enabled & marker_launcher) {
       if (!markerparser)

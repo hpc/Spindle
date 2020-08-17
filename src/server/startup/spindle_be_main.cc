@@ -22,8 +22,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "config.h"
 #include "cleanup_proc.h"
+#include "rshlaunch.h"
 
-static void setupLogging();
+static void setupLogging(int argc, char **argv);
 static int parseCommandLine(int argc, char *argv[]);
 
 #if defined(HAVE_LMON)
@@ -38,7 +39,8 @@ enum startup_type_t {
    serial,
    hostbin,
    mpilaunch,
-   selflaunch
+   selflaunch,
+   rshlaunch
 };
 startup_type_t startup_type;
 static int security_type;
@@ -50,7 +52,7 @@ static unique_id_t unique_id;
 int main(int argc, char *argv[])
 {
    int  result;
-   setupLogging();
+   setupLogging(argc, argv);
 
    debug_printf("Spindle Server Cmdline: ");
    for (int i=0; i<argc; i++) {
@@ -58,6 +60,9 @@ int main(int argc, char *argv[])
    }
    bare_printf("\n");
 
+   //Init RSH launch mode first.  Does nothing if rsh launch isn't enabled.
+   init_rsh_launch_be(argc, argv);
+   
    result = parseCommandLine(argc, argv);
    if (result == -1) {
       err_printf("Could not parse command line\n");
@@ -79,6 +84,8 @@ int main(int argc, char *argv[])
       case hostbin:
          result = startHostbinBE(port, num_ports, unique_id, security_type);
          break;
+      case rshlaunch:
+         //RSH needs same behvaior as MPILaunch
       case mpilaunch:
          result = startMPILaunchBE(port, num_ports, unique_id, security_type);
          break;
@@ -92,8 +99,19 @@ int main(int argc, char *argv[])
    return result;
 }
 
-static void setupLogging()
+static void setupLogging(int argc, char **argv)
 {
+   if (strcmp(argv[1], "--spindle_debuglevel") == 0 && argc > 2) {
+      if (strcmp(argv[2], "0") != 0)
+         setenv("SPINDLE_DEBUG", argv[2], 1);
+   }
+   if (strcmp(argv[3], "--pwd") == 0 && argc > 4) {
+      chdir(argv[4]);
+   }
+   if (strcmp(argv[5], "--test") == 0 && argc > 6) {
+      if (strcmp(argv[6], "0") != 0)
+         setenv("SPINDLE_TEST", argv[6], 1);
+   }
    LOGGING_INIT(const_cast<char *>("Server"));
    if (!spindle_debug_output_f)
       return;
@@ -132,6 +150,11 @@ static int parseCommandLine(int argc, char *argv[])
          startup_type = selflaunch;
          break;
       }
+      else if (strcmp(argv[i], "--spindle_rshlaunch") == 0) {
+         startup_type = rshlaunch;
+         i++; //skip rsh command
+         break;
+      }
    }
 
    if (++i >= argc) return -1;   
@@ -140,7 +163,7 @@ static int parseCommandLine(int argc, char *argv[])
    if (++i >= argc) return -1;   
    number = atoi(argv[i]);
 
-   if (startup_type == hostbin || startup_type == mpilaunch || startup_type == selflaunch) {
+   if (startup_type == hostbin || startup_type == mpilaunch || startup_type == selflaunch || startup_type == rshlaunch) {
       if (++i >= argc) return -1;
       port = atoi(argv[i]);
       if (++i >= argc) return -1;

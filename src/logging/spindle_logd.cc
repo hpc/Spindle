@@ -61,6 +61,8 @@ MsgReader *test_reader;
 bool runTests = false;
 bool runDebug = false;
 
+bool shouldExit = false;
+
 static unsigned char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
 
 class UniqueProcess
@@ -183,7 +185,7 @@ public:
    {
       if (isExitCode(msg1, msg1_size, msg2, msg2_size)) {
          /* We've received the exitcode */
-         cleanFiles();
+         shouldExit = true;
          return;
       }
 
@@ -360,7 +362,7 @@ public:
    {
       if (isExitCode(msg1, msg1_size, msg2, msg2_size)) {
          /* We've received the exitcode */
-         cleanFiles();
+         shouldExit = true;
          return;
       }
       
@@ -469,6 +471,10 @@ private:
                }
             }
          } while (foundShutdownProc);
+
+         if (conns.empty() && shouldExit) {
+            return false;
+         }         
       }
    }
 
@@ -529,6 +535,7 @@ private:
    void *main_loop()
    {
       while (waitAndHandleMessage());
+      cleanFiles();
       return NULL;
    }
 
@@ -662,7 +669,7 @@ void cleanFiles()
       test_reader->cleanFile();
 }
 
-void on_sig(int)
+void on_sig(int sig)
 {
    clean();
    exit(0);

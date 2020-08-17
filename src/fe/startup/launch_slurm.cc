@@ -16,6 +16,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "launcher.h"
 #include "spindle_debug.h"
+#include "parseargs.h"
 
 #include <string>
 #include <vector>
@@ -38,6 +39,7 @@ class SlurmLauncher : public ForkLauncher
 private:
    int nnodes;
    bool initError;
+   bool useRSH;
    set<char *> hostset;
    static SlurmLauncher *slauncher;
 protected:
@@ -49,6 +51,8 @@ public:
    virtual const char **getProcessTable();
    virtual const char *getDaemonArg();
    virtual void getSecondaryDaemonArgs(vector<const char *> &secondary_args);
+   virtual bool getReturnCodes(bool &daemon_done, int &daemon_ret,
+                               std::vector<std::pair<app_id_t, int> > &app_rets);
 };
 
 SlurmLauncher *SlurmLauncher::slauncher = NULL;
@@ -57,8 +61,10 @@ Launcher *createSlurmLauncher(spindle_args_t *params)
 {
    assert(!SlurmLauncher::slauncher);
    SlurmLauncher::slauncher = new SlurmLauncher(params);
-   if (SlurmLauncher::slauncher->initError)
+   if (SlurmLauncher::slauncher->initError) {
       delete SlurmLauncher::slauncher;
+      SlurmLauncher::slauncher = NULL;
+   }
    return SlurmLauncher::slauncher;
 }
 
@@ -67,6 +73,12 @@ SlurmLauncher::SlurmLauncher(spindle_args_t *params_) :
    nnodes(0),
    initError(false)
 {
+   useRSH = (bool) getUseRSH();
+   if (useRSH) {
+      params_->opts |= OPT_RSHLAUNCH;
+   }      
+   params_->opts |= OPT_PERSIST;
+
    char *nodelist_str = getenv("SLURM_NODELIST");
    if (!nodelist_str)
       nodelist_str = getenv("SLURM_JOB_NODLIST");
@@ -133,6 +145,11 @@ SlurmLauncher::~SlurmLauncher()
 
 bool SlurmLauncher::spawnDaemon()
 {
+   if (useRSH) {
+      debug_printf("RSH launch mode enabled.  Slurm launcher not manually spawning daemons\n");
+      return true;
+   }
+   
    daemon_pid = fork();
    if (daemon_pid == -1) {
       err_printf("Failed to fork process for daemon: %s\n", strerror(errno));
@@ -224,6 +241,9 @@ const char *SlurmLauncher::getDaemonArg()
 
 void SlurmLauncher::getSecondaryDaemonArgs(vector<const char *> &secondary_args)
 {
+   if (useRSH)
+      return;
+   
    char port_str[32], ss_str[32], port_num_str[32];
    snprintf(port_str, 32, "%d", params->port);
    snprintf(port_num_str, 32, "%d", params->num_ports);
@@ -233,3 +253,13 @@ void SlurmLauncher::getSecondaryDaemonArgs(vector<const char *> &secondary_args)
    secondary_args.push_back(strdup(ss_str));
 }
 
+bool SlurmLauncher::getReturnCodes(bool &daemon_done, int &daemon_ret,
+                                   std::vector<std::pair<app_id_t, int> > &app_rets)
+{   
+   if (!daemon_pid && useRSH) {
+      daemon_pid = getRSHPidFE();
+      debug_printf3("Marked daemon pid as %d\n", (int) daemon_pid);
+      markRSHPidReapedFE();
+   }
+   return ForkLauncher::getReturnCodes(daemon_done, daemon_ret, app_rets);
+}

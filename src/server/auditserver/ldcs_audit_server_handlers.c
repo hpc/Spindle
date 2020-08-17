@@ -2349,7 +2349,7 @@ static int handle_load_and_broadcast_metadata(ldcs_process_data_t *procdata, cha
    }
 
    if (localpath) {
-      if (mdtype == metadata_stat || metadata_lstat) {
+      if (mdtype == metadata_stat || mdtype == metadata_lstat) {
          result = filemngt_read_stat(localpath, &buf);
          buffer = (unsigned char *) &buf;
          buffer_size = sizeof(buf);

@@ -3,8 +3,8 @@ lib_LTLIBRARIES = libspindlebe.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
-CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c
-CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DTRACK_MKDIR -DLOOKUP_PREV_MKDIR
+CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c 
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DTRACK_MKDIR -DLOOKUP_PREV_MKDIR -DLIBEXECDIR=\"$(pkglibexecdir)\"
 CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la -ldl
 if COBO
 CORE_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la
@@ -30,7 +30,7 @@ libspindlebe_la_LDFLAGS = -version-info $(SPINDLEBE_LIB_VERSION)
 
 spindle_be_LDFLAGS = -static
 spindle_be_CPPFLAGS = $(CORE_CPPFLAGS)
-spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be_mpilaunch.cc $(CORE_SOURCES)
+spindle_be_SOURCES = spindle_be_main.cc spindle_be_serial.cc spindle_be_hostbin.cc spindle_be_mpilaunch.cc $(top_srcdir)/../utils/rshlaunch.c $(CORE_SOURCES)
 spindle_be_LDADD = $(CORE_LDADD) $(MUNGE_LIBS)
 
 if LINK_LIBSTDCXX_STATIC

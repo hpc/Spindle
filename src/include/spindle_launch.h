@@ -15,6 +15,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <stdint.h>
+#include <unistd.h>
 
 #if !defined(SPINDLE_LAUNCH_H_)
 #define SPINDLE_LAUNCH_H_
@@ -54,6 +55,7 @@ extern "C" {
 #define OPT_SELFLAUNCH (1 << 24)            /* Use a startup mode where the clients launch the daemon */
 #define OPT_BEEXIT     (1 << 25)            /* Block exit until each backend calls spindleExitBE */
 #define OPT_PROCCLEAN  (1 << 26)            /* Use a dedicated process to run cleanup routines after Spindle exits */
+#define OPT_RSHLAUNCH  (1 << 27)            /* Launch BEs via an rsh/ssh tree */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
@@ -71,6 +73,8 @@ extern "C" {
 #define external_launcher (1 << 5)          /* An external mechanism starts application */
 #define unknown_launcher (1 << 5)           /* Deprecated alias for external launcher */
 #define slurm_plugin_launcher (1 << 6)      /* Launched via a SLURM spank plugin */
+#define jsrun_launcher (1 << 7)             /* Launched via IBM's jsrun launcher */
+#define lrun_launcher (1 << 8)              /* Launched via LLNL's wrappers around jsrun */
 
 /* Possible values for startup_type, describe how Spindle servers are started */
 #define startup_serial 0                    /* Job is non-parallel app, and server is forked/exec */
@@ -79,6 +83,7 @@ extern "C" {
 #define startup_external 3                  /* An external mechanism starts Spindle */
 #define startup_mpi 4                       /* Start via the MPI launcher */
 #define startup_unknown 5                   /* Unknown launch mechanism */
+#define startup_lsf 6                       /* LSF launcher from IBM*/
 
 typedef uint64_t unique_id_t;
 typedef uint64_t opt_t;
@@ -170,6 +175,24 @@ SPINDLE_EXPORT int fillInSpindleArgsCmdlineFE(spindle_args_t *params, unsigned i
      mpirun -n 512 SPINDLE_ARGV[] mpi_app 
 */
 SPINDLE_EXPORT int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spindle_argv);
+
+
+/* If spindle is launched with OPT_RSHLAUNCH enabled, then this function will return 
+   the pid of the rsh/ssh process at the top of the tree.  That process will terminate
+   when the spindle session ends.
+
+   This function only returns a valid value on the FE after spindleInitFE is called.
+
+   This function return (pid_t) -1 on error.
+*/
+SPINDLE_EXPORT pid_t getRSHPidFE();
+
+/* If spindle is launched with OPT_RSHLAUNCH enabled, then this function can be used
+   to tell spindle if the top-of-tree RSH process has already been reaped via
+   wait/waitpid by code above spindle_launch.  If the top-of-tree process has not 
+   been reaped, then spindle will collect it in spindleCloseBE.
+*/
+SPINDLE_EXPORT void markRSHPidReapedFE();
 
 /* Runs the server process on a BE, returns when server is done */
 SPINDLE_EXPORT int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,

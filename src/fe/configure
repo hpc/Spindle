@@ -818,6 +818,8 @@ with_testrm
 with_rm
 enable_bluegene
 with_hostbin
+with_rsh_launch
+with_rsh_cmd
 enable_pipes
 enable_socket
 enable_shmem
@@ -844,6 +846,8 @@ with_launchmon_rmcommdir
 enable_slurm
 enable_openmpi
 enable_wreck
+enable_lrun
+enable_jsrun
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1513,6 +1517,8 @@ Optional Features:
   --enable-slurm          Enable support for the SLURM job launcher
   --enable-openmpi        Enable support for the OpenMPI job launcher
   --enable-wreck          Enable support for the Wreck job launcher
+  --enable-lrun           Enable support for LLNL's lrun job launcher
+  --enable-jsrun          Enable support for IBM's jsrun job launcher
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1527,10 +1533,14 @@ Optional Packages:
                           Number of TCP/IP ports to scan for Spindle server
                           communication
   --with-localstorage=DIR Directory on back-ends for storing relocated files
-  --with-testrm=ARM
-  --with-rm=ARG           Default resource manager (valid options are 'slurm'
-                          and 'flux')
+  --with-testrm=ARG
+  --with-rm=ARG           Default resource manager (valid options are 'slurm',
+                          'lrun', 'jsrun', and 'flux')
   --with-hostbin=EXE      Executable for returning host lists for jobs
+  --with-rsh-launch       Enable rsh launch mode by default for startup modes
+                          that support it
+  --with-rsh-cmd=EXE      Executable to use for rsh/ssh when running in rsh
+                          launch mode
   --with-python-prefix=STR
                           List of directories containing python installs
   --with-usage-logging=FILE
@@ -16397,6 +16407,29 @@ _ACEOF
 fi
 
 
+#RSH mode settings
+
+# Check whether --with-rsh-launch was given.
+if test "${with_rsh_launch+set}" = set; then :
+  withval=$with_rsh_launch;
+cat >>confdefs.h <<_ACEOF
+#define RSHLAUNCH_ENABLED 1
+_ACEOF
+
+fi
+
+
+
+# Check whether --with-rsh-cmd was given.
+if test "${with_rsh_cmd+set}" = set; then :
+  withval=$with_rsh_cmd;
+cat >>confdefs.h <<_ACEOF
+#define RSHLAUNCH_CMD "${withval}"
+_ACEOF
+
+fi
+
+
 #Runmode detection (pipe/socket or cobo/msocket communications)
 if test "x$OS_BUILD" == "xlinux"; then
   CLIENT_SERVER_COM=pipes
@@ -17250,10 +17283,45 @@ if test "${enable_wreck+set}" = set; then :
 fi
 
 
+# Check whether --enable-lrun was given.
+if test "${enable_lrun+set}" = set; then :
+  enableval=$enable_lrun; ENABLE_LRUN="true",EXPLICIT_RM="true"
+fi
+
+
+# Check whether --enable-jsrun was given.
+if test "${enable_jsrun+set}" = set; then :
+  enableval=$enable_jsrun; ENABLE_JSRUN="true",EXPLICIT_RM="true"
+fi
+
+
+if test "x$TESTRM" != "xunknown"; then
+  EXPLICIT_RM="true"
+fi
+
 if test "x$EXPLICIT_RM" != "xtrue"; then
    ENABLE_SLURM="true"
    ENABLE_OPENMPI="true"
    ENABLE_WRECK="true"
+   ENABLE_LRUN="true"
+   ENABLE_JSRUN="true"
+fi
+
+if test "x$TESTRM" == "xslurm"; then
+   ENABLE_SLURM="true"
+fi
+if test "x$TESTRM" == "xflux"; then
+   ENABLE_WRECK="true"
+fi
+if test "x$TESTRM" == "xlrun"; then
+   ENABLE_LRUN="true"
+fi
+if test "x$TESTRM" == "xjsrun"; then
+   ENABLE_JSRUN="true"
+fi
+
+if test "x$ENABLE_LRUN" == "xtrue"; then
+   ENABLE_JSRUN="true"
 fi
 
 if test "x$ENABLE_SLURM" == "xtrue"; then
@@ -17269,6 +17337,16 @@ fi
 if test "x$ENABLE_WRECK" == "xtrue"; then
 
 $as_echo "#define ENABLE_WRECKRUN_LAUNCHER 1" >>confdefs.h
+
+fi
+if test "x$ENABLE_LRUN" == "xtrue"; then
+
+$as_echo "#define ENABLE_LRUN_LAUNCHER 1" >>confdefs.h
+
+fi
+if test "x$ENABLE_JSRUN" == "xtrue"; then
+
+$as_echo "#define ENABLE_JSRUN_LAUNCHER 1" >>confdefs.h
 
 fi
 
