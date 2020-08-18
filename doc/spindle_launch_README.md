@@ -9,11 +9,11 @@ Overview
 --------
 
 While Spindle comes with several mechanisms for launching (launchmon,
-hostbin, slurm, and serial as of v0.13), each of these has disadvantages such
-as in-operatability with debuggers (launchmon), difficult to use
-(hostbin), or of limited scope (serial). In the ideal case Spindle
-should be integrated directly into a job launcher, which can easily
-perform the necessary actions of starting the servers, managing the job
+hostbin, slurm, LSF, and serial as of v0.13), each of these has 
+disadvantages such as in-operatability with debuggers (launchmon), 
+difficult to use (hostbin), or of limited scope (serial). In the ideal 
+case Spindle should be integrated directly into a job launcher, which can 
+easily perform the necessary actions of starting the servers, managing the job
 lifetime, and helping Spindle establish connections. This document
 describes the API for integrating Spindle into job launchers.
 
@@ -113,6 +113,15 @@ we have to break ABI compatibility.
         high-latency networks.
    -    'OPT_BEEXIT' - Spindle will block its exit until each BE has
         had 'spindleExitBE()' called on it.
+   -    'OPT_PROCCLEAN' - Spindle will launch a dedicated process to do
+        cleaning operations for after spindle exits.  Can be useful for
+        ensuring cleaning happens in less-stable environments.
+   -    'OPT_RSHLAUNCH' - When mixed with compatible launch modes, spindle 
+        will start its daemons with a tree of RSH/SSH commands.  Enabling
+        this mode means you don't have to manually start the BE with
+        `spindleRunBE()`.  Whether the daemons are launched via ssh or rsh
+        can be controlled through command arguments, configure, or an
+        environment variable (SPINDLE_RSH).
 
 - `typedef struct { ... } spindle_args_t`
 
@@ -290,6 +299,21 @@ of hostnames used in the job. The FE API functions are:
 
     This function return 0 on success and non-0 on error.
 
+-   `pid_t getRSHPidFE()`
+
+    If the spindle FE is initialized with OPT_RSHLAUNCH set, then the
+    spindle daemons will be launched with a tree of RSH processes.  
+    This function will return the pid of the rsh command at the top
+    of the tree.  This process will exit when Spindle shuts down.
+
+-   `markRSHPidReapedFE()`
+
+    This function should be called if the spindle FE was initialized 
+    with OPT_RSHLAUNCH, and the RM collects the rsh pid (via waitpid 
+    or wait) for spinlde.  If this function hasn't been been called then 
+    Spindle will try to collect the RSH process in spindleCloseFE(), which
+    could lead to hangs if the process has already been collected.
+   
 The BackEnd API
 ---------------
 

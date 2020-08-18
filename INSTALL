@@ -101,8 +101,27 @@ run 'configure --help' to see them all.
 
 3) Specify a start-up mechanism that works on your cluster
 
-Spindle prefers to use LaunchMON
-(http://sourceforge.net/projects/launchmon) to start its daemons, but
+If you're integrating Spindle with SLURM, then you can use Spindle's slurm
+wrappers, and optionally use Spindle's slurm plugin.  The wrappers can be
+enabled by --with-rm=slurm.  These let you run spindle on slurm by invoking
+"spindle srun ...".  But you have to get a SLURM allocation before running 
+spindle/srun.  You can also build a SLURM plugin by adding the 
+--enable-slurm-plugin option to configure.  By putting the resulting plugin
+file libspindleslurm.so into SLURM's plugstack.conf, you can run Spindle 
+with "srun --spindle ...".  This mode does not nead an allocation already
+setup when you invoke srun (but it doesn't hurt to have one).  The ideal 
+launch mode would be to enable both.
+
+If you're integrating Spindle with IBM's LSF, then you can use IBM's built-in
+LSF integration, or you can enable Spindle's jsrun/lrun wrappers.  See IBM's
+documentation for using their built-in Spindle integration--it's invoked 
+with something similar to "jsrun --use_spindle=1".  To enable Spindle's 
+LSF wrapper, configure spindle with the "--with-rm=jsrun" (if building
+Spindle with LLNL's lrun wrappers to jsrun, then use --with-rm=lrun).  
+This will let you run Spindle with "spindle jsrun ...".
+
+Otherwise, you can use LaunchMON
+(http://sourceforge.net/projects/launchmon) to start spindle, but
 that won't work on all clusters.  LaunchMON is normally used for
 starting debuggers on clusters, but Spindle has different requirements
 than debuggers.  One way to tell if Spindle/LaunchMON will work on

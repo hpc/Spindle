@@ -457,7 +457,6 @@ int filemngt_write_ldsometadata(char *localname, ldso_info_t *ldsoinfo)
 static int filemngt_read_buffer(char *localname, char *buffer, size_t size)
 {
    int result, bytes_read, fd, error;
-   int eexist_count = 3;
 
    fd = open(localname, O_RDONLY);
    if (fd == -1) {

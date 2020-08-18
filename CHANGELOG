@@ -1,3 +1,11 @@
+Spindle 0.13
+-----------
+  - Fix handling of ORIGIN when it appears in .so libraries.
+  - Can now wrap IBM's jsrun (and the LLNL alias lrun) with spindle.
+  - New SLURM plugin for launching spindle with "srun --spindle ..."
+  - New spindle launch mode that starts up daemons via an rsh/ssh tree
+  - New interfaces in spindle_launch for easier RM integration.
+
 Spindle 0.12
 -----------
   - Fixes for handling libraries with aliases, such as the same library loaded twice under two different symlink paths
