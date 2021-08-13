@@ -64,11 +64,62 @@ AC_ARG_WITH(hostbin,
 #RSH mode settings
 AC_ARG_WITH(rsh-launch,
             [AS_HELP_STRING([--with-rsh-launch],[Enable rsh launch mode by default for startup modes that support it])],
-            [AC_DEFINE_UNQUOTED([RSHLAUNCH_ENABLED],[1],[Default mode for rsh launch])],)
+            [ENABLE_RSH_LAUNCH=1],)
 
 AC_ARG_WITH(rsh-cmd,
             [AS_HELP_STRING([--with-rsh-cmd=EXE],[Executable to use for rsh/ssh when running in rsh launch mode])],
             [AC_DEFINE_UNQUOTED([RSHLAUNCH_CMD],"[${withval}]",[RSH command])],)
+
+AC_ARG_WITH(slurm-launch,
+            [AS_HELP_STRING([--with-slurm-launch],[Enable using slurm to launch spindle daemons])],
+            [ENABLE_SLURM_LAUNCH=1],)
+
+BROKEN_SRUN=0
+bad_srun_major=20
+bad_srun_minor=11
+good_srun_major=0
+good_srun_minor=0
+if test "x$TESTRM" == "xslurm"; then
+  AC_PATH_PROG(SRUN_PATH, "srun", "none")
+  if test "x$SRUN_PATH" == "xnone"; then
+     AC_MSG_ERROR([Slurm support was requested but could not find srun in PATH])
+  fi
+  AC_MSG_CHECKING([slurm version for compatibility])
+  srun_version=`${SRUN_PATH} --version | cut -d ' ' -f 2`
+  srun_major=`echo $srun_version | cut -d . -f 1`
+  srun_minor=`echo $srun_version | cut -d . -f 2`
+  srun_point=`echo $srun_version | cut -d . -f 3`
+  if ( [[ "$srun_major" == "$bad_srun_major" ]] && [[ $srun_minor -ge $bad_srun_minor ]] ) || [[ $srun_major -gt $bad_srun_major ]] ; then BROKEN_SRUN=1; fi
+  if test "x$good_srun_major" != "x0"; then
+    if ( [[ "$srun_major" == "$good_srun_major" ]] && [[ $srun_minor -ge $good_srun_minor ]] ) || [[ $srun_major -gt $good_srun_major ]] ; then BROKEN_SRUN=0; fi
+  fi
+  
+  if test "x$BROKEN_SRUN" == "x1"; then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+  fi
+
+  if [[ "x$ENABLE_SLURM_LAUNCH" == "x1" ]] && [[ "x$BROKEN_SRUN" == "x1" ]] ; then
+    AC_MSG_WARN([Slurm launching was explicitly requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You might still be able to get spindle to work by running jobs with srun's --overlap option.  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster.])
+  fi
+  
+  if [[ "x$ENABLE_RSH_LAUNCH" != "x1" ]] && [[ "x$ENABLE_SLURM_LAUNCH" != "x1" ]] ; then
+    if test "x$BROKEN_SRUN" == "x1"; then
+      AC_MSG_ERROR([Slurm support was requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You can disable this error message and build spindle with slurm-based daemon launching anyways by explicitly passing the --with-slurm-launch option (you might still be able to get spindle to work by running jobs with srun's --overlap option).  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster.])
+    else
+      ENABLE_SLURM_LAUNCH=1
+    fi
+  fi
+fi
+
+if test "x$ENABLE_SLURM_LAUNCH" == "x1"; then
+   AC_DEFINE_UNQUOTED([SLURMLAUNCH_ENABLED],[1],[Default mode for slurm launch])
+fi
+if test "x$ENABLE_RSH_LAUNCH" == "x1"; then
+  AC_DEFINE_UNQUOTED([RSHLAUNCH_ENABLED],[1],[Default mode for rsh launch])
+fi
+AC_DEFINE_UNQUOTED([BROKEN_SRUN],[1],[Whether we are using a broken srun])
             
 #Runmode detection (pipe/socket or cobo/msocket communications)
 if test "x$OS_BUILD" == "xlinux"; then

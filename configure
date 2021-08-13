@@ -689,6 +689,7 @@ SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
+SRUN_PATH
 TESTRM
 AR_FLAGS
 CXXCPP
@@ -835,6 +836,7 @@ enable_bluegene
 with_hostbin
 with_rsh_launch
 with_rsh_cmd
+with_slurm_launch
 enable_pipes
 enable_socket
 enable_shmem
@@ -1559,6 +1561,7 @@ Optional Packages:
                           that support it
   --with-rsh-cmd=EXE      Executable to use for rsh/ssh when running in rsh
                           launch mode
+  --with-slurm-launch     Enable using slurm to launch spindle daemons
   --with-python-prefix=STR
                           List of directories containing python installs
   --with-usage-logging=FILE
@@ -16350,11 +16353,7 @@ fi
 
 # Check whether --with-rsh-launch was given.
 if test "${with_rsh_launch+set}" = set; then :
-  withval=$with_rsh_launch;
-cat >>confdefs.h <<_ACEOF
-#define RSHLAUNCH_ENABLED 1
-_ACEOF
-
+  withval=$with_rsh_launch; ENABLE_RSH_LAUNCH=1
 fi
 
 
@@ -16367,6 +16366,116 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
+
+
+
+# Check whether --with-slurm-launch was given.
+if test "${with_slurm_launch+set}" = set; then :
+  withval=$with_slurm_launch; ENABLE_SLURM_LAUNCH=1
+fi
+
+
+BROKEN_SRUN=0
+bad_srun_major=20
+bad_srun_minor=11
+good_srun_major=0
+good_srun_minor=0
+if test "x$TESTRM" == "xslurm"; then
+  # Extract the first word of ""srun"", so it can be a program name with args.
+set dummy "srun"; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SRUN_PATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SRUN_PATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SRUN_PATH="$SRUN_PATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SRUN_PATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_SRUN_PATH" && ac_cv_path_SRUN_PATH=""none""
+  ;;
+esac
+fi
+SRUN_PATH=$ac_cv_path_SRUN_PATH
+if test -n "$SRUN_PATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SRUN_PATH" >&5
+$as_echo "$SRUN_PATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "x$SRUN_PATH" == "xnone"; then
+     as_fn_error $? "Slurm support was requested but could not find srun in PATH" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking slurm version for compatibility" >&5
+$as_echo_n "checking slurm version for compatibility... " >&6; }
+  srun_version=`${SRUN_PATH} --version | cut -d ' ' -f 2`
+  srun_major=`echo $srun_version | cut -d . -f 1`
+  srun_minor=`echo $srun_version | cut -d . -f 2`
+  srun_point=`echo $srun_version | cut -d . -f 3`
+  if ( [ "$srun_major" == "$bad_srun_major" ] && [ $srun_minor -ge $bad_srun_minor ] ) || [ $srun_major -gt $bad_srun_major ] ; then BROKEN_SRUN=1; fi
+  if test "x$good_srun_major" != "x0"; then
+    if ( [ "$srun_major" == "$good_srun_major" ] && [ $srun_minor -ge $good_srun_minor ] ) || [ $srun_major -gt $good_srun_major ] ; then BROKEN_SRUN=0; fi
+  fi
+
+  if test "x$BROKEN_SRUN" == "x1"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  fi
+
+  if [ "x$ENABLE_SLURM_LAUNCH" == "x1" ] && [ "x$BROKEN_SRUN" == "x1" ] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Slurm launching was explicitly requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You might still be able to get spindle to work by running jobs with srun's --overlap option.  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster." >&5
+$as_echo "$as_me: WARNING: Slurm launching was explicitly requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You might still be able to get spindle to work by running jobs with srun's --overlap option.  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster." >&2;}
+  fi
+
+  if [ "x$ENABLE_RSH_LAUNCH" != "x1" ] && [ "x$ENABLE_SLURM_LAUNCH" != "x1" ] ; then
+    if test "x$BROKEN_SRUN" == "x1"; then
+      as_fn_error $? "Slurm support was requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You can disable this error message and build spindle with slurm-based daemon launching anyways by explicitly passing the --with-slurm-launch option (you might still be able to get spindle to work by running jobs with srun's --overlap option).  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster." "$LINENO" 5
+    else
+      ENABLE_SLURM_LAUNCH=1
+    fi
+  fi
+fi
+
+if test "x$ENABLE_SLURM_LAUNCH" == "x1"; then
+
+cat >>confdefs.h <<_ACEOF
+#define SLURMLAUNCH_ENABLED 1
+_ACEOF
+
+fi
+if test "x$ENABLE_RSH_LAUNCH" == "x1"; then
+
+cat >>confdefs.h <<_ACEOF
+#define RSHLAUNCH_ENABLED 1
+_ACEOF
+
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define BROKEN_SRUN 1
+_ACEOF
 
 
 #Runmode detection (pipe/socket or cobo/msocket communications)
