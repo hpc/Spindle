@@ -648,14 +648,14 @@ BE_LIBS
 BE_LDFLAGS
 BE_CFLAGS
 BE_CC
+BLD_TESTSUITE_FALSE
+BLD_TESTSUITE_TRUE
 MPI_CXXLDFLAGS
 MPI_CXXFLAGS
 MPICXX
 MPI_CLDFLAGS
 MPI_CFLAGS
 MPICC
-BLD_TESTSUITE_FALSE
-BLD_TESTSUITE_TRUE
 LMON_DYNAMIC_FALSE
 LMON_DYNAMIC_TRUE
 LMON_FALSE
@@ -17155,14 +17155,6 @@ else
   BUILD_TESTSUITE=yes
 fi
 
- if test "x$BUILD_TESTSUITE" == "xyes"; then
-  BLD_TESTSUITE_TRUE=
-  BLD_TESTSUITE_FALSE='#'
-else
-  BLD_TESTSUITE_TRUE='#'
-  BLD_TESTSUITE_FALSE=
-fi
-
 
 #################################################################################################
 # Copyright (c) 2010, Lawrence Livermore National Security, LLC.
@@ -17865,6 +17857,22 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+if test "x$have_C_mpi" == "xno"; then
+  if test "x$BUILD_TESTSUITE" == "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: MPI compilers were not detected.  Disabling testsuite build" >&5
+$as_echo "$as_me: WARNING: MPI compilers were not detected.  Disabling testsuite build" >&2;}
+  fi
+  BUILD_TESTSUITE=no
+fi
+ if test "x$BUILD_TESTSUITE" == "xyes"; then
+  BLD_TESTSUITE_TRUE=
+  BLD_TESTSUITE_FALSE='#'
+else
+  BLD_TESTSUITE_TRUE='#'
+  BLD_TESTSUITE_FALSE=
+fi
 
 
 

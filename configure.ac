@@ -25,7 +25,6 @@ AC_ARG_ENABLE(testsuite,
               [AS_HELP_STRING([--enable-testsuite],[Chooses whether to build the Spindle testsuite. Default yes])],
               [BUILD_TESTSUITE=${enableval}],
               [BUILD_TESTSUITE=yes])
-AM_CONDITIONAL([BLD_TESTSUITE], [test "x$BUILD_TESTSUITE" == "xyes"])
 
 m4_include([m4/lx_find_mpi.m4])
 AC_LANG_PUSH(C)
@@ -33,6 +32,14 @@ LX_FIND_MPI
 AC_LANG(C++)
 LX_FIND_MPI
 AC_LANG_POP
+
+if test "x$have_C_mpi" == "xno"; then
+  if test "x$BUILD_TESTSUITE" == "xyes"; then
+    AC_MSG_WARN([MPI compilers were not detected.  Disabling testsuite build])
+  fi
+  BUILD_TESTSUITE=no
+fi
+AM_CONDITIONAL([BLD_TESTSUITE], [test "x$BUILD_TESTSUITE" == "xyes"])
 
 AC_ARG_VAR([BE_CC], [CC for back end])
 AC_ARG_VAR([BE_CFLAGS], [CFLAGS back end])
