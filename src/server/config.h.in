@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Whether we are using a broken srun */
+#undef BROKEN_SRUN
+
 /* Define if were using biter for client/server communication */
 #undef COMM_BITER
 
@@ -117,6 +120,9 @@
 
 /* Directory to store key files in */
 #undef SEC_KEYDIR
+
+/* Default mode for slurm launch */
+#undef SLURMLAUNCH_ENABLED
 
 /* The default local directory for Spindle */
 #undef SPINDLE_LOC
