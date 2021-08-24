@@ -7,12 +7,8 @@ and [Docker](https://docs.docker.com/get-docker/) installed for this tutorial.
 
 ## 1. Build Containers
 
-First, let's build a base container with slurm and centos with the [Dockerfile](Dockerfile) here:
-
-```bash
-$ docker build -t vanessa/slurm:20.11.8 .
-```
-Then building containers is as easy as:
+The [Dockerfile](Dockerfile) here is the base for building containers.
+So running the build is as easy as:
 
 ```bash
 $ docker-compose build
@@ -52,137 +48,197 @@ $ sbatch --wrap="sleep 20"
                  1    normal     wrap     root  R       0:00      1 c1
 ```
 
-## 2. Install spindle
+## 2. Interact with spindle
 
-Now let's follow instructions to install spindle.
-
-```bash
-$ git clone https://github.com/hpc/spindle
-$ cd spindle
-```
-
-We want to install providing paths to munge and slurm.
+Spindle should already be installed, and you can see the steps if you view the
+[Dockerfile](Dockerfile).
 
 ```bash
-./configure --with-munge-dir=/etc/munge --enable-sec-munge --with-slurm-dir=/etc/slurm --enable-testsuite=no
-make
-make install
+# which spindle
+/usr/local/bin/spindle
 ```
 
-Note that we are disabling the test suite otherwise we'd get an install error not detecting
-an MPI library. Now we can see spindle!
+You can try running a job first without spindle:
 
+```bash
+$ srun -N 1 cat /proc/self/maps
 ```
-# spindle --help
-Usage: spindle [OPTION...] mpi_command
 
- These options specify what types of files should be loaded through the Spindle
- network
-  -a, --reloc-aout=yes|no    Relocate the main executable through Spindle.
-                             Default: yes
-  -f, --follow-fork=yes|no   Relocate objects in fork'd child processes.
-                             Default: yes
-  -l, --reloc-libs=yes|no    Relocate shared libraries through Spindle.
-                             Default: yes
-  -x, --reloc-exec=yes|no    Relocate the targets of exec/execv/execve/...
-                             calls. Default: yes
-  -y, --reloc-python=yes|no  Relocate python modules (.py/.pyc) files when
-                             loaded via python. Default: yes
+If you try *with* spindle, this won't currently work:
 
- These options specify how the Spindle network should distibute files.  Push is
- better for SPMD programs.  Pull is better for MPMD programs. Default is push.
-  -p, --push                 Use a push model where objects loaded by any
-                             process are made available to all processes
-  -q, --pull                 Use a pull model where objects are only made
-                             available to processes that require them
+```bash
+$ spindle srun -N 1 cat /proc/self/maps
+```
 
- These options configure Spindle's network model.  Typical Spindle runs should
- not need to set these.
-  -c, --cobo                 Use a tree-based cobo network for distributing
-                             objects
-  -t, --port=port1-port2     TCP/IP port range for Spindle servers.  Default:
-                             21940-21964
+So instead you can get an allocation first:
 
- These options specify the security model Spindle should use for validating TCP
- connections. Spindle will choose a default value if no option is specified.
-      --security-munge       Use munge for security authentication
+```bash
+$ salloc -N 1
+```
 
- These options specify the job launcher Spindle is being run with.  If
- unspecified, Spindle will try to autodetect.
-      --launcher-startup     Launch spindle daemons using the system's job
-                             launcher (requires an already set-up session).
-      --no-mpi               Run serial jobs instead of MPI job
-      --openmpi              MPI job is launched with the OpenMPI job jauncher.
-                            
-      --slurm                MPI job is launched with the srun job launcher.
-      --wreck                MPI Job is launched with the wreck job launcher.
+If you want to view the source code, go to /spindle.
 
- Options for managing sessions, which can run multiple jobs out of one spindle
- cache.
-      --end-session=session-id   End a persistent Spindle session with the
-                             given session-id
-      --run-in-session=session-id
-                             Run a new job in the given session
-      --start-session        Start a persistent Spindle session and print the
-                             session-id to stdout
-
- Misc options
-  -b, --shmcache-size=size   Size of client shared memory cache in kilobytes,
-                             which can be used to improve performance if
-                             multiple processes are running on each node.
-                             Default: 0
-      --cache-prefix=path    Alias for python-prefix
-      --cleanup-proc=yes|no  Fork a dedicated process to clean-up files
-                             post-spindle.  Useful for high-fault situations.
-                             Default: no
-  -d, --debug=yes|no         If yes, hide spindle from debuggers so they think
-                             libraries come from the original locations.  May
-                             cause extra overhead. Default: yes
-  -e, --preload=FILE         Provides a text file containing a white-space
-                             separated list of files that should be relocated
-                             to each node before execution begins
-      --enable-rsh=yes|no    Enable startint daemons with an rsh tree, if the
-                             startup mode supports it. Default: No
-      --hostbin=EXECUTABLE   Path to a script that returns the hostlist for a
-                             job on a cluster
-  -h, --no-hide              Don't hide spindle file descriptors from
-                             application
-  -k, --audit-type=subaudit|audit
-                             Use the new-style subaudit interface for
-                             intercepting ld.so, or the old-style audit
-                             interface.  The subaudit option reduces memory
-                             overhead, but is more complex.  Default is audit.
-      --msgcache-buffer=size Enables message buffering if size is non-zero,
-                             otherwise sets the size of the buffer in
-                             kilobytes
-      --msgcache-timeout=timeout   Enables message buffering if size is
-                             non-zero, otherwise sets the buffering timeout in
-                             milliseconds
-  -n, --noclean=yes|no       Don't remove local file cache after execution.
-                             Default: no (removes the cache)
-  -o, --location=directory   Back-end directory for storing relocated files.
-                             Should be a non-shared location such as a ramdisk.
-                              Default: $TMPDIR
-      --persist=yes|no       Allow spindle servers to persist after the last
-                             client job has exited. Default: No
-  -r, --python-prefix=path   Colon-seperated list of directories that contain
-                             the python install location
-  -s, --strip=yes|no         Strip debug and symbol information from binaries
-                             before distributing them. Default: yes
-
-  -?, --help                 Give this help list
-      --usage                Give a short usage message
-  -V, --version              Print program version
-
-Mandatory or optional arguments to long options are also mandatory or optional
-for any corresponding short options.
-
-Report bugs to legendre1@llnl.gov.
+```bash
+cd /spindle/testsuite
+./runTests
 ```
 
 ## 3. Use Spindle
 
-**TODO** we need a dummy example here
+The first sanity check to see if spindle is working is to look at this output:
+
+```bash
+$ cat /proc/self/maps
+[root@slurmctld /]# cat /proc/self/maps
+00400000-0040b000 r-xp 00000000 00:7d 27450779                           /usr/bin/cat
+0060b000-0060c000 r--p 0000b000 00:7d 27450779                           /usr/bin/cat
+0060c000-0060d000 rw-p 0000c000 00:7d 27450779                           /usr/bin/cat
+0189d000-018be000 rw-p 00000000 00:00 0                                  [heap]
+7f2204c09000-7f2204dcb000 r-xp 00000000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f2204dcb000-7f2204fcb000 ---p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f2204fcb000-7f2204fcf000 r--p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f2204fcf000-7f2204fd1000 rw-p 001c6000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f2204fd1000-7f2204fd6000 rw-p 00000000 00:00 0 
+7f2204fd6000-7f2204ff8000 r-xp 00000000 00:7d 27466129                   /usr/lib64/ld-2.17.so
+7f2205064000-7f22051ed000 r--p 00000000 00:7d 27573565                   /usr/lib/locale/locale-archive
+7f22051ed000-7f22051f0000 rw-p 00000000 00:00 0 
+7f22051f6000-7f22051f7000 rw-p 00000000 00:00 0 
+7f22051f7000-7f22051f8000 r--p 00021000 00:7d 27466129                   /usr/lib64/ld-2.17.so
+7f22051f8000-7f22051f9000 rw-p 00022000 00:7d 27466129                   /usr/lib64/ld-2.17.so
+7f22051f9000-7f22051fa000 rw-p 00000000 00:00 0 
+7fff660dd000-7fff660fe000 rw-p 00000000 00:00 0                          [stack]
+7fff661dc000-7fff661df000 r--p 00000000 00:00 0                          [vvar]
+7fff661df000-7fff661e0000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+```
+
+and compare that with the same command, but with spindle:
+
+```bash
+$ spindle --no-mpi cat /proc/self/maps
+00400000-0040b000 r-xp 00000000 00:7d 28646903                           /tmp/spindle.84/usr/bin/1-spindlens-file-cat
+0060b000-0060c000 r--p 0000b000 00:7d 27450779                           /usr/bin/cat
+0060c000-0060d000 rw-p 0000c000 00:7d 27450779                           /usr/bin/cat
+01dc8000-01de9000 rw-p 00000000 00:00 0                                  [heap]
+7f8622f69000-7f86230f2000 r--p 00000000 00:7d 27573565                   /usr/lib/locale/locale-archive
+7f86230f2000-7f86232b4000 r-xp 00000000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f86232b4000-7f86234b4000 ---p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f86234b4000-7f86234b8000 r--p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f86234b8000-7f86234ba000 rw-p 001c6000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f86234ba000-7f86234bf000 rw-p 00000000 00:00 0 
+7f86234bf000-7f8623681000 r-xp 00000000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f8623681000-7f8623881000 ---p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f8623881000-7f8623887000 rw-p 001c2000 00:7d 27466152                   /usr/lib64/libc-2.17.so
+7f8623887000-7f862388c000 rw-p 00000000 00:00 0 
+7f862388c000-7f86238a9000 r-xp 00000000 00:7d 28646902                   /tmp/spindle.84/usr/local/lib/spindle/0-spindlens-file-libspindle_audit_pipe.so
+7f86238a9000-7f8623aa8000 ---p 0001d000 00:7d 28646902                   /tmp/spindle.84/usr/local/lib/spindle/0-spindlens-file-libspindle_audit_pipe.so
+7f8623aa8000-7f8623aaa000 rw-p 0001c000 00:7d 28646902                   /tmp/spindle.84/usr/local/lib/spindle/0-spindlens-file-libspindle_audit_pipe.so
+7f8623aaa000-7f8623aad000 rw-p 00000000 00:00 0 
+7f8623aad000-7f8623acf000 r-xp 00000000 00:7d 27466129                   /usr/lib64/ld-2.17.so
+7f8623bc3000-7f8623cc5000 rw-p 00000000 00:00 0 
+7f8623ccb000-7f8623cce000 rw-p 00000000 00:00 0 
+7f8623cce000-7f8623cd0000 rw-p 00021000 00:7d 27466129                   /usr/lib64/ld-2.17.so
+7f8623cd0000-7f8623cd1000 rw-p 00000000 00:00 0 
+7ffd73932000-7ffd73953000 rw-p 00000000 00:00 0                          [stack]
+7ffd739bd000-7ffd739c0000 r--p 00000000 00:00 0                          [vvar]
+7ffd739c0000-7ffd739c1000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+```
+
+You should see several paths replaced with spindle ones.
+
+Next, let's try running a benchmarking tool with and without spindle.
+This benchmark is called "Pynamic." Let's first clone it:
+
+```bash
+$ git clone https://github.com/LLNL/pynamic
+$ cd pynamic/pynamic-pyMPI-2.6a1
+
+# Run python config_pynamic.py to see usage
+```
+And then we would build shared libraries as follows. We are doing to decrease
+from the default because it will take forever!
+
+```bash
+# usage: config_pynamic.py <num_files> <avg_num_functions> [options] [-c <configure_options>]
+# example: config_pynamic.py 900 1250 -e -u 350 1250 -n 150
+# <num_files> = total number of shared objects to produce
+# <avg_num_functions> = average number of functions per shared object
+$ python config_pynamic.py 900 1250 -e -u 350 1250 -n 150
+```
+
+Don't actually do that - it will never finish and control+C won't kill it!
+Try this one instead, with a timer
+
+```bash
+$ time python config_pynamic.py 30 1250 -e -u 350 1250 -n 150
+
+************************************************
+summary of pynamic-sdb-pyMPI executable and 10 shared libraries
+Size of aggregate total of shared libraries: 2.5MB
+Size of aggregate texts of shared libraries: 6.8MB
+Size of aggregate data of shared libraries: 408.4KB
+Size of aggregate debug sections of shared libraries: 0B
+Size of aggregate symbol tables of shared libraries: 0B
+Size of aggregate string table size of shared libraries: 0B
+************************************************
+
+real	21m33.556s
+user	14m54.538s
+sys	3m31.206s
+```
+
+The above does take a bit (as you can see from the time) so let's try it now with
+spindle:
+
+```bash
+$ time spindle python config_pynamic.py 30 1250 -e -u 350 1250 -n 150
+```
+
+**under development, not written yet, debugging things!**
+
+```
+  3.1 TO TEST
+    % python pynamic_driver.py `date +%s`
+
+      or in a batchxterm:
+
+    % srun pyMPI pynamic_driver.py `date +%s`
+
+    % srun pynamic-pyMPI pynamic_driver.py `date +%s`
+
+    % srun pynamic-sdb-pyMPI pynamic_driver.py `date +%s`
+
+    % srun pynamic-bigexe pynamic_driver.py `date +%s`
+
+    # note: Pynamic creates 3 executables:
+    #    pyMPI - a vanilla pyMPI build
+    #    pynamic-pyMPI - pyMPI with the generated .so's linked in
+    #    pynamic-sdb-pyMPI - pyMPI with the generated libraries statically linked in
+    # and 2 optional executables (with the -b flag)
+    #    pynamic-bigexe-pyMPI - a larger pyMPI with the generated .so's linked in
+    #    pynamic-bigexe-sdb-pyMPI - a larger pyMPI with the generated libraries staically linked in
+
+--------------------------------------------------------
+4. CONTACTS
+   Greg Lee <lee218@llnl.gov>	
+   Dong Ahn <ahn1@llnl.gov>
+   Bronis de Supinski <desupinski1@llnl.gov>
+   John Gyllenhaal <gyllenhaal1@llnl.gov>
+ 
+# run the pynamic benchmark with and without spindle
+/cat/proc/self/maps
+
+prints out for each library loaded and bincat parts of address space takes up
+run same command under spindle
+
+spindle --no-mpi cat /proc/self/maps
+
+to check if install works and is visible outside of spindle itself
+/proc/pid/maps
+
+https://github.com/LLNL/pynamic
+```
 
 
 ## 4. Clean Up

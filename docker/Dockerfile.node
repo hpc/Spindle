@@ -1,3 +1,0 @@
-FROM vanessa/slurm:18.08.6
-
-# This container will be built on docker-compose up -d
