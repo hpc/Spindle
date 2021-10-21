@@ -4,6 +4,9 @@ set -e
 # Start ssh in all containers
 systemctl enable sshd
 
+# Ensure TMPDIR envar is defined for all users, spindle needs it
+echo "export TMPDIR=/tmp" >> /etc/profile.d/tmpdir.sh
+
 ssh-keygen -A
 /usr/sbin/sshd -D &
 

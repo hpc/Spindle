@@ -70,7 +70,7 @@ $ salloc -N 1
 $ spindle --no-mpi cat /proc/self/maps
 ```
 
-Notice that ssh works - which spindle should be installed to use.
+Before we run tests, let's get the hosts c1 and c2 added (it will ask you to confirm yes for each)
 
 ```bash
 $ ssh c1
@@ -86,6 +86,13 @@ If you want to view the source code, go to /spindle.
 ```bash
 cd /spindle/testsuite
 ./runTests
+```
+
+If you need more debug output:
+
+```bash
+# 1, 2, 3
+export SPINDLE_DEBUG=2
 ```
 
 Optionally, you can better configure the cluster:
