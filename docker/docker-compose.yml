@@ -19,19 +19,23 @@ services:
     command: "slurmdbd"
     container_name: slurmdbd
     hostname: slurmdbd
+    privileged: true
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - var_log_slurm:/var/log/slurm
       - tmp_slurm:/tmp
+      - ./sshd_config:/etc/ssh/sshd_config
     expose:
       - "6819"
+      - "22"
     depends_on:
       - mysql
 
   slurmctld:
     build:
       context: .
+    privileged: true
     command: "slurmctld"
     container_name: slurmctld
     hostname: slurmctld
@@ -39,6 +43,7 @@ services:
       - slurmdbd
     expose:
       - "6817"
+      - "22"
     depends_on:
       - "slurmdbd"
 
@@ -51,8 +56,11 @@ services:
     container_name: c1
     volumes_from:
       - slurmctld
+    links:
+      - slurmctld
     expose:
       - "6818"
+      - "22"
     depends_on:
       - "slurmctld"
 
@@ -63,10 +71,13 @@ services:
     privileged: true
     hostname: c2
     container_name: c2
+    links:
+      - slurmctld
     volumes_from:
       - slurmctld
     expose:
       - "6818"
+      - "22"
     depends_on:
       - "slurmctld"
       

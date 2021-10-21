@@ -38,7 +38,6 @@ Each of c1 and c2 are nodes for our cluster, and then slurmctld is like the logi
 ```bash
 $ docker exec -it slurmctld bash
 ```
-
 Try running a job!
 
 ```bash
@@ -64,23 +63,37 @@ You can try running a job first without spindle:
 $ srun -N 1 cat /proc/self/maps
 ```
 
-If you try *with* spindle, this won't currently work:
-
-```bash
-$ spindle srun -N 1 cat /proc/self/maps
-```
-
-So instead you can get an allocation first:
+If you try *with* spindle, you need to allocate a session first:
 
 ```bash
 $ salloc -N 1
+$ spindle --no-mpi cat /proc/self/maps
 ```
 
+Notice that ssh works - which spindle should be installed to use.
+
+```bash
+$ ssh c1
+exit
+
+$ ssh c2
+exit
+```
+
+**NOTE** stopped here - this doesn't actually work.
 If you want to view the source code, go to /spindle.
 
 ```bash
 cd /spindle/testsuite
 ./runTests
+```
+
+Optionally, you can better configure the cluster:
+
+```bash
+sacctmgr -i create cluster spindle-cluster 
+sacctmgr add account spindle --immediate
+sacctmgr create user spindle defaultaccount=spindle adminlevel=[None] --immediate
 ```
 
 ## 3. Use Spindle
