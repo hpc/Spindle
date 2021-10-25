@@ -75,6 +75,7 @@ we have to break ABI compatibility.
     -   `OPT_RELOCSO` - Stage shared libraries
     -   `OPT_RELOCEXEC` - Stage the targets of exec() calls
     -   `OPT_RELOCPY` - Stage python .py/.pyc/.pyo files
+    -   `OPT_RELOCJL` - Stage Julia .jl/.ji files
     -   `OPT_STRIP` - Strip debug information from ELF files before staging
     -   `OPT_NOCLEAN` - Not clean stage area on exit (useful for debugging)
     -   `OPT_NOHIDE` - Hide Spindle's communication FDs from application
