@@ -119,7 +119,6 @@ void la_activity (uintptr_t *cookie, unsigned int flag)
                  "???");
 
    if (flag == LA_ACT_CONSISTENT) {
-      remove_libc_rogot();
       mark_newlibs_as_need_writable_got();
    }
 

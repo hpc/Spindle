@@ -47,7 +47,7 @@ static signed int gots_size;
 #if defined(arch_x86_64)
 #define DEFAULT_RELENTSZ 24
 #define EXTRA_GOT_ENTRIES 3
-#elif defined(arch_ppc64)
+#elif defined(arch_ppc64) || defined(arch_ppc64le)
 #define DEFAULT_RELENTSZ 24
 #define EXTRA_GOT_ENTRIES 2
 #elif defined(arch_aarch64)

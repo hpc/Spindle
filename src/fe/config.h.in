@@ -97,9 +97,6 @@
 /* Use munge for authentication */
 #undef MUNGE
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Number of ports for COBO to search for an open port */
 #undef NUM_COBO_PORTS
 
