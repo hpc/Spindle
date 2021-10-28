@@ -111,11 +111,11 @@ char *parse_location(char *loc)
             err_printf("Location path %s too long when adding envvar %s and value %s\n", loc, envvar, env_value);
             return NULL;
          }
-         GCC9_DISABLE_WARNING("-Wstringop-overflow"); //Warns we truncate NULL byte.  That's on purpose.
-         GCC9_DISABLE_WARNING("-Wstringop-truncation"); 
+         GCC8_DISABLE_WARNING("-Wstringop-overflow"); //Warns we truncate NULL byte.  That's on purpose.
+         GCC8_DISABLE_WARNING("-Wstringop-truncation"); 
          strncpy(newloc + j, env_value, env_value_len);
-         GCC9_ENABLE_WARNING;
-         GCC9_ENABLE_WARNING; 
+         GCC8_ENABLE_WARNING;
+         GCC8_ENABLE_WARNING; 
          i += envvar_len + 1;
          j += env_value_len;
 #if defined(CUSTOM_GETENV) && defined(CUSTOM_GETENV_FREE)

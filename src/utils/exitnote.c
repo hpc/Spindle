@@ -91,7 +91,7 @@ int createExitNote(const char *location)
 
    bzero(&saddr, sizeof(saddr));
    saddr.sun_family = AF_UNIX;
-   strncpy(saddr.sun_path, socketpath, LINUX_MAX_SUN_PATH);
+   strncpy(saddr.sun_path, socketpath, LINUX_MAX_SUN_PATH-1);
 
    result = bind(sockfd, (struct sockaddr *) &saddr, sizeof(saddr));
    if (result == -1) {
@@ -139,7 +139,7 @@ int pingExitNote(const char *location)
 
    bzero(&saddr, sizeof(saddr));
    saddr.sun_family = AF_UNIX;
-   strncpy(saddr.sun_path, socketpath, LINUX_MAX_SUN_PATH);
+   strncpy(saddr.sun_path, socketpath, LINUX_MAX_SUN_PATH-1);
 
    timeout = 0;
    for (;;) {

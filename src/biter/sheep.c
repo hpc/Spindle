@@ -377,7 +377,7 @@ void sheep_check()
 
    prev = HEAP_NULL;
    for (cur = NEXT_FREE(head_block); cur != HEAP_NULL; cur = NEXT_FREE(cur)) {
-      assert(prev = PREV_FREE(cur));
+      assert(prev == PREV_FREE(cur));
       freed2++;
 #if defined(CHECK)
       if (IS_FREE(cur)) {

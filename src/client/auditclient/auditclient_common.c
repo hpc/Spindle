@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "auditclient.h"
 #include "ldcs_api.h"
 #include "intercept.h"
+#include "writablegot.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -103,6 +104,8 @@ unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
       debug_printf3("Set cookie_shift to %ld\n", (unsigned long) shift);
    }
 
+   add_wgot_library(map);
+
    return spindle_la_objopen(map, lmid, cookie);
 }
 
@@ -115,8 +118,9 @@ void la_activity (uintptr_t *cookie, unsigned int flag)
                  (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
                  "???");
 
-   if (flag == LA_ACT_CONSISTENT)
-      remove_libc_rogot();
+   if (flag == LA_ACT_CONSISTENT) {
+      mark_newlibs_as_need_writable_got();
+   }
 
    spindle_la_activity(cookie, flag);
    return;
@@ -135,7 +139,12 @@ void la_preinit(uintptr_t *cookie)
 extern unsigned int spindle_la_objclose(uintptr_t *cookie);
 unsigned int la_objclose (uintptr_t *cookie)
 {
+  struct link_map *map;
   debug_printf3("la_objclose() %p\n", cookie);
+
+  map = get_linkmap_from_cookie(cookie);
+  rm_wgot_library(map);
+
   if(cookie == firstcookie) {
      client_done();
   }

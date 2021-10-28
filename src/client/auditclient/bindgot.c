@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "auditclient.h"
 #include "spindle_debug.h"
+#include "writablegot.h"
 
 struct ppc64_funcptr_t {
    Elf64_Addr fptr;
@@ -162,7 +163,9 @@ Elf64_Addr doPermanentBinding_noidx(uintptr_t *refcook, uintptr_t *defcook,
 
    got_entry = (Elf64_Addr *) (rel->r_offset + base);
 
-#if _CALL_ELF == 1 && (defined(arch_pp64) || defined(arch_ppc32))
+   make_got_writable(got_entry, rmap);
+   
+#if _CALL_ELF == 1 && (defined(arch_ppc64) || defined(arch_ppc32))
    {
       struct ppc64_funcptr_t *func = (struct ppc64_funcptr_t *) target;
       debug_printf3("%s: Old GOT Entry %p -- New GOT Entry %p\n",
@@ -196,6 +199,11 @@ Elf64_Addr doPermanentBinding_idx(struct link_map *map,
    if (!rel)
       return target;
    got_entry = (Elf64_Addr *) (rel->r_offset + base);
+   debug_printf("rel at %p, rel->r_offset is %lx, base is %lx, for plt_reloc_idx %lu, got_entry %p\n",
+                rel, rel->r_offset, base, plt_reloc_idx, got_entry);
+                
+   make_got_writable(got_entry, map);
+   debug_printf3("binding at %p to target %lx\n in %s\n", got_entry, target, map->l_name);
    *got_entry = target;
    return target;
 }
