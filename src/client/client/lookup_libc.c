@@ -45,6 +45,8 @@ struct gnu_hash_header {
    uint32_t shift2;
 };
 
+static malloc_sig_t mallocfunc = NULL;
+
 static signed long lookup_gnu_hash_symbol(const char *name, ElfW(Sym) *syms, char *symnames, struct gnu_hash_header *header)
 {
    uint32_t *buckets, *vals;
@@ -171,6 +173,22 @@ int lookup_libc_symbols()
          debug_printf3("Bound errno_location to %p\n", app_errno_location);
          found++;
       }
+
+      result = -1;
+      if (gnu_hash)
+         result = lookup_gnu_hash_symbol("malloc", symtab, strtab, (struct gnu_hash_header *) gnu_hash);
+      if (elf_hash && result == -1)
+         result = lookup_elf_hash_symbol("malloc", symtab, strtab, (ElfW(Word) *) elf_hash);
+      if (result == -1) {        
+         debug_printf3("Warning, Could not find symbol malloc in libc\n");
+         not_found++;
+      }
+      else {
+         mallocfunc = (malloc_sig_t) (symtab[result].st_value + libc->l_addr);
+         debug_printf3("Bound errno_location to %p\n", app_errno_location);
+         found++;
+      }      
+
    }
 
    if (!found && not_found) {
@@ -179,4 +197,12 @@ int lookup_libc_symbols()
    }
 
    return 0;
+}
+
+malloc_sig_t get_libc_malloc()
+{
+   if (mallocfunc)
+      return mallocfunc;
+   lookup_libc_symbols();
+   return mallocfunc;
 }

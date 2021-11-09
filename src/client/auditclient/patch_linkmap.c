@@ -42,22 +42,40 @@ void patch_on_load_success(const char *rewritten_name, const char *orig_name)
 
    last_rewritten_name = (char *) rewritten_name;
    last_orig_name = spindle_strdup(orig_name);
-   debug_printf2("Patching link map %s -> %s\n", rewritten_name, orig_name);
+   debug_printf2("Seting up patching of link map %s -> %s\n", rewritten_name, orig_name);
 }
 
 void patch_on_linkactivity(struct link_map *lmap)
 {
+   size_t len;
+   char *oname;
+   
    if (!(opts & OPT_DEBUG))
       return;
    if (!last_rewritten_name || !last_orig_name)
       return;
 
    if (lmap->l_name == last_rewritten_name || strcmp(lmap->l_name, last_rewritten_name) == 0) {
-      lmap->l_name = last_orig_name;
+      debug_printf3("Replacing name %s with name %s\n", lmap->l_name, last_orig_name);
+      if (strlen(lmap->l_name) >= strlen(last_orig_name)) {
+         strcpy(lmap->l_name, last_orig_name);
+      }
+      else {
+         malloc_sig_t app_malloc = get_libc_malloc();
+         if (app_malloc) {
+            len = strlen(last_orig_name) + 2;
+            oname = (char *) app_malloc(len);
+            if (oname) {
+               strncpy(oname, last_orig_name, len);
+               lmap->l_name = oname;
+            }
+         }
+      }
    }
    else {
-      spindle_free(last_orig_name);
+      debug_printf3("Did not replace name %s with name %s\n", lmap->l_name ? : "NULL", last_orig_name ? : "NULL");
    }
+   spindle_free(last_orig_name);
    last_rewritten_name = NULL;
    last_orig_name = NULL;
 }
