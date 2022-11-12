@@ -9,6 +9,8 @@ AM_PROG_AR
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_CONFIG_FILES([logging/Makefile biter/Makefile shm_cache/Makefile client_comlib/Makefile client/Makefile auditclient/Makefile subaudit/Makefile beboot/Makefile spindle_api/Makefile ldsolookup/Makefile Makefile])
+AC_PROG_LIBTOOL
+AC_PROG_LN_S
 LT_INIT
 
 #Include common ops

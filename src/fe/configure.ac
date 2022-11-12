@@ -10,6 +10,8 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile startup/Makefile hostbin/Makefile Makefile])
+AC_PROG_LIBTOOL
+AC_PROG_LN_S
 LT_INIT
 
 #Include common ops
