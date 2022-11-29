@@ -1,8 +1,10 @@
 /*
  * Spindle job shell plugin for Flux.
  */
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <signal.h>
+#include <stdio.h>
 #include <jansson.h>
 
 #define FLUX_SHELL_PLUGIN_NAME "spindle"
@@ -201,6 +203,45 @@ static void wait_for_shell_init (flux_future_t *f, void *arg)
         run_spindle_frontend (ctx);
 }
 
+static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
+{
+    int spindle = 0;
+    int noclean = 0;
+    int nostrip = 0;
+    int follow_fork = 0;
+    const char *pyprefix = NULL;
+
+    /*  attributes.system.shell.options.spindle=1 is valid if no other
+     *  spindle options are set. Return early if this is the case.
+     */
+    if (flux_shell_getopt_unpack (shell, "spindle", "i", &spindle) == 1)
+        return 0;
+
+    if (flux_shell_getopt_unpack (shell,
+                                  "spindle",
+                                  "{s?i s?i s?i s?s}",
+                                  "noclean", &noclean,
+                                  "nostrip", &nostrip,
+                                  "follow-fork", &follow_fork,
+                                  "python-prefix", &pyprefix) < 0)
+        return shell_log_errno ("Unable to unpack spindle shell options");
+
+    if (noclean)
+        ctx->params.opts |= OPT_NOCLEAN;
+    if (nostrip)
+        ctx->params.opts &= ~OPT_STRIP;
+    if (follow_fork)
+        ctx->params.opts |= OPT_FOLLOWFORK;
+    if (pyprefix) {
+        char *tmp;
+        if (asprintf (&tmp, "%s:%s", ctx->params.pythonprefix, pyprefix) < 0)
+            return shell_log_errno ("unable to append to pythonprefix");
+        free (ctx->params.pythonprefix);
+        ctx->params.pythonprefix = tmp;
+    }
+    return 0;
+}
+
 /*  Spindle plugin shell.init callback
  *  Initialize spindle params and other context. On rank 0, add the
  *   port and num_ports to the shell.init event.
@@ -277,6 +318,11 @@ static int sp_init (flux_plugin_t *p,
                                     NULL,
                                     NULL) < 0)
         return shell_log_errno ("fillInSpindleArgsCmdlineFE failed");
+
+    /*  Read other spindle options from spindle option in jobspec:
+     */
+    if (sp_getopts (shell, ctx) < 0)
+        return -1;
 
     /*  N.B. Override unique_id with id again to be sure it wasn't changed
      *  (Occaisionally see hangs if this is not done)
