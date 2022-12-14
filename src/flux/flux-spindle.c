@@ -205,26 +205,34 @@ static void wait_for_shell_init (flux_future_t *f, void *arg)
 
 static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
 {
-    int spindle = 0;
+    json_error_t error;
+    json_t *opts;
     int noclean = 0;
     int nostrip = 0;
     int follow_fork = 0;
     const char *pyprefix = NULL;
 
+    if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
+        return -1;
+
     /*  attributes.system.shell.options.spindle=1 is valid if no other
      *  spindle options are set. Return early if this is the case.
      */
-    if (flux_shell_getopt_unpack (shell, "spindle", "i", &spindle) == 1)
+    if (json_is_integer (opts) && json_integer_value (opts) > 0)
         return 0;
 
-    if (flux_shell_getopt_unpack (shell,
-                                  "spindle",
-                                  "{s?i s?i s?i s?s}",
-                                  "noclean", &noclean,
-                                  "nostrip", &nostrip,
-                                  "follow-fork", &follow_fork,
-                                  "python-prefix", &pyprefix) < 0)
-        return shell_log_errno ("Unable to unpack spindle shell options");
+    /*  O/w, unpack extra spindle options from the options.spindle JSON
+     *  object. To support more options, add them to the unpack below:
+     *  Note that it is an error if extra options not handled here are
+     *  supplied by the user, but not unpacked (This handles typos, etc).
+     */
+    if (json_unpack_ex (opts, &error, JSON_STRICT,
+                        "{s?i s?i s?i s?s}",
+                        "noclean", &noclean,
+                        "nostrip", &nostrip,
+                        "follow-fork", &follow_fork,
+                        "python-prefix", &pyprefix) < 0)
+        return shell_log_errno ("Error in spindle option: %s", error.text);
 
     if (noclean)
         ctx->params.opts |= OPT_NOCLEAN;
