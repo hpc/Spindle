@@ -27,14 +27,14 @@
 /* Build with LaunchMON support */
 #undef HAVE_LMON
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have MPI libs and headers. */
 #undef HAVE_MPI
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -112,13 +112,15 @@
 /* The default port for Spindle */
 #undef SPINDLE_PORT
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Default recource manager */
 #undef TESTRM
 
-/* If the compiler supports a TLS storage class define it to that here */
+/* If the compiler supports a TLS storage class, define it to that here */
 #undef TLS
 
 /* The file for storing usage logs */

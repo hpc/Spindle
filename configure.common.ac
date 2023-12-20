@@ -4,13 +4,6 @@ DEFAULT_PORT=21940
 DEFAULT_LOC='$TMPDIR'
 DEFAULT_NUM_COBO_PORTS=25
 
-AC_MSG_CHECKING([for -Wall])
-OCFLAGS=$CFLAGS
-OCXXFLAGS=$CXXFLAGS
-CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXFLAGS -Wall"
-AC_TRY_COMPILE([], [], AC_MSG_RESULT(yes), [AC_MSG_RESULT(no); CFLAGS=$OCFLAGS; CXXFLAGS=$OCXXFLAGS])
-
 AC_SUBST([AR_FLAGS], [cr])
 
 AC_ARG_WITH(default-port,
@@ -41,7 +34,7 @@ AC_ARG_WITH(rm,
         [TESTRM=${withval}],
         [])
 if test "x$TESTRM" == "xunknown"; then
-   AC_WARN(["--with-rm not specified.  Tests will not work"])
+   AC_MSG_WARN(["--with-rm not specified.  Tests will not work"])
 fi
 AC_SUBST(TESTRM)
 AC_DEFINE_UNQUOTED([TESTRM], "[$TESTRM]", [Default recource manager])

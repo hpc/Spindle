@@ -33,3 +33,4 @@ test_driver_libs
 run_driver
 run_driver_rm
 preload_file_list
+build

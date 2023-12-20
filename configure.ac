@@ -1,8 +1,8 @@
-AC_INIT([spindle], m4_esyscmd([tr -d '\n' < VERSION]), m4_esyscmd([tr -d '\n' < BUG_EMAIL])) 
+AC_INIT([spindle],m4_esyscmd([tr -d '\n' < VERSION]),m4_esyscmd([tr -d '\n' < BUG_EMAIL]))
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
-AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([foreign])
+AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 AM_PROG_AR
 AC_PROG_CC
@@ -10,7 +10,7 @@ AC_PROG_CXX
 AC_PROG_SED
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile])
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_LN_S
 LT_INIT
 
