@@ -9,10 +9,12 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_SED
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile])
-LT_INIT
+AC_CONFIG_FILES([src/flux/Makefile src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile])
 AC_PROG_LN_S
 LT_INIT
+
+# Initialize pkg-config
+PKG_PROG_PKG_CONFIG
 
 #Include common ops
 m4_include([configure.common.ac])
@@ -85,6 +87,18 @@ fi
 
 AM_CONDITIONAL([BLD_SLURMPLUGIN], [test "x$ENABLE_SLURM_PLUGIN" == "xtrue"])
 AC_SUBST(SCONTROL_ABSPATH, $SCONTROL_ABSPATH)
+
+# Check for whether to build Flux shell plugin
+PKG_CHECK_MODULES([FLUX_CORE], [flux-core > 0.40.0], [with_flux=yes], [])
+PKG_CHECK_MODULES([FLUX_HOSTLIST], [flux-hostlist], [], [])
+
+AM_CONDITIONAL([WITH_FLUX], [test "x$with_flux" = "xyes"])
+if test "x$with_flux" = "xyes"; then
+  AS_VAR_SET(shell_plugindir, $libdir/flux/shell/plugins)
+  AC_SUBST(shell_plugindir)
+  fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
+  AC_SUBST(fluxplugin_ldflags)
+fi
 
 AC_OUTPUT
 

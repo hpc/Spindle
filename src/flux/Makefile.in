@@ -89,8 +89,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = libgenerator$(EXEEXT)
-subdir = testsuite
+subdir = src/flux
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -105,14 +104,48 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_libgenerator_OBJECTS = libgenerator.$(OBJEXT)
-libgenerator_OBJECTS = $(am_libgenerator_OBJECTS)
-libgenerator_LDADD = $(LDADD)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
+am__installdirs = "$(DESTDIR)$(shell_plugindir)"
+LTLIBRARIES = $(shell_plugin_LTLIBRARIES)
+am__DEPENDENCIES_1 =
+spindle_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(top_builddir)/src/server/startup/libspindlebe.la \
+	$(top_builddir)/src/fe/startup/libspindlefe.la
+am_spindle_la_OBJECTS = spindle_la-flux-spindle.lo
+spindle_la_OBJECTS = $(am_spindle_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+spindle_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(spindle_la_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -128,7 +161,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/scripts/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/libgenerator.Po
+am__depfiles_remade = ./$(DEPDIR)/spindle_la-flux-spindle.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -148,8 +181,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgenerator_SOURCES)
-DIST_SOURCES = $(libgenerator_SOURCES)
+SOURCES = $(spindle_la_SOURCES)
+DIST_SOURCES = $(spindle_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -334,26 +367,28 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
-BUILT_SOURCES = libtest10.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so origin_dir/liboriginlib.so origin_dir/origin_subdir/liborigintarget.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
-@BGQ_BLD_FALSE@DYNAMIC_FLAG = 
-@BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
-@BGQ_BLD_FALSE@IS_BLUEGENE = false
-@BGQ_BLD_TRUE@IS_BLUEGENE = true
-libgenerator_SOURCES = libgenerator.c
-test_driverSOURCES = $(top_srcdir)/testsuite/test_driver.c
-test_driverCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall
-test_driverLDADD = -ldl -ltestoutput -lfuncdict -lspindle
-test_driverLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite -L$(top_builddir)/src/client/spindle_api $(MPI_CLDFLAGS) $(LDFLAGS) -L. $(DYNAMIC_FLAG) -no-install
-test_driver_libsSOURCES = $(top_srcdir)/testsuite/test_driver.c
-test_driver_libsCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall
-test_driver_libsLDADD = -ltest10 -ltest50 -ltest100 -ltest500 -ltest1000 -ltest2000 -ltest4000 -ltest6000 -ltest8000 -ltest10000 -ldepA -lcxxexceptA -loriginlib -ldl -ltestoutput -lfuncdict -ldepB -ldepC -lcxxexceptB -lspindle
-test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install $(LDFLAGS) -Wl,-rpath,$(PWD)/origin_dir -L$(PWD)/origin_dir -Wl,-rpath-link,$(PWD)/origin_dir/origin_subdir
-REGLIB_SRC = $(srcdir)/registerlib.c
-LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
-CLEANFILES = libtest10.c libtest10.so libtest50.c libtest50.so libtest100.c libtest100.so libtest500.c libtest500.so libtest1000.c libtest1000.so libtest2000.c libtest2000.so libtest4000.c libtest4000.so libtest6000.c libtest6000.so libtest8000.c libtest8000.so libtest10000.c libtest10000.so libsymlink.so libdepA.so libdepB.so libdepC.so libcxxexceptA.so libcxxexceptB.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm test_driver test_driver_libs preload_file_list retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+shell_plugin_LTLIBRARIES = \
+	spindle.la
+
+spindle_la_SOURCES = \
+	flux-spindle.c
+
+spindle_la_CPPFLAGS = \
+	-I$(top_srcdir)/src/include \
+	$(FLUX_CORE_CFLAGS) \
+	$(FLUX_HOSTLIST_CFLAGS)
+
+spindle_la_LIBADD = \
+	$(FLUX_CORE_LIBS) \
+	$(FLUX_HOSTLIST_LIBS) \
+	$(top_builddir)/src/server/startup/libspindlebe.la \
+	$(top_builddir)/src/fe/startup/libspindlefe.la
+
+spindle_la_LDFLAGS = \
+	$(fluxplugin_ldflags) \
+	-module
+
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -366,9 +401,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign testsuite/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/flux/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign testsuite/Makefile
+	  $(AUTOMAKE) --foreign src/flux/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -387,18 +422,43 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
+install-shell_pluginLTLIBRARIES: $(shell_plugin_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	@list='$(shell_plugin_LTLIBRARIES)'; test -n "$(shell_plugindir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(shell_plugindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(shell_plugindir)" || exit 1; \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(shell_plugindir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(shell_plugindir)"; \
+	}
 
-libgenerator$(EXEEXT): $(libgenerator_OBJECTS) $(libgenerator_DEPENDENCIES) $(EXTRA_libgenerator_DEPENDENCIES) 
-	@rm -f libgenerator$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(libgenerator_OBJECTS) $(libgenerator_LDADD) $(LIBS)
+uninstall-shell_pluginLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(shell_plugin_LTLIBRARIES)'; test -n "$(shell_plugindir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(shell_plugindir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(shell_plugindir)/$$f"; \
+	done
+
+clean-shell_pluginLTLIBRARIES:
+	-test -z "$(shell_plugin_LTLIBRARIES)" || rm -f $(shell_plugin_LTLIBRARIES)
+	@list='$(shell_plugin_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
+
+spindle.la: $(spindle_la_OBJECTS) $(spindle_la_DEPENDENCIES) $(EXTRA_spindle_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(spindle_la_LINK) -rpath $(shell_plugindir) $(spindle_la_OBJECTS) $(spindle_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -406,7 +466,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgenerator.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spindle_la-flux-spindle.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -437,6 +497,13 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+spindle_la-flux-spindle.lo: flux-spindle.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spindle_la-flux-spindle.lo -MD -MP -MF $(DEPDIR)/spindle_la-flux-spindle.Tpo -c -o spindle_la-flux-spindle.lo `test -f 'flux-spindle.c' || echo '$(srcdir)/'`flux-spindle.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle_la-flux-spindle.Tpo $(DEPDIR)/spindle_la-flux-spindle.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='flux-spindle.c' object='spindle_la-flux-spindle.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spindle_la-flux-spindle.lo `test -f 'flux-spindle.c' || echo '$(srcdir)/'`flux-spindle.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -529,14 +596,14 @@ distdir-am: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(PROGRAMS)
+check: check-am
+all-am: Makefile $(LTLIBRARIES)
 installdirs:
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
-install-exec: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-am
+	for dir in "$(DESTDIR)$(shell_plugindir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
+install: install-am
+install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
 
@@ -557,7 +624,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -566,14 +632,13 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+clean-am: clean-generic clean-libtool clean-shell_pluginLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/libgenerator.Po
+		-rm -f ./$(DEPDIR)/spindle_la-flux-spindle.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -590,7 +655,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-shell_pluginLTLIBRARIES
 
 install-dvi: install-dvi-am
 
@@ -619,7 +684,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/libgenerator.Po
+		-rm -f ./$(DEPDIR)/spindle_la-flux-spindle.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -636,189 +701,28 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-shell_pluginLTLIBRARIES
 
-.MAKE: all check install install-am install-exec install-strip
+.MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
-	clean-generic clean-libtool clean-noinstPROGRAMS cscopelist-am \
-	ctags ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
+	clean-generic clean-libtool clean-shell_pluginLTLIBRARIES \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am \
+	install-shell_pluginLTLIBRARIES install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am
+	tags tags-am uninstall uninstall-am \
+	uninstall-shell_pluginLTLIBRARIES
 
 .PRECIOUS: Makefile
 
-
-test_driver: $(test_driverSOURCES) $(REGLIB_SRC) libtestoutput.so libfuncdict.so
-	$(AM_V_CCLD) $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(MPICC) -o $@ $(test_driverSOURCES) $(REGLIB_SRC) -DSO_NAME=$@ $(test_driverCFLAGS) $(test_driverLDFLAGS) $(test_driverLDADD)
-
-test_driver_libs: $(test_driverSOURCES) $(REGLIB_SRC) libtestoutput.so libfuncdict.so libtest10.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libdepA.so libcxxexceptA.so libdepB.so libdepC.so libcxxexceptB.so origin_dir/liboriginlib.so
-	$(AM_V_CCLD) $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(MPICC) -o $@ $(test_driver_libsSOURCES) $(REGLIB_SRC) -DSO_NAME=$@ $(test_driver_libsCFLAGS) $(test_driver_libsLDFLAGS) $(test_driver_libsLDADD)
-
-libtest10.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest10.c 10 t10
-
-libtest50.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest50.c 50 t50
-
-libtest100.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest100.c 100 t100
-
-libtest500.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest500.c 500 t500
-
-libtest1000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest1000.c 1000 t1000
-
-libtest2000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest2000.c 2000 t2000
-
-libtest4000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest4000.c 4000 t4000
-
-libtest6000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest6000.c 6000 t6000
-
-libtest8000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest8000.c 8000 t8000
-
-libtest10000.c: libgenerator
-	$(AM_V_GEN)./libgenerator libtest10000.c 10000 t10000
-
-libtest10.so: libtest10.c $(REGLIB_SRC) libfuncdict.so 
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t10_calc $(LD_FUNCDICT)
-
-libtest50.so: libtest50.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t50_calc $(LD_FUNCDICT)
-
-libtest100.so: libtest100.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t100_calc $(LD_FUNCDICT)
-
-libtest500.so: libtest500.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t500_calc $(LD_FUNCDICT)
-
-libtest1000.so: libtest1000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t1000_calc $(LD_FUNCDICT)
-
-libtest2000.so: libtest2000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t2000_calc $(LD_FUNCDICT)
-
-libtest4000.so: libtest4000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t4000_calc $(LD_FUNCDICT)
-
-libtest6000.so: libtest6000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t6000_calc $(LD_FUNCDICT)
-
-libtest8000.so: libtest8000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t8000_calc $(LD_FUNCDICT)
-
-libtest10000.so: libtest10000.c $(REGLIB_SRC) libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -DSO_NAME=$@ -DFUNC_NAME=t10000_calc $(LD_FUNCDICT)
-
-libdepA.so: libdepA.c $(REGLIB_SRC) libdepB.so libfuncdict.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -shared -L. -ldepB -DSO_NAME=$@ -DFUNC_NAME=depA_calc  $(LD_FUNCDICT)
-
-libsymlink.so: libtest10.so
-	$(AM_V_GEN) ln -fs $< $@
-
-libdepB.so: libdepB.c libdepC.so $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared -L. -ldepC
-
-libdepC.so: libdepC.c $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
-
-registerlib_exceptA.o: $(REGLIB_SRC)
-	$(AM_V_CC)$(MPICC) -c -o $@ -fPIC -Wall $< -DSO_NAME=libcxxexceptA.so -DFUNC_NAME=cxxexceptA_calc
-
-registerlib_exceptB.o: $(REGLIB_SRC)
-	$(AM_V_CC)$(MPICC) -c -o $@ -fPIC -Wall $< -DSO_NAME=libcxxexceptB.so
-
-libcxxexceptA.so: libcxxexceptA.cc registerlib_exceptA.o libcxxexceptB.so libfuncdict.so
-	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< registerlib_exceptA.o -shared -L. -lcxxexceptB -DSO_NAME=$@ -DFUNC_NAME=cxxexceptA_calc $(LD_FUNCDICT)
-
-libcxxexceptB.so: libcxxexceptB.cc registerlib_exceptB.o 
-	$(AM_V_CCLD)$(MPICXX) -o $@ -fPIC -Wall $< registerlib_exceptB.o -shared -DSO_NAME=$@
-
-libtestoutput.so: testoutput.c $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
-
-libfuncdict.so: funcdict.c $(REGLIB_SRC)
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=$@ -shared
-
-origin_dir/origin_subdir:
-	$(AM_V_GEN) mkdir -p origin_dir/origin_subdir
-
-origin_dir/origin_subdir/liborigintarget.so: origintarget.c origin_dir/origin_subdir
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< -shared
-
-origin_dir/liboriginlib.so: originlib.c $(REGLIB_SRC) origin_dir/origin_subdir/liborigintarget.so
-	$(AM_V_CCLD)$(MPICC) -o $@ -fPIC -Wall $< $(REGLIB_SRC) -DSO_NAME=liboriginlib.so -DFUNC_NAME=origin_calc -shared '-Wl,-rpath,$$ORIGIN/origin_subdir' -Lorigin_dir/origin_subdir -lorigintarget
-
-retzero_rx: retzero.c
-	$(AM_V_CCLD)$(MPICC) -o $@ $<
-	$(AM_V_GEN)chmod 700 $@
-
-retzero_r: retzero.c
-	$(AM_V_CCLD)$(MPICC) -o $@ $<
-	$(AM_V_GEN)chmod 600 $@
-
-retzero_x: retzero.c
-	$(AM_V_CCLD)$(MPICC) -o $@ $<
-	$(AM_V_GEN)chmod 300 $@
-
-retzero_: retzero.c
-	$(AM_V_CCLD)$(MPICC) -o $@ $<
-	$(AM_V_GEN)chmod 200 $@
-
-badinterp:
-	$(AM_V_GEN)echo "#!/notexist" > $@; chmod 700 $@
-
-hello_r.py: hello.py
-	$(AM_V_GEN)cp $< $@; chmod 600 $@
-
-hello_x.py: hello.py
-	$(AM_V_GEN)cp $< $@; chmod 300 $@
-
-hello_rx.py: hello.py
-	$(AM_V_GEN)cp $< $@; chmod 700 $@
-
-hello_.py: hello.py
-	$(AM_V_GEN)cp $< $@; chmod 200 $@
-
-hello_l.py:
-	$(AM_V_GEN)ln -fs hello_x.py $@
-
-badlink.py:
-	@if [ ! -h $@ ] ; then \
-		if [ $V ]; then echo ln -fs noexist.py $@; else echo "  GEN      $@"; fi; \
-		ln -fs noexist.py $@; \
-	fi
-
-runTests: $(srcdir)/runTests_template
-	@rm -f ./runTests
-	$(AM_V_GEN)$(SED) -e s,BLUEGENE_TEST,$(IS_BLUEGENE),g\;s,SPINDLE_EXEC,$(bindir)/spindle,g < $(srcdir)/runTests_template > $(top_builddir)/testsuite/runTests
-	@chmod 700 $(top_builddir)/testsuite/runTests
-
-run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile
-	@rm -f ./run_driver
-	$(AM_V_GEN)$(SED) -e s,SPINDLE_EXEC,$(bindir)/spindle,g\;s,TEST_RUN_DIR,$(ABS_TEST_DIR),g\;s,BLUEGENE_TEST,$(IS_BLUEGENE),g < $(srcdir)/run_driver_template > $(top_builddir)/testsuite/run_driver
-	@chmod 700 $(top_builddir)/testsuite/run_driver
-
-run_driver_rm: $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/Makefile
-	$(AM_V_GEN)cp $(srcdir)/run_driver_$(TESTRM) $(top_builddir)/testsuite/run_driver_rm
-	@chmod 700 $(top_builddir)/testsuite/run_driver_rm
-
-preload_file_list: $(srcdir)/preload_file_list_template $(top_builddir)/Makefile
-	@rm -f ./preload_file_list
-	$(AM_V_GEN)$(SED) -e s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $(srcdir)/preload_file_list_template > $(top_builddir)/testsuite/preload_file_list
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -662,6 +662,14 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+fluxplugin_ldflags
+shell_plugindir
+WITH_FLUX_FALSE
+WITH_FLUX_TRUE
+FLUX_HOSTLIST_LIBS
+FLUX_HOSTLIST_CFLAGS
+FLUX_CORE_LIBS
+FLUX_CORE_CFLAGS
 BLD_SLURMPLUGIN_FALSE
 BLD_SLURMPLUGIN_TRUE
 SCONTROL_ABSPATH
@@ -719,6 +727,9 @@ PIPES_TRUE
 SRUN_PATH
 TESTRM
 AR_FLAGS
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 CXXCPP
 OTOOL64
 OTOOL
@@ -729,7 +740,6 @@ MANIFEST_TOOL
 RANLIB
 DLLTOOL
 OBJDUMP
-LN_S
 NM
 ac_ct_DUMPBIN
 DUMPBIN
@@ -738,6 +748,7 @@ FGREP
 EGREP
 GREP
 LIBTOOL
+LN_S
 SED
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
@@ -904,6 +915,9 @@ CXX
 CXXFLAGS
 CCC
 CXXCPP
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
 BE_CC
 BE_CFLAGS
 BE_LDFLAGS
@@ -913,7 +927,11 @@ BE_CXX
 BE_CXXFLAGS
 BE_CPP
 BE_CXXCPP
-BE_host'
+BE_host
+FLUX_CORE_CFLAGS
+FLUX_CORE_LIBS
+FLUX_HOSTLIST_CFLAGS
+FLUX_HOSTLIST_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1628,6 +1646,11 @@ Some influential environment variables:
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   CXXCPP      C++ preprocessor
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
   BE_CC       CC for back end
   BE_CFLAGS   CFLAGS back end
   BE_LDFLAGS  LDFLAGS for back end
@@ -1638,6 +1661,14 @@ Some influential environment variables:
   BE_CPP      CPP for back end
   BE_CXXCPP   CXXCPP for back end
   BE_host     host to use for back end
+  FLUX_CORE_CFLAGS
+              C compiler flags for FLUX_CORE, overriding pkg-config
+  FLUX_CORE_LIBS
+              linker flags for FLUX_CORE, overriding pkg-config
+  FLUX_HOSTLIST_CFLAGS
+              C compiler flags for FLUX_HOSTLIST, overriding pkg-config
+  FLUX_HOSTLIST_LIBS
+              linker flags for FLUX_HOSTLIST, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -6730,7 +6761,18 @@ printf "%s\n" "$ac_cv_path_SED" >&6; }
 
 ac_config_headers="$ac_config_headers config.h"
 
-ac_config_files="$ac_config_files src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile"
+ac_config_files="$ac_config_files src/flux/Makefile src/slurm_plugin/Makefile doc/Makefile testsuite/Makefile Makefile"
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
+printf %s "checking whether ln -s works... " >&6; }
+LN_S=$as_ln_s
+if test "$LN_S" = "ln -s"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
+printf "%s\n" "no, using $LN_S" >&6; }
+fi
 
 case `pwd` in
   *\ * | *\	*)
@@ -7477,17 +7519,6 @@ else $as_nop
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_nm_interface" >&5
 printf "%s\n" "$lt_cv_nm_interface" >&6; }
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
-printf %s "checking whether ln -s works... " >&6; }
-LN_S=$as_ln_s
-if test "$LN_S" = "ln -s"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
-printf "%s\n" "no, using $LN_S" >&6; }
-fi
 
 # find the maximum length of command line arguments
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking the maximum length of command line arguments" >&5
@@ -17411,18 +17442,138 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 # Only expand once:
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
-printf %s "checking whether ln -s works... " >&6; }
-LN_S=$as_ln_s
-if test "$LN_S" = "ln -s"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
+
+# Initialize pkg-config
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+printf "%s\n" "$PKG_CONFIG" >&6; }
 else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
-printf "%s\n" "no, using $LN_S" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
 fi
 
 
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+printf "%s\n" "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+printf %s "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	else
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
 
 #Include common ops
 #Configure operations that are common between the Spindle and Spindle-client configurations
@@ -19198,6 +19349,205 @@ fi
 SCONTROL_ABSPATH=$SCONTROL_ABSPATH
 
 
+# Check for whether to build Flux shell plugin
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for flux-core > 0.40.0" >&5
+printf %s "checking for flux-core > 0.40.0... " >&6; }
+
+if test -n "$FLUX_CORE_CFLAGS"; then
+    pkg_cv_FLUX_CORE_CFLAGS="$FLUX_CORE_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"flux-core > 0.40.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "flux-core > 0.40.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FLUX_CORE_CFLAGS=`$PKG_CONFIG --cflags "flux-core > 0.40.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$FLUX_CORE_LIBS"; then
+    pkg_cv_FLUX_CORE_LIBS="$FLUX_CORE_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"flux-core > 0.40.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "flux-core > 0.40.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FLUX_CORE_LIBS=`$PKG_CONFIG --libs "flux-core > 0.40.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        FLUX_CORE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "flux-core > 0.40.0" 2>&1`
+        else
+	        FLUX_CORE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "flux-core > 0.40.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$FLUX_CORE_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (flux-core > 0.40.0) were not met:
+
+$FLUX_CORE_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables FLUX_CORE_CFLAGS
+and FLUX_CORE_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables FLUX_CORE_CFLAGS
+and FLUX_CORE_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	FLUX_CORE_CFLAGS=$pkg_cv_FLUX_CORE_CFLAGS
+	FLUX_CORE_LIBS=$pkg_cv_FLUX_CORE_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	with_flux=yes
+fi
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for flux-hostlist" >&5
+printf %s "checking for flux-hostlist... " >&6; }
+
+if test -n "$FLUX_HOSTLIST_CFLAGS"; then
+    pkg_cv_FLUX_HOSTLIST_CFLAGS="$FLUX_HOSTLIST_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"flux-hostlist\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "flux-hostlist") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FLUX_HOSTLIST_CFLAGS=`$PKG_CONFIG --cflags "flux-hostlist" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$FLUX_HOSTLIST_LIBS"; then
+    pkg_cv_FLUX_HOSTLIST_LIBS="$FLUX_HOSTLIST_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"flux-hostlist\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "flux-hostlist") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FLUX_HOSTLIST_LIBS=`$PKG_CONFIG --libs "flux-hostlist" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        FLUX_HOSTLIST_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "flux-hostlist" 2>&1`
+        else
+	        FLUX_HOSTLIST_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "flux-hostlist" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$FLUX_HOSTLIST_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (flux-hostlist) were not met:
+
+$FLUX_HOSTLIST_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables FLUX_HOSTLIST_CFLAGS
+and FLUX_HOSTLIST_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables FLUX_HOSTLIST_CFLAGS
+and FLUX_HOSTLIST_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	FLUX_HOSTLIST_CFLAGS=$pkg_cv_FLUX_HOSTLIST_CFLAGS
+	FLUX_HOSTLIST_LIBS=$pkg_cv_FLUX_HOSTLIST_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+ if test "x$with_flux" = "xyes"; then
+  WITH_FLUX_TRUE=
+  WITH_FLUX_FALSE='#'
+else
+  WITH_FLUX_TRUE='#'
+  WITH_FLUX_FALSE=
+fi
+
+if test "x$with_flux" = "xyes"; then
+  shell_plugindir=$libdir/flux/shell/plugins
+
+  fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
+
+fi
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -19401,6 +19751,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BLD_SLURMPLUGIN_TRUE}" && test -z "${BLD_SLURMPLUGIN_FALSE}"; then
   as_fn_error $? "conditional \"BLD_SLURMPLUGIN\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_FLUX_TRUE}" && test -z "${WITH_FLUX_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_FLUX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -20367,6 +20721,7 @@ do
   case $ac_config_target in
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+    "src/flux/Makefile") CONFIG_FILES="$CONFIG_FILES src/flux/Makefile" ;;
     "src/slurm_plugin/Makefile") CONFIG_FILES="$CONFIG_FILES src/slurm_plugin/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
