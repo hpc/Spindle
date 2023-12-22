@@ -273,6 +273,7 @@ static int sp_init (flux_plugin_t *p,
     json_t *R;
     const char *debug;
     const char *tmpdir;
+    const char *test;
 
     if (!(shell = flux_plugin_get_shell (p))
         || !(h = flux_shell_get_flux (shell)))
@@ -289,6 +290,11 @@ static int sp_init (flux_plugin_t *p,
     if ((debug = flux_shell_getenv (shell, "SPINDLE_DEBUG")))
         setenv ("SPINDLE_DEBUG", debug, 1);
 
+    /*  The spindle testsuite requires SPINDLE_TEST
+     */
+    if ((test = flux_shell_getenv (shell, "SPINDLE_TEST")))
+       setenv ("SPINDLE_TEST", test, 1);
+    
     /*  Spindle requires that TMPDIR is set. Propagate TMPDIR from job
      *  environment, or use /tmp if TMPDIR not set.
      */
