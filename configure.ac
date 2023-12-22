@@ -88,17 +88,7 @@ fi
 AM_CONDITIONAL([BLD_SLURMPLUGIN], [test "x$ENABLE_SLURM_PLUGIN" == "xtrue"])
 AC_SUBST(SCONTROL_ABSPATH, $SCONTROL_ABSPATH)
 
-# Check for whether to build Flux shell plugin
-PKG_CHECK_MODULES([FLUX_CORE], [flux-core > 0.40.0], [with_flux=yes], [])
-PKG_CHECK_MODULES([FLUX_HOSTLIST], [flux-hostlist], [], [])
-
-AM_CONDITIONAL([WITH_FLUX], [test "x$with_flux" = "xyes"])
-if test "x$with_flux" = "xyes"; then
-  AS_VAR_SET(shell_plugindir, $libdir/flux/shell/plugins)
-  AC_SUBST(shell_plugindir)
-  fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
-  AC_SUBST(fluxplugin_ldflags)
-fi
+AM_CONDITIONAL([BLD_FLUXPLUGIN], [test "x$ENABLE_FLUX_PLUGIN" = "xtrue"])
 
 AC_OUTPUT
 

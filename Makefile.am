@@ -2,7 +2,7 @@ SUBDIRS = src/client src/server src/fe doc
 if BLD_SLURMPLUGIN
 SUBDIRS += src/slurm_plugin
 endif
-if WITH_FLUX
+if BLD_FLUXPLUGIN
 SUBDIRS += src/flux
 endif
 if BLD_TESTSUITE

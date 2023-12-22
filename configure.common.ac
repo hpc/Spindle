@@ -256,6 +256,23 @@ AC_ARG_WITH(slurm-dir,
             [AS_HELP_STRING([--with-slurm-dir=DIR],[Look in in DIR for root of a slurm installation])]
             [SLURM_DIR=${withval}])
 
+AC_ARG_ENABLE(flux-plugin,
+              [AS_HELP_STRING([--enable-flux-plugin],[Build a spindle plugin for flux])],
+              [ENABLE_FLUX_PLUGIN="true"],
+              [ENABLE_FLUX_PLUGIN="false"])
+
+if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
+  # Check for whether to build Flux shell plugin
+  PKG_CHECK_MODULES([FLUX_CORE], [flux-core > 0.40.0], [], [ENABLE_FLUX_PLUGIN=false])
+  PKG_CHECK_MODULES([FLUX_HOSTLIST], [flux-hostlist], [], [])
+  if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
+    AS_VAR_SET(shell_plugindir, $libdir)
+    AC_SUBST(shell_plugindir)
+    fluxplugin_ldflags="-export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
+    AC_SUBST(fluxplugin_ldflags)
+  fi
+fi
+
 #Security options
 AC_DEFINE([KEY_SIZE_BYTES], [32], [Number of bytes in keys for gcrypt])
 

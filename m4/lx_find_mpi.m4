@@ -177,10 +177,10 @@ AC_DEFUN([LX_QUERY_MPI_COMPILER],
          CPPFLAGS=$MPI_$3FLAGS
          LIBS=$MPI_$3LDFLAGS
 
-         AC_LINK_IFELSE([AC_LANG_PROGRAM[[#include <mpi.h>],
+         AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <mpi.h>],
                      [int rank, size;
                       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-                      MPI_Comm_size(MPI_COMM_WORLD, &size);]]],
+                      MPI_Comm_size(MPI_COMM_WORLD, &size);])],
                      [# Add a define for testing at compile time.
                       AC_DEFINE([HAVE_MPI], [1], [Define to 1 if you have MPI libs and headers.])
                       have_$3_mpi='yes'],

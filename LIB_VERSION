@@ -24,6 +24,7 @@
 # Spindle 0.11 - libspindlefe.so 2.0.0, libspindlebe.so 2.0.0, libspindle.so 0.1.0
 # Spindle 0.12 - libspindlefe.so 2.1.0, libspindlebe.so 2.1.0, libspindle.so 0.1.0
 # Spindle 0.13 - libspindlefe.so 3.0.1, libspindlebe.so 3.0.1, libspindle.so 0.1.0, libspindleslurm.so 0.0.0
+# Spindle 0.14 - libspindlefe.so 3.0.1, libspindlebe.so 3.0.1, libspindle.so 0.1.0, libspindleslurm.so 0.0.0, libspindleflux 0.0.0
 
 if test "x$1" == "xspindlefe"; then
 echo 3:0:1
@@ -35,5 +36,8 @@ if test "x$1" == "xlibspindle"; then
 echo 0:1:0
 fi
 if test "x$1" == "xspindleslurm"; then
+echo 0:0:0
+fi
+if test "x$1" == "xspindleflux"; then
 echo 0:0:0
 fi
