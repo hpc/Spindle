@@ -1,9 +1,10 @@
 #!/bin/sh
 
 if [ x$SPINDLE_TEST_ARGS = x ] ; then
-((PROCS=*$SLURM_CPUS_ON_NODE))
+PROCS=`flux resource info | tr ',' '\n' | grep Cores | awk '{print $1}'`
 else
 PROCS=$SPINDLE_TEST_ARGS
 fi
 
-$SPINDLE $SPINDLE_OPTS /g/g0/dahn/workspace/FLUX/ngrm/zmq-broker/wreck/wreckrun -n $PROCS $*
+flux run -o userrc=spindle.rc -o spindle -n $PROCS $*
+
