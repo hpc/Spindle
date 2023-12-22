@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <jansson.h>
+#include <strings.h>
 
 #define FLUX_SHELL_PLUGIN_NAME "spindle"
 
@@ -203,6 +204,17 @@ static void wait_for_shell_init (flux_future_t *f, void *arg)
         run_spindle_frontend (ctx);
 }
 
+static int parse_yesno(opt_t *opt, opt_t flag, const char *yesno)
+{
+   if (strcasecmp(yesno, "no") == 0 || strcasecmp(yesno, "false") == 0 || strcasecmp(yesno, "0") == 0)
+      *opt &= ~flag;
+   else if (strcasecmp(yesno, "yes") == 0 || strcasecmp(yesno, "true") == 0 || strcasecmp(yesno, "1") == 0)
+      *opt |= 1;
+   else
+      return shell_log_errno ("Error in spindle option: Expected 'yes' or 'no', got %s", yesno);
+   return 0;
+}
+
 static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
 {
     json_error_t error;
@@ -210,6 +222,11 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int noclean = 0;
     int nostrip = 0;
     int follow_fork = 0;
+    int push = 0;
+    int pull = 0;
+    int had_error = 0;
+    const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
+    const char *followfork = NULL, *preload = NULL;
     const char *pyprefix = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
@@ -232,11 +249,18 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?s}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
-                        "follow-fork", &follow_fork,
-                        "python-prefix", &pyprefix) < 0)
+                        "push", &push,
+                        "pull", &pull,
+                        "reloc-aout", &relocaout,
+                        "follow-fork", &followfork,
+                        "reloc-libs", &reloclibs,
+                        "reloc-exec", &relocexec,
+                        "reloc-python", &relocpython,
+                        "python-prefix", &pyprefix,
+                        "preload", &preload) < 0)
         return shell_log_errno ("Error in spindle option: %s", error.text);
 
     if (noclean)
@@ -245,6 +269,26 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
         ctx->params.opts &= ~OPT_STRIP;
     if (follow_fork)
         ctx->params.opts |= OPT_FOLLOWFORK;
+    if (push) {
+       ctx->params.opts |= OPT_PUSH;
+       ctx->params.opts &= ~OPT_PULL;
+    }
+    if (pull) {
+       ctx->params.opts &= ~OPT_PUSH;
+       ctx->params.opts |= OPT_PULL;
+    }
+    if (relocaout)
+       had_error |= parse_yesno(&ctx->params.opts, OPT_RELOCAOUT, relocaout);
+    if (followfork)
+       had_error |= parse_yesno(&ctx->params.opts, OPT_FOLLOWFORK, followfork);
+    if (reloclibs)
+       had_error |= parse_yesno(&ctx->params.opts, OPT_RELOCSO, reloclibs);
+    if (relocexec)
+       had_error |= parse_yesno(&ctx->params.opts, OPT_RELOCEXEC, relocexec);
+    if (relocpython)
+       had_error |= parse_yesno(&ctx->params.opts, OPT_RELOCPY, relocpython);
+    if (preload)
+       ctx->params.preloadfile = (char *) preload;
     if (pyprefix) {
         char *tmp;
         if (asprintf (&tmp, "%s:%s", ctx->params.pythonprefix, pyprefix) < 0)
@@ -252,6 +296,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
         free (ctx->params.pythonprefix);
         ctx->params.pythonprefix = tmp;
     }
+    if (had_error)
+       return had_error;
     return 0;
 }
 

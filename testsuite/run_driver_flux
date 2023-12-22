@@ -6,5 +6,16 @@ else
 PROCS=$SPINDLE_TEST_ARGS
 fi
 
-flux run -o userrc=spindle.rc -o spindle -n $PROCS $*
+FLUX_SPINDLE_OPTS="spindle"
+if [ "x$SPINDLE_OPTS" = "x--preload=preload_file_list" ] ; then
+    FLUX_SPINDLE_OPTS="spindle.preload=preload_file_list"
+fi
+if [ "x$SPINDLE_OPTS" = "x--push" ] ; then
+    FLUX_SPINDLE_OPTS="spindle.push"
+fi
+if [ "x$SPINDLE_OPTS" = "x--pull" ] ; then
+    FLUX_SPINDLE_OPTS="spindle.pull"
+fi
+
+flux run -o userrc=spindle.rc -o $FLUX_SPINDLE_OPTS -n $PROCS $*
 
