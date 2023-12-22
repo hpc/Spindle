@@ -215,6 +215,11 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
         return -1;
 
+    /*
+     * Options we need to be always on
+     */
+    ctx->params.opts |= OPT_PERSIST;
+
     /*  attributes.system.shell.options.spindle=1 is valid if no other
      *  spindle options are set. Return early if this is the case.
      */
@@ -397,8 +402,6 @@ static int sp_task (flux_plugin_t *p,
 
 /*  Shell exit handler.
  *  Close the frontend on rank 0. All ranks terminate the backend.
- *  (Note: this is for debugging only, since the backend seems to hang
- *   around during testing. Disable for production use.)
  */
 static int sp_exit (flux_plugin_t *p,
                     const char *topic,
@@ -408,8 +411,6 @@ static int sp_exit (flux_plugin_t *p,
     struct spindle_ctx *ctx = flux_plugin_aux_get (p, "spindle");
     if (ctx && ctx->shell_rank == 0)
         spindleCloseFE (&ctx->params);
-    else if (ctx)
-        kill (ctx->backend_pid, SIGKILL);
     return 0;
 }
 
