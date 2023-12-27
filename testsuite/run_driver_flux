@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ x$SPINDLE_TEST_ARGS = x ] ; then
-PROCS=`flux resource info | tr ',' '\n' | grep Cores | awk '{print $1}'`
+if [ "x$SPINDLE_TEST_ARGS" = "x" ] ; then
+PROCS="-n `flux resource info | tr ',' '\n' | grep Cores | awk '{print $1}'`"
 else
 PROCS=$SPINDLE_TEST_ARGS
 fi
@@ -17,5 +17,5 @@ if [ "x$SPINDLE_OPTS" = "x--pull" ] ; then
     FLUX_SPINDLE_OPTS="spindle.pull"
 fi
 
-flux run -o userrc=spindle.rc -o $FLUX_SPINDLE_OPTS -n $PROCS $*
+flux run -o userrc=spindle.rc -o $FLUX_SPINDLE_OPTS $PROCS $*
 

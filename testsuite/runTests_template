@@ -2,6 +2,7 @@
 
 export SPINDLE_TEST_ARGS="$@"
 export SPINDLE_BLUEGENE="BLUEGENE_TEST"
+export TEST_RM="TEST_RESOURCE_MANAGER"
 
 ./run_driver --dependency --push
 ./run_driver --dlopen --push
@@ -49,6 +50,7 @@ fi
 ./run_driver --partial --preload
 ./run_driver --ldpreload --preload
 
+if test "x$TEST_RM" != "xflux"; then
 export SESSION_ID=`./run_driver --start-session`
 ./run_driver --dependency --session
 ./run_driver --dlopen --session
@@ -58,3 +60,11 @@ export SESSION_ID=`./run_driver --start-session`
 ./run_driver --ldpreload --session
 ./run_driver --end-session $SESSION_ID
 unset SESSION_ID
+else
+echo Skipping: ./run_driver --dependency --session
+echo Skipping: ./run_driver --dlopen --session
+echo Skipping: ./run_driver --dlreopen --session
+echo Skipping: ./run_driver --reorder --session
+echo Skipping: ./run_driver --partial --session
+echo Skipping: ./run_driver --ldpreload --session
+fi

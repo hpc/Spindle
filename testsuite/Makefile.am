@@ -173,7 +173,7 @@ badlink.py:
 
 runTests: $(srcdir)/runTests_template
 	@rm -f ./runTests
-	$(AM_V_GEN)$(SED) -e s,BLUEGENE_TEST,$(IS_BLUEGENE),g\;s,SPINDLE_EXEC,$(bindir)/spindle,g < $(srcdir)/runTests_template > $(top_builddir)/testsuite/runTests
+	$(AM_V_GEN)$(SED) -e s,BLUEGENE_TEST,$(IS_BLUEGENE),g\;s,TEST_RESOURCE_MANAGER,$(TESTRM),g\;s,SPINDLE_EXEC,$(bindir)/spindle,g < $(srcdir)/runTests_template > $(top_builddir)/testsuite/runTests
 	@chmod 700 $(top_builddir)/testsuite/runTests
 run_driver: $(srcdir)/run_driver_template $(top_builddir)/Makefile
 	@rm -f ./run_driver
