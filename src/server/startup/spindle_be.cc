@@ -119,6 +119,9 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
 
    initSecurity(security_type, unique_id);
 
+   debug_printf("Called spindleRunBE(port=%u, num_ports=%u, unique_id = %lu, security_type = %d, post_setup = %p)\n",
+                port, num_ports, unique_id, security_type, post_setup);
+   
    /* Setup network and share setup data */
    debug_printf3("spindleRunBE setting up network and receiving setup data\n");
    void *setup_data;

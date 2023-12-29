@@ -386,7 +386,7 @@ int client_close_connection_pipe(int fd)
 
    assert(fd >= 0 && fd < MAX_FD);
 
-   debug_printf2("Closing client connections.  Cleaning input %s (%d) and output %s (%d)\n",
+   debug_printf2("Closing client connections.  Closing FDs on input %s (%d) and output %s (%d)\n",
                  fdlist_pipe[fd].in_fn, fdlist_pipe[fd].in_fd, fdlist_pipe[fd].out_fn, fdlist_pipe[fd].out_fd);
 
    result = close(fdlist_pipe[fd].in_fd);

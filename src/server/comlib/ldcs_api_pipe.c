@@ -377,7 +377,7 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
   int         left,bsumread;
   ssize_t     btoread, bread;
   char       *dataptr;
-  
+  int continue_count = 0;
   left      = bytes;
   bsumread  = 0;
   dataptr   = (char*) data;
@@ -389,8 +389,14 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
     if(bread<0) {
        if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
           debug_printf3("read from fifo: got EAGAIN or EWOULDBLOCK\n");
-          if(block==LDCS_READ_NO_BLOCK) return(0);
-          else continue;
+          if(block==LDCS_READ_NO_BLOCK)
+             return 0;
+          else if (continue_count++ < 16)
+             continue;
+          else {
+             err_printf("Could not read from %d, too many EAGAIN msgs\n");
+             return -1;
+          }
        } else { 
           debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
        }
