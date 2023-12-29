@@ -87,6 +87,7 @@ void spawnLogDaemon(char *tempdir)
             params[cur++] = "spindle_test";
          }
          params[cur++] = NULL;
+         unsetenv("LD_AUDIT");
          execv(spindle_log_daemon_name, params);
          fprintf(stderr, "Error executing %s: %s\n", spindle_log_daemon_name, strerror(errno));
          exit(0);
