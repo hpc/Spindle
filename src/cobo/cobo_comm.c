@@ -162,6 +162,7 @@ int ll_read(int fd, void *buf, size_t count)
    unsigned char *cbuf = (unsigned char *) buf;
 
    while (pos < count) {
+      errno = 0;
       result = read(fd, cbuf + pos, count - pos);
       debug_printf3("Read %d bytes from network: 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x...\n", result,
                     result > 0 ? ((int) cbuf[pos+0]) : 0,
@@ -173,9 +174,13 @@ int ll_read(int fd, void *buf, size_t count)
                     result > 6 ? ((int) cbuf[pos+6]) : 0,
                     result > 7 ? ((int) cbuf[pos+7]) : 0);
       if (result == -1 || result == 0) {
-         if (errno == EINTR || errno == EAGAIN)
-            continue;
          error = errno;
+         if (error == EINTR || error == EAGAIN)
+            continue;
+         if (error == 0) {
+            debug_printf3("ll_read terminated without a return result\n");
+            return -1;
+         }
          err_printf("Error reading from cobo FD %d with return result %d: %s\n", fd, result, strerror(error));
          return -1;
       }

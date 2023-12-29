@@ -56,7 +56,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define debug_printf(format, ...)                                       \
    do {                                                                 \
       if (debug_file) {                                                 \
-         fprintf(debug_file, "[%s:%u] - " format, BASE_FILE, __LINE__, ## __VA_ARGS__); \
+         fprintf(debug_file, "[%d@%s:%u] - " format, getpid(), BASE_FILE, __LINE__, ## __VA_ARGS__); \
       }                                                                 \
    } while (0)
 
@@ -64,7 +64,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
    do {                                                                 \
       log_error(format, ## __VA_ARGS__);                                \
       if (debug_file) {                                                 \
-         fprintf(debug_file, "ERROR: [%s:%u] - %s", BASE_FILE, __LINE__, last_error_message); \
+         fprintf(debug_file, "ERROR: [%d@%s:%u] - %s", getpid(),  BASE_FILE, __LINE__, last_error_message); \
       }                                                                 \
    } while (0)
 
@@ -72,7 +72,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
    do {                                                                 \
        log_security_error(format, ## __VA_ARGS__);                      \
        if (debug_file) {                                                \
-          fprintf(debug_file, "SECURITY ERROR: [%s:%u] - %s", BASE_FILE, __LINE__, last_security_message); \
+          fprintf(debug_file, "SECURITY ERROR: [%d%s:%u] - %s", getpid(), BASE_FILE, __LINE__, last_security_message); \
        }                                                                \
    } while (0)
 
@@ -786,6 +786,11 @@ static int reliable_read(int fd, void *buf, size_t size)
       }
       result = read(fd, ((unsigned char *) buf) + bytes_read, size - bytes_read);
       if (result <= 0) {
+         int error = errno;
+         if (error == ECONNRESET) {
+            debug_printf("Connection reset during handshake read\n");
+            return HSHAKE_DROP_CONNECTION;
+         }
          error_printf("Expected error return %d when reading from socket: %s\n", result,
                       strerror(errno));
          return HSHAKE_INTERNAL_ERROR;
@@ -1085,8 +1090,8 @@ static int share_result(int fd, int handshake_result)
    debug_printf("Reading peer result\n");
    result = reliable_read(fd, &peer_result, sizeof(peer_result));
    if (result != sizeof(peer_result)) {
-      error_printf("Failed to read handshake result from peer\n");
-      return HSHAKE_INTERNAL_ERROR;
+      debug_printf("Failed to read handshake result from peer\n");
+      return result;
    }
    debug_printf("Peer reported result of %d\n", peer_result);
 
@@ -1147,7 +1152,7 @@ static int exchange_sig(int sockfd)
    result = reliable_read(sockfd, &sig, sizeof(sig));
    if (result != sizeof(sig)) {
       debug_printf("Problem reading sig from network\n");
-      return HSHAKE_INTERNAL_ERROR;
+      return result;
    }
    if (sig != SIG) {
       error_printf("Signature %x doesn't match expected value %x\n", sig, SIG);
@@ -1189,7 +1194,7 @@ static int recv_packet(int sockfd, unsigned char **packet, size_t *packet_size)
    result = reliable_read(sockfd, &size, sizeof(size));
    if (result != sizeof(size)) {
       debug_printf("Error reading packet size from network\n");
-      return HSHAKE_INTERNAL_ERROR;
+      return result;
    }
    debug_printf("Received packet size %u\n", (unsigned int) size);
    if (size > 0x100000) {
@@ -1201,7 +1206,7 @@ static int recv_packet(int sockfd, unsigned char **packet, size_t *packet_size)
    result = reliable_read(sockfd, *packet, size);
    if (result != size) {
       debug_printf("Error reading packet from network\n");
-      return HSHAKE_INTERNAL_ERROR;
+      return result;
    }
    *packet_size = size;
    debug_printf("Received packet from network\n");   
