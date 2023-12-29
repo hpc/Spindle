@@ -95,7 +95,7 @@ static unsigned int cobo_acceptid  = 2348104830u;
 /* number of ports and list of ports in the available port range */
 static int  cobo_num_ports = 0;
 static int* cobo_ports     = NULL;
-
+static int tree_port;
 /* size (in bytes) and pointer to hostlist data structure */
 static int   cobo_hostlist_size = 0;
 static void* cobo_hostlist      = NULL;
@@ -787,16 +787,22 @@ static int cobo_open_tree()
             continue;
         }
 
+        struct linger slinger;
+        slinger.l_onoff = 1;
+        slinger.l_linger = 0;
+        setsockopt(sockfd, SOL_SOCKET, SO_LINGER, &slinger, sizeof(slinger));
+
         /* set the socket to listen for connections */
         if (listen(sockfd, 1) < 0) {
            debug_printf3("Setting parent socket to listen (listen() %m errno=%d) port=%d\n",
                 errno, port);
-            continue;
+           continue;
         }
 
         /* bound and listening on our port */
         debug_printf3("Opened socket on port %d\n", port);
         port_is_bound = 1;
+        tree_port = port;
     }
 
     /* failed to bind to a port, this is fatal */
@@ -886,9 +892,6 @@ static int cobo_open_tree()
         have_parent = 1;
     }
 
-    /* we've got the connection to our parent, so close the listening socket */
-    close(sockfd);
-
     cobo_gettimeofday(&tree_start);
 
     /* TODO: exchange protocol version number */
@@ -976,6 +979,9 @@ static int cobo_open_tree()
 
     free(child_names);
 
+    /* we've got the connection to our parent, so close the listening socket */
+    close(sockfd);
+    
     return COBO_SUCCESS;
 }
 
