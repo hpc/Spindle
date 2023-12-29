@@ -170,6 +170,9 @@ int ldcs_audit_server_md_unregister_fd ( ldcs_process_data_t *ldcs_process_data 
 int ldcs_audit_server_md_destroy ( ldcs_process_data_t *ldcs_process_data ) 
 {
    /* Nothing to be done.  Sockets will be closed when we exit. */
+   if (cobo_close() != COBO_SUCCESS) {
+      debug_printf3("Failed to close\n");
+   }
    return 0;
 }
 
