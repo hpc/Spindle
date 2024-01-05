@@ -371,13 +371,12 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
   return(rc);
 }
 
-
 int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
 
   int         left,bsumread;
   ssize_t     btoread, bread;
   char       *dataptr;
-  int continue_count = 0;
+  int print_count = 512;
   left      = bytes;
   bsumread  = 0;
   dataptr   = (char*) data;
@@ -388,15 +387,12 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
     bread      = read(fd, dataptr, btoread);
     if(bread<0) {
        if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-          debug_printf3("read from fifo: got EAGAIN or EWOULDBLOCK\n");
+          if (print_count-- > 0)
+             debug_printf3("read from fifo: got EAGAIN or EWOULDBLOCK\n");
           if(block==LDCS_READ_NO_BLOCK)
              return 0;
-          else if (continue_count++ < 16)
+          else
              continue;
-          else {
-             err_printf("Could not read from %d, too many EAGAIN msgs\n");
-             return -1;
-          }
        } else { 
           debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
        }
