@@ -224,6 +224,8 @@ struct argp_option options[] = {
      "Relocate shared libraries through Spindle. Default: yes", GROUP_RELOC },
    { "reloc-python", RELOCPY, YESNO, 0,
      "Relocate python modules (.py/.pyc) files when loaded via python. Default: yes", GROUP_RELOC },
+   { "reloc-julia", RELOCJL, YESNO, 0,
+     "Relocate Julia (.jl/.ji) files when loaded via Julia. Default: yes", GROUP_RELOC },
    { "reloc-exec", RELOCEXEC, YESNO, 0,
      "Relocate the targets of exec/execv/execve/... calls. Default: yes", GROUP_RELOC },
    { "follow-fork", FOLLOWFORK, YESNO, 0,

@@ -56,6 +56,7 @@ extern "C" {
 #define OPT_BEEXIT     (1 << 25)            /* Block exit until each backend calls spindleExitBE */
 #define OPT_PROCCLEAN  (1 << 26)            /* Use a dedicated process to run cleanup routines after Spindle exits */
 #define OPT_RSHLAUNCH  (1 << 27)            /* Launch BEs via an rsh/ssh tree */
+#define OPT_RELOCJL    (1 << 28)            /* Relocate Julia .jl/.ji files */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)

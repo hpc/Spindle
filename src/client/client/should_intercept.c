@@ -60,6 +60,15 @@ static int is_compiled_python(const char *pathname, char *last_dot)
    return 0;
 }
 
+static int is_julia(const char *pathname, char *last_dot)
+{
+   if (last_dot &&
+       (strcmp(last_dot, ".jl") == 0 ||
+        strcmp(last_dot, ".ji") == 0))
+      return 1;
+   return 0;
+}
+
 static int is_dso(const char *pathname, char *last_slash, char *last_dot)
 {
    if (last_dot &&
@@ -101,11 +110,16 @@ int open_filter(const char *fname, int flags)
       return ORIG_CALL;
    }
 
-   if (!(opts & OPT_RELOCPY))
-      return ORIG_CALL;
-
    last_dot = strrchr(fname, '.');
    last_slash = strrchr(fname, '/');
+
+   if (opts & OPT_RELOCJL) {
+      if (is_julia(fname, last_dot) && !open_for_dir(flags))
+         return REDIRECT;
+   }
+
+   if (!(opts & OPT_RELOCPY))
+      return ORIG_CALL;
 
    if (is_python_path(fname) && !open_for_dir(flags))
       return REDIRECT;
@@ -138,11 +152,16 @@ int fopen_filter(const char *fname, const char *flags)
       return ORIG_CALL;
    }
 
-   if (!(opts & OPT_RELOCPY))
-      return ORIG_CALL;
-
    last_dot = strrchr(fname, '.');
    last_slash = strrchr(fname, '/');
+
+   if (opts & OPT_RELOCJL) {
+      if (!open_for_write(flags) && is_julia(fname, last_dot))
+         return REDIRECT;
+   }
+
+   if (!(opts & OPT_RELOCPY))
+      return ORIG_CALL;
 
    if (is_python_path(fname))
       return REDIRECT;
@@ -177,14 +196,20 @@ int stat_filter(const char *fname)
    if (relocate_spindleapi())
       return REDIRECT;
 
+   last_dot = strrchr(fname, '.');
+   last_slash = strrchr(fname, '/');
+
+   if (opts & OPT_RELOCJL) {
+      if (is_julia(fname, last_dot))
+         return REDIRECT;
+      // TODO: DSO handling below is probably also wanted by Julia
+   }
+
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
    if (is_python_path(fname))
       return REDIRECT;
-
-   last_dot = strrchr(fname, '.');
-   last_slash = strrchr(fname, '/');
 
    if (is_dso(fname, last_slash, last_dot) ||
        is_python(fname, last_dot) || 
