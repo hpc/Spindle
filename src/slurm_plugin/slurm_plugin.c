@@ -273,9 +273,9 @@ static int process_spindle_args(spank_t spank, int site_argc, char *site_argv[],
 
    site_options_size = strlen(site_options);
    user_options_size = strlen(user_options);
-   combined_options_size = site_options_size + user_options_size + 2;
+   combined_options_size = site_options_size + user_options_size + 3;
    combined_options = (char *) malloc(combined_options_size);
-   snprintf(combined_options, combined_options_size, "%s%s%s",
+   snprintf(combined_options, combined_options_size, "%s%s%s ",
             site_options,
             (site_options_size && user_options_size) ? " " : "",
             user_options);
@@ -301,7 +301,7 @@ static int process_spindle_args(spank_t spank, int site_argc, char *site_argv[],
    if (spindle_config)
       free(spindle_config);
          
-   if (combined_argv) {
+   if (!out_argv && combined_argv) {
       for (i = 0; i < combined_argc; i++) {
          if (combined_argv[i])
             free(combined_argv[i]);
