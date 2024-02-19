@@ -500,7 +500,6 @@ static int launchFE(char **hostlist, spindle_args_t *params)
    }
    if (pidFE) {
       sdprintf(2, "Forked FE as pid %d\n", pidFE);
-      registerFEPid(pidFE, params);
       return 0;
    }
 
