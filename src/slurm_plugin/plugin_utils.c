@@ -46,7 +46,6 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
    scontrol_cmdline_len = strlen(scontrol_path) + strlen(scontrol_args) + strlen(hoststr) + strlen(scontrol_suffix) + 6;
    scontrol_cmdline = (char *) malloc(scontrol_cmdline_len);
 
-   sdprintf(2, "Running scontrol to get host list: %s\n", scontrol_cmdline);
    result = snprintf(scontrol_cmdline, scontrol_cmdline_len, "%s %s \"%s\" %s",
                      scontrol_path, scontrol_args, hoststr, scontrol_suffix);
    if (result >= scontrol_cmdline_len) {
@@ -54,6 +53,7 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
                scontrol_cmdline, result, scontrol_cmdline_len);
       goto done;
    }
+   sdprintf(2, "Running scontrol to get host list: %s\n", scontrol_cmdline);
 
    f = popen(scontrol_cmdline, "r");
    if (!f) {
