@@ -39,6 +39,7 @@ int decodeSpindleConfig(const char *encodedstr,
                         int *spindle_argc, char ***spindle_argv);
 
 char **getHostsScontrol(unsigned int num_hosts, const char *hoststr);
+char **getHostAddrSinfo(unsigned int num_hosts, char **hostlist);
 char **getHostsParse(unsigned int num_hosts, const char *shortlist);
 
 int isFEHost(char **hostlist, unsigned int num_hosts);

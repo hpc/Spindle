@@ -22,6 +22,11 @@
 #else
 #define SLURM_SCONTROL_BIN "scontrol"
 #endif
+#if defined SINFO_BIN
+#define SLURM_SINFO_BIN STR(SINFO_BIN)
+#else
+#define SLURM_SINFO_BIN "sinfo"
+#endif
 
 
 extern char *parse_location(char *loc);
@@ -117,6 +122,86 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
       free(hostlist);
    }
    return ret;   
+}
+
+char **getHostAddrSinfo(unsigned int num_hosts, char **hostlist)
+{
+   const char *sinfo_path = SLURM_SINFO_BIN;
+   const char *sinfo_args = "-O NodeAddr -h -n";
+   const char *sinfo_suffix = "2> /dev/null";
+   FILE *f = NULL;
+   char **hostaddrlist = NULL, *s, *sinfo_cmdline = NULL, **ret = NULL;
+   int i, j, hostnamelen;
+   int result;
+   size_t maxHostLen = 0, sinfo_cmdlineLen, len;
+
+   hostaddrlist = calloc(num_hosts+1, sizeof(char*));
+
+   for (i = 0; i < num_hosts; i++) {
+       if (hostlist[i]) {
+	   size_t thisLen = strlen(hostlist[i]);
+	   if (thisLen > maxHostLen) maxHostLen = thisLen;
+       }
+   }
+
+   sinfo_cmdlineLen = strlen(sinfo_path) + strlen(sinfo_args)
+       + maxHostLen + strlen(sinfo_suffix) + 6;
+   sinfo_cmdline = (char *) malloc(sinfo_cmdlineLen);
+
+   for (i = 0; i < num_hosts; i++) {
+      if (!hostlist[i] || !strlen(hostlist[i])) goto done;
+      result = snprintf(sinfo_cmdline, sinfo_cmdlineLen, "%s %s \"%s\" %s",
+			sinfo_path, sinfo_args, hostlist[i], sinfo_suffix);
+      if (result >= sinfo_cmdlineLen) {
+	 sdprintf(1, "ERROR: Formatting error creating sinfo cmdline '%s' (%d)\n",
+		  sinfo_cmdline, result);
+	 goto done;
+      }
+      sdprintf(2, "Running sinfo to get host address: %s\n", sinfo_cmdline);
+
+      f = popen(sinfo_cmdline, "r");
+      if (!f) {
+	 sdprintf(1, "ERROR: Could not run sinfo: %s\n", sinfo_cmdline);
+	 goto done;
+      }
+
+      len = 0;
+      result = getline(&(hostaddrlist[i]), &len, f);
+      pclose(f);
+      if (result == -1) {
+         int error = errno;
+         sdprintf(1, "ERROR: Resolving '%s' failed: %s\n", hostlist[i], strerror(error));
+         (void) error;
+         goto done;
+      }
+
+      s = hostaddrlist[i];
+      hostnamelen = strlen(s);
+      for (j = 0; j < hostnamelen; j++) {
+         if (!((s[j] >= '0' && s[j] <= '9') ||
+               (s[j] >= 'a' && s[j] <= 'z') ||
+               (s[j] >= 'A' && s[j] <= 'Z') ||
+               (s[j] == '-' || s[j] == '_' || s[j] == '.'))) {
+            s[j] = '\0';
+            break;
+         }
+      }
+      sdprintf(3, "sinfo returned hostaddr %s for %s\n", s, hostlist[i]);
+   }
+   if (i != num_hosts) {
+      sdprintf(1, "ERROR: expected %d hosts from sinfo.  Got %d\n",  num_hosts, i);
+      goto done;
+   }
+
+   ret = hostaddrlist;
+  done:
+   if (sinfo_cmdline)
+      free(sinfo_cmdline);
+   if (!ret && hostaddrlist) {
+      for (i = 0; i < num_hosts; i++) free(hostaddrlist[i]);
+      free(hostlist);
+   }
+   return ret;
 }
 
 int isFEHost(char **hostlist, unsigned int num_hosts)

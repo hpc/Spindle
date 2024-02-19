@@ -426,7 +426,7 @@ static int get_spindle_args(spank_t spank, spindle_args_t *params)
 
 static int launch_spindle(spank_t spank, spindle_args_t *params)
 {
-   char **hostlist = NULL;
+   char **hostlist = NULL, **hostaddrlist = NULL;
    int result;
    int is_fe_host = 0;
    int is_be_leader = 0;
@@ -460,7 +460,14 @@ static int launch_spindle(spank_t spank, spindle_args_t *params)
    }
 
    if (is_fe_host && is_be_leader) {
+#if defined(SINFO_BIN)
+      hostaddrlist = getHostAddrSinfo(num_hosts, hostlist);
+      if (!hostaddrlist)
+	  goto done;
+      result = launchFE(hostaddrlist, params);
+#else
       result = launchFE(hostlist, params);
+#endif
       if (result == -1)
          goto done;
    }
@@ -471,6 +478,11 @@ static int launch_spindle(spank_t spank, spindle_args_t *params)
    if (hostlist) {
       for (i = 0; i < num_hosts; i++) free(hostlist[i]);
       free(hostlist);
+   }
+   if (hostaddrlist) {
+      for (i = 0; i < num_hosts; i++) free(hostaddrlist[i]);
+      free(hostaddrlist);
+   }
    
    return launch_result;
 }
