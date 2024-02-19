@@ -312,6 +312,7 @@ SCONTROL_ABSPATH = @SCONTROL_ABSPATH@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SINFO_ABSPATH = @SINFO_ABSPATH@
 SRUN_PATH = @SRUN_PATH@
 STRIP = @STRIP@
 TESTRM = @TESTRM@
@@ -378,7 +379,7 @@ top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libspindleslurm.la
 libver = `$(top_srcdir)/LIB_VERSION spindleslurm`
 libspindleslurm_la_SOURCES = encode_decode.c plugin_utils.c slurm_plugin.c $(top_srcdir)/src/utils/spindle_mkdir.c $(top_srcdir)/src/utils/parseloc.c
-libspindleslurm_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/include -I$(top_srcdir)/src/logging -DUSE_PLUGIN_DEBUG -DDEBUG -DCUSTOM_GETENV -DCUSTOM_GETENV_FREE -DSCONTROL_BIN="$(SCONTROL_ABSPATH)" -DSPINDLE_DO_EXPORT
+libspindleslurm_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/include -I$(top_srcdir)/src/logging -DUSE_PLUGIN_DEBUG -DDEBUG -DCUSTOM_GETENV -DCUSTOM_GETENV_FREE -DSCONTROL_BIN="$(SCONTROL_ABSPATH)" -DSINFO_BIN="$(SINFO_ABSPATH)" -DSPINDLE_DO_EXPORT
 libspindleslurm_la_LDFLAGS = $(AM_LDFLAGS) -ldl -version-info $(libver)
 libspindleslurm_la_LIBADD = $(top_builddir)/src/server/startup/libspindlebe.la $(top_builddir)/src/fe/startup/libspindlefe.la
 libspindleslurm_la_CFLAGS = $(CFLAGS) -fvisibility=hidden

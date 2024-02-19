@@ -22,6 +22,11 @@
 #else
 #define SLURM_SCONTROL_BIN "scontrol"
 #endif
+#if defined SINFO_BIN
+#define SLURM_SINFO_BIN STR(SINFO_BIN)
+#else
+#define SLURM_SINFO_BIN "sinfo"
+#endif
 
 
 extern char *parse_location(char *loc);
@@ -46,7 +51,6 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
    scontrol_cmdline_len = strlen(scontrol_path) + strlen(scontrol_args) + strlen(hoststr) + strlen(scontrol_suffix) + 6;
    scontrol_cmdline = (char *) malloc(scontrol_cmdline_len);
 
-   sdprintf(2, "Running scontrol to get host list: %s\n", scontrol_cmdline);
    result = snprintf(scontrol_cmdline, scontrol_cmdline_len, "%s %s \"%s\" %s",
                      scontrol_path, scontrol_args, hoststr, scontrol_suffix);
    if (result >= scontrol_cmdline_len) {
@@ -54,6 +58,7 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
                scontrol_cmdline, result, scontrol_cmdline_len);
       goto done;
    }
+   sdprintf(2, "Running scontrol to get host list: %s\n", scontrol_cmdline);
 
    f = popen(scontrol_cmdline, "r");
    if (!f) {
@@ -119,6 +124,86 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr)
    return ret;   
 }
 
+char **getHostAddrSinfo(unsigned int num_hosts, char **hostlist)
+{
+   const char *sinfo_path = SLURM_SINFO_BIN;
+   const char *sinfo_args = "-O NodeAddr -h -n";
+   const char *sinfo_suffix = "2> /dev/null";
+   FILE *f = NULL;
+   char **hostaddrlist = NULL, *s, *sinfo_cmdline = NULL, **ret = NULL;
+   int i, j, hostnamelen;
+   int result;
+   size_t maxHostLen = 0, sinfo_cmdlineLen, len;
+
+   hostaddrlist = calloc(num_hosts+1, sizeof(char*));
+
+   for (i = 0; i < num_hosts; i++) {
+       if (hostlist[i]) {
+	   size_t thisLen = strlen(hostlist[i]);
+	   if (thisLen > maxHostLen) maxHostLen = thisLen;
+       }
+   }
+
+   sinfo_cmdlineLen = strlen(sinfo_path) + strlen(sinfo_args)
+       + maxHostLen + strlen(sinfo_suffix) + 6;
+   sinfo_cmdline = (char *) malloc(sinfo_cmdlineLen);
+
+   for (i = 0; i < num_hosts; i++) {
+      if (!hostlist[i] || !strlen(hostlist[i])) goto done;
+      result = snprintf(sinfo_cmdline, sinfo_cmdlineLen, "%s %s \"%s\" %s",
+			sinfo_path, sinfo_args, hostlist[i], sinfo_suffix);
+      if (result >= sinfo_cmdlineLen) {
+	 sdprintf(1, "ERROR: Formatting error creating sinfo cmdline '%s' (%d)\n",
+		  sinfo_cmdline, result);
+	 goto done;
+      }
+      sdprintf(2, "Running sinfo to get host address: %s\n", sinfo_cmdline);
+
+      f = popen(sinfo_cmdline, "r");
+      if (!f) {
+	 sdprintf(1, "ERROR: Could not run sinfo: %s\n", sinfo_cmdline);
+	 goto done;
+      }
+
+      len = 0;
+      result = getline(&(hostaddrlist[i]), &len, f);
+      pclose(f);
+      if (result == -1) {
+         int error = errno;
+         sdprintf(1, "ERROR: Resolving '%s' failed: %s\n", hostlist[i], strerror(error));
+         (void) error;
+         goto done;
+      }
+
+      s = hostaddrlist[i];
+      hostnamelen = strlen(s);
+      for (j = 0; j < hostnamelen; j++) {
+         if (!((s[j] >= '0' && s[j] <= '9') ||
+               (s[j] >= 'a' && s[j] <= 'z') ||
+               (s[j] >= 'A' && s[j] <= 'Z') ||
+               (s[j] == '-' || s[j] == '_' || s[j] == '.'))) {
+            s[j] = '\0';
+            break;
+         }
+      }
+      sdprintf(3, "sinfo returned hostaddr %s for %s\n", s, hostlist[i]);
+   }
+   if (i != num_hosts) {
+      sdprintf(1, "ERROR: expected %d hosts from sinfo.  Got %d\n",  num_hosts, i);
+      goto done;
+   }
+
+   ret = hostaddrlist;
+  done:
+   if (sinfo_cmdline)
+      free(sinfo_cmdline);
+   if (!ret && hostaddrlist) {
+      for (i = 0; i < num_hosts; i++) free(hostaddrlist[i]);
+      free(hostlist);
+   }
+   return ret;
+}
+
 int isFEHost(char **hostlist, unsigned int num_hosts)
 {
    char host[256];
@@ -172,12 +257,13 @@ int isFEHost(char **hostlist, unsigned int num_hosts)
    return feresult;      
 }
 
+char *unique_file = NULL;
+
 #define UNIQUE_FILE_NAME "spindle_unique"
 
 int isBEProc(spindle_args_t *params)
 {
    char *dir = NULL, *expanded_dir = NULL, *realized_dir = NULL;
-   char *unique_file = NULL;
    char hostname[256], session_id_str[32];
    size_t unique_file_len;
    int beproc_result = -1;
@@ -218,9 +304,11 @@ int isBEProc(spindle_args_t *params)
    sdprintf(2, "Opened %s to result %d\n", unique_file, fd);
    if (fd != -1)
       beproc_result = 1;
-   else if (error == EEXIST)
+   else if (error == EEXIST) {
       beproc_result = 0;
-   else {
+      free(unique_file);
+      unique_file = NULL;
+   } else {
       sdprintf(1, "ERROR: Could not create spindle unique_file %s: %s\n", unique_file, strerror(error));
       goto done;
    }
@@ -230,8 +318,6 @@ int isBEProc(spindle_args_t *params)
       free(expanded_dir);
    if (realized_dir)
       free(realized_dir);
-   if (unique_file)
-      free(unique_file);
    if (fd != -1)
       close(fd);
    sdprintf(2, "returning %d\n", beproc_result);
@@ -700,6 +786,7 @@ pid_t grandchild_fork()
       exit(result == sizeof(grandchild_pid) ? 0 : -1);
    }
    //In grandchild
+   setpgid(0, 0); /* escape to own process group */
    fork_result = 0;
    goto done;
    
