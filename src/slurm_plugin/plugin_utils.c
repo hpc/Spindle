@@ -701,6 +701,7 @@ pid_t grandchild_fork()
       exit(result == sizeof(grandchild_pid) ? 0 : -1);
    }
    //In grandchild
+   setpgid(0, 0); /* escape to own process group */
    fork_result = 0;
    goto done;
    
