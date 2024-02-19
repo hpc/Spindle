@@ -82,11 +82,16 @@ if test "x$ENABLE_SLURM_PLUGIN" == "xtrue"; then
   if test "x$SCONTROL_ABSPATH" == "xnotfound"; then
     AC_MSG_ERROR([Could not find scontrol])
   fi
+  AC_PATH_PROG([SINFO_ABSPATH], [sinfo], [notfound])
+  if test "x$SINFO_ABSPATH" == "xnotfound"; then
+    AC_MSG_ERROR([Could not find sinfo])
+  fi
   PATH=$OPATH
 fi
 
 AM_CONDITIONAL([BLD_SLURMPLUGIN], [test "x$ENABLE_SLURM_PLUGIN" == "xtrue"])
 AC_SUBST(SCONTROL_ABSPATH, $SCONTROL_ABSPATH)
+AC_SUBST(SINFO_ABSPATH, $SINFO_ABSPATH)
 
 AM_CONDITIONAL([BLD_FLUXPLUGIN], [test "x$ENABLE_FLUX_PLUGIN" = "xtrue"])
 
