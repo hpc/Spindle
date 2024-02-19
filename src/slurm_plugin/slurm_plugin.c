@@ -432,7 +432,7 @@ static int launch_spindle(spank_t spank, spindle_args_t *params)
    int result;
    int is_fe_host = 0;
    int is_be_leader = 0;
-   unsigned int num_hosts;
+   unsigned int i, num_hosts;
    int num_hosts_result;
    int launch_result = -1;
 
@@ -470,7 +470,8 @@ static int launch_spindle(spank_t spank, spindle_args_t *params)
    launch_result = 0;
    
   done:
-   if (hostlist)
+   if (hostlist) {
+      for (i = 0; i < num_hosts; i++) free(hostlist[i]);
       free(hostlist);
    
    return launch_result;
