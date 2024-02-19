@@ -73,6 +73,7 @@ if test "x$ENABLE_SLURM_PLUGIN" == "xtrue"; then
                   [],
                   [AC_MSG_ERROR([Could not find slurm/spank.h])])
   CPPFLAGS=$OCPPFLAGS
+  AC_CHECK_DECLS([spank_prepend_task_argv], [], [], [[#include<slurm/spank.h>]])
 
   OPATH=$PATH
   if test "x$SLURM_DIR" != "x"; then
