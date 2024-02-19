@@ -84,8 +84,6 @@ int slurm_spank_task_init(spank_t spank, int site_argc, char *site_argv[])
    saved_env_t *env = NULL;
    static int initialized = 0;
    spindle_args_t params;
-   int combined_argc;
-   char **combined_argv;
    
    if (!enable_spindle)
       return 0;
@@ -109,7 +107,7 @@ int slurm_spank_task_init(spank_t spank, int site_argc, char *site_argv[])
    push_env(spank, &env);
    sdprintf(1, "Beginning spindle plugin\n");
    
-   result = process_spindle_args(spank, site_argc, site_argv, &params, &combined_argc, &combined_argv);
+   result = process_spindle_args(spank, site_argc, site_argv, &params, NULL, NULL);
    if (result == -1) {
       sdprintf(1, "Error processesing spindle arguments.  Aborting spindle\n");
       goto done;
