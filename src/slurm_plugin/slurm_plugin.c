@@ -618,11 +618,14 @@ static int handleExit(void *params, char **output_str)
       return -1;
    }
 
-   result = spindleExitBE(args.location);
-   if (result == -1) {
-      sdprintf(1, "ERROR: spindleExitBE returned and error on location %s\n", args.location);
-      return -1;
+   if (!args.location) {
+       sdprintf(2, "WARNING: spindleExitBE not called since location is NULL\n");
+   } else {
+       result = spindleExitBE(args.location);
+       if (result == -1) {
+	   sdprintf(1, "ERROR: spindleExitBE returned an error on location %s\n", args.location);
+	   return -1;
+       }
    }
-
    return 0;
 }
