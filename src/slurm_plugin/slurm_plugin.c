@@ -29,6 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "plugin_utils.h"
 
+#include "config.h"
 
 SPINDLE_EXPORT extern const char plugin_name[];
 SPINDLE_EXPORT extern const char plugin_type[];
@@ -578,9 +579,13 @@ static int launchBE(spank_t spank, spindle_args_t *params)
 
 static int prepApp(spank_t spank, spindle_args_t *params)
 {
+#if HAVE_DECL_SPANK_PREPEND_TASK_ARGV == 1
+   int result;
+#else
    int app_argc, result;
    char **app_argv;
    char *app_exe_name, *last_slash;
+#endif
    spank_err_t err;
    int bootstrap_argc;
    char **bootstrap_argv;
@@ -591,6 +596,16 @@ static int prepApp(spank_t spank, spindle_args_t *params)
       return -1;
    }
       
+#if HAVE_DECL_SPANK_PREPEND_TASK_ARGV == 1
+   sdprintf(2, "Prepping task process %d to run spindle\n", getpid());
+
+   const char **filter_argv = (const char **)bootstrap_argv;
+   err = spank_prepend_task_argv(spank, bootstrap_argc, filter_argv);
+   if (err != ESPANK_SUCCESS) {
+      sdprintf(1, "WARNING: Could not prepend spindle filter.\n");
+      result = -1;
+   }
+#else
    sdprintf(2, "Prepping app process %d to run spindle\n", getpid());
 
    err = spank_get_item(spank, S_JOB_ARGV, &app_argc, &app_argv);
@@ -605,6 +620,7 @@ static int prepApp(spank_t spank, spindle_args_t *params)
    }
 
    result = spindleHookSpindleArgsIntoExecBE(bootstrap_argc, bootstrap_argv, app_exe_name);
+#endif
    if (result == -1) {
       sdprintf(1, "ERROR setting up app to run spindle.  Spindle won't work\n");
       return -1;
