@@ -345,7 +345,7 @@ static char **get_hostlist(spank_t spank, unsigned int num_hosts)
       return NULL;
    }   
 
-#if defined(USE_SCONTROL)
+#if defined(SCONTROL_BIN)
    hostlist = getHostsScontrol(num_hosts, short_hosts);
 #else
    hostlist = getHostsParse(num_hosts, short_hosts);
