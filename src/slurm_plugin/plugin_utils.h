@@ -42,6 +42,7 @@ char **getHostsScontrol(unsigned int num_hosts, const char *hoststr);
 char **getHostsParse(unsigned int num_hosts, const char *shortlist);
 
 int isFEHost(char **hostlist, unsigned int num_hosts);
+extern char *unique_file;
 int isBEProc(spindle_args_t *params);
 
 char *encodeCmdArgs(int sargc, char **sargv);

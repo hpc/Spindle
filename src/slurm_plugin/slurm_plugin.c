@@ -557,6 +557,11 @@ static int launchBE(spank_t spank, spindle_args_t *params)
       sdprintf(1, "ERROR: spindleRunBE failed\n");
    else
       sdprintf(1, "spindleRunBE completed.  Session finishing.\n");
+
+   if (unique_file) unlink(unique_file);
+   free(unique_file);
+   unique_file = NULL;
+
    exit(result);
 
    return 0;

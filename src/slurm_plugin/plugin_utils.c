@@ -172,12 +172,13 @@ int isFEHost(char **hostlist, unsigned int num_hosts)
    return feresult;      
 }
 
+char *unique_file = NULL;
+
 #define UNIQUE_FILE_NAME "spindle_unique"
 
 int isBEProc(spindle_args_t *params)
 {
    char *dir = NULL, *expanded_dir = NULL, *realized_dir = NULL;
-   char *unique_file = NULL;
    char hostname[256], session_id_str[32];
    size_t unique_file_len;
    int beproc_result = -1;
@@ -218,9 +219,11 @@ int isBEProc(spindle_args_t *params)
    sdprintf(2, "Opened %s to result %d\n", unique_file, fd);
    if (fd != -1)
       beproc_result = 1;
-   else if (error == EEXIST)
+   else if (error == EEXIST) {
       beproc_result = 0;
-   else {
+      free(unique_file);
+      unique_file = NULL;
+   } else {
       sdprintf(1, "ERROR: Could not create spindle unique_file %s: %s\n", unique_file, strerror(error));
       goto done;
    }
@@ -230,8 +233,6 @@ int isBEProc(spindle_args_t *params)
       free(expanded_dir);
    if (realized_dir)
       free(realized_dir);
-   if (unique_file)
-      free(unique_file);
    if (fd != -1)
       close(fd);
    sdprintf(2, "returning %d\n", beproc_result);
