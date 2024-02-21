@@ -32,5 +32,6 @@ int fopen_filter(const char *fname, const char *flags);
 int exec_filter(const char *fname);
 int stat_filter(const char *fname);
 int fd_filter(int fd);
+int is_excluded_path(const char *pathname);
 
 #endif

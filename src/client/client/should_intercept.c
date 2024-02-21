@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "spindle_launch.h"
 #include "client.h"
@@ -27,6 +28,49 @@
 #include "spindle_debug.h"
 
 extern int relocate_spindleapi();
+
+int is_excluded_path(const char *pathname) {
+    static int is_enabled = -1;
+    static const char *exclude_prefixes[] = {
+        "/bin",
+        "/dev",
+        "/etc",
+        "/lib",
+        "/opt",
+        "/proc",
+        "/sbin",
+        "/sys",
+        "/tmp",
+        "/usr",
+        "/var",
+        NULL
+    };
+    int i;
+
+    if( is_enabled < 0 ) {
+        const char *envar = getenv("SPINDLE_DISABLE_EXCLUDE");
+        is_enabled = 1; // Default
+        if( NULL != envar && '1' == envar[0] ) {
+            is_enabled = 0;
+        }
+    }
+
+    if( 0 == is_enabled ) {
+        return 0;
+    }
+
+    if( NULL == pathname ) {
+        return 0;
+    }
+
+    for(i = 0; NULL != exclude_prefixes[i]; ++i ) {
+        if( 0 == strncmp(pathname, exclude_prefixes[i], strlen(exclude_prefixes[i])) ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 static int is_python_path(const char *pathname)
 {
@@ -93,6 +137,10 @@ int open_filter(const char *fname, int flags)
 {
    char *last_slash, *last_dot;
 
+   if( is_excluded_path(fname) ) {
+       return ORIG_CALL;
+   }
+
    if (relocate_spindleapi()) {
       if (open_for_excl(flags))
          return EXCL_OPEN;
@@ -130,6 +178,10 @@ int fopen_filter(const char *fname, const char *flags)
 {
    char *last_slash, *last_dot;
 
+   if( is_excluded_path(fname) ) {
+       return ORIG_CALL;
+   }
+
    if (relocate_spindleapi()) {
       if (open_for_excl(flags))
          return EXCL_OPEN;
@@ -161,6 +213,10 @@ int fopen_filter(const char *fname, const char *flags)
 
 int exec_filter(const char *fname)
 {
+   if( is_excluded_path(fname) ) {
+       return ORIG_CALL;
+   }
+
    if (relocate_spindleapi())
       return REDIRECT;
 
@@ -173,6 +229,10 @@ int exec_filter(const char *fname)
 int stat_filter(const char *fname)
 {
    char *last_dot, *last_slash;
+
+   if( is_excluded_path(fname) ) {
+       return ORIG_CALL;
+   }
 
    if (relocate_spindleapi())
       return REDIRECT;
