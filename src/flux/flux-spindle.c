@@ -340,7 +340,7 @@ static int sp_init (flux_plugin_t *p,
      */
     if ((test = flux_shell_getenv (shell, "SPINDLE_TEST")))
        setenv ("SPINDLE_TEST", test, 1);
-    
+
     /*  Spindle requires that TMPDIR is set. Propagate TMPDIR from job
      *  environment, or use /tmp if TMPDIR not set.
      */
