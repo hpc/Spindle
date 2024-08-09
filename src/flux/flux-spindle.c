@@ -177,7 +177,7 @@ static void wait_for_shell_init (flux_future_t *f, void *arg)
     int rc = -1;
 
     if (flux_job_event_watch_get (f, &event) < 0)
-        shell_die_errno (1, "failed waiting for memo event");
+        shell_die_errno (1, "spindle failed waiting for shell.init event");
     if (!(o = json_loads (event, 0, NULL))
             || json_unpack (o, "{s:s}", "name", &name) < 0)
         shell_die_errno (1, "failed to get event name");
