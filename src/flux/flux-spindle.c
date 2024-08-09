@@ -417,7 +417,7 @@ static int sp_init (flux_plugin_t *p,
      *   rank 0, but code is simpler if we treat all ranks the same.
      */
     if (!(f = flux_job_event_watch (h, id, "guest.exec.eventlog", 0))
-        || flux_future_then (f, 60., wait_for_shell_init, ctx) < 0)
+        || flux_future_then (f, 300., wait_for_shell_init, ctx) < 0)
         shell_die (1, "flux_job_event_watch");
 
     /*  Return control to job shell */
