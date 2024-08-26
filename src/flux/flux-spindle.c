@@ -177,7 +177,7 @@ static void wait_for_shell_init (flux_future_t *f, void *arg)
     int rc = -1;
 
     if (flux_job_event_watch_get (f, &event) < 0)
-        shell_die_errno (1, "failed waiting for memo event");
+        shell_die_errno (1, "spindle failed waiting for shell.init event");
     if (!(o = json_loads (event, 0, NULL))
             || json_unpack (o, "{s:s}", "name", &name) < 0)
         shell_die_errno (1, "failed to get event name");
@@ -340,7 +340,7 @@ static int sp_init (flux_plugin_t *p,
      */
     if ((test = flux_shell_getenv (shell, "SPINDLE_TEST")))
        setenv ("SPINDLE_TEST", test, 1);
-    
+
     /*  Spindle requires that TMPDIR is set. Propagate TMPDIR from job
      *  environment, or use /tmp if TMPDIR not set.
      */
@@ -417,7 +417,7 @@ static int sp_init (flux_plugin_t *p,
      *   rank 0, but code is simpler if we treat all ranks the same.
      */
     if (!(f = flux_job_event_watch (h, id, "guest.exec.eventlog", 0))
-        || flux_future_then (f, 60., wait_for_shell_init, ctx) < 0)
+        || flux_future_then (f, 300., wait_for_shell_init, ctx) < 0)
         shell_die (1, "flux_job_event_watch");
 
     /*  Return control to job shell */
