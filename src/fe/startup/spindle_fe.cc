@@ -254,13 +254,14 @@ int fillInSpindleArgsCmdlineFE(spindle_args_t *params, unsigned int options, int
       mod_argv[i+1] = sargv[i];
    }
    mod_argv[i+1] = const_cast<char*>("launcher");
-   mod_argv[i] = NULL;
+   mod_argv[i+2] = NULL;
+   mod_argc = i+2;
 
    opts = PARSECMD_FLAG_NOEXIT;
    opts |= PARSECMD_FLAG_CAPTUREIO;
    opts |= (options & SPINDLE_FILLARGS_NOUNIQUEID) ? PARSECMD_FLAG_NOUNIQUEID : 0;
    opts |= (options & SPINDLE_FILLARGS_NONUMBER) ? PARSECMD_FLAG_NONUMBER : 0;
-   result = parseCommandLine(i, mod_argv, params, opts, errstr);
+   result = parseCommandLine(mod_argc, mod_argv, params, opts, errstr);
 
    params->use_launcher = external_launcher;
    params->startup_type = startup_external;

@@ -185,7 +185,7 @@ int lookup_libc_symbols()
       }
       else {
          mallocfunc = (malloc_sig_t) (symtab[result].st_value + libc->l_addr);
-         debug_printf3("Bound errno_location to %p\n", app_errno_location);
+         debug_printf3("Bound mallocfunc to %p\n", mallocfunc);
          found++;
       }      
 

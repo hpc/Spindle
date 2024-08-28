@@ -18,6 +18,10 @@
 /* Define if were using sockets for client/server communication */
 #undef COMM_SOCKET
 
+/* Define to 1 if you have the declaration of `spank_prepend_task_argv', and
+   to 0 if you don't. */
+#undef HAVE_DECL_SPANK_PREPEND_TASK_ARGV
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

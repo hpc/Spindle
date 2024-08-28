@@ -36,9 +36,14 @@ ElfX_Addr client_call_binding(const char *symname, ElfX_Addr symvalue)
    if (!binding)
       return symvalue;
 
+   if (!binding->libc_func) {
+      debug_printf("%s: symname %s has no libc_func container\n",
+		    __func__, symname);
+      return (ElfX_Addr) binding->spindle_func;
+   }
+
    if (*binding->libc_func == NULL)
       *binding->libc_func = (void *) symvalue;
    
    return (ElfX_Addr) binding->spindle_func;
 }
-
