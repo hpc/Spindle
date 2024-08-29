@@ -298,14 +298,14 @@ public:
 
          first_quote = strchr(s, '"');
          last_quote = strrchr(s, '"');
-         if (!first_quote || !last_quote || first_quote == last_quote) {assert(0); return false; }
+         if (!first_quote || !last_quote || first_quote == last_quote) { return false; }
          len = last_quote - first_quote;
          if (len > 4096) len = 4096;
          strncpy(buffer, first_quote+1, len-1);
          buffer[len-1] = '\0';
 
          equals = strrchr(s, '=');
-         if (!equals || equals[1] != ' ') {assert(0); return false; }
+         if (!equals || equals[1] != ' ') { return false; }
          ret = atoi(equals+2);
          
          parseOpen(proc, buffer, ret);
