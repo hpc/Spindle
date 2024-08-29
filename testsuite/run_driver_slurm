@@ -11,8 +11,11 @@ PROCS=$SPINDLE_TEST_ARGS
 fi
 export PROCS
 
-if test "x$SPINDLE_BGQ_LD_PRELOAD" == "xtrue"; then
+if [ "x$SPINDLE_BGQ_LD_PRELOAD" == "xtrue" ] ; then
 PRELOAD_ARGS="--runjob-opts=--envs LD_PRELOAD=$LIBRARY_LIST"
+elif [ "x$SPINDLE_LD_PRELOAD" != "x" ] ; then
+export LD_PRELOAD=$SPINDLE_LD_PRELOAD    
+PRELOAD_ARGS="--export=ALL"
 fi
 
 $SPINDLE $SPINDLE_OPTS srun "$PRELOAD_ARGS" -n $PROCS $*

@@ -1,9 +1,14 @@
 #!/bin/sh
 
 cd TEST_RUN_DIR
-export LD_LIBRARY_PATH=`pwd`
+if [ "x$LD_LIBRARY_PATH" != "x" ] ; then
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`
+else
+    export LD_LIBRARY_PATH=`pwd`
+fi
 export SPINDLE_TEST=1
 export SPINDLE=SPINDLE_EXEC
+export PATH=$PATH:.
 
 if [ $1 == --start-session ] ; then
 $SPINDLE --start-session
@@ -46,7 +51,7 @@ fi
 export SPINDLE_BLUEGENE="BLUEGENE_TEST"
 if test "x$SPINDLE_BLUEGENE" == "xfalse"; then
 if [ $1 == --ldpreload ] ; then
-export LD_PRELOAD="$LIBRARY_LIST"
+export SPINDLE_LD_PRELOAD="$LIBRARY_LIST"
 fi
 export SPINDLE_BGQ_LD_PRELOAD="false"
 else

@@ -16,6 +16,11 @@ fi
 if [ "x$SPINDLE_OPTS" = "x--pull" ] ; then
     FLUX_SPINDLE_OPTS="spindle.pull"
 fi
+if [ "x$SPINDLE_LD_PRELOAD" != "x" ] ; then
+    export FLUX_LD_PRELOAD="--env=LD_PRELOAD=$SPINDLE_LD_PRELOAD"
+else
+    export FLUX_LD_PRELOAD=""
+fi
 
-flux run -o userrc=spindle.rc -o $FLUX_SPINDLE_OPTS $PROCS $*
+flux run $FLUX_LD_PRELOAD -o userrc=spindle.rc -o $FLUX_SPINDLE_OPTS $PROCS $*
 
