@@ -855,6 +855,7 @@ enable_sec_launchmon
 enable_sec_none
 with_gcrypt_dir
 with_munge_dir
+with_glibc_be_dir
 enable_remap_pageone
 with_launchmon
 with_launchmon_incdir
@@ -1565,6 +1566,9 @@ Optional Packages:
             SLURM_DIR=${withval}
   --with-gcrypt-dir=DIR   Look in DIR for gcrypt installation
   --with-munge-dir=DIR    Look in DIR for munge installation
+  --with-glibc-be-dir=DIR If glibc on compute nodes is installed in a
+                          non-standard location, then DIR is the directory
+                          containing libc.so.6
   --with-launchmon=DIR    Launchmon directory (must contain ./lib and
                           ./include)
   --with-launchmon-incdir=DIR
@@ -16431,8 +16435,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-
-
 #OS Detection
 # Check whether --enable-bluegene was given.
 if test "${enable_bluegene+set}" = set; then :
@@ -16480,6 +16482,15 @@ if test "${with_slurm_launch+set}" = set; then :
   withval=$with_slurm_launch; ENABLE_SLURM_LAUNCH=1
 fi
 
+
+case $sysconfdir in #(
+  */spindle) :
+    PKGSYSCONF_DIR=$sysconfdir ;; #(
+  */spindle/) :
+    PKGSYSCONF_DIR=$sysconfdir ;; #(
+  *) :
+    PKGSYSCONF_DIR=$sysconfdir/spindle ;;
+esac
 
 BROKEN_SRUN=0
 bad_srun_major=20
@@ -17178,6 +17189,15 @@ fi
   fi
 fi
 
+if test "x$GLIBC_BE_DIR" = "x"; then
+  # Get glibc location on front-end
+  CAT=`which cat`
+  LIBC_FILE=`ldd $CAT | grep libc | awk -F ' ' '{print $3}'`
+  GLIBC_BE_DIR=`dirname $LIBC_FILE`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: glibc backend location set to $GLIBC_BE_DIR" >&5
+$as_echo "$as_me: glibc backend location set to $GLIBC_BE_DIR" >&6;}
+
 #Security options
 
 $as_echo "#define KEY_SIZE_BYTES 32" >>confdefs.h
@@ -17215,6 +17235,13 @@ fi
 # Check whether --with-munge-dir was given.
 if test "${with_munge_dir+set}" = set; then :
   withval=$with_munge_dir; MUNGE_DIR=${withval}
+fi
+
+
+
+# Check whether --with-glibc-be-dir was given.
+if test "${with_glibc_be_dir+set}" = set; then :
+  withval=$with_glibc_be_dir; GLIBC_BE_DIR=${withval}
 fi
 
 

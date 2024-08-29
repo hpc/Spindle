@@ -39,8 +39,6 @@ fi
 AC_SUBST(TESTRM)
 AC_DEFINE_UNQUOTED([TESTRM], "[$TESTRM]", [Default recource manager])
 
-
-
 #OS Detection
 AC_ARG_ENABLE(bluegene,
               [AS_HELP_STRING([--enable-bluegene],[Build Spindle for BlueGene/Q])],
@@ -66,6 +64,11 @@ AC_ARG_WITH(rsh-cmd,
 AC_ARG_WITH(slurm-launch,
             [AS_HELP_STRING([--with-slurm-launch],[Enable using slurm to launch spindle daemons])],
             [ENABLE_SLURM_LAUNCH=1],)
+
+AS_CASE([$sysconfdir],
+        [*/spindle],[PKGSYSCONF_DIR=$sysconfdir],
+        [*/spindle/],[PKGSYSCONF_DIR=$sysconfdir],
+        [PKGSYSCONF_DIR=$sysconfdir/spindle])
 
 BROKEN_SRUN=0
 bad_srun_major=20
@@ -273,6 +276,14 @@ if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
   fi
 fi
 
+if test "x$GLIBC_BE_DIR" = "x"; then
+  # Get glibc location on front-end
+  CAT=`which cat`
+  LIBC_FILE=`ldd $CAT | grep libc | awk -F ' ' '{print $3}'`
+  GLIBC_BE_DIR=`dirname $LIBC_FILE`
+fi
+AC_MSG_NOTICE([glibc backend location set to $GLIBC_BE_DIR])
+
 #Security options
 AC_DEFINE([KEY_SIZE_BYTES], [32], [Number of bytes in keys for gcrypt])
 
@@ -296,6 +307,10 @@ AC_ARG_WITH(gcrypt-dir,
 AC_ARG_WITH(munge-dir,
             [AS_HELP_STRING([--with-munge-dir=DIR],[Look in DIR for munge installation])],
             [MUNGE_DIR=${withval}])
+
+AC_ARG_WITH(glibc-be-dir,
+            [AS_HELP_STRING([--with-glibc-be-dir=DIR],[If glibc on compute nodes is installed in a non-standard location, then DIR is the directory containing libc.so.6])],
+            [GLIBC_BE_DIR=${withval}])
 
 AC_ARG_ENABLE(remap-pageone,
               [AS_HELP_STRING([--enable-remap-pageone],[Controls mmap behavior when replacing executables. Should be false on older linux systems])],

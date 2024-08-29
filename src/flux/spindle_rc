@@ -1,0 +1,1 @@
+plugin.load { file="SPINDLE_LIB/libspindleflux.so" }

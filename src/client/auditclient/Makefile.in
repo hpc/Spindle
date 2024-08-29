@@ -299,6 +299,7 @@ FLUX_CORE_CFLAGS = @FLUX_CORE_CFLAGS@
 FLUX_CORE_LIBS = @FLUX_CORE_LIBS@
 FLUX_HOSTLIST_CFLAGS = @FLUX_HOSTLIST_CFLAGS@
 FLUX_HOSTLIST_LIBS = @FLUX_HOSTLIST_LIBS@
+GLIBC_BE_DIR = @GLIBC_BE_DIR@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -411,13 +412,13 @@ BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c bindgo
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 libspindle_audit_socket_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)
-libspindle_audit_socket_la_LDFLAGS = -shared -avoid-version
+libspindle_audit_socket_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
 libspindle_audit_pipe_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
-libspindle_audit_pipe_la_LDFLAGS = -shared -avoid-version
+libspindle_audit_pipe_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
 libspindle_audit_biter_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_biter_la_LIBADD = $(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
-libspindle_audit_biter_la_LDFLAGS = -shared -avoid-version
+libspindle_audit_biter_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
 all: all-am
 
 .SUFFIXES:

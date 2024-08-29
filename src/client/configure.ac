@@ -19,6 +19,6 @@ m4_include([../../configure.common.ac])
 CHECK_MMAP([cl])
 
 AC_SUBST([LIBSPINDLE_LIB_VERSION],[`$srcdir/../../LIB_VERSION libspindle`])
-
+AC_SUBST([GLIBC_BE_DIR])
 AC_OUTPUT
 
