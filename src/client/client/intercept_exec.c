@@ -54,10 +54,10 @@ static int prep_exec(const char *filepath, char **argv,
    debug_printf3("prep_exec for filepath %s to newpath %s\n", filepath, newpath);
    
    if (errcode == EACCES) {
-      debug_printf2("exec'ing original path %s because file wasn't +r, but could be +x\n",
-                    newpath);
       strncpy(newpath, filepath, newpath_size);
       newpath[newpath_size-1] = '\0';
+      debug_printf2("exec'ing original path %s because file wasn't +r, but could be +x\n",
+                    newpath);
       debug_printf("test_log(%s)\n", newpath);
       test_log(newpath);
       return 0;
