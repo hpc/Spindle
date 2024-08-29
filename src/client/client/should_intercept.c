@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "spindle_launch.h"
 #include "client.h"
@@ -27,6 +28,63 @@
 #include "spindle_debug.h"
 
 extern int relocate_spindleapi();
+
+extern char *location;
+static void get_location_tmpdir(char **tmpdir, int *tmpdir_size)
+{
+   static char location_root_cached[4096];
+   static int location_root_size = -1;
+   char *last_slash = NULL;
+
+   if (location_root_size != -1) {
+      *tmpdir = location_root_cached;
+      *tmpdir_size = location_root_size;
+      return;
+   }
+
+   if (location == NULL) {
+      *tmpdir = NULL;
+      *tmpdir_size = 0;
+   }
+
+   strncpy(location_root_cached, location, sizeof(location_root_cached)-1); 
+   
+   last_slash = strrchr(location_root_cached, '/');
+   while (last_slash && strncmp(last_slash, "/spindle.", 9) != 0)
+   {
+      *last_slash = '\0';
+      last_slash = strrchr(location_root_cached, '/');
+   }
+   if (!last_slash) {
+      location_root_cached[0] = '\0';
+      *tmpdir = location_root_cached;
+      *tmpdir_size = location_root_size = 0;
+      return;
+   }
+   *last_slash = '\0';
+   location_root_size = strlen(location_root_cached);
+   *tmpdir = location_root_cached;
+   *tmpdir_size = location_root_size;
+}
+
+static int is_local_file(const char *pathname)
+{
+   char *loctmpdir;
+   int loctmpdir_size;
+   get_location_tmpdir(&loctmpdir, &loctmpdir_size);
+   if (strncmp(pathname, loctmpdir, loctmpdir_size) == 0) {
+      debug_printf3("Decided that %s is prefixed by local path %s\n, not redirecting\n", pathname, loctmpdir);
+      return 1;
+   }
+
+   char *tmpdir = getenv("TMPDIR");
+   if (tmpdir && strncmp(pathname, tmpdir, strlen(tmpdir)) == 0) {
+      debug_printf3("Decided that %s is prefixed by tmpdir %s\n, not redirecting\n", pathname, tmpdir);
+      return 1;
+   }
+
+   return 0;
+}
 
 static int is_python_path(const char *pathname)
 {
@@ -101,6 +159,9 @@ int open_filter(const char *fname, int flags)
       return ORIG_CALL;
    }
 
+   if (is_local_file(fname))
+      return ORIG_CALL;
+
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
@@ -138,6 +199,9 @@ int fopen_filter(const char *fname, const char *flags)
       return ORIG_CALL;
    }
 
+   if (is_local_file(fname))
+      return ORIG_CALL;
+   
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
@@ -164,6 +228,9 @@ int exec_filter(const char *fname)
    if (relocate_spindleapi())
       return REDIRECT;
 
+   if (is_local_file(fname))
+      return ORIG_CALL;
+
    if (opts & OPT_RELOCEXEC)
       return REDIRECT;
    else
@@ -177,6 +244,9 @@ int stat_filter(const char *fname)
    if (relocate_spindleapi())
       return REDIRECT;
 
+   if (is_local_file(fname))
+      return ORIG_CALL;
+   
    if (!(opts & OPT_RELOCPY))
       return ORIG_CALL;
 
