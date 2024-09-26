@@ -60,7 +60,8 @@ typedef enum {
    READ_DIRECTORY,
    READ_FILE,
    REQ_DIRECTORY,
-   REQ_FILE
+   REQ_FILE,
+   ORIG_FILE
 } handle_file_result_t;
 
 typedef enum {
@@ -109,6 +110,7 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata,
                                       void *buffer, size_t size, size_t newsize, char *alias_to,
                                       int errcode);
 
+static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_rejected_query(ldcs_process_data_t *procdata, int nc, int errcode);
 
@@ -361,6 +363,11 @@ static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, cha
          return FOUND_ERRCODE;
       }
 
+      if (procdata->opts & OPT_STOPRELOC) {
+         /* The file exists, but we are configured to not request files off network. Tell the app
+            to load the original file */
+         return ORIG_FILE;
+      }
       /* File exists, but isn't present.  Read or request. */
       responsible = ldcs_audit_server_md_is_responsible(procdata, pathname);
       if (responsible)
@@ -436,6 +443,8 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
          client_result = handle_send_query(procdata, client->query_globalpath, 0);
          add_requestor(procdata->pending_requests, client->query_globalpath, NODE_PEER_CLIENT);
          return client_result;
+      case ORIG_FILE:
+         return handle_client_originalfile_query(procdata, nc);
    }
    assert(0);
    return -1;
@@ -908,6 +917,14 @@ static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathn
    return result;   
 }
 
+static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc)
+{
+   ldcs_client_t *client = procdata->client_table + nc;
+   client->query_localpath = client->query_globalpath;
+   debug_printf2("Server is sending original file path back: %s\n", client->query_localpath);
+   return handle_client_fulfilled_query(procdata, nc);
+}
+
 /**
  * Sends a message to a client with the local path for a sucessfully read file.
  **/
@@ -1142,6 +1159,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
          return handle_broadcast_errorcode(procdata, pathname, errcode);
       case NO_FILE:
       case NO_DIR:
+      case ORIG_FILE:
          return handle_create_selfload_file(procdata, pathname);
       case READ_DIRECTORY:
          result = handle_read_and_broadcast_dir(procdata, dirname);

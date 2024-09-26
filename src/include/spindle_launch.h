@@ -56,7 +56,8 @@ extern "C" {
 #define OPT_BEEXIT     (1 << 25)            /* Block exit until each backend calls spindleExitBE */
 #define OPT_PROCCLEAN  (1 << 26)            /* Use a dedicated process to run cleanup routines after Spindle exits */
 #define OPT_RSHLAUNCH  (1 << 27)            /* Launch BEs via an rsh/ssh tree */
-
+#define OPT_STOPRELOC  (1 << 28)            /* Stops spindle from relocating file contents, but still allow it to intercept file-not-found attempts */
+   
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
 #define OPT_SEC_MUNGE 0                     /* Use munge to validate connections */

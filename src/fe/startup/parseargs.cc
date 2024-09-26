@@ -52,6 +52,7 @@ using namespace std;
 #define PYTHONPREFIX 'r'
 #define STRIP 's'
 #define PORT 't'
+#define STOPRELOC 'w'
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
 #define DISABLE_LOGGING 'z'
@@ -117,7 +118,7 @@ using namespace std;
 static const char *YESNO = "yes|no";
 
 static const opt_t all_reloc_opts = OPT_RELOCAOUT | OPT_RELOCSO | OPT_RELOCEXEC |
-                                            OPT_RELOCPY | OPT_FOLLOWFORK;
+                                            OPT_RELOCPY | OPT_FOLLOWFORK | OPT_STOPRELOC;
 static const opt_t all_network_opts = OPT_COBO;
 static const opt_t all_pushpull_opts = OPT_PUSH | OPT_PULL;
 static const opt_t all_misc_opts = OPT_STRIP | OPT_DEBUG | OPT_PRELOAD | OPT_NOCLEAN | OPT_PERSIST | OPT_PROCCLEAN;
@@ -228,6 +229,8 @@ struct argp_option options[] = {
      "Relocate the targets of exec/execv/execve/... calls. Default: yes", GROUP_RELOC },
    { "follow-fork", FOLLOWFORK, YESNO, 0,
      "Relocate objects in fork'd child processes. Default: yes", GROUP_RELOC },
+   { "stop-reloc", STOPRELOC, YESNO, 0,
+     "Do not relocate file contents, though still intercept operations that would lead to file-not-found returns. Default: no", GROUP_RELOC },
    { NULL, 0, NULL, 0,
      "These options specify how the Spindle network should distibute files.  Push is better for SPMD programs.  Pull is better for MPMD programs. Default is push.", GROUP_PUSHPULL },
    { "push", PUSH, NULL, 0,
@@ -344,6 +347,7 @@ static opt_t opt_key_to_code(int key)
       case NOCLEAN: return OPT_NOCLEAN;
       case PERSIST: return OPT_PERSIST;
       case CLEANUPPROC: return OPT_PROCCLEAN;
+      case STOPRELOC: return OPT_STOPRELOC;
       default: return 0;
    }
 }
