@@ -35,7 +35,8 @@ typedef enum {
    clt_stat,
    clt_lstat,
    clt_ldso,
-   clt_file
+   clt_file,
+   clt_numafile
 } calc_local_t;
 
 char *filemngt_calc_localname(char *global_name, calc_local_t reqtype);

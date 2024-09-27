@@ -117,4 +117,6 @@ const ElfW(Phdr) *find_interp_phdrs(int *num_phdrs);
 
 extern int read_buffer(char *localname, char *buffer, int size);
 
+int get_cur_cpu();
+
 #endif

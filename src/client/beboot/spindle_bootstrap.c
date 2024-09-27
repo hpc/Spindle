@@ -97,6 +97,8 @@ static int establish_connection()
 
    send_pid(ldcsid);
    send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
+   if (opts & OPT_NUMA)
+      send_cpu(ldcsid, get_cur_cpu());
 
    return 0;
 }

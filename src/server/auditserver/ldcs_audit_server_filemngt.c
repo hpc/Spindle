@@ -128,6 +128,7 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
       case clt_lstat: prefix = "spindlens-fstat"; break;
       case clt_ldso: prefix = "spindlens-ldso"; break;
       case clt_file: prefix = "spindlens-file"; break;
+      case clt_numafile: prefix = "spindlens-numafile-XXXXXX"; break;
    }
    
    snprintf(target, sizeof(target), "%x-%s-%s",
@@ -347,6 +348,7 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
        debug_printf2("growing empty file to size %d", (int) size);
    }
 
+   debug_printf3("Unmapping buffer %p of size %lu\n", buffer, size);
    result = munmap(buffer, size);
    if (result == -1) {
       err_printf("Error unmapping buffer for %s\n", pathname);
@@ -381,6 +383,7 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
          return NULL;
       }
    }
+   debug_printf3("Remapped buffer %p of size %lu as read-only at %p\n", buffer, size, buffer2);
 
    close(fd);
 

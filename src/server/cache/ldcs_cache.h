@@ -36,11 +36,12 @@ typedef enum {
 ldcs_cache_result_t ldcs_cache_findDirInCache(char *dirname);
 ldcs_cache_result_t ldcs_cache_findFileDirInCache(char *filename, char *dirname, char **localpath, int *errcode);
 ldcs_cache_result_t ldcs_cache_getAlias(char *filename, char *dirname, char **alias);
+ldcs_cache_result_t ldcs_cache_isReplicated(char *filename, char *dirname, int *replication);
 
 ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread);
 
 ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname, 
-                                           char *localname, void *buffer, size_t buffer_size, char *alias_to, int errcode);
+                                           char *localname, void *buffer, size_t buffer_size, char *alias_to, int is_replicated, int errcode);
 
 ldcs_cache_result_t ldcs_cache_updateStatus(char *filename, char *dirname, ldcs_hash_object_status_t ostate);
 ldcs_hash_object_status_t ldcs_cache_getStatus(char *filename);

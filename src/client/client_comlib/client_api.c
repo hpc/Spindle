@@ -252,6 +252,27 @@ int send_pid(int fd) {
    return(rc);
 }
 
+int send_cpu(int fd, int cpu) {
+   ldcs_message_t message;
+   char buffer[16];
+   int rc=0;
+
+   snprintf(buffer, 16, "%d", cpu);
+   message.header.type = LDCS_MSG_CPU;
+   message.header.len = 16;
+   message.data = buffer;
+
+   debug_printf3("Sending cpu %d\n", cpu);
+
+   COMM_LOCK;
+
+   client_send_msg(fd, &message);
+
+   COMM_UNLOCK;
+
+   return(rc);
+}
+
 int send_location(int fd, char *location) {
    ldcs_message_t message;
 

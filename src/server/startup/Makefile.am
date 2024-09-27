@@ -21,6 +21,9 @@ endif
 if BITER
 CORE_LDADD += $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
 endif
+if USE_NUMA
+CORE_LDADD += -lnuma
+endif
 CORE_LDADD += $(GCRYPT_LIBS)
 
 libspindlebe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEBELIB 

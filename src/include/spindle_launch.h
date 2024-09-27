@@ -57,6 +57,7 @@ extern "C" {
 #define OPT_PROCCLEAN  (1 << 26)            /* Use a dedicated process to run cleanup routines after Spindle exits */
 #define OPT_RSHLAUNCH  (1 << 27)            /* Launch BEs via an rsh/ssh tree */
 #define OPT_STOPRELOC  (1 << 28)            /* Stops spindle from relocating file contents, but still allow it to intercept file-not-found attempts */
+#define OPT_NUMA       (1 << 29)            /* Enables file replication across NUMA domains */
    
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
 #define OPT_GET_SEC(OPT) ((OPT >> 19) & 7)
@@ -129,7 +130,10 @@ typedef struct {
    unsigned int bundle_timeout_ms;
 
    /* The max size of a set of bundled messages before they are sent */
-   unsigned int bundle_cachesize_kb;
+   unsigned int bundle_cachesize_kb;   
+
+   /* Colon-seperated list of substrings; filename matches against which will be replicated into each numa domain */
+   char *numa_files;
 } spindle_args_t;
 
 /* Functions used to startup Spindle on the front-end. Init returns after finishing start-up,

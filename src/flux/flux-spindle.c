@@ -225,8 +225,9 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int push = 0;
     int pull = 0;
     int had_error = 0;
+    int numa = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
-    const char *followfork = NULL, *preload = NULL;
+    const char *followfork = NULL, *preload = NULL, *numafiles = NULL;
     const char *pyprefix = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
@@ -249,7 +250,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?i s?s s?s}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
                         "push", &push,
@@ -260,6 +261,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "reloc-exec", &relocexec,
                         "reloc-python", &relocpython,
                         "python-prefix", &pyprefix,
+                        "numa", &numa,
+                        "numa-files", &numafiles,
                         "preload", &preload) < 0)
         return shell_log_errno ("Error in spindle option: %s", error.text);
 
@@ -289,6 +292,14 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
        had_error |= parse_yesno(&ctx->params.opts, OPT_RELOCPY, relocpython);
     if (preload)
        ctx->params.preloadfile = (char *) preload;
+    if (numa) {
+       ctx->params.opts |= OPT_NUMA;
+    }
+    if (numafiles) {
+       ctx->params.opts |= OPT_NUMA;
+       ctx->params.numa_files = numafiles;
+    }
+    
     if (pyprefix) {
         char *tmp;
         if (asprintf (&tmp, "%s:%s", ctx->params.pythonprefix, pyprefix) < 0)

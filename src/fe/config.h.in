@@ -90,6 +90,9 @@
 /* The bin directory for launchmon */
 #undef LAUNCHMON_BIN_DIR
 
+/* Use libnuma for numa optimizations */
+#undef LIBNUMA
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR

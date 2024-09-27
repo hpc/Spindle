@@ -91,10 +91,12 @@ struct ldcs_client_struct
   int                  is_stat;
   int                  is_lstat;   
   int                  is_loader;
+  int                  numa_node;
   char                 query_filename[MAX_PATH_LEN+1];    /* hash 1st key */
   char                 query_dirname[MAX_PATH_LEN+1];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN+2];  /* path to file in global fs (dirname+filename) */
   char                 *query_localpath;                /* path to file in local temporary fs (dirname+filename) */
+  int                  query_is_numa_replicated;
   double               query_arrival_time;
 };
 typedef struct ldcs_client_struct ldcs_client_t;
@@ -123,6 +125,7 @@ struct ldcs_process_data_struct
   char *location;
   char *hostname;
   char *pythonprefix;
+  char *numa_substrs;
   msgbundle_entry_t *msgbundle_entries;
   int msgbundle_cache_size_kb;
   int msgbundle_timeout_ms;

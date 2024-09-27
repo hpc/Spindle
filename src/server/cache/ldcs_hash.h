@@ -35,6 +35,7 @@ struct ldcs_hash_entry_t
   char *filename;
   char *localpath;
   char *alias_to;
+  int replication;
   void *buffer;
   size_t buffer_size;
   ldcs_hash_key_t hash_val;
@@ -49,7 +50,7 @@ struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename);
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntryOState(char *filename, char *dirname, int ostate);
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
-                                                void *buffer, size_t buffer_size, char *alias_to, int errcode);
+                                                void *buffer, size_t buffer_size, char *alias_to, int replicate, int errcode);
 
 struct ldcs_hash_entry_t *ldcs_hash_Lookup(const char *filename);
 struct ldcs_hash_entry_t *ldcs_hash_Lookup_FN_and_DIR(const char *filename, const char *dirname);

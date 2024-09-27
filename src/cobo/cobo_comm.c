@@ -195,9 +195,11 @@ int ll_write(int fd, void *buf, size_t count)
    size_t pos = 0;
    unsigned char *cbuf = (unsigned char *) buf;
 
+   debug_printf3("Have %lu bytes at %p to write to network\n", count, buf);
+   
    while (pos < count) {
       result = write(fd, cbuf + pos, count - pos);
-      debug_printf3("Wrote %d bytes to network: 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x...\n", result,
+      debug_printf3("Wrote %d bytes at %p to network: 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x...\n", result, cbuf + pos,
                     result > 0 ? ((int) cbuf[pos+0]) : 0,
                     result > 1 ? ((int) cbuf[pos+1]) : 0,
                     result > 2 ? ((int) cbuf[pos+2]) : 0,

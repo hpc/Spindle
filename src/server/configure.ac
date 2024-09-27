@@ -87,5 +87,8 @@ CPPFLAGS="$CPPFLAGS -DSPINDLEBE"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 AC_SUBST([SPINDLEBE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlebe`])
+
+AM_CONDITIONAL([USE_NUMA], [test "x$HAVE_NUMA" = "xtrue"])
+
 AC_OUTPUT
 

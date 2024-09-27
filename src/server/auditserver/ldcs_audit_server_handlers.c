@@ -26,6 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api_listen.h"
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_filemngt.h"
+#include "ldcs_audit_server_numa.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_cache.h"
 #include "stat_cache.h"
@@ -104,14 +105,15 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *f
 static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *alias_to, char *buffer, size_t size,
                                  broadcast_t bcast);
 static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, char *alias_to, size_t size,
-                                      int *fd, char **localpath, int *already_loaded);
+                                      int *fd, char **localpath, int *already_loaded, int *replicate);
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, 
                                       char *localname, char *pathname, int *fd,
-                                      void *buffer, size_t size, size_t newsize, char *alias_to,
-                                      int errcode);
+                                      char **origbuffer, size_t size, size_t newsize, char *alias_to,
+                                      int replicate, int errcode);
 
 static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc);
+static int handle_client_return_numa_replication(ldcs_process_data_t *procdata, int nc);
 static int handle_client_rejected_query(ldcs_process_data_t *procdata, int nc, int errcode);
 
 static int handle_request(ldcs_process_data_t *procdata, node_peer_t from, ldcs_message_t *msg);
@@ -184,6 +186,14 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       strncpy(client->remote_location, msg->data, sizeof(client->remote_location)-1);
       client->remote_location[sizeof(client->remote_location)-1] = '\0';
       debug_printf2("Server recvd location %s from %d\n", msg->data, nc);
+   }
+   else if (msg->header.type == LDCS_MSG_CPU) {
+      int clientcpu;
+      sscanf(msg->data, "%d", &clientcpu);
+      client->numa_node = numa_node_for_core(clientcpu);
+      if (client->numa_node == -1)
+         client->numa_node = 0;
+      debug_printf2("Server recvd cpu info from client on %d, marking as numa domain %d", clientcpu, client->numa_node);
    }
    return 0;
 }
@@ -415,6 +425,7 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
                               client->query_dirname, &client->query_localpath, &errcode);
    switch (result) {
       case FOUND_FILE:
+         handle_client_return_numa_replication(procdata, nc);
          return handle_client_fulfilled_query(procdata, nc);
       case NO_DIR:
          return handle_client_rejected_query(procdata, nc, SPINDLE_ENODIR);
@@ -560,7 +571,7 @@ static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *di
  * the region.
  **/
 static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, char *alias_to, size_t size,
-                                      int *fd, char **localname, int *already_loaded)
+                                      int *fd, char **localname, int *already_loaded, int *replicate)
 {
    void *buffer;
    int result;
@@ -596,25 +607,41 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
       assert(0);
    }
 
+   *replicate = numa_should_replicate(procdata, pathname);
+
    /**
     * Set up mapped memory for on the local disk for storing the file.
     **/
-   *localname = filemngt_calc_localname(pathname, clt_file);
+   *localname = filemngt_calc_localname(pathname, *replicate ? clt_numafile : clt_file);
    assert(*localname);
    add_global_name(pathname, *localname);
-
+   
    starttime = ldcs_get_time();
-   result = filemngt_create_file_space(*localname, size, &buffer, fd);
-   if (result == -1)
-      return NULL;
+   if (!(*replicate)) {
+      result = filemngt_create_file_space(*localname, size, &buffer, fd);
+      if (result == -1)
+         return NULL;
+   }
+   else {
+      buffer = numa_alloc_temporary_memory(size);
+      if (buffer == NULL)
+         return NULL;
+      *fd = -1;
+   }
    procdata->server_stat.libstore.time += (ldcs_get_time()-starttime);
 
    /**
     * Store the memory info in the cache
     **/
-   ldcs_cache_updateEntry(filename, dirname, *localname, buffer, size, alias_to, 0);
+   ldcs_cache_updateEntry(filename, dirname, *localname, buffer, size, alias_to, *replicate, 0);
 
-   debug_printf2("Allocated space for file %s with local file %s and mmap'd at %p\n", pathname, *localname, buffer);
+   if (!(*replicate))
+      debug_printf2("Allocated space for file %s with local file %s and mmap'd at %p\n", pathname, *localname, buffer);
+   else
+      debug_printf2("Allocated temporary space, pending numa copies, for file %s under pending local file %s and mmap'd at %p\n",
+                    pathname, *localname, buffer);      
+   
+
    return buffer;
 }
 
@@ -623,28 +650,72 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
  **/
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *localname, 
                                       char *pathname, int *fd, 
-                                      void *buffer, size_t size, size_t newsize, char *alias_to, int errcode)
+                                      char **orig_buffer, size_t size, size_t newsize, char *alias_to, int replicate, int errcode)
 {
    double starttime;
-   void *newbuffer = NULL;
+   void *newbuffer = NULL, *numabuffer = NULL, *final_numabuffer;
+   int i, num_nodes, result;
+   char numaname[MAX_PATH_LEN+1];
+   char *buffer = *orig_buffer;
 
    starttime = ldcs_get_time();
    if (errcode) {
       debug_printf2("Releasing space at %p because read of %s returned error %d\n",
                     buffer, pathname, errcode);
-      filemngt_clear_file_space(buffer, size, *fd);
+      if (!replicate)
+         filemngt_clear_file_space(buffer, size, *fd);
+      else
+         numa_free_temporary_memory(buffer, size);
       buffer = NULL;
       if (localname)
          free(localname);
       localname = NULL;
       size = 0;
    }
-   else {
+   else if (!replicate) {
       debug_printf2("Cleaning buffer space at %p, which is size = %lu, newsize = %lu\n", buffer,
                     (unsigned long) size, (unsigned long) newsize);
       newbuffer = filemngt_sync_file_space(buffer, *fd, localname, size, newsize);
       if (newbuffer == NULL)
          return -1;
+   }
+   else { //replicate && !errcode
+      num_nodes = numa_num_nodes();
+      debug_printf2("Replicating %s onto buffers for %d different numa domains\n", pathname, num_nodes);
+      for (i = 0; i < numa_num_nodes(); i++) {
+         int numafd;
+         strncpy(numaname, localname, MAX_PATH_LEN);
+         numa_update_local_filename(numaname, i);
+         debug_printf3("Creating file for numa domain %d in %s of size %lu\n", i, numaname, newsize);
+         result = filemngt_create_file_space(numaname, newsize, &numabuffer, &numafd);
+         if (result == -1) {
+            err_printf("Failed to create file space of size %lu for %s\n", newsize, numaname);
+            if (numafd != -1) close(numafd);
+            return -1;
+         }
+         debug_printf3("Assigning memory for %s at %p to numa node %d\n", numaname, numabuffer, i);
+         result = numa_assign_memory_to_node(numabuffer, newsize, i);
+         if (result == -1) {
+            err_printf("Failed to associate memory region at %p with numa node %d\n", numabuffer, i);
+            if (numafd != -1) close(numafd);
+            return -1;
+         }
+
+         memcpy(numabuffer, buffer, newsize);
+         final_numabuffer = filemngt_sync_file_space(numabuffer, numafd, numaname, newsize, newsize);
+         if (final_numabuffer == NULL) {
+            if (numafd != -1) close(numafd);
+            return -1;
+         }
+            
+         if (i == 0) {
+            //Use the 0 node replicated copy of the file for future broadcasts
+            newbuffer = final_numabuffer;
+         }
+         if (numafd != -1)
+            close(numafd);         
+      }
+      numa_free_temporary_memory(buffer, size);
    }
    procdata->server_stat.libstore.time += (ldcs_get_time() - starttime);      
 
@@ -652,11 +723,12 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
    if (size != newsize || buffer != newbuffer || alias_to || errcode) {
       /* The buffer either shrunk or moved.  Update file cache with the new information */
       parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
-      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, alias_to, errcode);
+      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, alias_to, replicate, errcode);
+      *orig_buffer = (char *) newbuffer;
    }
    if (alias_to) {
       parseFilenameNoAlloc(alias_to, filename, dirname, MAX_PATH_LEN);
-      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, NULL, errcode);
+      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, NULL, replicate, errcode);
    }
    *fd = -1;
    return 0;
@@ -710,7 +782,7 @@ static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, cha
    }
    if (*existing) {
       ldcs_cache_updateEntry(filename, dirname, *existing_localname, *existing_buffer,
-                             *existing_size, alias_to, *existing_errcode);
+                             *existing_size, alias_to, 0, *existing_errcode);
    }
 
    return 0;
@@ -734,6 +806,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    size_t existing_size;
    void *existing_buffer;
    char *existing_localname;
+   int replicate = 0;
    
 
    starttime = ldcs_get_time();
@@ -779,7 +852,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    debug_printf2("Reading and broadcasting file %s\n", pathname);
 
    /* Setup buffer for file contents */
-   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded);
+   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded, &replicate);
    if (!buffer) {
       assert(!already_loaded);
       global_result = -1;
@@ -804,8 +877,8 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    procdata->server_stat.libstore.time += (ldcs_get_time() - starttime);
 
   readdone:   
-   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, buffer, size,
-                                       newsize, alias_to, errcode);
+   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size,
+                                       newsize, alias_to, replicate, errcode);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -926,6 +999,28 @@ static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int n
 }
 
 /**
+ * Check if the requested file is numa replicated, then update the client
+ * to mark that it should send a numa replication copy of the file
+ **/
+static int handle_client_return_numa_replication(ldcs_process_data_t *procdata, int nc)
+{
+   ldcs_cache_result_t cache_filedir_result;
+   ldcs_client_t *client = procdata->client_table + nc;   
+   int replication;
+
+   if (!(procdata->opts | OPT_NUMA)) {
+      client->query_is_numa_replicated = 0;
+      return 0;
+   }
+   
+   cache_filedir_result = ldcs_cache_isReplicated(client->query_filename,
+                              client->query_dirname, &replication);
+   assert(cache_filedir_result == LDCS_CACHE_FILE_FOUND);
+   client->query_is_numa_replicated = replication;
+   return 0;
+}
+
+/**
  * Sends a message to a client with the local path for a sucessfully read file.
  **/
 static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
@@ -933,6 +1028,7 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    ldcs_message_t out_msg;
    int connid, zero = 0;
    char buffer_out[MAX_PATH_LEN+1+sizeof(int)];
+   char *outfile;
    ldcs_client_t *client = procdata->client_table + nc;
 
    connid = client->connid;
@@ -944,12 +1040,20 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    out_msg.header.type = LDCS_MSG_FILE_QUERY_ANSWER;
    out_msg.data = (void *) buffer_out;
    memcpy(out_msg.data, &zero, sizeof(int));
-   strncpy(out_msg.data+sizeof(int), client->query_localpath, MAX_PATH_LEN);
+
+   outfile = out_msg.data + sizeof(int);
+   strncpy(outfile, client->query_localpath, MAX_PATH_LEN);
    buffer_out[sizeof(buffer_out)-1] = '\0';
+   if (client->query_is_numa_replicated) {
+      debug_printf3("Updating local file %s with numa domain %d before sending to client\n", outfile, client->numa_node);
+      numa_update_local_filename(outfile, client->numa_node);
+   }
+   
    out_msg.header.len = strlen(client->query_localpath) + 1 + sizeof(int);
 
    ldcs_send_msg(connid, &out_msg);
    client->query_open = 0;
+   client->query_is_numa_replicated = 0;   
 
    debug_printf2("Server answering query (fulfilled): %s\n", out_msg.data);
    
@@ -1261,7 +1365,7 @@ static int handle_file_errcode(ldcs_process_data_t *procdata, ldcs_message_t *ms
    debug_printf2("Received errcode result %d from read of %s\n", errcode, pathname);
    char filename[MAX_PATH_LEN], dirname[MAX_PATH_LEN];
    parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
-   ldcs_cache_updateEntry(filename, dirname, NULL, NULL, 0, NULL, errcode);
+   ldcs_cache_updateEntry(filename, dirname, NULL, NULL, 0, NULL, 0, errcode);
 
    result = handle_broadcast_errorcode(procdata, pathname, errcode);
    if (result == -1)
@@ -1279,7 +1383,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    char *buffer = NULL;
    size_t size = 0;
    int result, global_error = 0, already_loaded, fd = -1, bytes_read = 0;
-   int existing, existing_errcode;
+   int existing, existing_errcode, replicate;
    size_t existing_size;
    void *existing_buffer;
    char *existing_localname;
@@ -1325,7 +1429,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    /* Setup up a memory buffer for us to read into, which is mapped to the
       local file.  Also fills in the hash table.  Does not actually read
       the file data */
-   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded);
+   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded, &replicate);
    if (!buffer) {
       if (already_loaded) {
          debug_printf("File %s was already loaded\n", pathname);
@@ -1351,7 +1455,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    }
 
    /* Syncs the file contents to disk and sets local access permissions */
-   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, buffer, size, size, alias_to, 0);
+   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size, size, alias_to, replicate, 0);
    if (result == -1) {
       global_error = -1;
       goto done;
@@ -1478,6 +1582,7 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
       case LDCS_MSG_CWD:
       case LDCS_MSG_PID:
       case LDCS_MSG_LOCATION:
+      case LDCS_MSG_CPU:
          return handle_client_info_msg(procdata, nc, msg);
       case LDCS_MSG_PYTHONPREFIX_REQ:
          return handle_pythonprefix_query(procdata, nc);
@@ -1610,7 +1715,7 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    ldcs_close_server_connection(connid);
    client->state = LDCS_CLIENT_STATUS_FREE;
    debug_printf("Closed client %d\n", nc);
-   
+
    assert(procdata->clients_live > 0);
    procdata->clients_live--;
    return handle_send_exit_ready_if_done(procdata);

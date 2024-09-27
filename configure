@@ -856,6 +856,7 @@ enable_biter
 enable_msocket
 enable_cobo
 with_python_prefix
+enable_numa
 with_usage_logging
 enable_cleanup_process
 enable_subaudit_as_default
@@ -1543,6 +1544,7 @@ Optional Features:
   --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
+  --enable-numa           Use libnuma to enable numa optimizations
   --enable-cleanup-process
                           Default to using a dedicated process to clean
                           relocated files
@@ -17021,6 +17023,51 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define PYTHON_INST_PREFIX "$PYTHON_INST_PREFIX"
 _ACEOF
+
+
+#NUMA configuration
+# Check whether --enable-numa was given.
+if test "${enable_numa+set}" = set; then :
+  enableval=$enable_numa; REQUIRE_NUMA="true"
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have libnuma" >&5
+$as_echo_n "checking whether we have libnuma... " >&6; }
+ORIG_LIBS=$LIBS
+LIBS="$LIBS -lnuma"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <numa.h>
+int
+main ()
+{
+numa_available();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  HAVE_NUMA="true";{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ORIG_LIBS
+
+if test "x$REQUIRE_NUMA" == "xtrue"; then
+  if test "x$HAVE_NUMA" != "xtrue"; then
+    as_fn_error $? "Could not link with libnuma, but numa required" "$LINENO" 5
+  fi
+fi
+if test "x$HAVE_NUMA" == "xtrue"; then
+
+$as_echo "#define LIBNUMA 1" >>confdefs.h
+
+fi
 
 
 #Usage logging

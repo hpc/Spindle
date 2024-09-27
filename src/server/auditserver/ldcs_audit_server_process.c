@@ -143,6 +143,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.location = args->location;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.numa_substrs = args->numa_files;
    ldcs_process_data.md_port = args->port;
    ldcs_process_data.opts = args->opts;
    ldcs_process_data.msgbundle_cache_size_kb = args->bundle_cachesize_kb;

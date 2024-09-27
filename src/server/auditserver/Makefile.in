@@ -121,8 +121,9 @@ libserverbase_la_DEPENDENCIES =
 am_libserverbase_la_OBJECTS = ldcs_audit_server_client_cb.lo \
 	ldcs_audit_server_server_cb.lo ldcs_audit_server_process.lo \
 	ldcs_audit_server_filemngt.lo ldcs_audit_server_handlers.lo \
-	ldcs_elf_read.lo ldcs_audit_server_requestors.lo msgbundle.lo \
-	parse_mounts.lo cleanup_proc.lo
+	ldcs_elf_read.lo ldcs_audit_server_requestors.lo \
+	ldcs_audit_server_numa.lo msgbundle.lo parse_mounts.lo \
+	cleanup_proc.lo
 libserverbase_la_OBJECTS = $(am_libserverbase_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -144,6 +145,7 @@ am__depfiles_remade = ./$(DEPDIR)/cleanup_proc.Plo \
 	./$(DEPDIR)/ldcs_audit_server_filemngt.Plo \
 	./$(DEPDIR)/ldcs_audit_server_handlers.Plo \
 	./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo \
+	./$(DEPDIR)/ldcs_audit_server_numa.Plo \
 	./$(DEPDIR)/ldcs_audit_server_process.Plo \
 	./$(DEPDIR)/ldcs_audit_server_requestors.Plo \
 	./$(DEPDIR)/ldcs_audit_server_server_cb.Plo \
@@ -372,7 +374,7 @@ noinst_LTLIBRARIES = libaudit_server_cobo.la libserverbase.la
 AM_CPPFLAGS = -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/../cobo -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -DLIBEXECDIR=\"$(pkglibexecdir)\"
 LDADD = $(top_builddir)/cache/libldcs_cache.la -lrt
 #AM_LDFLAGS = -all-static
-libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c msgbundle.c parse_mounts.cc cleanup_proc.cc
+libserverbase_la_SOURCES = ldcs_audit_server_client_cb.c ldcs_audit_server_server_cb.c ldcs_audit_server_process.c ldcs_audit_server_filemngt.c ldcs_audit_server_handlers.c ldcs_elf_read.c ldcs_audit_server_requestors.c ldcs_audit_server_numa.c msgbundle.c parse_mounts.cc cleanup_proc.cc
 libserverbase_la_LIBADD = -lpthread
 
 #libaudit_server_msocket_la_SOURCES = ldcs_audit_server_md_msocket.c ldcs_audit_server_md_msocket_util.c ldcs_audit_server_md_msocket_topo.c 
@@ -443,6 +445,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_filemngt.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_handlers.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_numa.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_process.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_requestors.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldcs_audit_server_server_cb.Plo@am__quote@ # am--include-marker
@@ -640,6 +643,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_filemngt.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_handlers.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo
+	-rm -f ./$(DEPDIR)/ldcs_audit_server_numa.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_process.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_requestors.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_server_cb.Plo
@@ -696,6 +700,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_filemngt.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_handlers.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_md_cobo.Plo
+	-rm -f ./$(DEPDIR)/ldcs_audit_server_numa.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_process.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_requestors.Plo
 	-rm -f ./$(DEPDIR)/ldcs_audit_server_server_cb.Plo

@@ -131,7 +131,8 @@ libspindlec_biter_la_DEPENDENCIES =  \
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_2 = client.lo lookup.lo should_intercept.lo exec_util.lo \
 	remap_exec.lo lookup_libc.lo \
-	$(top_builddir)/../utils/parseloc.lo
+	$(top_builddir)/../utils/parseloc.lo \
+	$(top_builddir)/../utils/getcpu.lo
 am_libspindlec_biter_la_OBJECTS = $(am__objects_2)
 libspindlec_biter_la_OBJECTS = $(am_libspindlec_biter_la_OBJECTS)
 @BITER_TRUE@am_libspindlec_biter_la_rpath =
@@ -164,7 +165,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo \
+am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo \
+	$(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo \
 	./$(DEPDIR)/client.Plo ./$(DEPDIR)/exec_util.Plo \
 	./$(DEPDIR)/libspindle_audit_la-intercept.Plo \
 	./$(DEPDIR)/libspindle_audit_la-intercept_exec.Plo \
@@ -363,7 +365,7 @@ noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1) \
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c
-BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c lookup_libc.c $(top_srcdir)/../utils/parseloc.c 
+BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c lookup_libc.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/getcpu.c 
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 libspindlec_pipe_la_SOURCES = $(BASE_SRCS)
@@ -428,6 +430,9 @@ $(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp):
 $(top_builddir)/../utils/parseloc.lo:  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../utils/getcpu.lo:  \
+	$(top_builddir)/../utils/$(am__dirstamp) \
+	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
 
 libspindlec_biter.la: $(libspindlec_biter_la_OBJECTS) $(libspindlec_biter_la_DEPENDENCIES) $(EXTRA_libspindlec_biter_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libspindlec_biter_la_rpath) $(libspindlec_biter_la_OBJECTS) $(libspindlec_biter_la_LIBADD) $(LIBS)
@@ -446,6 +451,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exec_util.Plo@am__quote@ # am--include-marker
@@ -666,7 +672,8 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
+		-rm -f $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
 	-rm -f ./$(DEPDIR)/client.Plo
 	-rm -f ./$(DEPDIR)/exec_util.Plo
 	-rm -f ./$(DEPDIR)/libspindle_audit_la-intercept.Plo
@@ -724,7 +731,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
+		-rm -f $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
 	-rm -f ./$(DEPDIR)/client.Plo
 	-rm -f ./$(DEPDIR)/exec_util.Plo
 	-rm -f ./$(DEPDIR)/libspindle_audit_la-intercept.Plo

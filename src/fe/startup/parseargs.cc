@@ -52,6 +52,7 @@ using namespace std;
 #define PYTHONPREFIX 'r'
 #define STRIP 's'
 #define PORT 't'
+#define NUMA 'u'
 #define STOPRELOC 'w'
 #define RELOCEXEC 'x'
 #define RELOCPY 'y'
@@ -173,6 +174,8 @@ static set<string> python_prefixes;
 static const char *default_python_prefixes = PYTHON_INST_PREFIX;
 static char *user_python_prefixes = NULL;
 
+static char *numa_substrings = NULL;
+
 #if DEFAULT_USE_SUBAUDIT == 1
 #define DEFAULT_USE_SUBAUDIT_STR "subaudit"
 #else
@@ -292,6 +295,11 @@ struct argp_option options[] = {
      "Run a new job in the given session", GROUP_SESSION },
    { NULL, 0, NULL, 0,
      "Misc options", GROUP_MISC },
+#if defined(LIBNUMA)
+   { "numa", NUMA, "list", OPTION_ARG_OPTIONAL,
+     "Colon-seperated list of substrings that will be matched to executables/libraries. Matches will have their memory replicated into each NUMA domain."
+     " Specify the option, but leave it blank to replicate all spindle-relocated files into each NUMA domain", GROUP_MISC },
+#endif
    { "audit-type", AUDITTYPE, "subaudit|audit", 0,
      "Use the new-style subaudit interface for intercepting ld.so, or the old-style audit interface.  The subaudit option reduces memory overhead, but is more complex.  Default is " DEFAULT_USE_SUBAUDIT_STR ".", GROUP_MISC },
    { "shmcache-size", SHAREDCACHE_SIZE, "size", 0,
@@ -504,6 +512,11 @@ static int parse(int key, char *arg, struct argp_state *vstate)
          return 0;
       }
       return ARGP_ERR_UNKNOWN;
+   }
+   else if (key == NUMA) {
+      opts |= OPT_NUMA;
+      numa_substrings = arg;
+      return 0;
    }
    else if (key == PYTHONPREFIX) {
       user_python_prefixes = arg;
@@ -838,6 +851,8 @@ int parseCommandLine(int argc, char *argv[], spindle_args_t *args, unsigned int 
    args->preloadfile = getPreloadFile();
    args->bundle_timeout_ms = msgcache_timeout_ms;
    args->bundle_cachesize_kb = msgcache_buffer_kb;
+   args->numa_files = numa_substrings ? strdup(numa_substrings) : NULL;
+      
    args->unique_id = 0;
    if (!(flags & PARSECMD_FLAG_NOUNIQUEID)) {
       args->unique_id = get_unique_id(io);
@@ -875,4 +890,9 @@ session_status_t get_session_status()
 int getUseRSH()
 {
    return use_rsh;
+}
+
+char *get_numa_substrings()
+{
+   return numa_substrings;
 }

@@ -57,6 +57,7 @@ struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename) {
    newentry->ostate = 0;
    newentry->localpath = NULL;
    newentry->alias_to = NULL;
+   newentry->replication = 0;
    newentry->buffer = NULL;
    newentry->buffer_size = 0;
    newentry->next = NULL;
@@ -77,7 +78,7 @@ struct ldcs_hash_entry_t *ldcs_hash_addEntry(char *dirname, char *filename) {
 }
 
 struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, char *localname, 
-                                                void *buffer, size_t buffer_size, char *alias_to, int errcode)
+                                                void *buffer, size_t buffer_size, char *alias_to, int replicate, int errcode)
 {
    struct ldcs_hash_entry_t *entry;
 
@@ -90,6 +91,7 @@ struct ldcs_hash_entry_t *ldcs_hash_updateEntry(char *filename, char *dirname, c
    entry->buffer = buffer;
    entry->buffer_size = buffer_size;
    entry->alias_to = alias_to ? strdup(alias_to) : NULL;
+   entry->replication = replicate;
    entry->errcode = errcode;
    return entry;
 }

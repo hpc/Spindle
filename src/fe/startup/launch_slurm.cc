@@ -119,7 +119,6 @@ SlurmLauncher::SlurmLauncher(spindle_args_t *params_) :
       initError = true;
       return;
    }
-   free(buffer);
 
    while (!feof(f)) {
       char *hostname = NULL;
@@ -133,9 +132,11 @@ SlurmLauncher::SlurmLauncher(spindle_args_t *params_) :
       fprintf(stderr, "Spindle encountered an error fetching the hostlist from scontrol. "
               "We tried to run the command:\n  %s\n", buffer);
       err_printf("scontrol returned %d: %s\n", result, strerror(error));
+      free(buffer);
       initError = true;
       return;
    }
+   free(buffer);
 }
 
 SlurmLauncher::~SlurmLauncher()

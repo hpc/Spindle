@@ -116,6 +116,7 @@ am_spindle_bootstrap_OBJECTS =  \
 	spindle_bootstrap-spindle_bootstrap.$(OBJEXT) \
 	$(top_builddir)/../utils/spindle_bootstrap-parseloc.$(OBJEXT) \
 	$(top_builddir)/../utils/spindle_bootstrap-spindle_mkdir.$(OBJEXT) \
+	$(top_builddir)/../utils/spindle_bootstrap-getcpu.$(OBJEXT) \
 	$(top_builddir)/client/spindle_bootstrap-exec_util.$(OBJEXT) \
 	$(top_builddir)/client/spindle_bootstrap-lookup.$(OBJEXT)
 spindle_bootstrap_OBJECTS = $(am_spindle_bootstrap_OBJECTS)
@@ -146,7 +147,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po \
+am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po \
+	$(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po \
 	$(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-spindle_mkdir.Po \
 	$(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-exec_util.Po \
 	$(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-lookup.Po \
@@ -336,7 +338,7 @@ spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -D
 spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindleclogc.la \
 	$(top_builddir)/shm_cache/libshmcache.la $(am__append_1) \
 	$(am__append_2)
-spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/client/exec_util.c  $(top_srcdir)/client/lookup.c
+spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/getcpu.c $(top_srcdir)/client/exec_util.c  $(top_srcdir)/client/lookup.c
 all: all-am
 
 .SUFFIXES:
@@ -431,6 +433,9 @@ $(top_builddir)/../utils/spindle_bootstrap-parseloc.$(OBJEXT):  \
 $(top_builddir)/../utils/spindle_bootstrap-spindle_mkdir.$(OBJEXT):  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../utils/spindle_bootstrap-getcpu.$(OBJEXT):  \
+	$(top_builddir)/../utils/$(am__dirstamp) \
+	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
 $(top_builddir)/client/$(am__dirstamp):
 	@$(MKDIR_P) $(top_builddir)/client
 	@: > $(top_builddir)/client/$(am__dirstamp)
@@ -456,6 +461,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-spindle_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-exec_util.Po@am__quote@ # am--include-marker
@@ -533,6 +539,20 @@ $(top_builddir)/../utils/spindle_bootstrap-spindle_mkdir.obj: $(top_builddir)/..
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/spindle_mkdir.c' object='$(top_builddir)/../utils/spindle_bootstrap-spindle_mkdir.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle_bootstrap-spindle_mkdir.obj `if test -f '$(top_builddir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/spindle_mkdir.c'; fi`
+
+$(top_builddir)/../utils/spindle_bootstrap-getcpu.o: $(top_builddir)/../utils/getcpu.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/spindle_bootstrap-getcpu.o -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Tpo -c -o $(top_builddir)/../utils/spindle_bootstrap-getcpu.o `test -f '$(top_builddir)/../utils/getcpu.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/getcpu.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Tpo $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/getcpu.c' object='$(top_builddir)/../utils/spindle_bootstrap-getcpu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle_bootstrap-getcpu.o `test -f '$(top_builddir)/../utils/getcpu.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/getcpu.c
+
+$(top_builddir)/../utils/spindle_bootstrap-getcpu.obj: $(top_builddir)/../utils/getcpu.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/spindle_bootstrap-getcpu.obj -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Tpo -c -o $(top_builddir)/../utils/spindle_bootstrap-getcpu.obj `if test -f '$(top_builddir)/../utils/getcpu.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/getcpu.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/getcpu.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Tpo $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/getcpu.c' object='$(top_builddir)/../utils/spindle_bootstrap-getcpu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle_bootstrap-getcpu.obj `if test -f '$(top_builddir)/../utils/getcpu.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/getcpu.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/getcpu.c'; fi`
 
 $(top_builddir)/client/spindle_bootstrap-exec_util.o: $(top_builddir)/client/exec_util.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_bootstrap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/client/spindle_bootstrap-exec_util.o -MD -MP -MF $(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-exec_util.Tpo -c -o $(top_builddir)/client/spindle_bootstrap-exec_util.o `test -f '$(top_builddir)/client/exec_util.c' || echo '$(srcdir)/'`$(top_builddir)/client/exec_util.c
@@ -700,7 +720,8 @@ clean-am: clean-generic clean-libtool clean-pkglibexecPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po
+		-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-spindle_mkdir.Po
 	-rm -f $(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-exec_util.Po
 	-rm -f $(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-lookup.Po
@@ -750,7 +771,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po
+		-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-getcpu.Po
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-parseloc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle_bootstrap-spindle_mkdir.Po
 	-rm -f $(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-exec_util.Po
 	-rm -f $(top_builddir)/client/$(DEPDIR)/spindle_bootstrap-lookup.Po
