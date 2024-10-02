@@ -88,6 +88,7 @@ void spawnLogDaemon(char *tempdir)
          }
          params[cur++] = NULL;
          unsetenv("LD_AUDIT");
+         unsetenv("LD_PRELOAD");
          execv(spindle_log_daemon_name, params);
          fprintf(stderr, "Error executing %s: %s\n", spindle_log_daemon_name, strerror(errno));
          exit(0);
@@ -159,7 +160,7 @@ int connectToLogDaemon(char *path)
    //Some programs have expectations of FD order.  Move the connection to
    // a high-number FD to avoid breaking their unsafe expectations.
    for (newfd = 317; newfd < 317+10; newfd++) {
-      if (fcntl(newfd, F_GETFD) == newfd)
+      if (fcntl(newfd, F_GETFD) != -1)
          continue;
       result = dup2(sockfd, newfd);
       if (result != -1) {
