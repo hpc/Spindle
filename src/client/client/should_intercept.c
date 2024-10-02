@@ -71,6 +71,15 @@ static int is_local_file(const char *pathname)
 {
    char *loctmpdir;
    int loctmpdir_size;
+   static int location_size = 0;
+   if (!location_size) {
+      location_size = strlen(location);
+   }
+   if (strncmp(pathname, location, location_size) == 0) {
+      debug_printf3("Decided that %s is part of spindle cache %s. Sending to spindle\n",
+                    pathname, location);
+      return 0;
+   }
    get_location_tmpdir(&loctmpdir, &loctmpdir_size);
    if (strncmp(pathname, loctmpdir, loctmpdir_size) == 0) {
       debug_printf3("Decided that %s is prefixed by local path %s\n, not redirecting\n", pathname, loctmpdir);
