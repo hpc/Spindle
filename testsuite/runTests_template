@@ -18,6 +18,13 @@ export TEST_RM="TEST_RESOURCE_MANAGER"
 ./run_driver --partial --pull
 ./run_driver --ldpreload --pull
 
+./run_driver --dependency --numa
+./run_driver --dlopen --numa
+./run_driver --dlreopen --numa
+./run_driver --reorder --numa
+./run_driver --partial --numa
+./run_driver --ldpreload --numa
+
 if test "x$SPINDLE_BLUEGENE" != "xtrue"; then
 ./run_driver --dependency --fork
 ./run_driver --dlopen --fork

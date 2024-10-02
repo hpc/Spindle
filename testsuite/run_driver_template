@@ -40,6 +40,10 @@ fi
 if [ $2 == --pull ] ; then 
 export SPINDLE_OPTS="--pull"
 fi
+if [ $2 == --numa ] ; then
+export SPINDLE_OPTS="--numa"
+fi
+
 if [ $2 == --session ] ; then
   if [ x$SESSION_ID == x ] ; then
     export SESSION_ID=`$SPINDLE --start-session`
