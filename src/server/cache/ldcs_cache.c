@@ -27,6 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "ldcs_cache.h"
 #include "ldcs_hash.h"
+#include "ccwarns.h"
 
 ldcs_cache_result_t ldcs_cache_findDirInCache(char *dirname) {
    struct ldcs_hash_entry_t *e = ldcs_hash_Lookup(dirname);
@@ -92,6 +93,46 @@ ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread
   return(ldcs_cache_findDirInCache(dirname));
 }
 
+ldcs_cache_result_t ldcs_cache_updateAlias(char *filename, char *dirname, char *alias_to)
+{
+   struct ldcs_hash_entry_t *e = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
+   if (!e) {
+      err_printf("Asked to update %s/%s, but wasn't found in cache\n", dirname, filename);
+      return LDCS_CACHE_FILE_NOT_FOUND;
+   }
+   debug_printf3("Updating cache of %s/%s with alias information\n", dirname, filename);   
+   e->alias_to = strdup(alias_to);
+   return LDCS_CACHE_FILE_FOUND;
+}
+
+ldcs_cache_result_t ldcs_cache_updateBuffer(char *filename, char *dirname, char *localname, void *buffer, size_t buffer_size, int errcode)
+{
+   struct ldcs_hash_entry_t *e = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
+   if (!e) {
+      err_printf("Asked to update %s/%s, but wasn't found in cache\n", dirname, filename);      
+      return LDCS_CACHE_FILE_NOT_FOUND;
+   }
+   debug_printf3("Updating cache of %s/%s with new file information\n", dirname, filename);
+   e->ostate = LDCS_CACHE_OBJECT_STATUS_LOCAL_PATH;   
+   e->localpath = localname;
+   e->buffer = buffer;
+   e->buffer_size = buffer_size;
+   e->errcode = errcode;
+   return LDCS_CACHE_FILE_FOUND;
+}
+
+ldcs_cache_result_t ldcs_cache_updateReplication(char *filename, char *dirname, int replication)
+{
+   struct ldcs_hash_entry_t *e = ldcs_hash_Lookup_FN_and_DIR(filename, dirname);
+   if (!e) {
+      err_printf("Asked to update %s/%s, but wasn't found in cache\n", dirname, filename);      
+      return LDCS_CACHE_FILE_NOT_FOUND;
+   }
+   debug_printf3("Updating cache of %s/%s with replication info\n", dirname, filename);
+   e->replication = replication;
+   return LDCS_CACHE_FILE_FOUND;   
+}
+
 ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname, 
                                            char *localname, void *buffer, size_t buffer_size, char *alias_to, int replicate, int errcode)
 {
@@ -100,14 +141,21 @@ ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname,
       e->ostate = LDCS_CACHE_OBJECT_STATUS_LOCAL_PATH;
       return(LDCS_CACHE_FILE_FOUND);
    }
-   else
+   else {
+      err_printf("Asked to update %s/%s, but wasn't found in cache\n", dirname, filename);
       return(LDCS_CACHE_FILE_NOT_FOUND);
+   }
 }
 
 ldcs_cache_result_t ldcs_cache_updateStatus(char *filename, char *dirname, ldcs_hash_object_status_t ostate) {
   struct ldcs_hash_entry_t *e = ldcs_hash_updateEntryOState(filename, dirname, (int) ostate);
-  if(e) {     return(LDCS_CACHE_FILE_FOUND);   } 
-  else  {    return(LDCS_CACHE_FILE_NOT_FOUND); }
+  if (e) {
+     return(LDCS_CACHE_FILE_FOUND);
+  } 
+  else  {
+     err_printf("Asked to update %s/%s, but wasn't found in cache\n", dirname, filename);     
+     return(LDCS_CACHE_FILE_NOT_FOUND);
+  }
 }
 
 ldcs_hash_object_status_t ldcs_cache_getStatus(char *filename) {
@@ -306,6 +354,7 @@ void addEmptyDirectory(char *dirname) {
 
 void cacheLibraries(char *dirname, size_t *bytesread) {
    size_t len;
+   int result;
    debug_printf3("cacheLibraries for directory %s\n", dirname);
    
    DIR *d = opendir(dirname);
@@ -325,7 +374,10 @@ void cacheLibraries(char *dirname, size_t *bytesread) {
    entry = (struct dirent *) malloc(len);
 
    for (;;) {
-      if (readdir_r(d, entry, &dent) != 0)
+      GCC7_DISABLE_WARNING("-Wdeprecated-declarations");
+      result = readdir_r(d, entry, &dent);
+      GCC7_ENABLE_WARNING      
+      if (result != 0)
          break;
       if (dent == NULL)
          break;

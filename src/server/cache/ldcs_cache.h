@@ -40,6 +40,11 @@ ldcs_cache_result_t ldcs_cache_isReplicated(char *filename, char *dirname, int *
 
 ldcs_cache_result_t ldcs_cache_processDirectory(char *dirname, size_t *bytesread);
 
+
+ldcs_cache_result_t ldcs_cache_updateAlias(char *filename, char *dirname, char *alias_to);
+ldcs_cache_result_t ldcs_cache_updateBuffer(char *filename, char *dirname, char *localname, void *buffer, size_t buffer_size, int errcode);
+ldcs_cache_result_t ldcs_cache_updateReplication(char *filename, char *dirname, int replication);
+
 ldcs_cache_result_t ldcs_cache_updateEntry(char *filename, char *dirname, 
                                            char *localname, void *buffer, size_t buffer_size, char *alias_to, int is_replicated, int errcode);
 

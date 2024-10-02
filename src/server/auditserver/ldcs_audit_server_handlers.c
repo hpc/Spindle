@@ -62,6 +62,7 @@ typedef enum {
    READ_FILE,
    REQ_DIRECTORY,
    REQ_FILE,
+   ALIAS_TO,
    ORIG_FILE
 } handle_file_result_t;
 
@@ -91,24 +92,24 @@ static int handle_pythonprefix_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_file_request(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
 static handle_file_result_t handle_howto_directory(ldcs_process_data_t *procdata, char *dir);
 static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, char *pathname,
-                                              char *file, char *dir, char **localpath, int *errcode);
+                                              char *file, char *dir, char **localpath, char **aliasto, int *errcode);
 static handle_metadata_result_t handle_howto_metadata(ldcs_process_data_t *procdata, char *pathname, metadata_t mdtype);
 static int handle_client_progress(ldcs_process_data_t *procdata, int nc);
 static int handle_progress(ldcs_process_data_t *procdata);
-
+static int handle_client_get_alias(ldcs_process_data_t *procdata, int nc, char *alias_to);
 static int handle_read_directory(ldcs_process_data_t *procdata, char *dir);
 static int handle_broadcast_dir(ldcs_process_data_t *procdata, char *dir, broadcast_t bcast);
 static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *dir);
 
 static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *filename, 
                                           broadcast_t bcast);
-static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *alias_to, char *buffer, size_t size,
+static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size,
                                  broadcast_t bcast);
-static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, char *alias_to, size_t size,
+static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size,
                                       int *fd, char **localpath, int *already_loaded, int *replicate);
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, 
                                       char *localname, char *pathname, int *fd,
-                                      char **origbuffer, size_t size, size_t newsize, char *alias_to,
+                                      char **origbuffer, size_t size, size_t newsize,
                                       int replicate, int errcode);
 
 static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc);
@@ -127,6 +128,7 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath)
 static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer, 
                             broadcast_t bcast);
 static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast);
+static int handle_alias_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast);
 
 static int handle_exit_broadcast(ldcs_process_data_t *procdata);
 static int handle_send_msg_to_keys(ldcs_process_data_t *procdata, ldcs_message_t *msg, char *key,
@@ -147,6 +149,7 @@ static int handle_cache_metadata(ldcs_process_data_t *procdata, char *pathname, 
                                  struct stat *buf, char **localname);
 static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype);
 static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathname, int errcode);
+static int handle_broadcast_alias(ldcs_process_data_t *procdata, char *alias_from, char *alias_to);
 static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer);
 static int handle_client_metadata(ldcs_process_data_t *procdata, int nc);
 static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc, metadata_t mdtype);
@@ -161,9 +164,8 @@ static int handle_read_ldso_metadata(ldcs_process_data_t *procdata, char *pathna
 static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int file_exists,
                              ldso_info_t *ldsoinfo, char **localname);
 static int handle_msgbundle(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_message_t *msg);
-static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to,
-                              int *existing, size_t *existing_size, int *existing_errcode,
-                              void **existing_buffer, char **existing_localname);
+static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to);
+static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -193,7 +195,7 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       client->numa_node = numa_node_for_core(clientcpu);
       if (client->numa_node == -1)
          client->numa_node = 0;
-      debug_printf2("Server recvd cpu info from client on %d, marking as numa domain %d", clientcpu, client->numa_node);
+      debug_printf2("Server recvd cpu info from client on %d, marking as numa domain %d\n", clientcpu, client->numa_node);
    }
    return 0;
 }
@@ -344,12 +346,14 @@ static handle_file_result_t handle_howto_directory(ldcs_process_data_t *procdata
  * from the network.
  * Called from handlers
  **/
-static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, char *pathname, char *file, char *dir,
-                                              char **localpath, int *errcode)
+static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, char *pathname,
+                                              char *file, char *dir,
+                                              char **localpath, char **alias_to, int *errcode)
 {
    int responsible = 0;
    ldcs_cache_result_t cache_filedir_result;
    handle_file_result_t dir_result;
+   *alias_to = NULL;
 
    if (ldcs_is_a_localfile(pathname)) {
       debug_printf("Recieved request for local file %s, returning err to client\n", pathname);
@@ -371,6 +375,12 @@ static handle_file_result_t handle_howto_file(ldcs_process_data_t *procdata, cha
       if (*errcode) {
          /* An errcode associated with reading this file was stored locally.  Less yeah. */
          return FOUND_ERRCODE;
+      }
+
+      cache_filedir_result = ldcs_cache_getAlias(file, dir, alias_to);
+      if (*alias_to) {
+         /* We don't have the file contents, but we've got an alias that points to something */
+         return ALIAS_TO;
       }
 
       if (procdata->opts & OPT_STOPRELOC) {
@@ -407,11 +417,12 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
 {
    handle_file_result_t result;
    int read_result, broadcast_result, client_result, errcode;
+   char *alias_to;
 
    ldcs_client_t *client = procdata->client_table + nc;
    if ((procdata->opts & OPT_PRELOAD) && !procdata->preload_done) {
       /* Postpone client requests until preload is complete */
-     debug_printf3("Postpone client requests until preload is complete\n");
+      debug_printf3("Postpone client requests until preload is complete\n");
       return 0;
    }
    if (!client->query_open)
@@ -421,8 +432,10 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
    if (client->is_stat || client->is_loader)
       return handle_client_metadata(procdata, nc);
 
+
    result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
-                              client->query_dirname, &client->query_localpath, &errcode);
+                              client->query_dirname, &client->query_localpath,
+                              &alias_to, &errcode);
    switch (result) {
       case FOUND_FILE:
          handle_client_return_numa_replication(procdata, nc);
@@ -456,6 +469,9 @@ static int handle_client_progress(ldcs_process_data_t *procdata, int nc)
          return client_result;
       case ORIG_FILE:
          return handle_client_originalfile_query(procdata, nc);
+      case ALIAS_TO:
+         handle_client_get_alias(procdata, nc, alias_to);
+         return handle_client_progress(procdata, nc);
    }
    assert(0);
    return -1;
@@ -476,6 +492,22 @@ static int handle_progress(ldcs_process_data_t *procdata)
          global_result = -1;
    }
    return global_result;
+}
+
+/**
+ * A client requested a file that turned out to be an alias. Move the query to 
+ * ask for the target of that alias.
+ **/
+static int handle_client_get_alias(ldcs_process_data_t *procdata, int nc, char *alias_to)
+{
+   ldcs_client_t *client = procdata->client_table + nc;
+   debug_printf2("Alias from %s to %s. Shifting processing to target of alias\n",
+                 client->query_globalpath, alias_to);
+   strncpy(client->query_aliasfrom, client->query_globalpath, MAX_PATH_LEN+2);
+   strncpy(client->query_globalpath, alias_to, MAX_PATH_LEN+1);
+   parseFilenameNoAlloc(client->query_globalpath, client->query_filename, client->query_dirname, MAX_PATH_LEN);
+   return 0;
+   
 }
 
 /**
@@ -570,7 +602,7 @@ static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *di
  * be done by the caller, and then handle_finish_buffer_setup should be called on 
  * the region.
  **/
-static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, char *alias_to, size_t size,
+static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size,
                                       int *fd, char **localname, int *already_loaded, int *replicate)
 {
    void *buffer;
@@ -633,7 +665,7 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
    /**
     * Store the memory info in the cache
     **/
-   ldcs_cache_updateEntry(filename, dirname, *localname, buffer, size, alias_to, *replicate, 0);
+   ldcs_cache_updateBuffer(filename, dirname, *localname, buffer, size, 0);
 
    if (!(*replicate))
       debug_printf2("Allocated space for file %s with local file %s and mmap'd at %p\n", pathname, *localname, buffer);
@@ -650,7 +682,7 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
  **/
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *localname, 
                                       char *pathname, int *fd, 
-                                      char **orig_buffer, size_t size, size_t newsize, char *alias_to, int replicate, int errcode)
+                                      char **orig_buffer, size_t size, size_t newsize, int replicate, int errcode)
 {
    double starttime;
    void *newbuffer = NULL, *numabuffer = NULL, *final_numabuffer;
@@ -720,15 +752,15 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
    procdata->server_stat.libstore.time += (ldcs_get_time() - starttime);      
 
    char filename[MAX_PATH_LEN], dirname[MAX_PATH_LEN];
-   if (size != newsize || buffer != newbuffer || alias_to || errcode) {
+   parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
+   if (size != newsize || buffer != newbuffer || errcode) {
       /* The buffer either shrunk or moved.  Update file cache with the new information */
-      parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
-      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, alias_to, replicate, errcode);
+      ldcs_cache_updateBuffer(filename, dirname, localname, newbuffer, newsize, errcode);
       *orig_buffer = (char *) newbuffer;
    }
-   if (alias_to) {
-      parseFilenameNoAlloc(alias_to, filename, dirname, MAX_PATH_LEN);
-      ldcs_cache_updateEntry(filename, dirname, localname, newbuffer, newsize, NULL, replicate, errcode);
+   if (replicate) {
+      ldcs_cache_updateReplication(filename, dirname, replicate);
+      *orig_buffer = (char *) newbuffer;
    }
    *fd = -1;
    return 0;
@@ -737,54 +769,22 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
 /**
  * If a file is an alias to another (symlink, extra slashes or dots in path)
  * then update the cache to reflect this.
- * If the file being alias_to is already in the cache, then fill in the 
- * existing parameters with some of its info.
  **/
-static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to,
-                              int *existing, size_t *existing_size, int *existing_errcode,
-                              void **existing_buffer, char **existing_localname)
+static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to)
 {
    char filename[MAX_PATH_LEN+1], dirname[MAX_PATH_LEN+1];
    char *localname;
    int errcode;
    ldcs_cache_result_t cresult;
 
-   *existing = 0;
    filename[MAX_PATH_LEN] = dirname[MAX_PATH_LEN] = '\0';
 
-   parseFilenameNoAlloc(alias_to, filename, dirname, MAX_PATH_LEN);
-   cresult = ldcs_cache_findFileDirInCache(filename, dirname, &localname, &errcode);
-   if (cresult == LDCS_CACHE_FILE_FOUND) {
-      if (localname) {
-         debug_printf3("%s was loaded and in cache, referenced by alias %s\n", alias_to, pathname);      
-         *existing = 1;
-         *existing_localname = localname;
-         *existing_errcode = errcode;
-         ldcs_cache_get_buffer(dirname, filename, existing_buffer, existing_size, NULL);
-      }
-      else {
-         debug_printf3("%s was in cache, referenced by alias %s\n", alias_to, pathname);
-      }
-   }
-   else {
-      debug_printf3("Adding %s to cache, referenced by alias %s\n", alias_to, pathname);
-      ldcs_cache_addFileDir(dirname, filename);
-      *existing = 0;
-   }
    parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
    cresult = ldcs_cache_findFileDirInCache(filename, dirname, &localname, &errcode);
-   if (cresult == LDCS_CACHE_FILE_FOUND) {
-      debug_printf3("Alias %s -> %s was already in cache\n", pathname, alias_to);
-   }
-   else {
-      debug_printf3("Adding alias %s -> %s to cache\n", pathname, alias_to);
-      ldcs_cache_addFileDir(dirname, filename);
-   }
-   if (*existing) {
-      ldcs_cache_updateEntry(filename, dirname, *existing_localname, *existing_buffer,
-                             *existing_size, alias_to, 0, *existing_errcode);
-   }
 
+   assert(cresult == LDCS_CACHE_FILE_FOUND);
+   debug_printf3("Updating %s in cache, which is an alias to %s\n", pathname, alias_to);
+   ldcs_cache_updateAlias(filename, dirname, alias_to);
    return 0;
 }
 
@@ -801,58 +801,44 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    int result, global_result = 0;
    int fd = -1;
    int errcode = 0, already_loaded;
-   char alias_to_buffer[MAX_PATH_LEN+1], *alias_to;
-   int existing, existing_errcode;
-   size_t existing_size;
-   void *existing_buffer;
-   char *existing_localname;
+   char alias_to_buffer[MAX_PATH_LEN+1], *alias_to = NULL;
    int replicate = 0;
    
 
    starttime = ldcs_get_time();
-   debug_printf2("Checking if %s is an alias\n", pathname);
-   result = filemngt_realpath(pathname, alias_to_buffer);
-   
+   debug_printf3("Checking if %s is an alias\n", pathname);
+   result = filemngt_realpath(pathname, alias_to_buffer);   
+   procdata->server_stat.metadata.time += (ldcs_get_time() - starttime);
+   procdata->server_stat.metadata.cnt += 1;
+
    if (result == 1) {
       alias_to = alias_to_buffer;
-      debug_printf2("%s is an alias for %s\n", pathname, alias_to);
+      debug_printf2("%s is an alias for %s. Setting up\n", pathname, alias_to);
+
+      result = handle_setup_alias(procdata, pathname, alias_to);
+      if (result == -1) {
+         global_result = -1;
+         goto done;
+      }
+      goto do_broadcast;
    }
-   else {
-      alias_to = NULL;
-   }
+
       
    /* Read file size from disk */
+   starttime = ldcs_get_time();
    size = filemngt_get_file_size(pathname, &errcode);
+   procdata->server_stat.metadata.time += (ldcs_get_time() - starttime);
+   procdata->server_stat.metadata.cnt += 1;   
    if (size == (size_t) -1) {
       newsize = size = 0;
       goto readdone;
    }
    newsize = size;
-   procdata->server_stat.metadata.time += (ldcs_get_time() - starttime);
-   procdata->server_stat.metadata.cnt += 2;
-
-   if (alias_to) {
-      result = handle_setup_alias(procdata, pathname, alias_to,
-                                  &existing, &existing_size, &existing_errcode,
-                                  &existing_buffer, &existing_localname);
-      if (result == -1) {
-         global_result = -1;
-         goto done;
-      }
-      if (existing) {
-         debug_printf2("Added alias %s to already-loaded file %s.  Skipping read\n", pathname, alias_to);
-         size = newsize = existing_size;
-         errcode = existing_errcode;
-         buffer = (char *) existing_buffer;
-         localname = existing_localname;
-         goto do_broadcast;
-      }
-   }
 
    debug_printf2("Reading and broadcasting file %s\n", pathname);
 
    /* Setup buffer for file contents */
-   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded, &replicate);
+   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate);
    if (!buffer) {
       assert(!already_loaded);
       global_result = -1;
@@ -878,7 +864,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
 
   readdone:   
    result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size,
-                                       newsize, alias_to, replicate, errcode);
+                                       newsize, replicate, errcode);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -888,10 +874,15 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    if (bcast == suppress_broadcast)
       goto done;
 
-   if (!errcode)
-      result = handle_broadcast_file(procdata, pathname, alias_to, buffer, newsize, bcast);
-   else
+   if (alias_to) {
+      result = handle_broadcast_alias(procdata, pathname, alias_to);
+   }
+   else if (!errcode) {
+      result = handle_broadcast_file(procdata, pathname, buffer, newsize, bcast);
+   }
+   else {
       result = handle_broadcast_errorcode(procdata, pathname, errcode);
+   }
    if (result == -1)
       global_result = -1;
 
@@ -904,8 +895,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
 /**
  * Send a file's contents across the network
  **/
-static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *alias_to, char *buffer, size_t size,
-                                 broadcast_t bcast)
+static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size, broadcast_t bcast)
 {
    char *packet_buffer = NULL;
    size_t packet_size;
@@ -914,7 +904,7 @@ static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, 
    ldcs_message_t msg;
    int force_broadcast;
 
-   result = filemngt_encode_packet(pathname, alias_to, buffer, size, &packet_buffer, &packet_size);
+   result = filemngt_encode_packet(pathname, buffer, size, &packet_buffer, &packet_size);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -990,6 +980,45 @@ static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathn
    return result;   
 }
 
+/**
+ * Broadcast an alias (soft symlink) that's the result from accessing a file
+ **/
+static int handle_broadcast_alias(ldcs_process_data_t *procdata, char *alias_from, char *alias_to)
+{
+   char *packet_buffer = 0;
+   size_t packet_size = 0, pos = 0, from_len, to_len;
+   ldcs_message_t msg;
+   int result;
+   double starttime;
+   
+   debug_printf2("Broadcasting alias %s -> %s\n", alias_from, alias_to);
+   assert(alias_from && alias_to);
+   packet_size = 0;
+   from_len = strlen(alias_from) + 1;
+   to_len = strlen(alias_to) + 1;
+
+   packet_size = from_len + to_len;
+   packet_buffer = (char *) malloc(packet_size);
+   memcpy(packet_buffer + pos, alias_from, from_len);
+   pos += from_len;
+   memcpy(packet_buffer + pos, alias_to, to_len);
+   pos += to_len;
+   assert(pos == packet_size);
+
+   msg.header.type = LDCS_MSG_ALIAS;
+   msg.header.len = packet_size;
+   msg.data = packet_buffer;
+
+   starttime = ldcs_get_time();
+   result = handle_send_msg_to_keys(procdata, &msg, alias_from, NULL, 0, 0, metadata_none);
+   procdata->server_stat.libdist.cnt++;
+   procdata->server_stat.libdist.bytes += packet_size;
+   procdata->server_stat.libdist.time += (ldcs_get_time() - starttime);      
+
+   free(packet_buffer);
+   return result;
+}
+
 static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc)
 {
    ldcs_client_t *client = procdata->client_table + nc;
@@ -1052,8 +1081,6 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    out_msg.header.len = strlen(client->query_localpath) + 1 + sizeof(int);
 
    ldcs_send_msg(connid, &out_msg);
-   client->query_open = 0;
-   client->query_is_numa_replicated = 0;   
 
    debug_printf2("Server answering query (fulfilled): %s\n", out_msg.data);
    
@@ -1061,6 +1088,8 @@ static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc)
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() -
       client->query_arrival_time;
+
+   handle_close_client_query(procdata, nc);
    return 0;
 }
 
@@ -1085,13 +1114,13 @@ static int handle_client_rejected_query(ldcs_process_data_t *procdata, int nc, i
    out_msg.header.len = sizeof(buffer_out);
       
    ldcs_send_msg(connid, &out_msg);
-   client->query_open = 0;
 
    debug_printf2("Server answering query (rejected with errcode %d)\n", errcode);
       
    /* statistic */
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+   handle_close_client_query(procdata, nc);
    return 0;
 }
 
@@ -1245,7 +1274,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
    int result = 0, dir_result = 0, errcode = 0;
    
    parseFilenameNoAlloc(pathname, filename, dirname, MAX_PATH_LEN);
-   fresult = handle_howto_file(procdata, pathname, filename, dirname, &localname, &errcode);
+   fresult = handle_howto_file(procdata, pathname, filename, dirname, &localname, &alias_to, &errcode);
 
    debug_printf2("Received request for file %s from network\n", pathname);
    switch (fresult) {
@@ -1256,7 +1285,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
             return -1;
          }
          add_requestor(procdata->pending_requests, pathname, from);
-         result = handle_broadcast_file(procdata, pathname, alias_to, buffer, size, request_broadcast);
+         result = handle_broadcast_file(procdata, pathname, buffer, size, request_broadcast);
          return result;
       case FOUND_ERRCODE:
          add_requestor(procdata->pending_requests, pathname, from);         
@@ -1281,6 +1310,9 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
          result = handle_send_query(procdata, pathname, 0);
          add_requestor(procdata->pending_requests, pathname, from);
          return (result == -1 || dir_result == -1) ? -1 : 0;
+      case ALIAS_TO:
+         add_requestor(procdata->pending_requests, pathname, from);
+         return handle_broadcast_alias(procdata, pathname, alias_to);         
    }
    assert(0);
    return -1;
@@ -1379,14 +1411,12 @@ static int handle_file_errcode(ldcs_process_data_t *procdata, ldcs_message_t *ms
  **/
 static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer, broadcast_t bcast)
 {
-   char pathname[MAX_PATH_LEN+1], alias_to_buffer[MAX_PATH_LEN+1], *localname, *alias_to;
+   char pathname[MAX_PATH_LEN+1], *localname;
    char *buffer = NULL;
    size_t size = 0;
    int result, global_error = 0, already_loaded, fd = -1, bytes_read = 0;
-   int existing, existing_errcode, replicate;
-   size_t existing_size;
-   void *existing_buffer;
-   char *existing_localname;
+   int replicate;
+   
    pathname[MAX_PATH_LEN] = '\0';
 
    /* If this hits, then the network layer read a entire FILE_DATA packet
@@ -1398,29 +1428,10 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
       We'll postpone doing that until we have the memory allocated for it in a 
       mapped region of our address space.  The decode packet will just read the 
       pathname and size. */
-   result = filemngt_decode_packet(peer, msg, pathname, alias_to_buffer, &size, &bytes_read);
+   result = filemngt_decode_packet(peer, msg, pathname, &size, &bytes_read);
    if (result == -1) {
       global_error = -1;
       goto done;
-   }
-   alias_to = alias_to_buffer[0] != '\0' ? alias_to_buffer : NULL;
-
-   if (alias_to) {
-      result = handle_setup_alias(procdata, pathname, alias_to,
-                                  &existing, &existing_size, &existing_errcode,
-                                  &existing_buffer, &existing_localname);
-      if (result == -1) {
-         global_error = -1;
-         goto done;
-      }
-      if (existing) {
-         debug_printf2("Recvd alias %s to already-loaded file %s.  Skipping and flushing read of size %lu\n", pathname, alias_to, size);
-         buffer = (char *) existing_buffer;
-         localname = existing_localname;
-         ldcs_audit_server_md_trash_bytes(peer, size);         
-         size = existing_size;
-         goto do_broadcast;
-      }      
    }
 
    debug_printf("Receiving file contents for file %s from %s\n", pathname, 
@@ -1429,7 +1440,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    /* Setup up a memory buffer for us to read into, which is mapped to the
       local file.  Also fills in the hash table.  Does not actually read
       the file data */
-   buffer = handle_setup_file_buffer(procdata, pathname, alias_to, size, &fd, &localname, &already_loaded, &replicate);
+   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate);
    if (!buffer) {
       if (already_loaded) {
          debug_printf("File %s was already loaded\n", pathname);
@@ -1455,15 +1466,14 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    }
 
    /* Syncs the file contents to disk and sets local access permissions */
-   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size, size, alias_to, replicate, 0);
+   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size, size, replicate, 0);
    if (result == -1) {
       global_error = -1;
       goto done;
    }
 
-  do_broadcast:
    /* Notify other servers and clients of file read */
-   result = handle_broadcast_file(procdata, pathname, alias_to, buffer, size, bcast);
+   result = handle_broadcast_file(procdata, pathname, buffer, size, bcast);
    if (result == -1) {
       global_error = -1;
    }
@@ -1506,6 +1516,33 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
    procdata->server_stat.distdir.cnt++;
    procdata->server_stat.distdir.bytes += msg->header.len;
    procdata->server_stat.distdir.time += ldcs_get_time() - starttime;
+
+   return handle_progress(procdata);
+}
+
+/**
+ * We've received a packet with alias info. Handle it.
+ **/
+static int handle_alias_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast)
+{
+   char *alias_from, *alias_to;
+   char *data;
+   size_t from_size;
+   int result;
+
+   data = msg->data;
+   alias_from = data;
+   from_size = strlen(alias_from);
+
+   alias_to = data + from_size + 1;
+   debug_printf2("Received alias from network %s -> %s\n", alias_from, alias_to);
+   char filename[MAX_PATH_LEN], dirname[MAX_PATH_LEN];
+   parseFilenameNoAlloc(alias_from, filename, dirname, MAX_PATH_LEN);
+   ldcs_cache_updateAlias(filename, dirname, alias_to);
+
+   result = handle_broadcast_alias(procdata, alias_from, alias_to);
+   if (result == -1)
+      return -1;
 
    return handle_progress(procdata);
 }
@@ -1680,6 +1717,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_exit_cancel_msg(procdata, msg);
       case LDCS_MSG_BUNDLE:
          return handle_msgbundle(procdata, peer, msg);
+      case LDCS_MSG_ALIAS:
+         return handle_alias_recv(procdata, msg, request_broadcast);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -1882,12 +1921,12 @@ static int handle_report_fileexist_result(ldcs_process_data_t *procdata, int nc,
    out_msg.data = (void *) &query_result;
 
    result = ldcs_send_msg(connid, &out_msg);
-   client->query_open = 0;
-   client->existance_query = 0;
-
+   
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
 
+   handle_close_client_query(procdata, nc);
+   
    return result;
 }
 
@@ -1897,12 +1936,14 @@ static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc)
    int errcode;
    handle_file_result_t howto_result;
    ldcs_client_t *client;
+   char *alias_to;
 
    client = procdata->client_table + nc;
    debug_printf2("Request to test for existance of %s\n", client->query_globalpath);
 
    howto_result = handle_howto_file(procdata, client->query_globalpath, client->query_filename,
-                                    client->query_dirname, &client->query_localpath, &errcode);
+                                    client->query_dirname, &client->query_localpath,
+                                    &alias_to, &errcode);
    switch (howto_result) {
       case READ_FILE:
       case REQ_FILE:
@@ -1928,6 +1969,10 @@ static int handle_fileexist_test(ldcs_process_data_t *procdata, int nc)
             return -1;
          }
          return 0;
+      case ALIAS_TO:
+         /* Test for existance of alias */
+         handle_client_get_alias(procdata, nc, alias_to);
+         return handle_fileexist_test(procdata, nc);
       default:
          err_printf("Unexpected return %d from handle_howto_file\n", (int) howto_result);
          assert(0);
@@ -2002,11 +2047,12 @@ static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldc
    resp.data = (void*) newpath;
 
    result = ldcs_send_msg(client->connid, &resp);
-   client->query_open = 0;
 
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
 
+   handle_close_client_query(procdata, nc);
+   
    return result;
 }
 
@@ -2378,12 +2424,12 @@ static int handle_client_metadata_result(ldcs_process_data_t *procdata, int nc, 
    msg.data = localpath;
    
    result = ldcs_send_msg(connid, &msg);
-   client->query_open = 0;
-   client->is_stat = 0;
 
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time+=(ldcs_get_time()-
                                                    client->query_arrival_time);
+   handle_close_client_query(procdata, nc);
+   
    return result;
 }
 
@@ -2610,6 +2656,17 @@ static int handle_send_exit_cancel(ldcs_process_data_t *procdata)
    msg.data = NULL;
 
    return spindle_forward_query(procdata, &msg);
+}
+
+static int handle_close_client_query(ldcs_process_data_t *procdata, int nc)
+{
+   ldcs_client_t *client = procdata->client_table + nc;
+   client->query_open = 0;
+   client->existance_query = 0;
+   client->query_is_numa_replicated = 0;
+   client->is_stat = 0;
+   client->query_globalpath[0] = client->query_filename[0] = client->query_dirname[0] = client->query_aliasfrom[0] = '\0';   
+   return 0;   
 }
 
 /**

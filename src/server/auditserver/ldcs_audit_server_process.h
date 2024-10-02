@@ -96,6 +96,7 @@ struct ldcs_client_struct
   char                 query_dirname[MAX_PATH_LEN+1];     /* hast 2nd key */
   char                 query_globalpath[MAX_PATH_LEN+2];  /* path to file in global fs (dirname+filename) */
   char                 *query_localpath;                /* path to file in local temporary fs (dirname+filename) */
+  char                 query_aliasfrom[MAX_PATH_LEN+2];
   int                  query_is_numa_replicated;
   double               query_arrival_time;
 };
