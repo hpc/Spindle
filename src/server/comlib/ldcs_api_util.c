@@ -79,6 +79,7 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
       STR_CASE(LDCS_MSG_EXIT_READY);
       STR_CASE(LDCS_MSG_EXIT_CANCEL);
       STR_CASE(LDCS_MSG_BUNDLE);
+      STR_CASE(LDCS_MSG_ALIAS);
       STR_CASE(LDCS_MSG_UNKNOWN);
    }
    return "unknown";

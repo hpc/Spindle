@@ -46,12 +46,87 @@ static int initialize_numa_lib() {
    return initialized;
 }
 
+#define FOREACH_ENTRY(colon_seperated_list)        \
+   char buffer[MAX_PATH_LEN+1];                    \
+   char *end;                                      \
+   char *start = colon_seperated_list;             \
+   int str_len;                                    \
+   while (*start != '\0') {                        \
+     while (*start == ':') {                       \
+       start++;                                    \
+       if (*start == '\0')                         \
+          break;                                   \
+     }                                             \
+     end = start;                                  \
+     while (*end != ':' && *end != '\0')           \
+        end++;                                     \
+     str_len = end - start;                        \
+     if (str_len == 0) {                           \
+        start++;                                   \
+        continue;                                  \
+     }                                             \
+     if (str_len > sizeof(buffer)) {               \
+         err_printf("substring component is longer than MAX_PATH_LEN.\n"); \
+         break;                                    \
+     }                                             \
+     strncpy(buffer, start, str_len);              \
+     buffer[str_len] = '\0';
+
+#define FOREACH_ENTRY_END                       \
+   start = end;                                 \
+   } 
+
+static int pattern_match(char *pattern, char *filename, int filename_len) {
+   int should_match_at_start = 0, should_match_at_end = 0;
+   size_t pattern_len = strlen(pattern);
+   if (pattern[0] == '^') {
+      should_match_at_start = 1;
+      pattern = pattern+1;
+      pattern_len--;
+   }
+   if (pattern_len && pattern[pattern_len-1] == '$') {
+      should_match_at_end = 1;
+      pattern[pattern_len-1] = '\0';
+      pattern_len--;
+   }
+
+   if (pattern_len > filename_len)
+      return 0;
+   
+   char *matchsubstr;
+   if (!should_match_at_end)
+      matchsubstr = strstr(filename, pattern);
+   else
+      matchsubstr = strstr(filename+(filename_len-pattern_len), pattern);
+   if (matchsubstr == NULL) {
+      return 0;
+   }
+   if (should_match_at_start && (matchsubstr != filename)) {
+      return 0;
+   }
+   return 1;
+}
+   
+static int check_numa_excludes(ldcs_process_data_t *procdata, char *filename, size_t filename_len)
+{
+   if (!procdata->numa_excludes || procdata->numa_excludes[0] == '\0') {
+      debug_printf3("No numa excludes. replicating.\n");
+      return 1;
+   }
+
+   FOREACH_ENTRY(procdata->numa_excludes)
+   {
+     if (pattern_match(buffer, filename, filename_len)) {
+        debug_printf3("Not replicating because match in numa excludes %s.\n", buffer);
+         return 0;
+      }
+   }
+   FOREACH_ENTRY_END;
+   return 1;
+}
+
 int numa_should_replicate(ldcs_process_data_t *procdata, char *filename)
 {
-   char *start, *end;
-   int str_len;
-   char buffer[MAX_PATH_LEN+1];
-   
    if (!(procdata->opts & OPT_NUMA)) {
       return 0;
    }
@@ -59,39 +134,19 @@ int numa_should_replicate(ldcs_process_data_t *procdata, char *filename)
       return 0;
    }
 
+   size_t filename_len = strlen(filename);
    if (!procdata->numa_substrs || procdata->numa_substrs[0] == '\0') {
-      debug_printf3("Numa replicating %s because NUMA replicate-all is on\n", filename);
-      return 1;
+      debug_printf3("NUMA replicate-all is on. Considering replicating %s.\n", filename);
+      return check_numa_excludes(procdata, filename, filename_len);
    }
-
-
-   start = procdata->numa_substrs;
-   while (*start != '\0') {
-      while (*start == ':') {
-         start++;
-         if (*start == '\0')
-            return 0;
+   FOREACH_ENTRY(procdata->numa_substrs)
+   {
+      if (pattern_match(buffer, filename, filename_len)) {
+         debug_printf3("Numa file %s matches substring %s. Considering replicating.\n", filename, buffer);
+         return check_numa_excludes(procdata, filename, filename_len);
       }
-      end = start;
-      while (*end != ':' && *end != '\0')
-         end++;
-      str_len = end - start;
-      if (str_len == 0) {
-         start++;
-         continue;
-      }
-      if (str_len > sizeof(buffer)) {
-         err_printf("Numa substring component is longer than MAX_PATH_LEN.\n");
-         return 0;
-      }
-      strncpy(buffer, start, str_len);
-      buffer[str_len] = '\0';
-      if (strstr(filename, buffer)) {
-         debug_printf3("Numa file %s matches substring %s, replicating.\n", filename, buffer);
-         return 1;
-      }
-      start = end;
    }
+   FOREACH_ENTRY_END;
    return 0;
 }
 

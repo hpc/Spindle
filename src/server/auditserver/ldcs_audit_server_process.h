@@ -127,6 +127,7 @@ struct ldcs_process_data_struct
   char *hostname;
   char *pythonprefix;
   char *numa_substrs;
+  char *numa_excludes;   
   msgbundle_entry_t *msgbundle_entries;
   int msgbundle_cache_size_kb;
   int msgbundle_timeout_ms;

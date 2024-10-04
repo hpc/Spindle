@@ -134,6 +134,10 @@ typedef struct {
 
    /* Colon-seperated list of substrings; filename matches against which will be replicated into each numa domain */
    char *numa_files;
+
+   /* Colon-seperated list of prefixes to exclude from numa optimization, with precedence over numa_files */
+   char *numa_excludes;
+   
 } spindle_args_t;
 
 /* Functions used to startup Spindle on the front-end. Init returns after finishing start-up,

@@ -227,8 +227,9 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int had_error = 0;
     int numa = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
-    const char *followfork = NULL, *preload = NULL, *numafiles = NULL;
+    const char *followfork = NULL, *preload = NULL;
     const char *pyprefix = NULL;
+    char *numafiles = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
         return -1;

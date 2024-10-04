@@ -846,6 +846,7 @@ enable_msocket
 enable_cobo
 with_python_prefix
 enable_numa
+enable_numa_excludes
 with_usage_logging
 enable_cleanup_process
 enable_subaudit_as_default
@@ -1523,6 +1524,8 @@ Optional Features:
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
+  --numa-excludes         Do not numa optimize files matching the given
+                          substrings
   --enable-cleanup-process
                           Default to using a dedicated process to clean
                           relocated files
@@ -16414,7 +16417,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-
 TESTRM=unknown
 
 # Check whether --with-testrm was given.
@@ -16851,6 +16853,13 @@ if test "${enable_numa+set}" = set; then :
   enableval=$enable_numa; REQUIRE_NUMA="true"
 fi
 
+# Check whether --enable-numa-excludes was given.
+if test "${enable_numa_excludes+set}" = set; then :
+  enableval=$enable_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
+else
+  NUMA_EXCLUDES_VAL=""
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have libnuma" >&5
 $as_echo_n "checking whether we have libnuma... " >&6; }
@@ -16886,6 +16895,11 @@ fi
 if test "x$HAVE_NUMA" == "xtrue"; then
 
 $as_echo "#define LIBNUMA 1" >>confdefs.h
+
+
+cat >>confdefs.h <<_ACEOF
+#define NUMA_EXCLUDES "NUMA_EXCLUDES_VAL"
+_ACEOF
 
 fi
 

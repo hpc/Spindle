@@ -84,6 +84,11 @@ typedef enum {
    not_exists
 } exist_t;
 
+typedef enum {
+   is_elf_yes,
+   is_elf_no,
+   is_elf_unknown
+} is_elf_t;
 #define SPINDLE_ENODIR -68
 
 static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg);
@@ -106,11 +111,12 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *f
 static int handle_broadcast_file(ldcs_process_data_t *procdata, char *pathname, char *buffer, size_t size,
                                  broadcast_t bcast);
 static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size,
-                                      int *fd, char **localpath, int *already_loaded, int *replicate);
+                                      int *fd, char **localpath, int *already_loaded, int *replicate,
+                                      is_elf_t is_elf);
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, 
                                       char *localname, char *pathname, int *fd,
                                       char **origbuffer, size_t size, size_t newsize,
-                                      int replicate, int errcode);
+                                      int *replicatep, int errcode);
 
 static int handle_client_originalfile_query(ldcs_process_data_t *procdata, int nc);
 static int handle_client_fulfilled_query(ldcs_process_data_t *procdata, int nc);
@@ -603,7 +609,7 @@ static int handle_read_and_broadcast_dir(ldcs_process_data_t *procdata, char *di
  * the region.
  **/
 static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathname, size_t size,
-                                      int *fd, char **localname, int *already_loaded, int *replicate)
+                                      int *fd, char **localname, int *already_loaded, int *replicate, is_elf_t is_elf)
 {
    void *buffer;
    int result;
@@ -639,7 +645,10 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
       assert(0);
    }
 
-   *replicate = numa_should_replicate(procdata, pathname);
+   if (is_elf == is_elf_yes || is_elf == is_elf_unknown)
+      *replicate = numa_should_replicate(procdata, pathname);
+   else //is_elf == is_elf_no
+      *replicate = 0;
 
    /**
     * Set up mapped memory for on the local disk for storing the file.
@@ -682,14 +691,18 @@ static void *handle_setup_file_buffer(ldcs_process_data_t *procdata, char *pathn
  **/
 static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *localname, 
                                       char *pathname, int *fd, 
-                                      char **orig_buffer, size_t size, size_t newsize, int replicate, int errcode)
+                                      char **orig_buffer, size_t size, size_t newsize, int *replicatep, int errcode)
 {
    double starttime;
    void *newbuffer = NULL, *numabuffer = NULL, *final_numabuffer;
-   int i, num_nodes, result;
+   int i, num_nodes, result, turned_off_replication = 0;
    char numaname[MAX_PATH_LEN+1];
    char *buffer = *orig_buffer;
+   int is_elf_file;
+   int replicate = *replicatep;
 
+   is_elf_file = filemngt_is_elf_file(*orig_buffer, size);
+   
    starttime = ldcs_get_time();
    if (errcode) {
       debug_printf2("Releasing space at %p because read of %s returned error %d\n",
@@ -710,6 +723,28 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
       newbuffer = filemngt_sync_file_space(buffer, *fd, localname, size, newsize);
       if (newbuffer == NULL)
          return -1;
+   }
+   else if (replicate && !is_elf_file) {
+      //We don't actually need to replicate this non-elf file. Move it to non-replicated storage.
+      debug_printf2("Turning off replication of %s for non-ELF file\n", pathname);
+      int newfd = -1;
+      result = filemngt_create_file_space(localname, newsize, &newbuffer, &newfd);
+      if (result == -1) {
+         err_printf("Failed to create space of size %lu for %s\n", newsize, localname);
+         return -1;
+      }
+      memcpy(newbuffer, buffer, newsize);
+      newbuffer = filemngt_sync_file_space(newbuffer, newfd, localname, newsize, newsize);
+      if (newbuffer == NULL) {
+         if (newfd != -1) close(newfd);
+         return -1;
+      }
+      procdata->server_stat.libstore.bytes += newsize;
+      if (newfd != -1) close(newfd);
+      replicate = 0;
+      *replicatep = 0;
+      turned_off_replication = 1;
+      numa_free_temporary_memory(buffer, size);      
    }
    else { //replicate && !errcode
       num_nodes = numa_num_nodes();
@@ -739,7 +774,8 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
             if (numafd != -1) close(numafd);
             return -1;
          }
-            
+         procdata->server_stat.libstore.bytes += newsize;
+         
          if (i == 0) {
             //Use the 0 node replicated copy of the file for future broadcasts
             newbuffer = final_numabuffer;
@@ -758,7 +794,7 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
       ldcs_cache_updateBuffer(filename, dirname, localname, newbuffer, newsize, errcode);
       *orig_buffer = (char *) newbuffer;
    }
-   if (replicate) {
+   if (replicate || turned_off_replication) {
       ldcs_cache_updateReplication(filename, dirname, replicate);
       *orig_buffer = (char *) newbuffer;
    }
@@ -838,7 +874,7 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    debug_printf2("Reading and broadcasting file %s\n", pathname);
 
    /* Setup buffer for file contents */
-   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate);
+   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate, is_elf_unknown);
    if (!buffer) {
       assert(!already_loaded);
       global_result = -1;
@@ -859,12 +895,12 @@ static int handle_read_and_broadcast_file(ldcs_process_data_t *procdata, char *p
    procdata->server_stat.libread.time += (ldcs_get_time() - starttime);
 
    procdata->server_stat.libstore.cnt++;
-   procdata->server_stat.libstore.bytes += !errcode ? newsize : 0;
+   procdata->server_stat.libstore.bytes += !errcode && !replicate ? newsize : 0;
    procdata->server_stat.libstore.time += (ldcs_get_time() - starttime);
 
   readdone:   
    result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size,
-                                       newsize, replicate, errcode);
+                                       newsize, &replicate, errcode);
    if (result == -1) {
       global_result = -1;
       goto done;
@@ -1415,7 +1451,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    char *buffer = NULL;
    size_t size = 0;
    int result, global_error = 0, already_loaded, fd = -1, bytes_read = 0;
-   int replicate;
+   int replicate, is_elf;
    
    pathname[MAX_PATH_LEN] = '\0';
 
@@ -1428,7 +1464,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
       We'll postpone doing that until we have the memory allocated for it in a 
       mapped region of our address space.  The decode packet will just read the 
       pathname and size. */
-   result = filemngt_decode_packet(peer, msg, pathname, &size, &bytes_read);
+   result = filemngt_decode_packet(peer, msg, pathname, &size, &bytes_read, &is_elf);
    if (result == -1) {
       global_error = -1;
       goto done;
@@ -1440,7 +1476,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    /* Setup up a memory buffer for us to read into, which is mapped to the
       local file.  Also fills in the hash table.  Does not actually read
       the file data */
-   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate);
+   buffer = handle_setup_file_buffer(procdata, pathname, size, &fd, &localname, &already_loaded, &replicate, is_elf ? is_elf_yes : is_elf_no);
    if (!buffer) {
       if (already_loaded) {
          debug_printf("File %s was already loaded\n", pathname);
@@ -1466,7 +1502,7 @@ static int handle_file_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, 
    }
 
    /* Syncs the file contents to disk and sets local access permissions */
-   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size, size, replicate, 0);
+   result = handle_finish_buffer_setup(procdata, localname, pathname, &fd, &buffer, size, size, &replicate, 0);
    if (result == -1) {
       global_error = -1;
       goto done;

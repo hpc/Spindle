@@ -64,6 +64,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->bundle_timeout_ms, buf, pos);
    unpack_param(args->bundle_cachesize_kb, buf, pos);
    unpack_param(args->numa_files, buf, pos);
+   unpack_param(args->numa_excludes, buf, pos);
    assert(pos == buffer_size);
 
    return 0;    

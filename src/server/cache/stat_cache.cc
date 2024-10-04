@@ -40,7 +40,7 @@ void add_stat_cache(char *pathname, char *data, metadata_t stattype)
                     pathname, data ? data : "NULL");
 
    std::string pathname_key = pathname;
-   std::map<std::string, char*> *table;
+   std::map<std::string, char*> *table = nullptr;
    switch (stattype) {
       case metadata_none: assert(0); break;
       case metadata_stat: table = &stat_table; break;
@@ -55,7 +55,7 @@ int lookup_stat_cache(char *pathname, char **data, metadata_t stattype)
 {
    std::string pathname_key = pathname;
 
-   std::map<std::string, char*> *table;
+   std::map<std::string, char*> *table = nullptr;
    switch (stattype) {
       case metadata_none: assert(0); break;      
       case metadata_stat: table = &stat_table; break;

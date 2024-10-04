@@ -75,6 +75,7 @@ using namespace std;
 #define MSGCACHE_TIMEOUT 281
 #define CLEANUPPROC 282
 #define RSHMODE 283
+#define NUMA_EXCLUDES 284
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -82,7 +83,8 @@ using namespace std;
 #define GROUP_SEC 4
 #define GROUP_LAUNCHER 5
 #define GROUP_SESSION 6
-#define GROUP_MISC 7
+#define GROUP_NUMA 7
+#define GROUP_MISC 8
 
 #if defined(MUNGE)
 #define DEFAULT_SEC OPT_SEC_MUNGE
@@ -175,6 +177,12 @@ static const char *default_python_prefixes = PYTHON_INST_PREFIX;
 static char *user_python_prefixes = NULL;
 
 static char *numa_substrings = NULL;
+static const char *numa_excludes = "";
+#if defined DEFAULT_NUMA_EXCLUDES
+static const char *default_numa_excludes = STR(DEFAULT_NUMA_EXCLUDES);
+#else
+static const char *default_numa_excludes = "";
+#endif
 
 #if DEFAULT_USE_SUBAUDIT == 1
 #define DEFAULT_USE_SUBAUDIT_STR "subaudit"
@@ -298,7 +306,9 @@ struct argp_option options[] = {
 #if defined(LIBNUMA)
    { "numa", NUMA, "list", OPTION_ARG_OPTIONAL,
      "Colon-seperated list of substrings that will be matched to executables/libraries. Matches will have their memory replicated into each NUMA domain."
-     " Specify the option, but leave it blank to replicate all spindle-relocated files into each NUMA domain", GROUP_MISC },
+     " Specify the option, but leave it blank to replicate all spindle-relocated files into each NUMA domain", GROUP_NUMA },
+   { "numa-excludes", NUMA_EXCLUDES, "list", OPTION_ARG_OPTIONAL,
+     "Colon-seprated list of prefixes that will excludes executables/libraries from NUMA optimization. Takes precedence over other numa lists", GROUP_NUMA },
 #endif
    { "audit-type", AUDITTYPE, "subaudit|audit", 0,
      "Use the new-style subaudit interface for intercepting ld.so, or the old-style audit interface.  The subaudit option reduces memory overhead, but is more complex.  Default is " DEFAULT_USE_SUBAUDIT_STR ".", GROUP_MISC },
@@ -516,6 +526,10 @@ static int parse(int key, char *arg, struct argp_state *vstate)
    else if (key == NUMA) {
       opts |= OPT_NUMA;
       numa_substrings = arg;
+      return 0;
+   }
+   else if (key == NUMA_EXCLUDES) {
+      numa_excludes = arg;
       return 0;
    }
    else if (key == PYTHONPREFIX) {
@@ -824,7 +838,7 @@ int parseCommandLine(int argc, char *argv[], spindle_args_t *args, unsigned int 
    opt_t opts;
    FILE *io = NULL;
    char *captured_io = NULL;
-   size_t captured_io_size = 0;
+   size_t captured_io_size = 0, numa_excludes_size;
    int result = -1;
    
    if (flags & PARSECMD_FLAG_CAPTUREIO) {
@@ -852,7 +866,18 @@ int parseCommandLine(int argc, char *argv[], spindle_args_t *args, unsigned int 
    args->bundle_timeout_ms = msgcache_timeout_ms;
    args->bundle_cachesize_kb = msgcache_buffer_kb;
    args->numa_files = numa_substrings ? strdup(numa_substrings) : NULL;
-      
+
+   numa_excludes_size = strlen(numa_excludes) + strlen(default_numa_excludes) + 2;
+   args->numa_excludes = (char *) malloc(numa_excludes_size);
+   if (numa_excludes[0] != '\0' && default_numa_excludes[0] != '\0')
+      snprintf(args->numa_excludes, numa_excludes_size, "%s:%s", default_numa_excludes, numa_excludes);
+   else if (numa_excludes[0] != '\0')
+      strncpy(args->numa_excludes, numa_excludes, numa_excludes_size);
+   else if (default_numa_excludes[0] != '\0')
+      strncpy(args->numa_excludes, default_numa_excludes, numa_excludes_size);
+   else
+      args->numa_excludes[0] = '\0';
+   
    args->unique_id = 0;
    if (!(flags & PARSECMD_FLAG_NOUNIQUEID)) {
       args->unique_id = get_unique_id(io);

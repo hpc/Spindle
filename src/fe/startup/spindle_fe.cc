@@ -69,6 +69,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
    buffer_size += args->numa_files ? strlen(args->numa_files) + 1 : 1;
+   buffer_size += args->numa_excludes ? strlen(args->numa_excludes) + 1 : 1;
 
    unsigned int pos = 0;
    char *buf = (char *) malloc(buffer_size);
@@ -86,6 +87,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->bundle_timeout_ms, buf, pos);
    pack_param(args->bundle_cachesize_kb, buf, pos);
    pack_param(args->numa_files, buf, pos);
+   pack_param(args->numa_excludes, buf, pos);
    assert(pos == buffer_size);
 
    buffer = (void *) buf;
