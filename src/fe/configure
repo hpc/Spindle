@@ -839,7 +839,7 @@ enable_msocket
 enable_cobo
 with_python_prefix
 enable_numa
-enable_numa_excludes
+with_numa_excludes
 with_usage_logging
 enable_cleanup_process
 enable_subaudit_as_default
@@ -1522,8 +1522,6 @@ Optional Features:
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
-  --numa-excludes         Do not numa optimize files matching the given
-                          substrings
   --enable-cleanup-process
                           Default to using a dedicated process to clean
                           relocated files
@@ -1570,6 +1568,8 @@ Optional Packages:
   --with-slurm-launch     Enable using slurm to launch spindle daemons
   --with-python-prefix=STR
                           List of directories containing python installs
+  --with-numa-excludes    Do not numa optimize files matching the given
+                          substrings
   --with-usage-logging=FILE
                           File for writing usage logs
   --with-slurm-dir=DIR    Look in in DIR for root of a slurm installation
@@ -16856,9 +16856,10 @@ if test "${enable_numa+set}" = set; then :
   enableval=$enable_numa; REQUIRE_NUMA="true"
 fi
 
-# Check whether --enable-numa-excludes was given.
-if test "${enable_numa_excludes+set}" = set; then :
-  enableval=$enable_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
+
+# Check whether --with-numa-excludes was given.
+if test "${with_numa_excludes+set}" = set; then :
+  withval=$with_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
 else
   NUMA_EXCLUDES_VAL=""
 fi
@@ -16901,7 +16902,7 @@ $as_echo "#define LIBNUMA 1" >>confdefs.h
 
 
 cat >>confdefs.h <<_ACEOF
-#define NUMA_EXCLUDES "NUMA_EXCLUDES_VAL"
+#define NUMA_EXCLUDES "$NUMA_EXCLUDES_VAL"
 _ACEOF
 
 fi

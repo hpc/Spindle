@@ -118,8 +118,8 @@ static int check_numa_excludes(ldcs_process_data_t *procdata, char *filename, si
    {
      if (pattern_match(buffer, filename, filename_len)) {
         debug_printf3("Not replicating because match in numa excludes %s.\n", buffer);
-         return 0;
-      }
+        return 0;
+     }
    }
    FOREACH_ENTRY_END;
    return 1;

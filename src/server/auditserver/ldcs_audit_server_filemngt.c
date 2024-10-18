@@ -176,8 +176,9 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
 {
    int cur_pos = 0;
    int filename_len = strlen(filename) + 1;
-   int is_elf = filemngt_is_elf_file(*buffer, *buffer_size);
-   *buffer_size = sizeof(is_elf) + filename_len + sizeof(filename_len) + sizeof(filesize);
+   int is_elf = filemngt_is_elf_file(filecontents, *buffer_size);
+   //TODO: Remove filesize from allocation if we're doing a non-contig send. Wastes memory.
+   *buffer_size = sizeof(is_elf) + filename_len + sizeof(filename_len) + sizeof(filesize) + filesize;
    *buffer = (char *) malloc(*buffer_size);
    if (!*buffer) {
       err_printf("Failed to allocate memory for file contents packet for %s\n", filename);
@@ -200,8 +201,8 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize,
       packet.  In order to keep file contents zero-copy we won't add them
       to the packet, but will instead send them with a second write command.
       memcpy(*buffer + cur_pos, filecontents, filesize);
-      cur_pos += filesize;
    */
+   cur_pos += filesize;
 
    assert(cur_pos == *buffer_size);
    return 0;
@@ -215,7 +216,7 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
    if (!msg->data) {
       /* We've delayed the file read from the network.  Just read the elf, filename and size here.
          We'll later get the file contents latter by reading directly to mapped memory */
-      result = ldcs_audit_server_md_complete_msg_read(peer, msg, is_elf, sizeof(is_elf));
+      result = ldcs_audit_server_md_complete_msg_read(peer, msg, is_elf, sizeof(*is_elf));
       if (result == -1)
          return -1;
       

@@ -75,7 +75,7 @@ using namespace std;
 #define MSGCACHE_TIMEOUT 281
 #define CLEANUPPROC 282
 #define RSHMODE 283
-#define NUMA_EXCLUDES 284
+#define NUMA_EXCLUDES_OPTION 284
 
 #define GROUP_RELOC 1
 #define GROUP_PUSHPULL 2
@@ -178,8 +178,8 @@ static char *user_python_prefixes = NULL;
 
 static char *numa_substrings = NULL;
 static const char *numa_excludes = "";
-#if defined DEFAULT_NUMA_EXCLUDES
-static const char *default_numa_excludes = STR(DEFAULT_NUMA_EXCLUDES);
+#if defined NUMA_EXCLUDES
+static const char *default_numa_excludes = NUMA_EXCLUDES;
 #else
 static const char *default_numa_excludes = "";
 #endif
@@ -307,7 +307,7 @@ struct argp_option options[] = {
    { "numa", NUMA, "list", OPTION_ARG_OPTIONAL,
      "Colon-seperated list of substrings that will be matched to executables/libraries. Matches will have their memory replicated into each NUMA domain."
      " Specify the option, but leave it blank to replicate all spindle-relocated files into each NUMA domain", GROUP_NUMA },
-   { "numa-excludes", NUMA_EXCLUDES, "list", OPTION_ARG_OPTIONAL,
+   { "numa-excludes", NUMA_EXCLUDES_OPTION, "list", OPTION_ARG_OPTIONAL,
      "Colon-seprated list of prefixes that will excludes executables/libraries from NUMA optimization. Takes precedence over other numa lists", GROUP_NUMA },
 #endif
    { "audit-type", AUDITTYPE, "subaudit|audit", 0,
@@ -528,7 +528,7 @@ static int parse(int key, char *arg, struct argp_state *vstate)
       numa_substrings = arg;
       return 0;
    }
-   else if (key == NUMA_EXCLUDES) {
+   else if (key == NUMA_EXCLUDES_OPTION) {
       numa_excludes = arg;
       return 0;
    }
