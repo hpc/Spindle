@@ -200,7 +200,7 @@ static void launch_daemon(char *location)
       gchild = fork();
       if (gchild != 0) {
          snprintf(buffer, sizeof(buffer), "%d\n", getpid());
-         write(fd, buffer, strlen(buffer));
+         (void)! write(fd, buffer, strlen(buffer));
          close(fd);
          exit(0);
       }

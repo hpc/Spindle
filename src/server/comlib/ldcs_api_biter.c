@@ -59,7 +59,7 @@ int ldcs_create_server_biter(char* location, int num)
    assert(result != -1);
    clients_avail_r_fd = clients_avail[0];
    clients_avail_w_fd = clients_avail[1];
-   write(clients_avail_w_fd, &a_byte, sizeof(a_byte));
+   (void)! write(clients_avail_w_fd, &a_byte, sizeof(a_byte));
    
    return server_id;
 }
@@ -111,7 +111,7 @@ int ldcs_open_server_connections_biter(int fd, int nc, int *more_avail)
    cur_proc_in_cn++;
    *more_avail = (cur_session < num_cns-1) || (cur_proc_in_cn < num_procs_in_cn);
    if (!*more_avail) {
-      read(clients_avail_r_fd, &a_byte, sizeof(a_byte));
+      (void)! read(clients_avail_r_fd, &a_byte, sizeof(a_byte));
    }
 
    return new_client;

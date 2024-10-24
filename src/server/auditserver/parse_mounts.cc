@@ -58,7 +58,7 @@ static bool parse()
  
       mount_point[MAX_PATH_LEN] = '\0';
       
-      fscanf(f, "%*d %*d %d:%d %*s %4096s", &major, &minor, mount_point);
+      (void)! fscanf(f, "%*d %*d %d:%d %*s %4096s", &major, &minor, mount_point);
       do {
          result = fgetc(f);
       } while (result != (int) '\n' && result != EOF);

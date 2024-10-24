@@ -45,7 +45,7 @@ Launcher::Launcher(spindle_args_t *params_) :
 {
    int fds[2];
 
-   pipe(fds);
+   (void)! pipe(fds);
    jobfinish_read_fd = fds[0];
    jobfinish_write_fd = fds[1];
    mark_closeonexec(jobfinish_read_fd);

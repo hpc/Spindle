@@ -50,7 +50,7 @@ static void get_cache_name(const char *path, const char *prefix, char *result, c
    char *last_slash = NULL;
 
    if (path[0] != '/') {
-      getcwd(cwd, MAX_PATH_LEN+1);
+      (void)! getcwd(cwd, MAX_PATH_LEN+1);
       cwd[MAX_PATH_LEN] = '\0';
       snprintf(result, MAX_PATH_LEN+strlen(prefix), "%s%s/%s", prefix, cwd, path);
       snprintf(dirresult, MAX_PATH_LEN+1, "^%s/%s", cwd, path);

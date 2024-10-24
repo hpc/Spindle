@@ -122,7 +122,7 @@ SlurmLauncher::SlurmLauncher(spindle_args_t *params_) :
 
    while (!feof(f)) {
       char *hostname = NULL;
-      fscanf(f, "%ms", &hostname);
+      (void)! fscanf(f, "%ms", &hostname);
       if (hostname && *hostname)
          hostset.insert(hostname);
    }

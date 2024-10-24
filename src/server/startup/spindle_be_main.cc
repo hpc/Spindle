@@ -106,7 +106,7 @@ static void setupLogging(int argc, char **argv)
          setenv("SPINDLE_DEBUG", argv[2], 1);
    }
    if (strcmp(argv[3], "--pwd") == 0 && argc > 4) {
-      chdir(argv[4]);
+      (void)! chdir(argv[4]);
    }
    if (strcmp(argv[5], "--test") == 0 && argc > 6) {
       if (strcmp(argv[6], "0") != 0)

@@ -309,7 +309,7 @@ static pid_t grandchild_fork()
    int gchild = fork();
    if (gchild == -1) {
       int neg1 = -1;
-      write(pipefd[1], &neg1, sizeof(neg1));
+      (void)! write(pipefd[1], &neg1, sizeof(neg1));
       close(pipefd[1]);
       _exit(0);
    }
@@ -324,7 +324,7 @@ static pid_t grandchild_fork()
 static void finish_session_startup(bool err)
 {
    int pid = err ? -1 : getpid();
-   write(pipefd[1], &pid, sizeof(int));
+   (void)! write(pipefd[1], &pid, sizeof(int));
    close(pipefd[1]);
 }
 static app_id_t next_app_id = 1;
@@ -392,8 +392,8 @@ int init_session(spindle_args_t *args)
       debug_printf("New session socket is %s\n", session_socket.c_str());
 
       //Print new session id
-      write(1, session_id.c_str(), session_id.length());
-      write(1, "\n", 1);
+      (void)! write(1, session_id.c_str(), session_id.length());
+      (void)! write(1, "\n", 1);
 
       close(0);
       open("/dev/null", O_RDONLY);

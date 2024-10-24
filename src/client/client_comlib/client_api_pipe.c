@@ -133,7 +133,7 @@ static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out
       int fd = atoi(dent->d_name);
       snprintf(dirpath, MAX_PATH_LEN, "/proc/self/fd/%d", fd);
       memset(fdpath, 0, sizeof(fdpath));
-      readlink(dirpath, fdpath, MAX_PATH_LEN);
+      (void)! readlink(dirpath, fdpath, MAX_PATH_LEN);
 
       debug_printf("Comparing %s with in_path = %s, out_path = %s\n", fdpath, in_path, out_path);
       if (!found_in && strcmp(fdpath, in_path) == 0) {

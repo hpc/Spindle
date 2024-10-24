@@ -271,7 +271,7 @@ static int handshake_main(int sockfd, handshake_protocol_t *hdata, uint64_t sess
    int result, return_result, peer_result, socket_error = 0;
    handshake_packet_t packet, expected_packet;
    unsigned char *packet_buffer = NULL, *recvd_packet_buffer = NULL;
-   size_t packet_buffer_size = 0, recvd_packet_buffer_size;
+   size_t packet_buffer_size = 0, recvd_packet_buffer_size = 0;
 
    /**
     * Exchange a public signature as a handshake to make sure
@@ -1241,7 +1241,7 @@ static int log_error(const char *format, ...)
    va_list ap;
 
    va_start(ap, format);
-   vasprintf(&buffer, format, ap);
+   (void)! vasprintf(&buffer, format, ap);
    va_end(ap);
 
    assert(buffer);
@@ -1261,24 +1261,24 @@ static int log_security_error(const char *format, ...)
    va_list ap;
 
    va_start(ap, format);
-   vasprintf(&message_str, format, ap); 
+   (void)! vasprintf(&message_str, format, ap); 
    va_end(ap);
    
    assert(saved_conninfo);
    if (saved_conninfo->i_am_server)
-      asprintf(&conn_str,
-               "COBO/PMGR Handshake Security Error. My uid = %d. "
-               "Client at %s tried to connect to me at %s, but failed with error: ", 
-               getuid(),
-               sockaddr_str(&saved_conninfo->client_addr, client_name, sizeof(client_name)), 
-               sockaddr_str(&saved_conninfo->server_addr, server_name, sizeof(server_name)));
+      (void)! asprintf(&conn_str,
+                       "COBO/PMGR Handshake Security Error. My uid = %d. "
+                       "Client at %s tried to connect to me at %s, but failed with error: ", 
+                       getuid(),
+                       sockaddr_str(&saved_conninfo->client_addr, client_name, sizeof(client_name)), 
+                       sockaddr_str(&saved_conninfo->server_addr, server_name, sizeof(server_name)));
    else 
-      asprintf(&conn_str,
-               "COBO/PMGR Handshake Security Error. My uid = %d. "
-               "Server at %s took my connection from %s, but failed with error: ", 
-               getuid(),
-               sockaddr_str(&saved_conninfo->server_addr, server_name, sizeof(server_name)), 
-               sockaddr_str(&saved_conninfo->client_addr, client_name, sizeof(client_name)));
+      (void)! asprintf(&conn_str,
+                       "COBO/PMGR Handshake Security Error. My uid = %d. "
+                       "Server at %s took my connection from %s, but failed with error: ", 
+                       getuid(),
+                       sockaddr_str(&saved_conninfo->server_addr, server_name, sizeof(server_name)), 
+                       sockaddr_str(&saved_conninfo->client_addr, client_name, sizeof(client_name)));
    
    if (last_security_message != NULL) {
       free(last_security_message);

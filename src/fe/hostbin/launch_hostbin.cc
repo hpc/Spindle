@@ -109,10 +109,10 @@ private:
          if (result > 0) {
             read_anything = true;
             if (to_fd1 != -1) {
-               write(to_fd1, read_buffer, result);
+               (void)! write(to_fd1, read_buffer, result);
             }
             if (to_fd2 != -1) {
-               write(to_fd2, read_buffer, result);
+               (void)! write(to_fd2, read_buffer, result);
             }
          }
       } while (result > 0);
@@ -295,7 +295,7 @@ public:
       
       if (started) {
          char c = 'c';
-         write(done_pipe[WR], &c, sizeof(c));
+         (void)! write(done_pipe[WR], &c, sizeof(c));
          pthread_join(thrd, NULL);
       }
       

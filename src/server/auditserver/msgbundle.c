@@ -43,7 +43,7 @@ void msgbundle_init(ldcs_process_data_t *procdata)
                 procdata->msgbundle_timeout_ms);
 
    debug_printf2("Spawning timeout monitoring thread for cache buffers\n");
-   pipe(flush_pipe);
+   (void)! pipe(flush_pipe);
    ldcs_listen_register_fd(flush_pipe[0], procdata->serverid, &flush_msgbuffer_cb, (void *) procdata);
    pthread_mutex_init(&mut, NULL);
    pthread_cond_init(&timeout_sync, NULL);
@@ -178,7 +178,7 @@ static int flush_msgbuffer_cb(int fd, int serverid, void *data)
    char throwaway_byte;
 
    if (fd != -1)
-      read(fd, (void *) &throwaway_byte, 1);
+      (void)! read(fd, (void *) &throwaway_byte, 1);
    
    for (mb = procdata->msgbundle_entries; mb; mb = mb->next) {
       debug_printf3("flushing for mb %s\n", mb->name);

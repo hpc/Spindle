@@ -80,7 +80,7 @@ public:
       if (fd != -1) {
          char pid_str[32];
          snprintf(pid_str, 32, "%d", getpid());
-         write(fd, pid_str, strlen(pid_str));
+         (void)! write(fd, pid_str, strlen(pid_str));
          unique = true;
          return;
       }
@@ -189,9 +189,9 @@ public:
          return;
       }
 
-      write(fd, msg1, msg1_size);
+      (void)! write(fd, msg1, msg1_size);
       if (msg2)
-         write(fd, msg2, msg2_size);
+         (void)! write(fd, msg2, msg2_size);
    }
 };
 
@@ -332,7 +332,7 @@ public:
             fprintf(stderr, "Error created test result file %s: %s\n", fname.c_str(), strerror(errno));
             return false;
          }
-         write(result, "0", 1);
+         (void)! write(result, "0", 1);
          close(result);
          return true;
       }

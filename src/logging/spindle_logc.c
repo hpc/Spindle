@@ -353,9 +353,9 @@ void fini_spindle_debugging()
 {
    static unsigned char exitcode[8] = { 0x01, 0xff, 0x03, 0xdf, 0x05, 0xbf, 0x07, '\n' };
    if (debug_fd != -1)
-      write(debug_fd, &exitcode, sizeof(exitcode));
+      (void)! write(debug_fd, &exitcode, sizeof(exitcode));
    if (test_fd != -1)
-      write(test_fd, &exitcode, sizeof(exitcode));
+      (void)! write(test_fd, &exitcode, sizeof(exitcode));
 }
 
 int is_debug_fd(int fd)

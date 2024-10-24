@@ -46,7 +46,7 @@ ldcs_message_t *parsePreloadFile(string filename)
       return NULL;
    }
 
-   getcwd(cwd, MAX_PATH_LEN+1);
+   (void)! getcwd(cwd, MAX_PATH_LEN+1);
    cwd[MAX_PATH_LEN] = '\0';
 
    for (;;) {

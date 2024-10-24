@@ -463,7 +463,7 @@ int mark_bytes_cached(unsigned long bytec, void *session)
       return 0;
 
    if (bytes_cached == 0) {
-      write(w_aux_fd, &a_byte, 1);
+      (void)! write(w_aux_fd, &a_byte, 1);
    }
    bytes_cached += bytec;
    s->local_bytes_cached += bytec;
@@ -483,7 +483,7 @@ int clear_bytes_cached(unsigned long bytec, void *session)
    s->local_bytes_cached -= bytec;
 
    if (bytes_cached == 0) {
-      read(r_aux_fd, &a_byte, 1);
+      (void)! read(r_aux_fd, &a_byte, 1);
    }
    
    return 0;
