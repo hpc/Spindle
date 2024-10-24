@@ -15,6 +15,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include "config.h"
+#include <stdlib.h>
+#include "ldcs_audit_server_process.h"
 
 #if defined(LIBNUMA)
 
@@ -24,7 +26,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/mman.h>
 
 #include "ldcs_audit_server_numa.h"
-#include "ldcs_audit_server_process.h"
 #include "spindle_debug.h"
 #include "spindle_launch.h"
 
@@ -249,7 +250,6 @@ void *numa_alloc_temporary_memory(size_t size)
 
 void numa_free_temporary_memory(void *alloc, size_t size)
 {
-   return NULL;
 }
 
 void numa_update_local_filename(char *localfilename, int node)
