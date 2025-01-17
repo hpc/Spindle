@@ -123,8 +123,8 @@ AS_CASE([$sysconfdir],
 BROKEN_SRUN=0
 bad_srun_major=20
 bad_srun_minor=11
-good_srun_major=0
-good_srun_minor=0
+good_srun_major=23
+good_srun_minor=11
 if test "x$ENABLE_SLURM" == "xtrue"; then
   AC_PATH_PROG(SRUN_PATH, "srun", "none")
   if test "x$SRUN_PATH" == "xnone"; then
@@ -135,10 +135,7 @@ if test "x$ENABLE_SLURM" == "xtrue"; then
   srun_major=`echo $srun_version | cut -d . -f 1`
   srun_minor=`echo $srun_version | cut -d . -f 2`
   srun_point=`echo $srun_version | cut -d . -f 3`
-  if ( [[ "$srun_major" == "$bad_srun_major" ]] && [[ $srun_minor -ge $bad_srun_minor ]] ) || [[ $srun_major -gt $bad_srun_major ]] ; then BROKEN_SRUN=1; fi
-  if test "x$good_srun_major" != "x0"; then
-    if ( [[ "$srun_major" == "$good_srun_major" ]] && [[ $srun_minor -ge $good_srun_minor ]] ) || [[ $srun_major -gt $good_srun_major ]] ; then BROKEN_SRUN=0; fi
-  fi
+  if ( [ "$srun_major" == "$good_srun_major" ] && [ $srun_minor -lt $good_srun_minor ] ) || [ $srun_major -lt $good_srun_major ]; then BROKEN_SRUN=1; fi
   
   if test "x$BROKEN_SRUN" == "x1"; then
     AC_MSG_RESULT([no])
@@ -165,7 +162,7 @@ fi
 if test "x$ENABLE_RSH_LAUNCH" == "x1"; then
   AC_DEFINE_UNQUOTED([RSHLAUNCH_ENABLED],[1],[Default mode for rsh launch])
 fi
-AC_DEFINE_UNQUOTED([BROKEN_SRUN],[1],[Whether we are using a broken srun])
+AC_DEFINE_UNQUOTED([BROKEN_SRUN],[$BROKEN_SRUN],[Whether we are using a broken srun])
             
 #Runmode detection (pipe/socket or cobo/msocket communications)
 if test "x$OS_BUILD" == "xlinux"; then
