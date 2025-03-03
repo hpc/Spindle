@@ -75,6 +75,10 @@ static char **cmdline;
 static char *instantiated_cache_path;
 static char *instantiated_fifo_path;
 static char *instantiated_daemon_path;
+static char *orig_location;     // The client should be checking
+                                // instantiated_cache_path for files,
+                                // but sometimes this doesn't happen
+                                // and we need to check against orig_location.
 
 char libstr_socket_subaudit[] = PROGLIBDIR "/libspindle_subaudit_socket.so";
 char libstr_pipe_subaudit[] = PROGLIBDIR "/libspindle_subaudit_pipe.so";
@@ -124,6 +128,7 @@ static void setup_environment()
       connection_str = client_get_connection_string(ldcsid);
 
    setenv("LD_AUDIT", client_lib, 1);
+   setenv("LDCS_ORIG_LOCATION", orig_location, 1);
    setenv("LDCS_INSTANTIATED_CACHE_PATH", instantiated_cache_path, 1);
    setenv("LDCS_INSTANTIATED_FIFO_PATH", instantiated_fifo_path, 1);
    setenv("LDCS_INSTANTIATED_DAEMON_PATH", instantiated_daemon_path, 1);
@@ -323,12 +328,20 @@ int main(int argc, char *argv[])
       }
    }
 
+
    debug_printf("Launched Spindle Bootstrapper\n");
 
    result = parse_cmdline(argc, argv);
    if (result == -1) {
       fprintf(stderr, "spindle_boostrap cannot be invoked directly\n");
       return -1;
+   }
+
+   orig_location = parse_location(symbolic_location, number);
+   if (!orig_location) {
+       fprintf( stderr, "parse_location() failed on symbolic_location=%s, number=%d\n",
+               symbolic_location, number );
+       return -1;
    }
 
    debug_printf("QQQ Candidate cache paths:  %s:%s\n", cache_path, symbolic_location );

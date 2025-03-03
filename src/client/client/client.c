@@ -66,9 +66,10 @@ static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
 static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
 
-static char *instantiated_cache_path;
+char *instantiated_cache_path;          // needed by should_intercept.c
 static char *instantiated_fifo_path;
 static char *instantiated_daemon_path;
+char *orig_location;                    // needed by should_intercept.c
 int number;
 
 static char *concatStrings(const char *str1, const char *str2) 
@@ -194,6 +195,7 @@ static int init_server_connection()
    instantiated_cache_path = getenv("LDCS_INSTANTIATED_CACHE_PATH");
    instantiated_fifo_path = getenv("LDCS_INSTANTIATED_FIFO_PATH");
    instantiated_daemon_path = getenv("LDCS_INSTANTIATED_DAEMON_PATH");
+   orig_location = getenv("LDCS_ORIG_LOCATION");
    number = atoi(getenv("LDCS_NUMBER"));
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");

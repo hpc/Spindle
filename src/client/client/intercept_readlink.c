@@ -28,7 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 ssize_t (*orig_readlink)(const char *path, char *buf, size_t bufsiz);
 int (*orig_readlinkat)(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 
-extern char *location;
+extern char *instantiated_cache_path;
 extern int number;
 
 static ssize_t readlink_worker(const char *path, char *buf, size_t bufsiz,
@@ -38,12 +38,12 @@ static ssize_t readlink_worker(const char *path, char *buf, size_t bufsiz,
    char spindle_id[32];
    int location_len;
 
-   location_len = strlen(location);   
+   location_len = strlen(instantiated_cache_path);   
    snprintf(spindle_id, sizeof(spindle_id), "spindle.%d", number);
 
    if (!strstr(newbuf, spindle_id) ||
-       strncmp(location, newbuf, location_len) != 0) {
-      debug_printf3("readlink not intercepting, %s not prefixed by %s\n", newbuf, location);
+       strncmp(instantiated_cache_path, newbuf, location_len) != 0) {
+      debug_printf3("readlink not intercepting, %s not prefixed by %s\n", newbuf, instantiated_cache_path);
       int len = strlen(newbuf);
       if (len > bufsiz)
          len = bufsiz;

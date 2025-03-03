@@ -29,7 +29,7 @@
 
 extern int relocate_spindleapi();
 
-extern char *location;
+extern char *instantiated_cache_path;
 extern char *orig_location;
 static void get_location_tmpdir(char **tmpdir, int *tmpdir_size)
 {
@@ -43,12 +43,12 @@ static void get_location_tmpdir(char **tmpdir, int *tmpdir_size)
       return;
    }
 
-   if (location == NULL) {
+   if (instantiated_cache_path == NULL) {
       *tmpdir = NULL;
       *tmpdir_size = 0;
    }
 
-   strncpy(location_root_cached, location, sizeof(location_root_cached)-1); 
+   strncpy(location_root_cached, instantiated_cache_path, sizeof(location_root_cached)-1); 
    
    last_slash = strrchr(location_root_cached, '/');
    while (last_slash && strncmp(last_slash, "/spindle.", 9) != 0)
@@ -73,12 +73,12 @@ int is_in_spindle_cache(const char *pathname)
    static int location_size = 0;
    static int orig_location_size = 0;
    if (!location_size) {
-      location_size = strlen(location);
+      location_size = strlen(instantiated_cache_path);
    }
    if (!orig_location_size) {
       orig_location_size = strlen(orig_location);
    }
-   return ((strncmp(pathname, location, location_size) == 0) ||
+   return ((strncmp(pathname, instantiated_cache_path, location_size) == 0) ||
            (strncmp(pathname, orig_location, orig_location_size) == 0));
 }
 
@@ -88,7 +88,7 @@ static int is_local_file(const char *pathname)
    int loctmpdir_size;
    if (is_in_spindle_cache(pathname)) {
       debug_printf3("Decided that %s is part of spindle cache %s. Sending to spindle\n",
-                    pathname, location);
+                    pathname, instantiated_cache_path);
       return 0;
    }
    get_location_tmpdir(&loctmpdir, &loctmpdir_size);
