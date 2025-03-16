@@ -32,7 +32,6 @@ enum SpindleConfigID {
    confLocation,
    confCachePath,
    confFifoPath,
-   confDaemonPath,
    confCachePrefix,
    confPythonPrefix,
    confStrip,
@@ -123,7 +122,6 @@ enum CmdlineShortOptions {
    shortSpindleLevel = 295,
    shortCachePath = 296,
    shortFifoPath = 297,
-   shortDaemonPath = 298
 };
 
 enum CmdlineGroups {

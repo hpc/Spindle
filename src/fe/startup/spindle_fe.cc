@@ -69,7 +69,6 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
    buffer_size += args->cache_path ? strlen(args->cache_path) + 1 : 1;
    buffer_size += args->fifo_path ? strlen(args->fifo_path) + 1 : 1;
-   buffer_size += args->daemon_path ? strlen(args->daemon_path) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
    buffer_size += args->numa_files ? strlen(args->numa_files) + 1 : 1;
@@ -89,7 +88,6 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->location, buf, pos);
    pack_param(args->cache_path, buf, pos);
    pack_param(args->fifo_path, buf, pos);
-   pack_param(args->daemon_path, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);
    pack_param(args->bundle_timeout_ms, buf, pos);
@@ -228,7 +226,6 @@ int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spin
    (*spindle_argv)[n++] = strdup(params->location);
    (*spindle_argv)[n++] = strdup(params->cache_path);
    (*spindle_argv)[n++] = strdup(params->fifo_path);
-   (*spindle_argv)[n++] = strdup(params->daemon_path);
    (*spindle_argv)[n++] = strdup(number_s);
    (*spindle_argv)[n++] = strdup(opt_s);
    (*spindle_argv)[n++] = strdup(cachesize_s);

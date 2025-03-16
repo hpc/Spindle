@@ -182,16 +182,6 @@ int ldcs_audit_server_process(spindle_args_t *args)
        debug_printf2("Instantiated fifo path:  %s\n", ldcs_process_data.instantiated_fifo_path);
    }
 
-   debug_printf2("Candidate daemon paths:  %s:%s\n", args->daemon_path, args->location );
-   ldcs_process_data.instantiated_daemon_path  = instantiate_directory( args->daemon_path, args->location, args->number );
-   if( NULL == ldcs_process_data.instantiated_daemon_path ){
-        debug_printf( "None of the following daemon path directory candidates could be instantiated.\n");
-        debug_printf( "%s:%s\n", args->daemon_path, args->location );
-        exit(-1);
-   }else{
-       debug_printf2("Instantiated daemon path:  %s\n", ldcs_process_data.instantiated_daemon_path);
-   }
-
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");
       ldcs_process_data.dist_model = LDCS_PULL;

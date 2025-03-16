@@ -123,10 +123,9 @@ typedef struct {
    /* Default local-disk path for the Spindle cache, fifos, and daemons. */
    char *location;
 
-   /* Colon-speparated lists of local-disk paths for caches, fifos, and daemons */
+   /* Colon-speparated lists of local-disk paths for caches and fifos*/
    char *cache_path;
    char *fifo_path;
-   char *daemon_path;
 
    /* Colon-seperated list of directories where Python is installed */
    char *pythonprefix;

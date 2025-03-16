@@ -61,7 +61,6 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->location, buf, pos);
    unpack_param(args->cache_path, buf, pos);
    unpack_param(args->fifo_path, buf, pos);
-   unpack_param(args->daemon_path, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
    unpack_param(args->bundle_timeout_ms, buf, pos);

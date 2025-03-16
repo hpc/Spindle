@@ -62,7 +62,7 @@ static char **daemon_args;
 
 // Initialized via parse_cmdline()
 static char *symbolic_location;
-static char *cache_path, *fifo_path, *daemon_path; // potentially multiple colon-separated paths
+static char *cache_path, *fifo_path; // potentially multiple colon-separated paths
 static char *number_s;
 static int number;
 static char *opts_s;
@@ -74,7 +74,6 @@ static char **cmdline;
 // Initialized via main()
 static char *instantiated_cache_path;
 static char *instantiated_fifo_path;
-static char *instantiated_daemon_path;
 static char *orig_location;     // The client should be checking
                                 // instantiated_cache_path for files,
                                 // but sometimes this doesn't happen
@@ -131,7 +130,6 @@ static void setup_environment()
    setenv("LDCS_ORIG_LOCATION", orig_location, 1);
    setenv("LDCS_INSTANTIATED_CACHE_PATH", instantiated_cache_path, 1);
    setenv("LDCS_INSTANTIATED_FIFO_PATH", instantiated_fifo_path, 1);
-   setenv("LDCS_INSTANTIATED_DAEMON_PATH", instantiated_daemon_path, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
@@ -180,7 +178,6 @@ static int parse_cmdline(int argc, char *argv[])
    symbolic_location = argv[i++];
    cache_path = argv[i++];
    fifo_path = argv[i++];
-   daemon_path = argv[i++];
    number_s = argv[i++];
    number = atoi(number_s);
    opts_s = argv[i++];
@@ -203,8 +200,9 @@ static void launch_daemon()
    char unique_file[MAX_PATH_LEN+1];
    char buffer[32];
 
-   snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", instantiated_daemon_path);
    unique_file[MAX_PATH_LEN] = '\0';
+   // Use the fifo path to also hold the daemon file.
+   snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", instantiated_fifo_path);
    fd = open(unique_file, O_CREAT | O_EXCL | O_WRONLY, 0600);
    if (fd == -1) {
       debug_printf("Not starting daemon -- %s already exists\n", unique_file);
@@ -362,16 +360,6 @@ int main(int argc, char *argv[])
         exit(-1);
    }else{
        debug_printf2("Instantiated fifo path:  %s\n", instantiated_fifo_path);
-   }
-
-   debug_printf2("Candidate daemon paths: %s:%s\n", daemon_path, symbolic_location );
-   instantiated_daemon_path  = instantiate_directory( daemon_path, symbolic_location, number );
-   if( NULL == daemon_path ){
-        debug_printf( "None of the following daemon path directory candidates could be instantiated.\n");
-        debug_printf( "%s:%s", daemon_path, symbolic_location );
-        exit(-1);
-   }else{
-       debug_printf2("Instantiated cache path:  %s\n", instantiated_daemon_path);
    }
 
    if (daemon_args) {

@@ -138,7 +138,6 @@ static char **removeEnvironmentStrs(char **envp)
          if (strIsPrefix("LD_AUDIT=", envp[i]) ||
              strIsPrefix("LDCS_INSTANTIATED_CACHE_PATH=", envp[i]) ||
              strIsPrefix("LDCS_INSTANTIATED_FIFO_PATH=", envp[i]) ||
-             strIsPrefix("LDCS_INSTANTIATED_DAEMON_PATH=", envp[i]) ||
              strIsPrefix("LDCS_CONNECTION=", envp[i]) ||
              strIsPrefix("LDCS_RANKINFO=", envp[i]) ||
              strIsPrefix("LDCS_OPTIONS=", envp[i]) ||
@@ -174,7 +173,6 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
          unsetf("LD_AUDIT");
          unsetf("LDCS_INSTANTIATED_CACHE_PATH");
          unsetf("LDCS_INSTANTIATED_FIFO_PATH");
-         unsetf("LDCS_INSTANTIATED_DAEMON_PATH");
          unsetf("LDCS_CONNECTION");
          unsetf("LDCS_RANKINFO");
          unsetf("LDCS_OPTIONS");
