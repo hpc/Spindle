@@ -210,18 +210,18 @@ char* instantiate_directory( char *pathlist, char *defaultpath, int number ){
         sprintf( full_pathlist, "%s:%s", pathlist, defaultpath );
     }
 
-    debug_printf2("QQQ full_pathlist = %s\n", full_pathlist);
+    debug_printf2("full_pathlist = %s\n", full_pathlist);
 
     int success = -1;
     char *saveptr;
     char *candidate_path = strtok_r( full_pathlist, ":", &saveptr );
     while( candidate_path ){
-        debug_printf2("QQQ Working on candidate_path = %s\n", candidate_path);
+        debug_printf2("Working on candidate_path = %s\n", candidate_path);
         char *parsed_candidate = parse_location( candidate_path, number );
-        debug_printf2("QQQ After parse_location(), parsed_candidate = %s\n", parsed_candidate);
+        debug_printf2("After parse_location(), parsed_candidate = %s\n", parsed_candidate);
         if( parsed_candidate ){
             char *realized_candidate = realize( parsed_candidate );
-            debug_printf2("QQQ After realize(), realized_candidate = %s\n", realized_candidate);
+            debug_printf2("After realize(), realized_candidate = %s\n", realized_candidate);
             success = spindle_mkdir( realized_candidate );
             if( 0 == success ){
                 instantiated_path = strdup( realized_candidate );

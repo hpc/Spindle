@@ -344,34 +344,34 @@ int main(int argc, char *argv[])
        return -1;
    }
 
-   debug_printf("QQQ Candidate cache paths:  %s:%s\n", cache_path, symbolic_location );
+   debug_printf2("Candidate cache paths:  %s:%s\n", cache_path, symbolic_location );
    instantiated_cache_path  = instantiate_directory( cache_path, symbolic_location, number );
    if( NULL == cache_path ){
-        fprintf( stderr, "None of the following cache path directory candidates could be instantiated.\n");
-        fprintf( stderr, "%s:%s\n", cache_path, symbolic_location );
+        debug_printf( "None of the following cache path directory candidates could be instantiated.\n");
+        debug_printf( "%s:%s\n", cache_path, symbolic_location );
         exit(-1);
    }else{
-       debug_printf("QQQ Instantiated cache path:  %s\n", instantiated_cache_path);
+       debug_printf2("Instantiated cache path:  %s\n", instantiated_cache_path);
    }
 
-   debug_printf("QQQ Candidate fifo paths:   %s:%s\n", fifo_path, symbolic_location );
+   debug_printf2("Candidate fifo paths:   %s:%s\n", fifo_path, symbolic_location );
    instantiated_fifo_path  = instantiate_directory( fifo_path, symbolic_location, number );
    if( NULL == fifo_path ){
-        fprintf( stderr, "None of the following fifo path directory candidates could be instantiated.\n");
-        fprintf( stderr, "%s:%s\n", fifo_path, symbolic_location );
+        debug_printf( "None of the following fifo path directory candidates could be instantiated.\n");
+        debug_printf( "%s:%s\n", fifo_path, symbolic_location );
         exit(-1);
    }else{
-       debug_printf("QQQ Instantiated fifo path:  %s\n", instantiated_fifo_path);
+       debug_printf2("Instantiated fifo path:  %s\n", instantiated_fifo_path);
    }
 
-   debug_printf("QQQ Candidate daemon paths: %s:%s\n", daemon_path, symbolic_location );
+   debug_printf2("Candidate daemon paths: %s:%s\n", daemon_path, symbolic_location );
    instantiated_daemon_path  = instantiate_directory( daemon_path, symbolic_location, number );
    if( NULL == daemon_path ){
-        fprintf( stderr, "None of the following daemon path directory candidates could be instantiated.\n");
-        fprintf( stderr, "%s:%s", daemon_path, symbolic_location );
+        debug_printf( "None of the following daemon path directory candidates could be instantiated.\n");
+        debug_printf( "%s:%s", daemon_path, symbolic_location );
         exit(-1);
    }else{
-       debug_printf("QQQ Instantiated cache path:  %s\n", instantiated_daemon_path);
+       debug_printf2("Instantiated cache path:  %s\n", instantiated_daemon_path);
    }
 
    if (daemon_args) {
