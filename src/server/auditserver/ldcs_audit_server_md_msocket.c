@@ -62,9 +62,6 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
   int rc=0;
 
   char* ldcs_nportsstr=getenv("LDCS_NPORTS");
-#ifdef BLR_FIXME
-  char* ldcs_locmodstr=getenv("LDCS_LOCATION_MOD");
-#endif
 
   int usedport;
   int serverfd, serverid, i;
@@ -130,21 +127,6 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
 
   ldcs_listen_unregister_fd(serverfd);
 
-#ifdef BLR_FIXME
-  if(ldcs_locmodstr) {
-    int ldcs_locmod=atoi(ldcs_locmodstr);
-    if(ldcs_locmod>0) {
-      char buffer[MAX_PATH_LEN];
-      debug_printf3("multiple server per node add modifier to location mod=%d\n",ldcs_locmod);
-      if(strlen(ldcs_process_data->location)+10<MAX_PATH_LEN) {
-	sprintf(buffer,"%s-%02d",ldcs_process_data->location,ldcs_process_data->md_rank%ldcs_locmod);
-	debug_printf3("change location to %s (locmod=%d)\n",buffer,ldcs_locmod);
-	free(ldcs_process_data->location);
-	ldcs_process_data->location=strdup(buffer);
-      } else _error("location path too long");
-    }
-  } 
-#endif
   return(rc);
 }
 
