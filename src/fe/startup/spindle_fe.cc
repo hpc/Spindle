@@ -390,9 +390,11 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    /* Start FE server */
    debug_printf("spindle_args_t { number = %u; port = %u; num_ports = %u; opts = %lu; unique_id = %lu; "
                 "use_launcher = %u; startup_type = %u; shm_cache_size = %u; location = %s; "
+                "cache_location = %s; fifo_location = %s; "
                 "pythonprefix = %s; preloadfile = %s; bundle_timeout_ms = %u; bundle_cachesize_kb = %u }\n",
                 params->number, params->port, params->num_ports, params->opts, params->unique_id,
                 params->use_launcher, params->startup_type, params->shm_cache_size, params->location,
+                params->cache_path, params->fifo_path,
                 params->pythonprefix, params->preloadfile, params->bundle_timeout_ms,
                 params->bundle_cachesize_kb);
    printSpindleFlags(params->opts);
