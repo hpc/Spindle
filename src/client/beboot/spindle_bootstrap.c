@@ -46,6 +46,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 extern  char* instantiate_directory( char *pathlist, char *defaultpath, int number );
+extern char *parse_location(char *loc, int number);
 
 char spindle_daemon[] = LIBEXECDIR "/spindle_be";
 char spindle_interceptlib[] = PROGLIBDIR "/libspindleint.so";
