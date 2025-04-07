@@ -151,6 +151,7 @@ class OutputLog : public OutputInterface
 {
    int fd;
    std::string output_file;
+   static pthread_mutex_t write_mutex;
 public:
    OutputLog(std::string fname) :
       output_file(fname)
@@ -179,6 +180,7 @@ public:
    {
       if (fd != -1 && fd != 2)
          close(fd);
+      pthread_mutex_destroy( &write_mutex );
    }
 
    virtual void writeMessage(int proc, const char *msg1, int msg1_size, const char *msg2, int msg2_size)
@@ -189,11 +191,15 @@ public:
          return;
       }
 
+      pthread_mutex_lock(&write_mutex);
       (void)! write(fd, msg1, msg1_size);
       if (msg2)
          (void)! write(fd, msg2, msg2_size);
+      pthread_mutex_unlock(&write_mutex);
    }
 };
+
+pthread_mutex_t OutputLog::write_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 class TestVerifier
 {
