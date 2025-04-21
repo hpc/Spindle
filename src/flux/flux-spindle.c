@@ -458,10 +458,6 @@ static int sp_init (flux_plugin_t *p,
     int shell_rank;
     flux_future_t *f;
     json_t *R;
-    const char *debug;
-    const char *tmpdir;
-    const char *test;
-    const char *spindle_enabled;
 
     if (!(shell = flux_plugin_get_shell (p))
         || !(h = flux_shell_get_flux (shell)))
@@ -470,30 +466,7 @@ static int sp_init (flux_plugin_t *p,
     if (flux_shell_getopt (shell, "spindle", NULL) != 1)
         return 0;
 
-    /*  If SPINDLE_DEBUG is set in the environment of the job, propagate
-     *  it into the shell so we get spindle debugging for this session.
-     */
-    if ((debug = flux_shell_getenv (shell, "SPINDLE_DEBUG")))
-        setenv ("SPINDLE_DEBUG", debug, 1);
-
     debug_printf(1, "initializing spindle for use with flux");
-
-    /*  The spindle testsuite requires SPINDLE_TEST
-     */
-    if ((test = flux_shell_getenv (shell, "SPINDLE_TEST")))
-       setenv ("SPINDLE_TEST", test, 1);
-
-    /*  Spindle requires that TMPDIR is set. Propagate TMPDIR from job
-     *  environment, or use /tmp if TMPDIR not set.
-     */
-    tmpdir = flux_shell_getenv (shell, "TMPDIR");
-    if (!tmpdir)
-        tmpdir = "/tmp";
-    setenv ("TMPDIR", tmpdir, 1);
-
-    spindle_enabled = flux_shell_getenv (shell, "SPINDLE");
-    if (spindle_enabled)
-       setenv("SPINDLE", spindle_enabled, 1);
 
     /*  Get the jobid, R, and shell rank
      */
@@ -628,6 +601,38 @@ static int sp_exit (flux_plugin_t *p,
 
 int flux_plugin_init (flux_plugin_t *p)
 {
+    const char *debug;
+    const char *test;
+    const char *tmpdir;
+    const char *spindle_enabled;
+
+    /* Do not make any logging calls until after the last setenv(). */
+
+    flux_shell_t *shell = flux_plugin_get_shell (p);
+
+    /*  If SPINDLE_DEBUG is set in the environment of the job, propagate
+     *  it into the shell so we get spindle debugging for this session.
+     */
+    if ((debug = flux_shell_getenv (shell, "SPINDLE_DEBUG")))
+        setenv ("SPINDLE_DEBUG", debug, 1);
+
+    /*  The spindle testsuite requires SPINDLE_TEST
+     */
+    if ((test = flux_shell_getenv (shell, "SPINDLE_TEST")))
+       setenv ("SPINDLE_TEST", test, 1);
+
+    /*  Spindle requires that TMPDIR is set. Propagate TMPDIR from job
+     *  environment, or use /tmp if TMPDIR not set.
+     */
+    tmpdir = flux_shell_getenv (shell, "TMPDIR");
+    if (!tmpdir)
+        tmpdir = "/tmp";
+    setenv ("TMPDIR", tmpdir, 1);
+
+    spindle_enabled = flux_shell_getenv (shell, "SPINDLE");
+    if (spindle_enabled)
+       setenv("SPINDLE", spindle_enabled, 1);
+
     if (flux_plugin_set_name (p, "spindle") < 0
         || flux_plugin_add_handler (p, "shell.init", sp_init, NULL) < 0
         || flux_plugin_add_handler (p, "task.init",  sp_task, NULL) < 0
