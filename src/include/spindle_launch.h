@@ -126,6 +126,12 @@ typedef struct {
    /* The local-disk location where Spindle will store its cache */
    char *location;
 
+   /* Colon-separated list of candidate paths for cached libraries. */
+   char *cachepaths;
+
+   /* Colon-separated list of candidate paths for local fifos and other filesystem-based communication. */
+   char *commpaths;
+
    /* Colon-seperated list of directories where Python is installed */
    char *pythonprefix;
 
