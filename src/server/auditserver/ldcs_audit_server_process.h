@@ -126,6 +126,8 @@ struct ldcs_process_data_struct
   ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
   char *location;
+  char *cachepaths;
+  char *commpaths;
   char *hostname;
   char *pythonprefix;
   char *localprefix;

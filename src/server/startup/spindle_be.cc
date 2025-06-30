@@ -28,6 +28,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cassert>
 #include <unistd.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+int spindle_mkdir(char *orig_path);
+#if defined(__cplusplus)
+}
+#endif
 extern int releaseApplication();
 
 template<typename T>
@@ -59,6 +66,8 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
    unpack_param(args->location, buf, pos);
+   unpack_param(args->cachepaths, buf, pos);
+   unpack_param(args->commpaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
    unpack_param(args->bundle_timeout_ms, buf, pos);
@@ -115,6 +124,34 @@ static void initSecurity(int security_type, uint64_t unique_id)
    }
 }
 
+static void parsePaths( char **truePath, char const * const origPathList, const uint64_t number ){
+
+    char * pathList = strdup( origPathList );
+    char *saveptr, *candidatePath, *parsedCandidatePath;
+    int rc;
+    *truePath = NULL;
+
+    candidatePath = strtok_r( pathList, ":", &saveptr );
+    while( NULL != candidatePath ){
+        debug_printf("QQQ candidatePath = %s\n", candidatePath);
+        parsedCandidatePath = parse_location( candidatePath, number );
+        if( parsedCandidatePath ){
+           debug_printf("QQQ parsedCandidatePath = %s\n", parsedCandidatePath);
+           rc = spindle_mkdir( parsedCandidatePath );
+           if( 0 == rc ){
+               debug_printf("QQQ Successfully created directory %s\n", parsedCandidatePath);
+               *truePath = parsedCandidatePath;
+               return;
+           }else{
+               debug_printf("QQQ Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
+           }
+        }else{
+            debug_printf("QQQ Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
+        }
+        candidatePath = strtok_r( NULL, ":", &saveptr );
+    }
+}
+
 int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
                  int (*post_setup)(spindle_args_t *))
 {
@@ -143,15 +180,43 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    assert(args.port == port);
    
    
-   /* Expand environment variables in location. */
-   char *new_location = parse_location(args.location, args.number);
-   if (!new_location) {
-      err_printf("Failed to convert location %s\n", args.location);
-      return -1;
+   // For each of args.location, args.cachepaths, and args.commpaths, parse each
+   // candidate directory in the list (replacing environment variables with their
+   // values) and attempt to create that directory.  On success, replace the list
+   // of paths with the path to the created directory.
+   char *new_path = NULL;
+   debug_printf("QQQ Parsing paths for args.location (%s).\n", args.location);
+   parsePaths( &new_path, args.location, args.number );
+   if( new_path ){
+       args.location = new_path;
+       debug_printf("QQQ args.location=%s\n", args.location);
+   }else{
+       err_printf("No valid location path available.\n");
+       return -1;
    }
-   debug_printf("Translated location from %s to %s\n", args.location, new_location);
-   free(args.location);
-   args.location = new_location;
+
+   new_path = NULL;
+   debug_printf("QQQ Parsing paths for args.cachepaths (%s).\n", args.cachepaths);
+   parsePaths( &new_path, args.cachepaths, args.number );
+   if( new_path ){
+       args.cachepaths = new_path;
+       debug_printf("QQQ args.cachepaths=%s\n", args.cachepaths);
+   }else{
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
+       args.cachepaths = args.location;
+   }
+
+   new_path = NULL;
+   debug_printf("QQQ Parsing paths for args.commpaths(%s).\n", args.commpaths);
+   parsePaths( &new_path, args.commpaths, args.number );
+   if( new_path ){
+       args.commpaths = new_path;
+       debug_printf("QQQ args.commpaths=%s\n", args.commpaths);
+   }else{
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
+       args.commpaths = args.location;
+   }
+
    test_printf("<internal> location=%s\n", args.location);
 
    result = ldcs_audit_server_process(&args);

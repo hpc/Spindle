@@ -71,6 +71,8 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += sizeof(opt_t);
    buffer_size += sizeof(unique_id_t);
    buffer_size += args->location ? strlen(args->location) + 1 : 1;
+   buffer_size += args->cachepaths ? strlen(args->cachepaths) + 1 : 1;
+   buffer_size += args->commpaths ? strlen(args->commpaths) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
    buffer_size += args->numa_files ? strlen(args->numa_files) + 1 : 1;
@@ -91,6 +93,8 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->startup_type, buf, pos);
    pack_param(args->shm_cache_size, buf, pos);
    pack_param(args->location, buf, pos);
+   pack_param(args->cachepaths, buf, pos);
+   pack_param(args->commpaths, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);
    pack_param(args->bundle_timeout_ms, buf, pos);
@@ -395,9 +399,11 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    /* Start FE server */
    debug_printf("spindle_args_t { number = %lu; port = %u; num_ports = %u; opts = %lu; unique_id = %lu; "
                 "use_launcher = %u; startup_type = %u; shm_cache_size = %u; location = %s; "
+                "cachepaths = %s; commpaths = %s "
                 "pythonprefix = %s; preloadfile = %s; bundle_timeout_ms = %u; bundle_cachesize_kb = %u }\n",
                 (unsigned long) params->number, params->port, params->num_ports, params->opts, params->unique_id,
                 params->use_launcher, params->startup_type, params->shm_cache_size, params->location,
+                params->cachepaths, params->commpaths,
                 params->pythonprefix, params->preloadfile, params->bundle_timeout_ms,
                 params->bundle_cachesize_kb);
    printSpindleFlags(params->opts);
