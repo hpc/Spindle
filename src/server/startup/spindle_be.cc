@@ -217,7 +217,11 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
        args.commpaths = args.location;
    }
 
+   // The test verifier is isolated behind the logger.  To set these paths, we
+   // pass in "magic" logging messages.
    test_printf("<internal> location=%s\n", args.location);
+   test_printf("<internal> cachepath=%s\n", args.cachepaths);
+   test_printf("<internal> compath=%s\n", args.commpaths);
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
