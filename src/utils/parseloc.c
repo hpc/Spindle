@@ -278,3 +278,45 @@ int is_local_prefix(const char *path, char **local_prefixes) {
    return 0;
 }
 
+/**
+ * Iterates through a colon-separated list of candidate paths in origPathList along with the session
+ * number and attempts to create each path.
+ * If not NULL, symbolicPath will contain a pointer to the symbolic version of the first valid path.
+ *  That is to say, environment variables in the path will not be expanded.
+ * If not NULL, parsedPath will contain a pointer to a version of that path with environment variables
+ *  substituted with their values, e.g., $TMP.
+ * If not NULL, realizedPath will contain a pointer to a canonical version of the path, e.g.,
+ *  symbolic links replaced with the actual directory names.
+ * If no valid paths are found, the values in realizedPath, parsedPath, and symbolicPath will be
+ *  unchanged.
+ */
+void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char const * const origPathList, number_t number ){
+
+    char * pathList = strdup( origPathList );
+    char *saveptr, *candidatePath, *parsedCandidatePath;
+    int rc;
+
+    candidatePath = strtok_r( pathList, ":", &saveptr );
+    while( NULL != candidatePath ){
+        debug_printf("QQQ candidatePath = %s\n", candidatePath);
+        parsedCandidatePath = parse_location( candidatePath, number );
+        if( parsedCandidatePath ){
+           debug_printf("QQQ parsedCandidatePath = %s\n", parsedCandidatePath);
+           rc = spindle_mkdir( parsedCandidatePath );
+           if( 0 == rc ){
+               debug_printf("QQQ Successfully created directory %s\n", parsedCandidatePath);
+
+               if( symbolicPath) *symbolicPath = candidatePath;
+               if( parsedPath  ) *parsedPath   = parsedCandidatePath;
+               if( realizedPath) *realizedPath = realize( parsedCandidatePath );
+               return;
+
+           }else{
+               debug_printf("QQQ Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
+           }
+        }else{
+            debug_printf("QQQ Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
+        }
+        candidatePath = strtok_r( NULL, ":", &saveptr );
+    }
+}

@@ -28,13 +28,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <cassert>
 #include <unistd.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-int spindle_mkdir(char *orig_path);
-#if defined(__cplusplus)
-}
-#endif
+extern int spindle_mkdir(char *orig_path);
+extern void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char const * const origPathList, number_t number );
 extern int releaseApplication();
 
 template<typename T>
@@ -124,34 +119,6 @@ static void initSecurity(int security_type, uint64_t unique_id)
    }
 }
 
-static void parsePaths( char **truePath, char const * const origPathList, const uint64_t number ){
-
-    char * pathList = strdup( origPathList );
-    char *saveptr, *candidatePath, *parsedCandidatePath;
-    int rc;
-    *truePath = NULL;
-
-    candidatePath = strtok_r( pathList, ":", &saveptr );
-    while( NULL != candidatePath ){
-        debug_printf("QQQ candidatePath = %s\n", candidatePath);
-        parsedCandidatePath = parse_location( candidatePath, number );
-        if( parsedCandidatePath ){
-           debug_printf("QQQ parsedCandidatePath = %s\n", parsedCandidatePath);
-           rc = spindle_mkdir( parsedCandidatePath );
-           if( 0 == rc ){
-               debug_printf("QQQ Successfully created directory %s\n", parsedCandidatePath);
-               *truePath = parsedCandidatePath;
-               return;
-           }else{
-               debug_printf("QQQ Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
-           }
-        }else{
-            debug_printf("QQQ Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
-        }
-        candidatePath = strtok_r( NULL, ":", &saveptr );
-    }
-}
-
 int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
                  int (*post_setup)(spindle_args_t *))
 {
@@ -186,7 +153,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    // of paths with the path to the created directory.
    char *new_path = NULL;
    debug_printf("QQQ Parsing paths for args.location (%s).\n", args.location);
-   parsePaths( &new_path, args.location, args.number );
+   parsePaths( &new_path, NULL, NULL, args.location, args.number );
    if( new_path ){
        args.location = new_path;
        debug_printf("QQQ args.location=%s\n", args.location);
@@ -197,7 +164,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
 
    new_path = NULL;
    debug_printf("QQQ Parsing paths for args.cachepaths (%s).\n", args.cachepaths);
-   parsePaths( &new_path, args.cachepaths, args.number );
+   parsePaths( &new_path, NULL, NULL, args.cachepaths, args.number );
    if( new_path ){
        args.cachepaths = new_path;
        debug_printf("QQQ args.cachepaths=%s\n", args.cachepaths);
@@ -208,7 +175,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
 
    new_path = NULL;
    debug_printf("QQQ Parsing paths for args.commpaths(%s).\n", args.commpaths);
-   parsePaths( &new_path, args.commpaths, args.number );
+   parsePaths( &new_path, NULL, NULL, args.commpaths, args.number );
    if( new_path ){
        args.commpaths = new_path;
        debug_printf("QQQ args.commpaths=%s\n", args.commpaths);
