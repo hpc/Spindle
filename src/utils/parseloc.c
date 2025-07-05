@@ -34,13 +34,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "spindle_launch.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-   char *parse_location(char *loc, number_t number);
-#if defined(__cplusplus)
-}
-#endif
+//char *parse_location(char *loc, number_t number);
+extern int spindle_mkdir(char *orig_path);
 
 #if defined(CUSTOM_GETENV)
 extern char *custom_getenv();
@@ -281,6 +276,7 @@ int is_local_prefix(const char *path, char **local_prefixes) {
 /**
  * Iterates through a colon-separated list of candidate paths in origPathList along with the session
  * number and attempts to create each path.
+ *
  * If not NULL, symbolicPath will contain a pointer to the symbolic version of the first valid path.
  *  That is to say, environment variables in the path will not be expanded.
  * If not NULL, parsedPath will contain a pointer to a version of that path with environment variables
@@ -290,7 +286,7 @@ int is_local_prefix(const char *path, char **local_prefixes) {
  * If no valid paths are found, the values in realizedPath, parsedPath, and symbolicPath will be
  *  unchanged.
  */
-void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char const * const origPathList, number_t number ){
+void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number ){
 
     char * pathList = strdup( origPathList );
     char *saveptr, *candidatePath, *parsedCandidatePath;

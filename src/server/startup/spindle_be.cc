@@ -29,8 +29,18 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 
 extern int spindle_mkdir(char *orig_path);
-extern void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char const * const origPathList, number_t number );
 extern int releaseApplication();
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
+
+#if defined(__cplusplus)
+}
+#endif
 
 template<typename T>
 void unpack_param(T &value, char *buffer, int &pos)

@@ -234,6 +234,8 @@ int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spin
       (*spindle_argv)[n++] = strdup(uniqueid_s);
    }
    (*spindle_argv)[n++] = strdup(params->location);
+   (*spindle_argv)[n++] = strdup(params->cachepaths);
+   (*spindle_argv)[n++] = strdup(params->commpaths);
    (*spindle_argv)[n++] = strdup(number_s);
    (*spindle_argv)[n++] = strdup(opt_s);
    (*spindle_argv)[n++] = strdup(cachesize_s);

@@ -141,6 +141,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
 
    debug_printf3("Initializing server data structures\n");
    ldcs_process_data.location = args->location;
+   ldcs_process_data.commpaths = args->commpaths;
+   ldcs_process_data.cachepaths = args->cachepaths;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.localprefix = args->local_prefixes;

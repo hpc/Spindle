@@ -53,7 +53,20 @@ static int rankinfo[4]={-1,-1,-1,-1};
 number_t number;
 static int use_cache;
 static unsigned int cachesize;
-static char *location, *number_s, *orig_location, *symbolic_location;
+static char *number_s;
+
+// Unmodified colon-separated lists of paths.
+static char *symbolic_locationpaths, *symbolic_cachepaths, *symbolic_commpaths;
+
+// Unmodified version of the first valid path in each list.
+static char *symbolic_location, *symbolic_cachepath, *symbolic_commpath;
+
+// Path resulting from removal of environment variables (e.g., $TMP).
+static char *orig_location, *orig_cachepath, *orig_commpath;
+
+// Path resulting from converting symlinks to canonical form.
+static char *location, *cachepath, *commpath;
+
 static char **cmdline;
 static char *executable;
 static char *client_lib;
@@ -87,7 +100,7 @@ static char *default_subaudit_libstr = libstr_biter_subaudit;
 extern int spindle_mkdir(char *path);
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
-
+extern void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
@@ -115,6 +128,8 @@ static void setup_environment()
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
    setenv("LDCS_ORIG_LOCATION", orig_location, 1);
+   setenv("LDCS_CACHPATH", cachepath, 1);
+   setenv("LDCS_COMMPATH", commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
@@ -159,8 +174,9 @@ static int parse_cmdline(int argc, char *argv[])
          daemon_args[i - 3] = argv[i];
       daemon_args[i - 3] = NULL;
    }
-
-   symbolic_location = argv[i++];
+   symbolic_locationpaths = argv[i++];
+   symbolic_cachepaths = argv[i++];
+   symbolic_commpaths = argv[i++];
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
    opts_s = argv[i++];
@@ -342,11 +358,9 @@ int main(int argc, char *argv[])
       }
    }
 
-   orig_location = parse_location(symbolic_location, number);
-   if (!orig_location) {
-      return -1;
-   }
-   location = realize(orig_location);
+   parsePaths( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
+   parsePaths( &cachepath, &orig_cachepath, &symbolic_cachepath, symbolic_cachepaths,    number );
+   parsePaths( &commpath,  &orig_commpath,  &symbolic_commpath,  symbolic_commpaths,     number );
 
    if (daemon_args) {
       launch_daemon(location);
