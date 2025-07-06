@@ -289,7 +289,7 @@ int is_local_prefix(const char *path, char **local_prefixes) {
 void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number ){
 
     char * pathList = strdup( origPathList );
-    char *saveptr, *candidatePath, *parsedCandidatePath;
+    char *saveptr, *candidatePath, *parsedCandidatePath, *realizedCandidatePath;
     int rc;
 
     candidatePath = strtok_r( pathList, ":", &saveptr );
@@ -298,13 +298,15 @@ void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, ch
         parsedCandidatePath = parse_location( candidatePath, number );
         if( parsedCandidatePath ){
            debug_printf("QQQ parsedCandidatePath = %s\n", parsedCandidatePath);
+           realizedCandidatePath = realize( parsedCandidatePath );
+           debug_printf("QQQ realizedCandidatePath = %s\n", realizedCandidatePath);
            rc = spindle_mkdir( parsedCandidatePath );
            if( 0 == rc ){
                debug_printf("QQQ Successfully created directory %s\n", parsedCandidatePath);
 
                if( symbolicPath) *symbolicPath = candidatePath;
                if( parsedPath  ) *parsedPath   = parsedCandidatePath;
-               if( realizedPath) *realizedPath = realize( parsedCandidatePath );
+               if( realizedPath) *realizedPath = realizedCandidatePath;
                return;
 
            }else{
