@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 
 #if !defined(USE_PLUGIN_DEBUG)
 #include "spindle_debug.h"
@@ -161,38 +162,70 @@ char *parse_location_noerr(char *loc, number_t number)
  **/
 char *realize(char *path)
 {
+   int local_errno;
    char *result;
-   char *origpath, *cur_slash = NULL, *trailing;
-   struct stat buf;
+   char *origpath, *cur_slash = NULL, *prev_slash = NULL;
+   struct stat *buf = calloc( 1, sizeof( struct stat ) );
    char newpath[MAX_PATH_LEN+1];
    int lastpos;
    newpath[MAX_PATH_LEN] = '\0';
 
    origpath = strdup(path);
-   for (;;) {
-      if (stat(origpath, &buf) != -1)
-         break;
-      if (cur_slash)
-         *cur_slash = '/';
+   debug_printf("Attemping to realize '%s'.\n", origpath);
+   errno=0;
+   while( stat( origpath, buf ) == -1 ){
+      local_errno = errno;
+      debug_printf("Failed to stat '%s' (%s).\n", origpath, strerror(local_errno));
+      prev_slash = cur_slash;
       cur_slash = strrchr(origpath, '/');
-      if (!cur_slash)
-         break;
-      *cur_slash = '\0';
+      if( prev_slash )
+          *prev_slash = '/';
+      if( cur_slash )
+          *cur_slash = '\0';
+      else{
+          err_printf("Nothing in the original path can be stat'ed.  (%s)\n", path);
+          assert(0);
+      }
+      debug_printf("Now attempting to stat '%s'.\n", origpath);
+      debug_printf("Ignoring (for now) '%s'.\n", cur_slash+1);
+      errno=0;
    }
-   if (cur_slash)
-      trailing = cur_slash + 1;
-   else
-      trailing = "";
+   debug_printf( "stat info for %s:\n", origpath );
+   debug_printf( "=== st_mode & S_IFMT = %#o.\n", buf->st_mode & S_IFMT );
+   free(buf);
 
+
+   errno = 0;
    result = realpath(origpath, newpath);
    if (!result) {
+      local_errno = errno;
+      err_printf(
+          "Error:  realpath(3) failed to create canonical version of '%s' (%s).  Returning '%s'.\n",
+          origpath, strerror(local_errno), path );
+      errno = 0;
+      int rc = stat( origpath, &buf );
+      local_errno = errno;
+      err_printf(
+          "        Statting that path results in rc=%d, errno=%d, error='%s'.\n",
+          rc, local_errno, strerror(local_errno));
       free(origpath);
-      return path;
+      assert(0);
    }
 
-   strncat(newpath, "/", MAX_PATH_LEN);
-   strncat(newpath, trailing, MAX_PATH_LEN);
-   newpath[MAX_PATH_LEN] = '\0';
+   if( prev_slash ){
+       if( strlen( newpath ) + strlen( cur_slash+1 ) > MAX_PATH_LEN ){
+            err_printf(
+                    "Error:  The realized path exceeds MAX_PATH_LEN (%d).\n"
+                    "  Original path:     '%s'\n"
+                    "  Statable part:     '%s'\n"
+                    "  Canonical version: '%s'\n"
+                    "  Returning original path.\n",
+                    MAX_PATH_LEN, path, origpath, newpath);
+            return path;
+       }
+       strncat(newpath, "/",         2);
+       strncat(newpath, cur_slash+1, MAX_PATH_LEN - strlen( newpath ));
+   }
    free(origpath);
 
    lastpos = strlen(newpath)-1;
