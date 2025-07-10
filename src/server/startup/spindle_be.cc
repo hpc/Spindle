@@ -162,33 +162,27 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    // values) and attempt to create that directory.  On success, replace the list
    // of paths with the path to the created directory.
    char *new_path = NULL;
-   debug_printf("QQQ Parsing paths for args.location (%s).\n", args.location);
    parsePaths( &new_path, NULL, NULL, args.location, args.number );
    if( new_path ){
        args.location = new_path;
-       debug_printf("QQQ args.location=%s\n", args.location);
    }else{
        err_printf("No valid location path available.\n");
        return -1;
    }
 
    new_path = NULL;
-   debug_printf("QQQ Parsing paths for args.cachepaths (%s).\n", args.cachepaths);
    parsePaths( &new_path, NULL, NULL, args.cachepaths, args.number );
    if( new_path ){
        args.cachepaths = new_path;
-       debug_printf("QQQ args.cachepaths=%s\n", args.cachepaths);
    }else{
        err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
        args.cachepaths = args.location;
    }
 
    new_path = NULL;
-   debug_printf("QQQ Parsing paths for args.commpaths(%s).\n", args.commpaths);
    parsePaths( &new_path, NULL, NULL, args.commpaths, args.number );
    if( new_path ){
        args.commpaths = new_path;
-       debug_printf("QQQ args.commpaths=%s\n", args.commpaths);
    }else{
        err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
        args.commpaths = args.location;
