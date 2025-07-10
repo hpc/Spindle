@@ -51,6 +51,8 @@ static char *parse_location_impl(char *loc, number_t number, int print_on_error)
    int i = 0, j = 0;
    int is_escaped = 0;
    
+
+   debug_printf("Entering parse_location_impl: loc='%s', number=%ld\n", loc, number);
    while (loc[i] != '\0') {
       if (j >= MAX_PATH_LEN) {
          fprintf(stderr, "Spindle Error: Path length of location %s is too long\n", loc);
@@ -171,7 +173,6 @@ char *realize(char *path)
    newpath[MAX_PATH_LEN] = '\0';
 
    origpath = strdup(path);
-   debug_printf("Attemping to realize '%s'.\n", origpath);
    errno=0;
    while( stat( origpath, buf ) == -1 ){
       local_errno = errno;
@@ -186,14 +187,8 @@ char *realize(char *path)
           err_printf("Nothing in the original path can be stat'ed.  (%s)\n", path);
           assert(0);
       }
-      debug_printf("Now attempting to stat '%s'.\n", origpath);
-      debug_printf("Ignoring (for now) '%s'.\n", cur_slash+1);
       errno=0;
    }
-   debug_printf( "stat info for %s:\n", origpath );
-   debug_printf( "=== st_mode & S_IFMT = %#o.\n", buf->st_mode & S_IFMT );
-   free(buf);
-
 
    errno = 0;
    result = realpath(origpath, newpath);
@@ -203,7 +198,7 @@ char *realize(char *path)
           "Error:  realpath(3) failed to create canonical version of '%s' (%s).  Returning '%s'.\n",
           origpath, strerror(local_errno), path );
       errno = 0;
-      int rc = stat( origpath, &buf );
+      int rc = stat( origpath, buf );
       local_errno = errno;
       err_printf(
           "        Statting that path results in rc=%d, errno=%d, error='%s'.\n",
@@ -211,8 +206,9 @@ char *realize(char *path)
       free(origpath);
       assert(0);
    }
+   free(buf);
 
-   if( prev_slash ){
+   if( cur_slash ){
        if( strlen( newpath ) + strlen( cur_slash+1 ) > MAX_PATH_LEN ){
             err_printf(
                     "Error:  The realized path exceeds MAX_PATH_LEN (%d).\n"
@@ -221,6 +217,7 @@ char *realize(char *path)
                     "  Canonical version: '%s'\n"
                     "  Returning original path.\n",
                     MAX_PATH_LEN, path, origpath, newpath);
+            free(origpath);
             return path;
        }
        strncat(newpath, "/",         2);
@@ -251,13 +248,13 @@ char **parse_colonsep_prefixes(char *colonsep_list, number_t number)
       prefixes[0] = NULL;
       return prefixes;
    }
-   int numprefixes = 1;
+   size_t numprefixes = 1;
    for (size_t i = 0; s[i] != '\0'; i++) {
       if (s[i] == ':') {
          numprefixes++;
       }
    }   
-   int num_strs = numprefixes + 1;
+   size_t num_strs = numprefixes + 1;
    
    prefixes = (char **) malloc(sizeof(char*) * num_strs);
    size_t i = 0, cur = 0;
@@ -325,28 +322,24 @@ void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, ch
     char *saveptr, *candidatePath, *parsedCandidatePath, *realizedCandidatePath;
     int rc;
 
+    debug_printf2("origPathList='%s', number='%lu'.\n", origPathList, number );
     candidatePath = strtok_r( pathList, ":", &saveptr );
     while( NULL != candidatePath ){
-        debug_printf("QQQ candidatePath = %s\n", candidatePath);
         parsedCandidatePath = parse_location( candidatePath, number );
         if( parsedCandidatePath ){
-           debug_printf("QQQ parsedCandidatePath = %s\n", parsedCandidatePath);
            realizedCandidatePath = realize( parsedCandidatePath );
-           debug_printf("QQQ realizedCandidatePath = %s\n", realizedCandidatePath);
            rc = spindle_mkdir( parsedCandidatePath );
            if( 0 == rc ){
-               debug_printf("QQQ Successfully created directory %s\n", parsedCandidatePath);
-
                if( symbolicPath) *symbolicPath = candidatePath;
                if( parsedPath  ) *parsedPath   = parsedCandidatePath;
                if( realizedPath) *realizedPath = realizedCandidatePath;
                return;
 
            }else{
-               debug_printf("QQQ Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
+               debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
            }
         }else{
-            debug_printf("QQQ Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
+            debug_printf2("Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
         }
         candidatePath = strtok_r( NULL, ":", &saveptr );
     }
