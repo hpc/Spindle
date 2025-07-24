@@ -195,23 +195,18 @@ static int init_server_connection()
    debug_printf("Initializing connection to server\n");
 
    if (ldcsid != -1){
-       debug_printf("QQQ ldcsid already initialized to %d.\n", ldcsid );
       return 0;
    }
    if (!use_ldcs){
-       debug_printf("QQQ not setting ldcsid because use_ldcs=%d.\n", use_ldcs);
       return 0;
    }
-   debug_printf("QQQ ldcsid = %d.\n", ldcsid);
 
    location = getenv("LDCS_LOCATION");
    orig_location = getenv("LDCS_ORIG_LOCATION");
    commpath = getenv("LDCS_COMMPATH");
-   debug_printf("QQQ ldcsid bug \"LDCS_COMMPATH\"='%s'.\n", commpath);
    cachepath = getenv("LDCS_CACHEPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
-   //debug_printf("QQQ ldcsid bug \"LDCS_CONNECTION\"='%s', LDCS_NUMBER=%"PRIu64".\n", connection, number);
    rankinfo_s = getenv("LDCS_RANKINFO");
    opts_s = getenv("LDCS_OPTIONS");
    cachesize_s = getenv("LDCS_CACHESIZE");
@@ -226,7 +221,6 @@ static int init_server_connection()
    }
 
    if (!(opts & OPT_FOLLOWFORK)) {
-      debug_printf("QQQ ldcsid bug Disabling environment variables because we're not following forks\n");
       unsetenv("LD_AUDIT");
       unsetenv("LDCS_LOCATION");
       unsetenv("LDCS_ORIG_LOCATION");
@@ -255,7 +249,6 @@ static int init_server_connection()
                     location, (unsigned long) number, connection, rankinfo_s);
       ldcsid  = client_register_connection(connection);
       if (ldcsid == -1){
-          debug_printf("QQQ ldcsid = -1, client_register_connection failed for connection='%s'.\n", connection);
          return -1;
       }
       assert(rankinfo_s);
@@ -267,7 +260,6 @@ static int init_server_connection()
       debug_printf("open connection to ldcs %s %lu\n", location, (unsigned long) number);
       ldcsid = client_open_connection(commpath, number);
       if (ldcsid == -1){
-          debug_printf("QQQ ldcsid = -1, client_open_connection( commpath='%s', number=%lu ) failed.\n", commpath, number );
          return -1;
       }
 

@@ -108,17 +108,14 @@ static int establish_connection()
    debug_printf2("Opening connection to server\n");
    ldcsid = client_open_connection(commpath, number);
    if (ldcsid == -1){
-       debug_printf("QQQ ldcsid = -1 due to failure on client_open_connection( '%s', %"PRIu64" )\n", commpath, number );
       return -1;
-   }else{
-       debug_printf("QQQ ldcsid = %d client_open_connection( '%s', %"PRIu64" ) succeeded.\n", ldcsid, commpath, number );
    }
-
 
    send_pid(ldcsid);
    send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
-   if (opts & OPT_NUMA)
+   if (opts & OPT_NUMA){
       send_cpu(ldcsid, get_cur_cpu());
+   }
 
    return 0;
 }
@@ -132,7 +129,6 @@ static void setup_environment()
    if (opts & OPT_RELOCAOUT){
       connection_str = client_get_connection_string(ldcsid);
    }
-  debug_printf("QQQ ldcsid=%d, connection_str='%s', opts & OPT_RELOCAOUT = %d.\n", ldcsid, connection_str, opts & OPT_RELOCAOUT );
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
@@ -140,10 +136,8 @@ static void setup_environment()
    setenv("LDCS_CACHPATH", cachepath, 1);
    setenv("LDCS_COMMPATH", commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
-   debug_printf("QQQ (ldcsid bug) LDCS_NUMBER set to '%s'.\n", number_s);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str){
-       debug_printf("QQQ (ldcsid bug) setting LDCS_CONNECTION to '%s'\n", connection_str);
       setenv("LDCS_CONNECTION", connection_str, 1);
    }
    setenv("LDCS_OPTIONS", opts_s, 1);

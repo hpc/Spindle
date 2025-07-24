@@ -207,7 +207,6 @@ int client_open_connection_pipe(char* location, number_t number)
    /* wait for directory (at most one minute) */
    stat_cnt = 0;
    snprintf(ready, MAX_PATH_LEN, "%s/spindle_comm/ready", location);
-   debug_printf2("QQQ Creating directory '%s'.\n", ready);
    memset(&st, 0, sizeof(st));
    
    while (((stat(ready, &st) == -1) || ((st.st_mode & (S_IRUSR | S_IWUSR)) == 0)) && 
@@ -220,7 +219,6 @@ int client_open_connection_pipe(char* location, number_t number)
   
    /* create incomming fifo */
    sprintf(fifo, "%s/spindle_comm/fifo-%d-0", location, getpid());
-   debug_printf2("QQQ Creating fifo '%s'.\n", fifo);
    result = ldcs_mkfifo(fifo);
    if (result == -2)
       find_r_fd = 1;
@@ -231,7 +229,6 @@ int client_open_connection_pipe(char* location, number_t number)
 
    /* create outgoing fifo */
    sprintf(fifo, "%s/spindle_comm/fifo-%d-1", location, getpid());
-   debug_printf2("QQQ Creating fifo '%s'.\n", fifo);
    result = ldcs_mkfifo(fifo);
    if (result == -2)
       find_w_fd = 1;
