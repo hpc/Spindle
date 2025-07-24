@@ -184,10 +184,9 @@ char *realize(char *path)
       if( cur_slash )
           *cur_slash = '\0';
       else{
-          err_printf("Nothing in the original path can be stat'ed.  (%s)\n", path);
-          assert(0);
+          debug_printf("Nothing in the original path can be stat'ed.  (%s)\n", path);
+          return NULL;
       }
-      errno=0;
    }
 
    errno = 0;
@@ -204,7 +203,7 @@ char *realize(char *path)
           "        Statting that path results in rc=%d, errno=%d, error='%s'.\n",
           rc, local_errno, strerror(local_errno));
       free(origpath);
-      assert(0);
+      return NULL;
    }
    free(buf);
 
@@ -328,16 +327,19 @@ void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, ch
         parsedCandidatePath = parse_location( candidatePath, number );
         if( parsedCandidatePath ){
            realizedCandidatePath = realize( parsedCandidatePath );
-           rc = spindle_mkdir( parsedCandidatePath );
-           if( 0 == rc ){
-               if( symbolicPath) *symbolicPath = candidatePath;
-               if( parsedPath  ) *parsedPath   = parsedCandidatePath;
-               if( realizedPath) *realizedPath = realizedCandidatePath;
-               return;
-
-           }else{
-               debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", parsedCandidatePath );
-           }
+           if( realizedCandidatePath ){
+               rc = spindle_mkdir( parsedCandidatePath );
+               if( 0 == rc ){
+                   if( symbolicPath) *symbolicPath = candidatePath;
+                   if( parsedPath  ) *parsedPath   = parsedCandidatePath;
+                   if( realizedPath) *realizedPath = realizedCandidatePath;
+                   return;
+               }else{
+                   debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", realizedCandidatePath );
+               }
+            }else{
+                debug_printf2( "Unable to realize candidate %s, moving on to the next candidate.\n", parsedCandidatePath );
+            }
         }else{
             debug_printf2("Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
         }
