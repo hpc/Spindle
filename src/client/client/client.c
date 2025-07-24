@@ -192,10 +192,14 @@ static int init_server_connection()
 
    debug_printf("Initializing connection to server\n");
 
-   if (ldcsid != -1)
+   if (ldcsid != -1){
+       debug_printf("QQQ ldcsid already initialized to %d.\n", ldcsid );
       return 0;
-   if (!use_ldcs)
+   }
+   if (!use_ldcs){
+       debug_printf("QQQ not setting ldcsid because use_ldcs=%d.\n", use_ldcs);
       return 0;
+   }
 
    location = getenv("LDCS_LOCATION");
    orig_location = getenv("LDCS_ORIG_LOCATION");
@@ -245,8 +249,10 @@ static int init_server_connection()
       debug_printf3("location = %s, number = %lu, connection = %s, rankinfo = %s\n",
                     location, (unsigned long) number, connection, rankinfo_s);
       ldcsid  = client_register_connection(connection);
-      if (ldcsid == -1)
+      if (ldcsid == -1){
+          debug_printf("QQQ ldcsid = -1, client_register_connection failed for connection='%s'.\n", connection);
          return -1;
+      }
       assert(rankinfo_s);
       sscanf(rankinfo_s, "%d %d %d %d %d", &old_ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
       unsetenv("LDCS_CONNECTION");
@@ -254,9 +260,11 @@ static int init_server_connection()
    else {
       /* Establish a new connection */
       debug_printf("open connection to ldcs %s %lu\n", location, (unsigned long) number);
-      ldcsid = client_open_connection(location, number);
-      if (ldcsid == -1)
+      ldcsid = client_open_connection(commpath, number);
+      if (ldcsid == -1){
+          debug_printf("QQQ ldcsid = -1, client_open_connection( '%s', %lu ) failed.\n", commpath, number );
          return -1;
+      }
 
       send_pid(ldcsid);
       send_location(ldcsid, location);

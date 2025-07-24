@@ -104,7 +104,7 @@ extern void parsePaths( char **realizedPath, char **parsedPath, char **symbolicP
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
-   ldcsid = client_open_connection(location, number);
+   ldcsid = client_open_connection(commpath, number);
    if (ldcsid == -1) 
       return -1;
 

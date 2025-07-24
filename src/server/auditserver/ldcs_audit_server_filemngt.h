@@ -23,7 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "ldcs_audit_server_md.h"
 
-int ldcs_audit_server_filemngt_init (char* location);
+int ldcs_audit_server_filemngt_init (char* location, char* cachepath, char* commpath);
 
 int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip, int *err, int *was_stripped);
 int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize, 

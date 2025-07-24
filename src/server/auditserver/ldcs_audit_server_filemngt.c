@@ -46,6 +46,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 char *_ldcs_audit_server_tmpdir;
+static char *_ldcs_audit_server_cachepath;
+static char *_ldcs_audit_server_commpath;
 static char *normalized_tmpdir;
 
 extern int spindle_mkdir(char *path);
@@ -55,10 +57,12 @@ static char *filemngt_normalize_dir(char *dir) {
    return newpath ? newpath : dir;
 }
 
-int ldcs_audit_server_filemngt_init (char* location) {
+int ldcs_audit_server_filemngt_init (char* location, char *cachepath, char *commpath) {
    int rc=0;
 
    _ldcs_audit_server_tmpdir = location;
+   _ldcs_audit_server_cachepath = cachepath;
+   _ldcs_audit_server_commpath  = commpath;
    if (-1 == spindle_mkdir(_ldcs_audit_server_tmpdir)) {
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
       _error("mkdir failed");
@@ -288,6 +292,8 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
 int ldcs_audit_server_filemngt_clean()
 {
    cleanup_created_dirs(_ldcs_audit_server_tmpdir);
+   cleanup_created_dirs(_ldcs_audit_server_cachepath);
+   cleanup_created_dirs(_ldcs_audit_server_commpath);
    return 0;
 }
 
