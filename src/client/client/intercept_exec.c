@@ -253,8 +253,16 @@ static int prep_exec(const char *filepath, char **argv,
 {
    int result;
    char *interp_name;
+   int i;
 
    debug_printf3("prep_exec for filepath %s to newpath %s\n", filepath, newpath);
+   if (spindle_debug_prints >= 3) {
+      debug_printf3("Args for exec are:\n");
+      for (i = 0; argv[i]; i++) {
+         debug_printf3("%d. %s\n", i, argv[i]);
+      }
+   }
+   
    
    if (errcode == EACCES) {
       strncpy(newpath, filepath, newpath_size);

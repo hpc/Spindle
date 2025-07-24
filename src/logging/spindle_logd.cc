@@ -399,7 +399,7 @@ public:
 class MsgReader
 {
 private:
-   static const unsigned int MAX_MESSAGE = 4096;
+   static const unsigned int MAX_MESSAGE = 16536;
    static const unsigned int LISTEN_BACKLOG = 64;
 
    struct Connection {

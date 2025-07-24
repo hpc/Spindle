@@ -149,6 +149,7 @@ void add_global_name(char* pathname, char* localpath)
   char *dname, *fname;
   int index;
 
+  debug_printf3("add_global_name is parsing %s\n", localpath);
   parse_name(localpath, &dname, &fname, &index);
   if (index == -1) {
      err_printf("Given name %s that couldn't be parsed\n", localpath);

@@ -101,9 +101,9 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
    //The naming decisions here need to be cordinated with name parsing in
    // cache/global_name.c
    static unsigned int unique_str_num = 0;
-   char target[MAX_NAME_LEN+1];
-   char dirpart[MAX_NAME_LEN+1];
-   char filepart[MAX_FILENAME_LEN+1];
+   char target[MAX_PATH_LEN+1];
+   char dirpart[MAX_PATH_LEN+1];
+   char filepart[MAX_PATH_LEN+1];
    char *endslash, *lastslash;
    const char *prefix = NULL;
    size_t dirpart_size, filepart_size;
@@ -196,7 +196,7 @@ int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize, 
 {
    int cur_pos = 0;
    int filename_len = strlen(filename) + 1;
-   int is_elf = filemngt_is_elf_file(filecontents, *buffer_size);
+   int is_elf = filemngt_is_elf_file(filecontents, filesize);
    //TODO: Remove filesize from allocation if we're doing a non-contig send. Wastes memory.
    *buffer_size = sizeof(is_elf) + sizeof(stripped) + filename_len + sizeof(filename_len) + sizeof(filesize) + filesize;
    *buffer = (char *) malloc(*buffer_size);
@@ -297,6 +297,8 @@ int ldcs_audit_server_filemngt_clean()
    return 0;
 }
 
+#define EMPTY_FILE_PTR ((void *) 0xE977)
+
 int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, int *fd_out)
 {
    int result;
@@ -306,8 +308,9 @@ int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, i
       return -1;
    }
    if (size == 0) {
-       size = getpagesize();
-       debug_printf2("growing empty file to size %d", (int) size);
+      debug_printf2("Empty file %s", filename);
+      *buffer_out = EMPTY_FILE_PTR;
+      return 0;
    }
    result = ftruncate(*fd_out, size);
    if (result == -1) {
@@ -328,7 +331,7 @@ int filemngt_create_file_space(char *filename, size_t size, void **buffer_out, i
 int filemngt_clear_file_space(void *buffer, size_t size, int fd)
 {
    int result = 0;
-   if (buffer && size)
+   if (buffer && buffer != EMPTY_FILE_PTR && size)
       result = munmap(buffer, size);
    if (fd != -1)
       close(fd);
@@ -352,9 +355,10 @@ void *filemngt_sync_file_space(void *buffer, int fd, char *pathname, size_t size
    int result;
    char *buffer2;
 
-   if (size == 0) {
-       newsize = size = getpagesize();
-       debug_printf2("growing empty file to size %d", (int) size);
+   if (size == 0 || buffer == EMPTY_FILE_PTR) {
+      debug_printf2("Empty file sync for %s", pathname);
+      close(fd);
+      return EMPTY_FILE_PTR;
    }
 
    debug_printf3("Unmapping buffer %p of size %lu\n", buffer, size);

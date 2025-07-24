@@ -210,6 +210,7 @@ static int markw(struct got_range_t *got)
    pagesize = (unsigned long) getpagesize();
    pagestart = got->start & ~(pagesize-1);
 
+   debug_printf3("Setting permissions on %p +%lx to %d\n", (void *) pagestart, got->end - pagestart, (PROT_READ | PROT_WRITE));
    result = mprotect((void*) pagestart, got->end - pagestart, PROT_READ | PROT_WRITE);
    if (result == -1) {
       err_printf("Could not mark GOT region %lx to %lx as writable\n", pagestart, got->end);

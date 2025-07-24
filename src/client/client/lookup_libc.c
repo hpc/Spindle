@@ -118,12 +118,35 @@ static struct link_map *get_libc()
    return NULL;
 }
 
+static struct link_map *get_libdl()
+{
+   struct link_map *l;
+   for (l = _r_debug.r_map; l != NULL; l = l->l_next) {
+      debug_printf3("Looking for libdl: is it %s?\n", 
+            (l->l_name != NULL) ? l->l_name : "No Name");
+      if (l->l_name && (strstr(l->l_name, "libdl-") || strstr(l->l_name, "libdl."))) {
+         debug_printf3("libdl found %s\n", 
+               (l->l_name != NULL) ? l->l_name : "No Name");
+         return l;
+      }
+   }
+   return NULL;   
+}
+
+static int is_libdl_symbol(struct spindle_binding_t *b)
+{
+   return strcmp("dlerror", b->name) == 0;
+}
+
+int lookup_libdl_symbols();
+
 int lookup_libc_symbols()
 {
    static int lookup_libc_done = 0;
    struct link_map *libc;
    struct spindle_binding_t *binding;
    signed long result;
+   int libdl_result;
    int found = 0, not_found = 0;
 
    if (lookup_libc_done)
@@ -142,6 +165,8 @@ int lookup_libc_symbols()
 
       for (binding = get_bindings(); binding->name != NULL; binding++) {
          if (binding->name[0] == '\0' || !binding->libc_func)
+            continue;
+         if (is_libdl_symbol(binding))
             continue;
          
          result = -1;
@@ -190,8 +215,11 @@ int lookup_libc_symbols()
          debug_printf3("Bound errno_location to %p\n", app_errno_location);
          found++;
       }      
-
    }
+
+   libdl_result = lookup_libdl_symbols();
+   if (libdl_result > 0)
+      found += libdl_result;
 
    if (!found && not_found) {
       err_printf("Could not bind any symbols in libc.\n");
@@ -201,6 +229,50 @@ int lookup_libc_symbols()
       lookup_libc_done = 1;
 
    return 0;
+}
+
+int lookup_libdl_symbols()
+{
+   struct link_map *libdl;
+   struct spindle_binding_t *binding;
+   signed long result;
+   int found = 0;
+
+   debug_printf("Looking up bindings for spindle intercepted symbols in libdl\n");
+   libdl = get_libdl();
+   if (!libdl) {
+      debug_printf3("Could not find libdl in link maps.  Postponing libdl bindings.\n");
+      return -1;
+   }
+
+   {
+      INIT_DYNAMIC(libdl);
+      assert(gnu_hash || elf_hash);
+
+      for (binding = get_bindings(); binding->name != NULL; binding++) {
+         if (binding->name[0] == '\0' || !binding->libc_func)
+            continue;
+         if (!is_libdl_symbol(binding))
+            continue;
+         
+         result = -1;
+         if (gnu_hash)
+            result = lookup_gnu_hash_symbol(binding->name, symtab, strtab, (struct gnu_hash_header *) gnu_hash);
+         if (elf_hash && result == -1)
+            result = lookup_elf_hash_symbol(binding->name, symtab, strtab, (ElfW(Word) *) elf_hash);
+         
+         if (result == -1) {
+            debug_printf3("Warning, Could not bind symbol %s in libdl\n", binding->name);
+            *binding->libc_func = NULL;
+         }
+         else {
+            *binding->libc_func = (void *) (symtab[result].st_value + libdl->l_addr);
+            found++;
+         }
+      }
+   }
+
+   return found;
 }
 
 malloc_sig_t get_libc_malloc()

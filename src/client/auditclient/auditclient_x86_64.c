@@ -102,8 +102,9 @@ static int bind_global_relocations(struct link_map *map, Elf64_Rela *relocs, Elf
          *got_entry = target;
          if (!made_reloc_table_writable) {
             reloc_table_pagebase = ((Elf64_Addr) relocs) & ~((Elf64_Addr) (getpagesize()-1));
-            reloc_table_size = ((num_relocs + 1) * sizeof(Elf64_Rela)) - 1;
-            result = mprotect((void *) reloc_table_pagebase, reloc_table_size, PROT_READ | PROT_WRITE);
+            reloc_table_size = ((num_relocs + 1) * sizeof(Elf64_Rela)) - 1 + (((Elf64_Addr) relocs) - reloc_table_pagebase);
+            debug_printf3("mprotect(%p, %lu, PROT_READ|PROT_WRITE|PROT_EXEC) making GOT table writiable\n", (void *) reloc_table_pagebase, reloc_table_size);
+            result = mprotect((void *) reloc_table_pagebase, reloc_table_size, PROT_READ | PROT_WRITE | PROT_EXEC);
             if (result == -1) {
                error = errno;
                err_printf("Could not mprotect for write to relocs 0x%lx +%lu: %s\n",
@@ -118,16 +119,6 @@ static int bind_global_relocations(struct link_map *map, Elf64_Rela *relocs, Elf
       }
    }
 
-   if (made_reloc_table_writable) {
-      result = mprotect((void *) reloc_table_pagebase, reloc_table_size, PROT_READ);
-      if (result == -1) {
-         error = errno;
-         err_printf("Could not mprotect restore reloctable 0x%lx +%lu: %s\n",
-                    reloc_table_pagebase, reloc_table_size, strerror(error));
-         return -1;
-      }
-   }
-         
    return 0;
 }
 

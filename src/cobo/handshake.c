@@ -235,8 +235,8 @@ static int handshake_wrapper(int sockfd, handshake_protocol_t *hdata, uint64_t s
    saved_conninfo = &connection_info;
    result = get_client_server_addrs(sockfd, is_server, &connection_info);
    if (result < 0) {
-      debug_printf("Error getting socket addresses in get_client_server_addrs\n");
-      return_result = result;
+      debug_printf("Could not get socket addresses in get_client_server_addrs. Other side must have closed.\n");
+      return_result = HSHAKE_DROP_CONNECTION;
       goto done;
    }
    
@@ -793,7 +793,7 @@ static int reliable_read(int fd, void *buf, size_t size)
          }
          error_printf("Expected error return %d when reading from socket: %s\n", result,
                       strerror(error));
-         return HSHAKE_INTERNAL_ERROR;
+         return HSHAKE_DROP_CONNECTION;
       }
       else
          bytes_read += result;
@@ -1115,13 +1115,13 @@ static int get_client_server_addrs(int sockfd, int i_am_server,
    result = getpeername(sockfd, &remote_addr, &addr_len);
    if (result == -1) {
       error_printf("Error getting peer socket name: %s\n", strerror(errno));
-      return HSHAKE_INTERNAL_ERROR;
+      return HSHAKE_DROP_CONNECTION;
    }
    addr_len = sizeof(remote_addr);
    result = getsockname(sockfd, &local_addr, &addr_len);
    if (result == -1) {
       error_printf("Error getting local socket name: %s\n", strerror(errno));
-      return HSHAKE_INTERNAL_ERROR;
+      return HSHAKE_DROP_CONNECTION;
    }
 
    conninfo->i_am_server = i_am_server;
@@ -1145,7 +1145,7 @@ static int exchange_sig(int sockfd)
    result = reliable_write(sockfd, &sig, sizeof(sig));
    if (result != sizeof(sig)) {
       debug_printf("Problem writing sig on network\n");
-      return HSHAKE_INTERNAL_ERROR;
+      return HSHAKE_DROP_CONNECTION;
    }
 
    debug_printf("Receiving sig from network\n");
