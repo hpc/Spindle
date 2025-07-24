@@ -205,6 +205,8 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
       propogateEnvironmentStr(envp, newenv, &pos, "LD_AUDIT");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_LOCATION");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_ORIG_LOCATION");
+      propogateEnvironmentStr(envp, newenv, &pos, "LDCS_COMMPATH");
+      propogateEnvironmentStr(envp, newenv, &pos, "LDCS_CACHEPATH");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_CONNECTION");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_RANKINFO");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_OPTIONS");

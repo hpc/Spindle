@@ -25,6 +25,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "spindle_debug.h"
 #include "ldcs_api.h"
@@ -105,8 +107,13 @@ static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
    ldcsid = client_open_connection(commpath, number);
-   if (ldcsid == -1) 
+   if (ldcsid == -1){
+       debug_printf("QQQ ldcsid = -1 due to failure on client_open_connection( '%s', %"PRIu64" )\n", commpath, number );
       return -1;
+   }else{
+       debug_printf("QQQ ldcsid = %d client_open_connection( '%s', %"PRIu64" ) succeeded.\n", ldcsid, commpath, number );
+   }
+
 
    send_pid(ldcsid);
    send_rankinfo_query(ldcsid, &rankinfo[0], &rankinfo[1], &rankinfo[2], &rankinfo[3]);      
@@ -122,8 +129,10 @@ static void setup_environment()
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
    
    char *connection_str = NULL;
-   if (opts & OPT_RELOCAOUT) 
+   if (opts & OPT_RELOCAOUT){
       connection_str = client_get_connection_string(ldcsid);
+   }
+  debug_printf("QQQ ldcsid=%d, connection_str='%s', opts & OPT_RELOCAOUT = %d.\n", ldcsid, connection_str, opts & OPT_RELOCAOUT );
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
@@ -131,9 +140,12 @@ static void setup_environment()
    setenv("LDCS_CACHPATH", cachepath, 1);
    setenv("LDCS_COMMPATH", commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
+   debug_printf("QQQ (ldcsid bug) LDCS_NUMBER set to '%s'.\n", number_s);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
-   if (connection_str)
+   if (connection_str){
+       debug_printf("QQQ (ldcsid bug) setting LDCS_CONNECTION to '%s'\n", connection_str);
       setenv("LDCS_CONNECTION", connection_str, 1);
+   }
    setenv("LDCS_OPTIONS", opts_s, 1);
    setenv("LDCS_CACHESIZE", cachesize_s, 1);
    setenv("LDCS_BOOTSTRAPPED", "1", 1);

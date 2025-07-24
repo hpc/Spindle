@@ -29,6 +29,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <link.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "ldcs_api.h" 
 #include "config.h"
@@ -200,13 +202,16 @@ static int init_server_connection()
        debug_printf("QQQ not setting ldcsid because use_ldcs=%d.\n", use_ldcs);
       return 0;
    }
+   debug_printf("QQQ ldcsid = %d.\n", ldcsid);
 
    location = getenv("LDCS_LOCATION");
    orig_location = getenv("LDCS_ORIG_LOCATION");
    commpath = getenv("LDCS_COMMPATH");
+   debug_printf("QQQ ldcsid bug \"LDCS_COMMPATH\"='%s'.\n", commpath);
    cachepath = getenv("LDCS_CACHEPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
+   //debug_printf("QQQ ldcsid bug \"LDCS_CONNECTION\"='%s', LDCS_NUMBER=%"PRIu64".\n", connection, number);
    rankinfo_s = getenv("LDCS_RANKINFO");
    opts_s = getenv("LDCS_OPTIONS");
    cachesize_s = getenv("LDCS_CACHESIZE");
@@ -221,7 +226,7 @@ static int init_server_connection()
    }
 
    if (!(opts & OPT_FOLLOWFORK)) {
-      debug_printf("Disabling environment variables because we're not following forks\n");
+      debug_printf("QQQ ldcsid bug Disabling environment variables because we're not following forks\n");
       unsetenv("LD_AUDIT");
       unsetenv("LDCS_LOCATION");
       unsetenv("LDCS_ORIG_LOCATION");
@@ -262,7 +267,7 @@ static int init_server_connection()
       debug_printf("open connection to ldcs %s %lu\n", location, (unsigned long) number);
       ldcsid = client_open_connection(commpath, number);
       if (ldcsid == -1){
-          debug_printf("QQQ ldcsid = -1, client_open_connection( '%s', %lu ) failed.\n", commpath, number );
+          debug_printf("QQQ ldcsid = -1, client_open_connection( commpath='%s', number=%lu ) failed.\n", commpath, number );
          return -1;
       }
 
