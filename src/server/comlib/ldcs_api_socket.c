@@ -84,6 +84,7 @@ int ldcs_get_fd_socket (int fd) {
 
 
 int ldcs_create_server_socket(char* location, number_t number) {
+  location=location;
   int fd, sockfd;
   struct sockaddr_in serv_addr;
 
@@ -157,6 +158,7 @@ int ldcs_open_server_connection_socket(int fd) {
 };
 
 int ldcs_open_server_connections_socket(int fd, int nc, int *more_avail) {
+  nc=nc;
   *more_avail=0;
   return(ldcs_open_server_connection_socket(fd));
 };
@@ -183,29 +185,32 @@ int ldcs_destroy_server_socket(int fd) {
 /* ************************************************************** */
 /* message transfer functions                                     */
 /* ************************************************************** */
-static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
+static size_t _ldcs_read_socket(int fd, void *data, size_t bytes, ldcs_read_block_t block, int *err) {
 
-  int         left,bsumread;
-  ssize_t      btoread, bread;
-  char       *dataptr;
-  
-  left      = bytes;
-  bsumread  = 0;
-  dataptr   = (char*) data;
+  size_t    btoread, bread, bsumread=0, left=bytes;
+  char       *dataptr = (char*) data;
+  ssize_t   rc;
 
   while (left > 0)  {
     btoread    = left;
-    bread      = read(fd, dataptr, btoread);
-    if(bread<0) {
+    errno      = 0;
+    rc         = read(fd, dataptr, btoread);
+    *err       = errno;
+    bread      = (size_t)rc;
+    if(rc<0) {
       if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
-	if(block==LDCS_READ_NO_BLOCK) return(0);
-	else continue;
-      } else { 
-         debug_printf3("read from socket: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+	    debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
+	    if(block==LDCS_READ_NO_BLOCK){
+            return(0);
+        }
+	    else{
+            continue;
+        }
+      } else {
+         debug_printf3("read from socket: errno=%d (%s)\n",errno,strerror(errno));
       }
     } else {
-      debug_printf3("read from socket: %ld bytes ...\n",bread);
+      debug_printf3("read from socket: %zu bytes ...\n",bread);
     }
 
     if(bread>0) {
@@ -247,7 +252,7 @@ int ldcs_send_msg_socket(int fd, ldcs_message_t * msg) {
   connfd=ldcs_socket_fdlist[fd].fd;
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 
@@ -266,7 +271,8 @@ int ldcs_send_msg_socket(int fd, ldcs_message_t * msg) {
 ldcs_message_t * ldcs_recv_msg_socket(int fd,  ldcs_read_block_t block) {
   ldcs_message_t *msg;
   char help[41];
-  int n, connfd;
+  size_t n;
+  int connfd, err;
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   connfd=ldcs_socket_fdlist[fd].fd;
 
@@ -274,20 +280,20 @@ ldcs_message_t * ldcs_recv_msg_socket(int fd,  ldcs_read_block_t block) {
   if (!msg)  _error("could not allocate memory for message");
   
 
-  n = _ldcs_read_socket(connfd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_socket(connfd,&msg->header,sizeof(msg->header), block, &err);
+  if (err) _error("ERROR reading header from socket");
   if (n == 0) {
     free(msg);
     return(NULL);
   }
-  if (n < 0) _error("ERROR reading header from socket");
 
   if(msg->header.len>0) {
 
     msg->data = (char *) malloc(msg->header.len);
     if (!msg)  _error("could not allocate memory for message data");
     
-    n = _ldcs_read_socket(connfd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n < 0) _error("ERROR reading message data from socket");
+    n = _ldcs_read_socket(connfd,msg->data,msg->header.len, LDCS_READ_BLOCK, &err);
+    if (err) _error("ERROR reading message data from socket");
     if (n != msg->header.len) _error("received different number of bytes for message data");
 
   } else {
@@ -295,7 +301,7 @@ ldcs_message_t * ldcs_recv_msg_socket(int fd,  ldcs_read_block_t block) {
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf3("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
   
@@ -306,31 +312,32 @@ ldcs_message_t * ldcs_recv_msg_socket(int fd,  ldcs_read_block_t block) {
 int ldcs_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t block) {
   char help[41];
   int rc=0;
-  int n, connfd;
+  size_t n;
+  int connfd, err;
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   connfd=ldcs_socket_fdlist[fd].fd;
 
 
-  n = _ldcs_read_socket(connfd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_socket(connfd,&msg->header,sizeof(msg->header), block, &err);
+  if (err) _error("ERROR reading header from socket");
   if (n == 0) return(rc);
-  if (n < 0) _error("ERROR reading header from socket");
 
   if(msg->header.len>0) {
 
     msg->data = (char *) malloc(msg->header.len);
     if (!msg)  _error("could not allocate memory for message data");
     
-    n = _ldcs_read_socket(connfd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n == 0) return(rc);
-    if (n < 0) _error("ERROR reading message data from socket");
+    n = _ldcs_read_socket(connfd,msg->data,msg->header.len, LDCS_READ_BLOCK, &err);
+    if (err) _error("ERROR reading message data from socket");
     if (n != msg->header.len) _error("received different number of bytes for message data");
+    if (n == 0) return(rc);
 
   } else {
     msg->data = NULL;
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf3("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
   
@@ -344,5 +351,7 @@ int ldcs_get_aux_fd_socket()
 
 int ldcs_socket_id_to_nc_socket(int id, int fd, ldcs_process_data_t *process_data)
 {
+   fd=fd;
+   process_data=process_data;
    return id;
 }

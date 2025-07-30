@@ -37,11 +37,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 static int pagesize;
 
-static int fetchPhdrs(ElfW(Addr) *aout_base, ElfW(Phdr) **phdrs, unsigned int *phdrs_size)
+static int fetchPhdrs(ElfW(Addr) *aout_base, ElfW(Phdr) **phdrs, size_t *phdrs_size)
 {
    pid_t pid;
    char auxvpath[64];
-   int fd = 0, result, i;
+   int fd = 0, result;
+   size_t i;
    ElfW(auxv_t) auxv;
    ElfW(Phdr) *phdr;
    ElfW(Addr) phdr_offset = 0;
@@ -104,7 +105,7 @@ static int fetchPhdrs(ElfW(Addr) *aout_base, ElfW(Phdr) **phdrs, unsigned int *p
 
    *aout_base = (ElfW(Addr)) (((unsigned long) *phdrs) - phdr_offset);
 
-   debug_printf("Remapping a.out.  %u program headers at %p.  Program base at %lx\n",
+   debug_printf("Remapping a.out.  %zu program headers at %p.  Program base at %lx\n",
                 *phdrs_size, *phdrs, (unsigned long) *aout_base);
 
    return 0;
@@ -169,7 +170,7 @@ void remap_executable(int ldcsid)
 {
    ElfW(Addr) aout_base;
    ElfW(Phdr) *phdrs, *p;
-   unsigned int phdrs_size, i;
+   size_t phdrs_size, i;
    int result;
    int exe_fd;
 

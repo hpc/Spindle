@@ -45,41 +45,49 @@ void init_queue(int num_procs, void *session)
 
 int test_pipe_lock(void *session)
 {
+   session=session;
    return 1;
 }
 
 int release_pipe_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 int take_queue_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 int release_queue_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 int take_write_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 int release_write_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 int take_pipe_lock(void *session)
 {
+   session=session;
    return 0;
 }
 
 void get_message(int for_proc, void **msg_data, size_t *msg_size, size_t *bytes_read, void *session)
 {
+   session=session;
    message_t *msg = PROC_MESSAGES[for_proc];
    assert(msg);
 
@@ -90,6 +98,7 @@ void get_message(int for_proc, void **msg_data, size_t *msg_size, size_t *bytes_
 
 int has_message(int for_proc, void *session)
 {
+   session=session;
    return PROC_MESSAGES[for_proc] != NULL;
 }
 
@@ -124,6 +133,7 @@ int enqueue_message(int for_proc, void *msg_data, size_t msg_size, void *header_
 
 int get_message_space(size_t msg_size, unsigned char **msg_space, void **header_space, void *session)
 {
+   session=session;
    *msg_space = (unsigned char *) malloc(msg_size);
    *header_space = malloc(sizeof(message_t));
    return 0;

@@ -29,6 +29,7 @@ extern void restore_pathpatch();
 
 unsigned int spindle_la_version(unsigned int version)
 {
+   version=version;
    patchDTV_init();
    return 1;
 }
@@ -51,6 +52,8 @@ void spindle_la_activity (uintptr_t *cookie, unsigned int flag)
 
 unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
+   lmid=lmid;
+   cookie=cookie;
    char buffer[4096];
    char *exe_name, *exe_name2;
 
@@ -73,5 +76,6 @@ unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *co
 
 unsigned int spindle_la_objclose(uintptr_t *cookie)
 {
+   cookie=cookie;
    return 0;
 }

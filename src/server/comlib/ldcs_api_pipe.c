@@ -85,7 +85,7 @@ void free_fd_pipe (int fd) {
 
 int ldcs_get_fd_pipe (int fd) {
   int realfd=-1;
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
   if(fdlist_pipe[fd].inuse) {
     if(fdlist_pipe[fd].type==LDCS_PIPE_FD_TYPE_SERVER) {
       realfd=ldcs_notify_get_fd(fdlist_pipe[fd].notify_fd);
@@ -101,6 +101,7 @@ int ldcs_get_fd_pipe (int fd) {
 extern int spindle_mkdir(char *orig_path);
 
 int ldcs_create_server_pipe(char* location, number_t number) {
+  number=number;
   int fd;
 
   fd=get_new_fd_pipe();
@@ -112,7 +113,7 @@ int ldcs_create_server_pipe(char* location, number_t number) {
 
   if (-1 == spindle_mkdir(staging_dir)) {
      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
-     _error("mkdir failed");
+     err_printf("mkdir failed");
   }
 
   char readypath[MAX_PATH_LEN];
@@ -138,16 +139,18 @@ int ldcs_create_server_pipe(char* location, number_t number) {
 
 int ldcs_open_server_connection_pipe(int fd) {
   /*  */
+  fd=fd;
   return(-1);
 }
 
 int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
+  nc=nc;
   int  fifoid, inout, connfd;
   char fifo[MAX_PATH_LEN];
   char *fifo_file;
   int  pid;
   
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
   
 
   /* wait until a <pid>-1 fifo is created */
@@ -175,13 +178,13 @@ int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
   fdlist_pipe[connfd].in_fn = strdup(fifo);
 
   debug_printf3("before open fifo '%s'\n",fdlist_pipe[connfd].out_fn);
-  if (-1 == (fifoid = open(fdlist_pipe[connfd].out_fn, O_WRONLY))) _error("open fifo failed");
+  if (-1 == (fifoid = open(fdlist_pipe[connfd].out_fn, O_WRONLY))) err_printf("open fifo failed");
   debug_printf3("after open fifo (out): -> fifoid=%d\n",fifoid);
   fdlist_pipe[connfd].out_fd=fifoid;
 
   debug_printf3("before open fifo '%s'\n",fdlist_pipe[connfd].in_fn);
-  if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY|O_NONBLOCK)))  _error("open fifo failed");
-  /* if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY)))  _error("open fifo failed"); */
+  if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY|O_NONBLOCK)))  err_printf("open fifo failed");
+  /* if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY)))  err_printf("open fifo failed"); */
   debug_printf3("after open fifo (in) : -> fifoid=%d\n",fifoid);
   fdlist_pipe[connfd].in_fd=fifoid;
 
@@ -205,7 +208,7 @@ int ldcs_close_server_connection_pipe(int fd) {
   int result;
   struct stat st;
 
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
   
   debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist_pipe[fd].in_fd,fd);
   close(fdlist_pipe[fd].in_fd);
@@ -253,7 +256,7 @@ int ldcs_destroy_server_pipe(int fd) {
   int rc=0;
   char path[MAX_PATH_LEN];
 
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
   
   ldcs_notify_destroy(fdlist_pipe[fd].notify_fd);
 
@@ -270,21 +273,22 @@ int ldcs_destroy_server_pipe(int fd) {
 /* ************************************************************** */
 int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg) {
 
-  int n;
+  size_t n;
+  int err;
 
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
   
-  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,msg->data );  
 
-  n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd,&msg->header,sizeof(msg->header));
-  if (n < 0) _error("ERROR writing header to pipe");
+  n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd, &msg->header, sizeof(msg->header), &err);
+  if (err) err_printf("ERROR writing header to pipe");
 
   if(msg->header.len>0) {
-    n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd,(void *) msg->data,msg->header.len);
-    if (n < 0) _error("ERROR writing data to pipe");
-    if (n != msg->header.len) _error("sent different number of bytes for message data");
+    n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd,(void *) msg->data,msg->header.len, &err);
+    if (err) err_printf("ERROR writing data to pipe");
+    if (n != msg->header.len) err_printf("sent different number of bytes for message data");
   }
     
   return(0);
@@ -292,34 +296,35 @@ int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg) {
 
 ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
   ldcs_message_t *msg;
-  int n;
+  size_t n;
+  int err;
 
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
 
   msg = (ldcs_message_t *) malloc(sizeof(ldcs_message_t));
-  if (!msg)  _error("could not allocate memory for message");
+  if (!msg)  err_printf("could not allocate memory for message");
 
-  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block, &err);
+  if (err) err_printf("ERROR reading header from connection");
   if (n == 0) {
     free(msg);
     return(NULL);
   }
-  if (n < 0) _error("ERROR reading header from connection");
 
   if(msg->header.len>0) {
 
     msg->data = (char *) malloc(msg->header.len);
-    if (!msg)  _error("could not allocate memory for message data");
+    if (!msg)  err_printf("could not allocate memory for message data");
 
-    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n < 0) _error("ERROR reading message data from socket");
-    if (n != msg->header.len) _error("received different number of bytes for message data");
+    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK, &err);
+    if (err) err_printf("ERROR reading message data from socket");
+    if (n != msg->header.len) err_printf("received different number of bytes for message data");
 
   } else {
     msg->data = NULL;
   }
 
-  debug_printf3("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len, msg->data );
 
@@ -327,13 +332,15 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
 }
 
 int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
-  int n;
+  size_t n;
+  int err;
   int rc=0;
   msg->header.type=LDCS_MSG_UNKNOWN;
   msg->header.len=0;
-  if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
+  if ((fd<0) || (fd>fdlist_pipe_size) )  err_printf("wrong fd");
 
-  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block, &err);
+  if (err) err_printf("ERROR reading header from connection");
   if (n == 0) {
      /* Disconnect.  Return an artificial client end message */
      debug_printf2("Client disconnected.  Returning END message\n");
@@ -342,22 +349,19 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
      msg->data = NULL;
      return(rc);
   }
-  if (n < 0) _error("ERROR reading header from connection");
 
   if(msg->header.len>0) {
-    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
-    if (n == 0) 
-       return(rc);
-    if (n < 0) {
-       int error = errno;
-       err_printf("Error during read of pipe: %s (%d)\n", strerror(error), error);
+    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK, &err);
+    if (err) {
+       err_printf("Error during read of pipe: %s (%d)\n", strerror(err), err);
        return -1;
     }
+    if (n == 0)
+       return(rc);
     if (n != msg->header.len) {
-       int error = errno;
        err_printf("Partial read on pipe.  Got %u / %u: %s (%d)\n",
                   (unsigned) n, (unsigned) msg->header.len,
-                  strerror(error), error);
+                  strerror(err), err);
        return -1;
     }
 
@@ -365,28 +369,28 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
     *msg->data = '\0';
   }
 
-  debug_printf3("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len, msg->data );
 
   return(rc);
 }
 
-int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
+size_t _ldcs_read_pipe(int fd, void *data, size_t bytes, ldcs_read_block_t block, int *err ) {
 
-  int         left,bsumread;
-  ssize_t     btoread, bread;
-  char       *dataptr;
+  ssize_t    rc;
+  size_t     btoread, bread,left=bytes,bsumread=0;
+  char       *dataptr= (char*) data;
   int print_count = 512;
-  left      = bytes;
-  bsumread  = 0;
-  dataptr   = (char*) data;
 
   while (left > 0)  {
     btoread    = left;
     debug_printf3("before read from fifo %d, bytes_to_read = %ld\n", fd, btoread);
-    bread      = read(fd, dataptr, btoread);
-    if(bread<0) {
+    errno=0;
+    rc = read(fd, dataptr, btoread);
+    *err = errno;
+    bread=(size_t)rc;
+    if(rc<0) {
        if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
           if (print_count-- > 0)
              debug_printf3("read from fifo: got EAGAIN or EWOULDBLOCK\n");
@@ -394,11 +398,11 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
              return 0;
           else
              continue;
-       } else { 
-          debug_printf3("read from fifo: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+       } else {
+          debug_printf3("read from fifo: %zu bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
        }
     } else {
-       debug_printf3("read from fifo: %ld bytes ...\n",bread);
+       debug_printf3("read from fifo: %zu bytes ...\n",bread);
     }
     if(bread>0) {
       left      -= bread;
@@ -414,9 +418,9 @@ int _ldcs_read_pipe(int fd, void *data, int bytes, ldcs_read_block_t block ) {
 
 
 
-int _ldcs_write_pipe(int fd, const void *data, int bytes ) {
-  int         left,bsumwrote;
-  ssize_t     bwrite, bwrote;
+size_t _ldcs_write_pipe(int fd, const void *data, size_t bytes, int *err ) {
+  ssize_t    rc;
+  size_t     bwrite, bwrote, left, bsumwrote;
   char       *dataptr;
   
   left      = bytes;
@@ -425,7 +429,15 @@ int _ldcs_write_pipe(int fd, const void *data, int bytes ) {
 
   while (left > 0) {
     bwrite     = left;
-    bwrote     = write(fd, dataptr, bwrite);
+    errno      = 0;
+    rc         = write(fd, dataptr, bwrite);
+    *err       = errno;
+    if( -1 == rc ){
+        err_printf("Write to pipe %d failed, errno=%d(%s)\n",
+                fd, *err, strerror(*err) );
+        break;
+    }
+    bwrote     = (size_t)rc;
     left      -= bwrote;
     dataptr   += bwrote;
     bsumwrote += bwrote;
@@ -440,5 +452,7 @@ int ldcs_get_aux_fd_pipe()
 
 int ldcs_socket_id_to_nc_pipe(int id, int fd, ldcs_process_data_t *process_data)
 {
+   fd=fd;
+   process_data=process_data;
    return id;
 }

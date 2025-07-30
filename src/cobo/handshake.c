@@ -106,7 +106,7 @@ static char *last_error_message = NULL;
 static char *last_security_message = NULL;
 static unsigned char *saved_key;
 static char *saved_key_filepath;
-static unsigned int saved_key_len;
+static size_t saved_key_len;
 static connection_info_t *saved_conninfo;
 static int timeout_seconds = 0;
 
@@ -122,7 +122,7 @@ static int none_encrypt_packet(handshake_packet_t *packet,
                                unsigned char **packet_buffer, size_t *packet_buffer_size);
 static int munge_encrypt_packet(handshake_packet_t *packet, 
                                 unsigned char **packet_buffer, size_t *packet_buffer_size);
-static int filekey_encrypt_packet(char *key_filepath, int key_length_bytes,
+static int filekey_encrypt_packet(char *key_filepath, size_t key_length_bytes,
                                   handshake_packet_t *packet, 
                                   unsigned char **packet_buffer, size_t *packet_buffer_size);
 static int key_encrypt_packet(unsigned char *key, int key_length_bytes,
@@ -147,9 +147,9 @@ static int handshake_wrapper(int sockfd, handshake_protocol_t *hdata, uint64_t s
                              int is_server);
 static int handshake_main(int sockfd, handshake_protocol_t *hdata, uint64_t session_id,
                           int is_server);
-static int reliable_write(int fd, const void *buf, size_t size);
-static int reliable_read(int fd, void *buf, size_t size);
-static int read_key(char *key_filepath, int key_length_bytes);
+static size_t reliable_write(int fd, const void *buf, size_t size, int *err);
+static size_t reliable_read(int fd, void *buf, size_t size, int *err);
+static int read_key(char *key_filepath, size_t key_length_bytes);
 static int share_result(int fd, int result);
 static int get_client_server_addrs(int sockfd, int i_am_server, connection_info_t *conninfo);
 static int send_packet(int sockfd, unsigned char *packet, unsigned int packet_size);
@@ -444,14 +444,14 @@ static int encrypt_packet(handshake_protocol_t *hdata, handshake_packet_t *packe
          debug_printf("Server encrypting packet with munge\n");
          return munge_encrypt_packet(packet, packet_buffer, packet_buffer_size);
       case hs_key_in_file:
-         debug_printf("Server encrypting packet with key of size %d from file %s\n",
+         debug_printf("Server encrypting packet with key of size %zu from file %s\n",
                       hdata->data.key_in_file.key_length_bytes,
                       hdata->data.key_in_file.key_filepath);
          return filekey_encrypt_packet(hdata->data.key_in_file.key_filepath,
                                        hdata->data.key_in_file.key_length_bytes,
                                        packet, packet_buffer, packet_buffer_size);
       case hs_explicit_key:
-         debug_printf("Server encrypting packet with provided key of size %d\n",
+         debug_printf("Server encrypting packet with provided key of size %zu\n",
                       hdata->data.explicit_key.key_length_bytes);
          return key_encrypt_packet(hdata->data.explicit_key.key,
                                    hdata->data.explicit_key.key_length_bytes,
@@ -470,6 +470,9 @@ static int none_encrypt_packet(handshake_packet_t *packet,
    memcpy(*packet_buffer, packet, *packet_buffer_size);
    return 0;
 #else
+   packet=packet;
+   packet_buffer=packet_buffer;
+   packet_buffer_size=packet_buffer_size;
    error_printf("Null encryption must be explicitly enabled\n");
    return HSHAKE_INTERNAL_ERROR;
 #endif
@@ -543,9 +546,10 @@ static int munge_encrypt_packet(handshake_packet_t *packet,
 #endif
 }
 
-static int read_key(char *key_filepath, int key_length_bytes)
+static int read_key(char *key_filepath, size_t key_length_bytes)
 {
-   int result, fd = -1;
+   int err, fd = -1, rc;
+   size_t result;
    struct stat st;
    int return_result;
    uid_t uid = getuid();
@@ -573,8 +577,8 @@ static int read_key(char *key_filepath, int key_length_bytes)
       goto done;
    }
 
-   result = fstat(fd, &st);
-   if (result == -1) {
+   rc = fstat(fd, &st);
+   if (rc == -1) {
       security_error_printf("Unable to access keyfile %s: %s\n", key_filepath, strerror(errno));
       return_result = HSHAKE_ABORT;
       goto done;
@@ -601,7 +605,7 @@ static int read_key(char *key_filepath, int key_length_bytes)
       goto done;
    }
    
-   if (st.st_size != key_length_bytes) {
+   if (st.st_size != (off_t)key_length_bytes) {
       security_error_printf("Size on key file %s is %lu and does not match expected size of %lu\n",
                             key_filepath, (unsigned long) st.st_size, (unsigned long) key_length_bytes);
       return_result = HSHAKE_ABORT;
@@ -610,8 +614,8 @@ static int read_key(char *key_filepath, int key_length_bytes)
 
    buffer = malloc(key_length_bytes);
    assert(buffer);
-   result = reliable_read(fd, buffer, key_length_bytes);
-   if (result != key_length_bytes) {
+   result = reliable_read(fd, buffer, key_length_bytes, &err);
+   if (err || result != key_length_bytes) {
       security_error_printf("Unable to read from key file %s: %s\n", key_filepath, strerror(errno));
       return_result = HSHAKE_ABORT;
       goto done;
@@ -631,7 +635,7 @@ static int read_key(char *key_filepath, int key_length_bytes)
    return return_result;
 }
 
-static int filekey_encrypt_packet(char *key_filepath, int key_length_bytes,
+static int filekey_encrypt_packet(char *key_filepath, size_t key_length_bytes,
                                   handshake_packet_t *packet, 
                                   unsigned char **packet_buffer, size_t *packet_buffer_size)
 {
@@ -732,15 +736,21 @@ static int key_encrypt_packet(unsigned char *key, int key_length_bytes,
 
    return 0;   
 #else
+   key=key;
+   key_length_bytes=key_length_bytes;
+   packet=packet;
+   packet_buffer=packet_buffer;
+   packet_buffer_size=packet_buffer_size;
    error_printf("Handshake not built against gcrypt\n");
    return HSHAKE_INTERNAL_ERROR;
 #endif   
 }
 
-static int reliable_write(int fd, const void *buf, size_t size)
+static size_t reliable_write(int fd, const void *buf, size_t size, int *err)
 {
    int result;
    size_t bytes_written = 0;
+   *err = HSHAKE_SUCCESS;
 
    while (bytes_written < size) {
       result = write(fd, ((unsigned char *) buf) + bytes_written, size - bytes_written);
@@ -748,7 +758,8 @@ static int reliable_write(int fd, const void *buf, size_t size)
          continue;
       else if (result == -1) {
          error_printf("Error writing to socket: %s\n", strerror(errno));
-         return -1;
+         *err = HSHAKE_INTERNAL_ERROR;
+         return 0;
       }
       else
          bytes_written += result;
@@ -756,10 +767,11 @@ static int reliable_write(int fd, const void *buf, size_t size)
    return bytes_written;
 }
 
-static int reliable_read(int fd, void *buf, size_t size)
+static size_t reliable_read(int fd, void *buf, size_t size, int *err)
 {
    int result;
    size_t bytes_read = 0;
+   *err = HSHAKE_SUCCESS;
 
    while (bytes_read < size) {
       if (timeout_seconds) {
@@ -773,15 +785,18 @@ static int reliable_read(int fd, void *buf, size_t size)
          result = select(fd+1, &rfd_set, NULL, NULL, &timeout);
          if (result == -1) {
             error_printf("Error select'ing on socket fd: %s\n", strerror(errno));
-            return HSHAKE_INTERNAL_ERROR;
+            *err = HSHAKE_INTERNAL_ERROR;
+            return 0;
          }
          else if (result == 0) {
             error_printf("Timed out waiting for read from peer\n");
-            return HSHAKE_INTERNAL_ERROR;
+            *err = HSHAKE_INTERNAL_ERROR;
+            return 0;
          }
          else if (result != 1) {
             error_printf("Unexpected return code of %d from select\n", result);
-            return HSHAKE_INTERNAL_ERROR;            
+            *err = HSHAKE_INTERNAL_ERROR;
+            return 0;            
          }        
       }
       result = read(fd, ((unsigned char *) buf) + bytes_read, size - bytes_read);
@@ -840,6 +855,9 @@ static int none_decrypt_packet(handshake_packet_t *expected_packet,
    memcpy(&recvd_packet, recvd_buffer, recvd_buffer_size);
    return compare_packets(expected_packet, &recvd_packet);
 #else
+   expected_packet=expected_packet;
+   recvd_buffer=recvd_buffer;
+   recvd_buffer_size=recvd_buffer_size;
    error_printf("Null encryption must be explicitly enabled\n");
    return HSHAKE_INTERNAL_ERROR;
 #endif
@@ -849,6 +867,7 @@ static int munge_decrypt_packet(handshake_packet_t *expected_packet,
                                 unsigned char *recvd_buffer, size_t recvd_buffer_size)
 {
 #if defined(MUNGE)
+   recvd_buffer_size=recvd_buffer_size;
    munge_err_t result;
    munge_ctx_t ctx = NULL;
    void *payload = NULL;
@@ -936,6 +955,9 @@ static int munge_decrypt_packet(handshake_packet_t *expected_packet,
    return return_result;
    
 #else
+   expected_packet=expected_packet;
+   recvd_buffer=recvd_buffer;
+   recvd_buffer_size=recvd_buffer_size;
    error_printf("Handshake not compiled with munge support\n");
    return HSHAKE_INTERNAL_ERROR;
 #endif
@@ -993,6 +1015,11 @@ static int key_decrypt_packet(unsigned char *key, unsigned int key_len,
    
    return return_result;
 #else
+   key=key;
+   key_len=key_len;
+   expected_packet=expected_packet;
+   recvd_buffer=recvd_buffer;
+   recvd_buffer_size=recvd_buffer_size;
    error_printf("handshake was not compiled with gcrypt support");
    return HSHAKE_INTERNAL_ERROR;
 #endif
@@ -1063,7 +1090,8 @@ static int compare_packets(handshake_packet_t *expected_packet,
 static int share_result(int fd, int handshake_result)
 {
    int32_t result_to_send, peer_result;
-   int result;
+   size_t result;
+   int err=0;
 
    switch (handshake_result) {
       case HSHAKE_SUCCESS:
@@ -1081,17 +1109,17 @@ static int share_result(int fd, int handshake_result)
     
    debug_printf("Sharing handshake result %d with peer\n", result_to_send);
       
-   result = reliable_write(fd, &result_to_send, sizeof(result_to_send));
-   if (result != sizeof(result_to_send)) {
+   result = reliable_write(fd, &result_to_send, sizeof(result_to_send), &err);
+   if ( err || result != sizeof(result_to_send)) {
       error_printf("Failed to send result of connection\n");
       return HSHAKE_INTERNAL_ERROR;
    }
    
    debug_printf("Reading peer result\n");
-   result = reliable_read(fd, &peer_result, sizeof(peer_result));
-   if (result != sizeof(peer_result)) {
+   result = reliable_read(fd, &peer_result, sizeof(peer_result), &err);
+   if (err || result != sizeof(peer_result)) {
       debug_printf("Failed to read handshake result from peer\n");
-      return result;
+      return err;
    }
    debug_printf("Peer reported result of %d\n", peer_result);
 
@@ -1139,20 +1167,21 @@ static int get_client_server_addrs(int sockfd, int i_am_server,
 static int exchange_sig(int sockfd) 
 {
    uint32_t sig = SIG;
-   int result;
+   size_t result;
+   int err;
 
    debug_printf("Sending sig %x on network\n", sig);
-   result = reliable_write(sockfd, &sig, sizeof(sig));
-   if (result != sizeof(sig)) {
+   result = reliable_write(sockfd, &sig, sizeof(sig), &err);
+   if (err || result != sizeof(sig)) {
       debug_printf("Problem writing sig on network\n");
       return HSHAKE_DROP_CONNECTION;
    }
 
    debug_printf("Receiving sig from network\n");
-   result = reliable_read(sockfd, &sig, sizeof(sig));
-   if (result != sizeof(sig)) {
+   result = reliable_read(sockfd, &sig, sizeof(sig), &err);
+   if (err || result != sizeof(sig)) {
       debug_printf("Problem reading sig from network\n");
-      return result;
+      return err;
    }
    if (sig != SIG) {
       error_printf("Signature %x doesn't match expected value %x\n", sig, SIG);
@@ -1165,18 +1194,19 @@ static int exchange_sig(int sockfd)
 static int send_packet(int sockfd, unsigned char *packet, unsigned int packet_size)
 {
    uint32_t size;
-   int result;
+   size_t result;
+   int err;
 
    debug_printf("Sending packet size on network\n");
    size = packet_size;
-   result = reliable_write(sockfd, &size, sizeof(size));
-   if (result != sizeof(size)) {
+   result = reliable_write(sockfd, &size, sizeof(size), &err);
+   if ( err || result != sizeof(size)) {
       debug_printf("Problem writing packet size on network\n");
       return HSHAKE_INTERNAL_ERROR;
    }
 
    debug_printf("Sending packet on network\n");
-   result = reliable_write(sockfd, packet, packet_size);
+   result = reliable_write(sockfd, packet, packet_size, &err);
    if (result != packet_size) {
       debug_printf("Problem writing packet on network\n");
       return HSHAKE_INTERNAL_ERROR;
@@ -1188,13 +1218,14 @@ static int send_packet(int sockfd, unsigned char *packet, unsigned int packet_si
 static int recv_packet(int sockfd, unsigned char **packet, size_t *packet_size)
 {
    uint32_t size;
-   int result;
+   size_t result;
+   int err;
 
    debug_printf("Receiving packet size from network\n");
-   result = reliable_read(sockfd, &size, sizeof(size));
-   if (result != sizeof(size)) {
+   result = reliable_read(sockfd, &size, sizeof(size), &err);
+   if (err || result != sizeof(size)) {
       debug_printf("Error reading packet size from network\n");
-      return result;
+      return err;
    }
    debug_printf("Received packet size %u\n", (unsigned int) size);
    if (size > 0x100000) {
@@ -1203,10 +1234,10 @@ static int recv_packet(int sockfd, unsigned char **packet, size_t *packet_size)
    }
    *packet = malloc(size);
    assert(*packet);
-   result = reliable_read(sockfd, *packet, size);
-   if (result != size) {
+   result = reliable_read(sockfd, *packet, size, &err);
+   if (err || result != size) {
       debug_printf("Error reading packet from network\n");
-      return result;
+      return err;
    }
    *packet_size = size;
    debug_printf("Received packet from network\n");   

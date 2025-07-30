@@ -10,6 +10,7 @@
 
 int main(int argc, char *argv[])
 {
+   argc=argc;
    ElfW(Dyn) *dyn;
    ElfW(Addr) *pltgot = NULL;
    char path[4097];

@@ -27,6 +27,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 unsigned int spindle_la_version(unsigned int version)
 {
+   version=version;
    int result;
    int binding_offset = 0;
 
@@ -55,12 +56,16 @@ static void bind_to_libc()
 
 void spindle_la_activity(uintptr_t *cookie, unsigned int flag)
 {
+   cookie=cookie;
+   flag=flag;
    bind_to_libc();
    update_plt_bindings();
 }
 
 unsigned int spindle_la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie)
 {
+   lmid=lmid;
+   cookie=cookie;
    bind_to_libc();
    add_library_to_plt_update_list(map);
    return 0;

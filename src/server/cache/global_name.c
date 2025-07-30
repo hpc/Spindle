@@ -63,8 +63,8 @@ void grow_global_name_list()
 static int get_global_file_index(char* file)
 {
   char buf[MAX_PATH_LEN+1];
-  int len = strlen(file);
-  int cnt;
+  size_t len = strlen(file);
+  size_t cnt;
   int rval;
   int val;
 

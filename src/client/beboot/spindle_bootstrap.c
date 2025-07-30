@@ -282,6 +282,7 @@ static void get_clientlib()
 
 void test_log(const char *name)
 {
+    name=name;
 }
 
 static int handle_exec_failure(char **cmdline, int errno_val)

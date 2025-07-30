@@ -41,6 +41,10 @@ Elf64_Addr la_x86_64_gnu_pltenter(Elf64_Sym *sym,
                                   const char *symname,
                                   long int *framesizep)
 {
+   ndx=ndx;
+   defcook=defcook;
+   flags=flags;
+   framesizep=framesizep;
    struct link_map *map = get_linkmap_from_cookie(refcook);
    unsigned long reloc_index = *((unsigned long *) (regs->lr_rsp-8));
    Elf64_Addr target = client_call_binding(symname, sym->st_value);
@@ -53,6 +57,9 @@ uintptr_t la_symbind64(Elf64_Sym *sym, unsigned int ndx,
 {
 //   struct link_map *rmap = get_linkmap_from_cookie(refcook);
 //   struct link_map *dmap = get_linkmap_from_cookie(defcook);
+   ndx=ndx;
+   refcook=refcook;
+   defcook=defcook;
    updateDataBindingQueue(0);
    Elf64_Addr target = client_call_binding(symname, sym->st_value);
    *flags = 0;

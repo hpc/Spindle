@@ -474,7 +474,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
     if (!he) {
        /* gethostbyname doesn't know how to resolve hostname, trying inet_addr */ 
        saddr.s_addr = inet_addr(hostname);
-       if (saddr.s_addr == -1) {
+       if (saddr.s_addr == (in_addr_t)-1) {
            err_printf("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d)\n",
                 hostname, hstrerror(h_errno), h_errno);
            return s;
@@ -1345,6 +1345,9 @@ int cobo_allgather(void* sendbuf, int sendcount, void* recvbuf)
  */
 int cobo_alltoall(void* sendbuf, int sendcount, void* recvbuf)
 {
+    sendbuf=sendbuf;
+    sendcount=sendcount;
+    recvbuf=recvbuf;
     struct timeval start, end;
     cobo_gettimeofday(&start);
     debug_printf3("Starting cobo_alltoall()");

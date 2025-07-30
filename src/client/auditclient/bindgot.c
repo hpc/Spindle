@@ -131,6 +131,7 @@ Elf64_Addr doPermanentBinding_noidx(uintptr_t *refcook, uintptr_t *defcook,
                                     Elf64_Addr target, const char *symname,
                                     void *stack_begin, void *stack_end)
 {
+   defcook=defcook;
    int plt_reloc_idx;
    Elf64_Rela *rels = NULL, *rel;
    Elf64_Xword relsize = 0;
@@ -247,6 +248,7 @@ Elf64_Addr doPermanentBinding_idx(struct link_map *map,
                                   Elf64_Addr target,
                                   const char *symname)
 {
+   symname=symname;
    Elf64_Dyn *dynamic_section = map->l_ld;
    Elf64_Addr *got_entry;
    Elf64_Rela *rel = NULL;

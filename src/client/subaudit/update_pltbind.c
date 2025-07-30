@@ -178,7 +178,8 @@ void add_library_to_plt_update_list(struct link_map *lmap)
 
 void remove_library_from_plt_update_list(struct link_map *lmap)
 {
-   int i, found = -1;
+   unsigned int i;
+   int found = -1;
    if (!update_list_cur)
       return;
 

@@ -118,7 +118,7 @@ ssize_t readlink_wrapper(const char *path, char *buf, size_t bufsiz)
    if (len > bufsiz)
       len = bufsiz;
    memcpy(buf, resultpath, len);
-   debug_printf2("spindle readlink translated %s to %.*s with len %d\n", path, len, buf, len);
+   debug_printf2("spindle readlink translated %s to %.*s with len %zu\n", path, (int)len, buf, len);
    return len;
 }
 
@@ -149,6 +149,6 @@ ssize_t readlinkat_wrapper(int dirfd, const char *path, char *buf, size_t bufsiz
    if (len > bufsiz)
       len = bufsiz;
    memcpy(buf, newbuf, len);
-   debug_printf2("spindle readlink translated %s to %.*s with len %d\n", path, len, newbuf, len);
+   debug_printf2("spindle readlink translated %s to %.*s with len %zu\n", path, (int)len, newbuf, len);
    return (ssize_t) len;
 }

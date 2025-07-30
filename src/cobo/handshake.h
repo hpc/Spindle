@@ -52,11 +52,11 @@ typedef struct {
       } munge;
       struct {
          char *key_filepath;
-         int key_length_bytes;
+         size_t key_length_bytes;
       } key_in_file;
       struct {
          unsigned char *key;
-         int key_length_bytes;
+         size_t key_length_bytes;
       } explicit_key;
    } data;
 } handshake_protocol_t;

@@ -44,8 +44,8 @@ typedef struct biterd_session {
    int s2c_fd;
    char *c2s_path;
    char *s2c_path;
-   int num_clients;
-   int clients_accepted;
+   uint32_t num_clients;
+   uint32_t clients_accepted;
    void *proc_messages;
    msg_header_t polled_data;
    int has_polled_data;
@@ -55,7 +55,7 @@ typedef struct biterd_session {
 } biterd_session_t;
 
 static biterd_session_t sessions[BITER_MAX_SESSIONS];
-static int max_session = 0;
+static uint32_t max_session = 0;
 
 extern void init_queue(int num_procs, void *session);
 
@@ -117,7 +117,7 @@ int biterd_newsession(const char *tmpdir, int cn_id)
    char *c2s_path = NULL, *s2c_path = NULL;
    int result, c2s_fd = -1, s2c_fd = -1;
    int path_len = strlen(tmpdir) + 32;
-   int session_id, i, unique_number, num_clients;
+   uint32_t session_id, i, unique_number, num_clients;
 
    assert(sizeof(int) == sizeof(uint32_t)); //Fix FD_* macros if this fails on new platform
 
@@ -393,7 +393,7 @@ int biterd_has_data_avail(int session_id, fd_set *readset)
    int client_id;
    int fd = sessions[session_id].c2s_fd;
    int aux_fd = get_aux_fd();
-   int i, orig;
+   uint32_t i, orig;
 
    session = sessions + session_id;
 
@@ -422,8 +422,8 @@ int biterd_has_data_avail(int session_id, fd_set *readset)
 
 int biterd_get_session_proc_w_aux_data(int *session_result, int *proc_result)
 {
-   static int last_session = 0;
-   int cur_session, start_session, j;
+   static uint32_t last_session = 0;
+   uint32_t cur_session, start_session, j;
    biterd_session_t *session;
    cur_session = start_session = last_session;
 

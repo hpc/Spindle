@@ -67,6 +67,7 @@ int ldcs_create_server_biter(char* location, number_t num)
 
 int ldcs_open_server_connection_biter(int id)
 {
+   id=id;
    assert(0 && "Unused");
    return -1;
 }
@@ -167,7 +168,7 @@ int ldcs_send_msg_biter(int fd, ldcs_message_t *msg)
    
    if (spindle_debug_prints) {
       int rank = biterd_get_rank(session, proc);
-      debug_printf3("Sending message of size %d to rank %d (session = %d, proc = %d)\n",
+      debug_printf3("Sending message of size %zu to rank %d (session = %d, proc = %d)\n",
                     msg->header.len, rank, session, proc);
    }
    
@@ -183,7 +184,7 @@ int ldcs_send_msg_biter(int fd, ldcs_message_t *msg)
 
    result = biterd_write(session, proc, msg->data, msg->header.len);
    if (result == -1) {
-      err_printf("Error writing message of size %d to session %d, proc %d: %s\n",
+      err_printf("Error writing message of size %zu to session %d, proc %d: %s\n",
                  msg->header.len, session, proc, biterd_lasterror_str());
       return -1;
    }
@@ -246,6 +247,7 @@ int ldcs_socket_id_to_nc_biter(int id, int fd, ldcs_process_data_t *process_data
 
 int ldcs_recv_msg_static_biter(int connid, ldcs_message_t *msg, ldcs_read_block_t block)
 {
+   block=block;
    int session = CLIENT_ID_SESSION(connid);
    int proc = CLIENT_ID_PROC(connid);
    int result;
@@ -271,7 +273,7 @@ int ldcs_recv_msg_static_biter(int connid, ldcs_message_t *msg, ldcs_read_block_
       return -1;
    }
 
-   debug_printf3("Message to be read is of size %d (session = %d, proc = %d)\n",
+   debug_printf3("Message to be read is of size %zu (session = %d, proc = %d)\n",
                  msg->header.len, session, proc);
    
    if (msg->header.len == 0) {
@@ -281,7 +283,7 @@ int ldcs_recv_msg_static_biter(int connid, ldcs_message_t *msg, ldcs_read_block_
 
    result = biterd_read(session, proc, msg->data, msg->header.len);
    if (result == -1) {
-      err_printf("Error reading message of size %d from session %d, proc %d: %s\n",
+      err_printf("Error reading message of size %zu from session %d, proc %d: %s\n",
                  msg->header.len, session, proc, biterd_lasterror_str());
       return -1;
    }

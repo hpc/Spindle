@@ -68,6 +68,7 @@ int add_wgot_library(struct link_map *map)
    unsigned long rel_size = 0, relent_size = 0, relcount = 0, plt_gotsize = 0, start, end;
    unsigned long datarels_size = 0, largest_datarel_target = 0, smallest_datarel_target = 0;
    signed int i;
+   unsigned long j;
    struct got_range_t *tmprange;
    
 
@@ -118,9 +119,9 @@ int add_wgot_library(struct link_map *map)
    plt_gotsize = (relcount + EXTRA_GOT_ENTRIES + 1) * sizeof(void*);
 
    if (datarels) {
-      for (i = 0; i < datarels_size / relent_size; i++) {
-         unsigned long target = datarels[i].r_offset + map->l_addr;
-         if (ELF64_R_TYPE(datarels[i].r_info) != DATA_GOT_TYPE)
+      for (j = 0; j < datarels_size / relent_size; j++) {
+         unsigned long target = datarels[j].r_offset + map->l_addr;
+         if (ELF64_R_TYPE(datarels[j].r_info) != DATA_GOT_TYPE)
             continue;
          largest_datarel_target = MAX(target, largest_datarel_target);
          if (!smallest_datarel_target) smallest_datarel_target = target;

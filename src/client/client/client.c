@@ -90,6 +90,8 @@ static char *concatStrings(const char *str1, const char *str2)
 static int find_libs_iterator(struct dl_phdr_info *lib,
                               size_t size, void *data)
 {
+   size=size;
+   data=data;
    if (!libc_name && (strstr(lib->dlpi_name, "libc.") || strstr(lib->dlpi_name, "libc-"))) {
       libc_name = lib->dlpi_name;
       libc_phdrs = lib->dlpi_phdr;
