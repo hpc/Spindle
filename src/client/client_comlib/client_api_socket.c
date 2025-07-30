@@ -42,10 +42,10 @@ static int get_new_fd_socket()
    return 0;
 }
 
-static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
+static size_t _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t block) {
 
-  int         left,bsumread;
-  ssize_t      btoread, bread;
+  size_t     left,bsumread,btoread;
+  ssize_t    bread;
   char       *dataptr;
   
   left      = bytes;
@@ -57,14 +57,16 @@ static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t bl
     bread      = read(fd, dataptr, btoread);
     if(bread<0) {
       if( (errno==EAGAIN) || (errno==EWOULDBLOCK) ) {
-	debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
-	if(block==LDCS_READ_NO_BLOCK) return(0);
-	else continue;
+	    debug_printf3("read from socket: got EAGAIN or EWOULDBLOCK\n");
+	    if(block==LDCS_READ_NO_BLOCK)
+          return(0);
+	    else continue;
       } else { 
-         debug_printf3("read from socket: %ld bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+         debug_printf3("read from socket: %zd bytes ... errno=%d (%s)\n",bread,errno,strerror(errno));
+         return 0;
       }
     } else {
-      debug_printf3("read from socket: %ld bytes ...\n",bread);
+      debug_printf3("read from socket: %zd bytes ...\n",bread);
     }
 
     if(bread>0) {
@@ -73,7 +75,7 @@ static int _ldcs_read_socket(int fd, void *data, int bytes, ldcs_read_block_t bl
       bsumread  += bread;
     } else {
       if(bread==0) return(bsumread);
-      else         return(bread);
+      else         return( (size_t)bread );
     }
   }
   return (bsumread);
@@ -198,7 +200,7 @@ int client_send_msg_socket(int fd, ldcs_message_t * msg) {
   connfd=ldcs_socket_fdlist[fd].fd;
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf3("sending message of type: %s len=%d data=%s ...\n",
+  debug_printf3("sending message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
 
@@ -217,14 +219,14 @@ int client_send_msg_socket(int fd, ldcs_message_t * msg) {
 int client_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_t block) {
   char help[41];
   int rc=0;
-  int n, connfd;
+  int connfd;
+  size_t n;
   if ((fd<0) || (fd>MAX_FD) )  _error("wrong fd");
   connfd=ldcs_socket_fdlist[fd].fd;
 
 
   n = _ldcs_read_socket(connfd,&msg->header,sizeof(msg->header), block);
   if (n == 0) return(rc);
-  if (n < 0) _error("ERROR reading header from socket");
 
   if(msg->header.len>0) {
 
@@ -233,7 +235,6 @@ int client_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_
     
     n = _ldcs_read_socket(connfd,msg->data,msg->header.len, LDCS_READ_BLOCK);
     if (n == 0) return(rc);
-    if (n < 0) _error("ERROR reading message data from socket");
     if (n != msg->header.len) _error("received different number of bytes for message data");
 
   } else {
@@ -241,7 +242,7 @@ int client_recv_msg_static_socket(int fd, ldcs_message_t *msg,  ldcs_read_block_
   }
 
   bzero(help,41);if(msg->data) strncpy(help,msg->data,40);
-  debug_printf3("received message of type: %s len=%d data=%s ...\n",
+  debug_printf3("received message of type: %s len=%zu data=%s ...\n",
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,help );
   

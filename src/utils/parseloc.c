@@ -223,13 +223,13 @@ char **parse_colonsep_prefixes(char *colonsep_list, number_t number)
       prefixes[0] = NULL;
       return prefixes;
    }
-   int numprefixes = 1;
+   size_t numprefixes = 1;
    for (size_t i = 0; s[i] != '\0'; i++) {
       if (s[i] == ':') {
          numprefixes++;
       }
    }   
-   int num_strs = numprefixes + 1;
+   size_t num_strs = numprefixes + 1;
    
    prefixes = (char **) malloc(sizeof(char*) * num_strs);
    size_t i = 0, cur = 0;

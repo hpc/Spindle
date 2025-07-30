@@ -261,6 +261,7 @@ int rtcache_fxstat64(int vers, int fd, struct stat *buf)
 static int *ldso_errno;
 int ldso_xstat(int ver, const char *filename, struct stat *buf)
 {
+   ver=ver;
    int result;
    result = handle_stat(filename, buf, FROM_LDSO);
    if (result != 0) {
@@ -273,6 +274,7 @@ int ldso_xstat(int ver, const char *filename, struct stat *buf)
 
 int ldso_lxstat(int ver, const char *filename, struct stat *buf)
 {
+   ver=ver;
    int result;
    result = handle_stat(filename, buf, FROM_LDSO | IS_LSTAT);   
    if (result != 0) {

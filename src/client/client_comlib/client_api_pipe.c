@@ -197,6 +197,7 @@ int client_open_connection_pipe(char* location, number_t number)
    char ready[MAX_PATH_LEN];
    int find_r_fd = 0, find_w_fd = 0;
 
+   number=number;
    debug_printf("Client creating pipe for connection to server\n");
    fd = get_new_fd_pipe();
    if (fd < 0) 
@@ -320,7 +321,7 @@ int client_send_msg_pipe(int fd, ldcs_message_t *msg) {
 
    assert(fd >= 0 && fd < MAX_FD);
    
-   debug_printf3("sending message of size len=%d\n", msg->header.len);
+   debug_printf3("sending message of size len=%zu\n", msg->header.len);
    
    result = write_pipe(fdlist_pipe[fd].out_fd, &msg->header, sizeof(msg->header));
    if (result == -1)
@@ -360,7 +361,7 @@ static int client_recv_msg_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t b
       msg->data = (char *) spindle_malloc(msg->header.len);
    }
 
-   debug_printf3("Reading %d bytes for payload from pipe\n", msg->header.len);
+   debug_printf3("Reading %zu bytes for payload from pipe\n", msg->header.len);
    result = read_pipe(fdlist_pipe[fd].in_fd, msg->data, msg->header.len);
    return result;
 }

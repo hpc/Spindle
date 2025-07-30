@@ -34,6 +34,7 @@ extern unsigned int shm_cachesize;
 
 int client_open_connection_biter(char* location, number_t number)
 {
+   number=number;
    debug_printf3("Calling biterc_newsession(%s, %lu)\n", location, (unsigned long) shm_cachesize);
    session = biterc_newsession(location, shm_cachesize);
    if (session == -1) {
@@ -55,11 +56,13 @@ int client_close_connection_biter(int connid)
 
 int client_register_connection_biter(char *connection_str)
 {
+   connection_str = connection_str;
    return 0;
 }
 
 char *client_get_connection_string_biter(int fd)
 {
+   fd = fd;
    return NULL;
 }
 
@@ -72,7 +75,7 @@ int client_send_msg_biter(int connid, ldcs_message_t *msg)
       return -1;
    }
 
-   debug_printf3("sending message of size len=%d\n", msg->header.len);
+   debug_printf3("sending message of size len=%zu\n", msg->header.len);
 
    result = biterc_write(connid, &msg->header, sizeof(msg->header));
    if (result == -1) {
@@ -146,5 +149,6 @@ int client_recv_msg_dynamic_biter(int fd, ldcs_message_t *msg, ldcs_read_block_t
 
 int is_client_fd(int connid, int fd)
 {
+   connid = connid;
    return biterc_is_client_fd(session, fd);
 }

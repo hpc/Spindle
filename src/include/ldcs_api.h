@@ -112,7 +112,7 @@ typedef  enum {
 struct ldcs_message_header_struct
 {
   ldcs_message_ids_t type;
-  int len;
+  size_t len;
 };
 
 typedef struct ldcs_message_header_struct ldcs_message_header_t;

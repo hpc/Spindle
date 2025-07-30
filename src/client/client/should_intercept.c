@@ -76,7 +76,7 @@ static int is_python_path(const char *pathname)
    return 0;
 }
 
-static int is_python(const char *pathname, char *last_dot)
+static int is_python(const char * const last_dot)
 {
    if (last_dot &&
        (strcmp(last_dot, ".py") == 0 ||
@@ -86,7 +86,7 @@ static int is_python(const char *pathname, char *last_dot)
    return 0;
 }
 
-static int is_compiled_python(const char *pathname, char *last_dot)
+static int is_compiled_python(const char * const last_dot)
 {
    if (last_dot &&
        (strcmp(last_dot, ".pyc") == 0 ||
@@ -95,7 +95,7 @@ static int is_compiled_python(const char *pathname, char *last_dot)
    return 0;
 }
 
-static int is_dso(const char *pathname, char *last_slash, char *last_dot)
+static int is_dso(const char * const last_slash, const char * const last_dot)
 {
    if (last_dot &&
        strcmp(last_dot, ".so") == 0)
@@ -163,13 +163,13 @@ int open_filter(const char *fname, int flags)
    if (is_python_path(fname) && !open_for_dir(flags))
       return REDIRECT;
 
-   if (!open_for_write(flags) && is_dso(fname, last_slash, last_dot))
+   if (!open_for_write(flags) && is_dso(last_slash, last_dot))
       return REDIRECT;
 
-   if (open_for_excl(flags) && is_compiled_python(fname, last_dot))
+   if (open_for_excl(flags) && is_compiled_python(last_dot))
       return EXCL_OPEN;
 
-   if (!open_for_write(flags) && is_python(fname, last_dot))
+   if (!open_for_write(flags) && is_python(last_dot))
       return REDIRECT;
 
    return ORIG_CALL;
@@ -205,13 +205,13 @@ int fopen_filter(const char *fname, const char *flags)
    if (is_python_path(fname))
       return REDIRECT;
 
-   if (!open_for_write(flags) && is_dso(fname, last_slash, last_dot))
+   if (!open_for_write(flags) && is_dso(last_slash, last_dot))
       return REDIRECT;
 
-   if (open_for_excl(flags) && is_compiled_python(fname, last_dot))
+   if (open_for_excl(flags) && is_compiled_python(last_dot))
       return EXCL_OPEN;
 
-   if (!open_for_write(flags) && is_python(fname, last_dot))
+   if (!open_for_write(flags) && is_python(last_dot))
       return REDIRECT;
 
    return ORIG_CALL;
@@ -264,8 +264,8 @@ int stat_filter(const char *fname)
    last_dot = strrchr(fname, '.');
    last_slash = strrchr(fname, '/');
 
-   if (is_dso(fname, last_slash, last_dot) ||
-       is_python(fname, last_dot) || 
+   if (is_dso(last_slash, last_dot) ||
+       is_python(last_dot) || 
        is_lib_prefix(fname, last_slash))
       return REDIRECT;
    else

@@ -22,7 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 typedef struct msg_header_t {
    uint32_t msg_size;
-   uint32_t msg_target;
+   int32_t msg_target;
 } msg_header_t;
 
 extern int test_pipe_lock(void *session);

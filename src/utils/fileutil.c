@@ -26,9 +26,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 int read_n_bytes(char *localname, int fd, void *buffer, size_t size)
 {
-   int result, bytes_read, error;
+   int result, error;
+   size_t bytes_read;
    bytes_read = 0;
-   debug_printf3("Reading %ld bytes from %s\n", size, localname);
+   debug_printf3("Reading %zu bytes from %s\n", size, localname);
 
    while (bytes_read != size) {
       errno = 0;
@@ -37,7 +38,7 @@ int read_n_bytes(char *localname, int fd, void *buffer, size_t size)
          error = errno;
          if (error == EAGAIN || error == EINTR)
             continue;
-         err_printf("Failed to read from file %s of size %lu (already read %d): %s\n",
+         err_printf("Failed to read from file %s of size %zu (already read %zu): %s\n",
                     localname, size, bytes_read, strerror(error));
          close(fd);
          return -1;
@@ -77,9 +78,8 @@ int read_buffer(char *localname, char *buffer, int size)
 
 int write_n_bytes(char *localname, int fd, void *buffer, size_t size)
 {
-   int result, bytes_written;
-
-   bytes_written = 0;
+   int result;
+   size_t bytes_written = 0;
 
    while (bytes_written != size) {
       result = write(fd, ((char *) buffer) + bytes_written, size - bytes_written);

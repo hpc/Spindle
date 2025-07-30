@@ -56,7 +56,8 @@ static int fix_local_readlink(char *buf, size_t bufsiz)
 ssize_t readlink_wrapper(const char *path, char *buf, size_t bufsiz)
 {
    char resultpath[MAX_PATH_LEN+1];
-   int intercept_result, result, len, readlink_errcode;
+   int intercept_result, result, readlink_errcode;
+   size_t len;
    ssize_t rl_result;
 
    check_for_fork();
@@ -125,7 +126,8 @@ ssize_t readlinkat_wrapper(int dirfd, const char *path, char *buf, size_t bufsiz
 {
    char newbuf[MAX_PATH_LEN+1];
    ssize_t rl_result;
-   int result, len;
+   size_t len;
+   int result;
    
    debug_printf2("Intercepted readlinkat on %s\n", path);
 

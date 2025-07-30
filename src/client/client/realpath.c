@@ -347,7 +347,7 @@ realpath_stk (const char *name, char *resolved, struct realpath_bufs *bufs)
 
       /* Length of this file name component; it can be zero if a file
          name ends in '/'.  */
-      long startlen = end - start;
+      size_t startlen = end - start;
 
       if (startlen == 0)
          break;
@@ -365,7 +365,7 @@ realpath_stk (const char *name, char *resolved, struct realpath_bufs *bufs)
          if (!ISSLASH (dest[-1]))
             *dest++ = '/';
 
-         while (rname + bufs->rname.length - dest
+         while ( (size_t)(rname + bufs->rname.length - dest)
                 < startlen + sizeof dir_suffix)
          {
             long dest_offset = dest - rname;

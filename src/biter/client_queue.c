@@ -91,6 +91,7 @@ int init_message(int num_procs, void *header_ptr, void *session)
 
 void get_message(int for_proc, void **msg_data, size_t *msg_size, size_t *bytes_read, void *session)
 {
+   session = session;
    message_t *msg;
    sheep_ptr_t *msgp = proc_messages + for_proc;
    assert(!IS_SHEEP_NULL(msgp));
@@ -103,6 +104,7 @@ void get_message(int for_proc, void **msg_data, size_t *msg_size, size_t *bytes_
 
 int has_message(int for_proc, void *session)
 {
+   session=session;
    sheep_ptr_t *msgp = proc_messages + for_proc;
    return !IS_SHEEP_NULL(msgp);
 }
@@ -209,6 +211,7 @@ int get_message_space(size_t msg_size, unsigned char **msg_space, void **header_
 
 void update_bytes_read(int for_proc, size_t newval, void *session)
 {
+   session=session;
    message_t *msg;
    sheep_ptr_t *msgp = proc_messages + for_proc;
    assert(!IS_SHEEP_NULL(msgp));
