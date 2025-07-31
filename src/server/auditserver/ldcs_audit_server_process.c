@@ -47,6 +47,7 @@ ldcs_process_data_t ldcs_process_data;
 unsigned int opts;
 
 int _listen_exit_loop_cb_func ( int num_fds,  void * data) {
+  num_fds=num_fds;
   int rc=0;
   ldcs_process_data_t *ldcs_process_data = ( ldcs_process_data_t *) data ;
 

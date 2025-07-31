@@ -190,7 +190,7 @@ int filemngt_read_file(char *filename, void *buffer, size_t *size, int strip,
 int filemngt_encode_packet(char *filename, void *filecontents, size_t filesize, int stripped,
                            char **buffer, size_t *buffer_size)
 {
-   int cur_pos = 0;
+   size_t cur_pos = 0;
    int filename_len = strlen(filename) + 1;
    int is_elf = filemngt_is_elf_file(filecontents, filesize);
    //TODO: Remove filesize from allocation if we're doing a non-contig send. Wastes memory.

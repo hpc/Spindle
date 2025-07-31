@@ -42,6 +42,7 @@ static bool hit_sigterm = false;
 
 static void on_sigterm(int sig)
 {
+   sig=sig;
    hit_sigterm = true;   
 }
 

@@ -240,7 +240,7 @@ static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc)
    int connid;
    ldcs_client_t *client;
    char *buffer;
-   int len, local_len, ee_len;
+   size_t len, local_len, ee_len;
 
    assert(nc != -1);
    client = procdata->client_table + nc;
@@ -278,6 +278,7 @@ static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc)
  **/
 static int handle_client_myrankinfo_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg)
 {
+   msg=msg;
    int tmpdata[4];
    ldcs_message_t out_msg;
    int connid;
@@ -890,6 +891,7 @@ static int handle_finish_buffer_setup(ldcs_process_data_t *procdata, char *local
  **/
 static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, char *alias_to)
 {
+   procdata=procdata;
    char filename[MAX_PATH_LEN+1], dirname[MAX_PATH_LEN+1];
    char *localname;
    int errcode;
@@ -1071,7 +1073,7 @@ static int handle_broadcast_errorcode(ldcs_process_data_t *procdata, char *pathn
    size_t packet_size = 0;
    int result;
    int pathname_len = strlen(pathname)+1;
-   int pos = 0;
+   size_t pos = 0;
    ldcs_message_t msg;
    double starttime;
    
@@ -1440,6 +1442,7 @@ static int handle_request_file(ldcs_process_data_t *procdata, node_peer_t from, 
       case REQ_DIRECTORY:
          dir_result = handle_send_query(procdata, dirname, 1, 0);
          add_requestor(procdata->file_requests, dirname, from);
+         [[ fallthrough ]]; /* Requires gcc >= 10.0 or -std=c23 or ... */
          /* Fall through to next case and request file */
       case REQ_FILE:
          result = handle_send_query(procdata, pathname, 0, is_dso);
@@ -1531,8 +1534,11 @@ static int handle_send_file_query(ldcs_process_data_t *procdata, char *fullpath,
  **/
 static int handle_file_errcode(ldcs_process_data_t *procdata, ldcs_message_t *msg, node_peer_t peer, broadcast_t bcast)
 {
+   peer=peer;
+   bcast=bcast;
    char *pathname;
-   int errcode, pathname_len, result, pos = 0;
+   int errcode, result;
+   size_t pathname_len, pos = 0;
    unsigned char *data;
 
    data = (unsigned char *) msg->data;
@@ -1665,6 +1671,7 @@ static int handle_directory_recv(ldcs_process_data_t *procdata, ldcs_message_t *
  **/
 static int handle_alias_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, broadcast_t bcast)
 {
+   bcast=bcast;
    char *alias_from, *alias_to;
    char *data;
    size_t from_size;
@@ -1992,6 +1999,7 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
  **/
 int handle_client_start(ldcs_process_data_t *procdata, int nc)
 {
+   nc=nc;
    if (procdata->sent_exit_ready) {
       return handle_send_exit_cancel(procdata);
    }
@@ -2023,8 +2031,8 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
 
 static int handle_preload_filelist(ldcs_process_data_t *procdata, ldcs_message_t *msg)
 {
-   int cur = 0, global_result = 0, result;
-   int num_dirs, num_files, i;
+   size_t cur = 0;
+   int num_dirs, num_files, i, global_result = 0, result;
    char *data = (char *) msg->data;
    char *pathname;
    
@@ -2498,12 +2506,11 @@ static int handle_cache_ldso(ldcs_process_data_t *procdata, char *pathname, int 
 static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathname, int file_exists, unsigned char *buf, size_t buf_size, metadata_t mdtype)
 {
    char *packet_buffer = NULL;
-   size_t packet_size;
+   size_t packet_size, pos = 0;
    double starttime;
    int result;
    ldcs_message_t msg;
    int pathname_len = strlen(pathname) + 1;
-   int pos = 0;
    extended_stat_t *sbuf = (extended_stat_t *) buf;
    const char *mount;
    int mount_len;
@@ -2582,11 +2589,12 @@ static int handle_broadcast_metadata(ldcs_process_data_t *procdata, char *pathna
  **/
 static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *msg, metadata_t mdtype, node_peer_t peer)
 {
-   int file_exists;
+   peer=peer;
+   int file_exists, result;
    char pathname[MAX_PATH_LEN+1], *localpath;
    extended_stat_t buf;
    ldso_info_t ldsoinfo;
-   int pos = 0, pathlen, result, payload_size = 0, mount_len = 0, bytes_left;
+   size_t pos = 0, pathlen, payload_size = 0, mount_len = 0, bytes_left;
    char *buffer = (char *) msg->data;
    unsigned char *payload = NULL;
    char mount[MAX_PATH_LEN+1];
@@ -2596,13 +2604,13 @@ static int handle_metadata_recv(ldcs_process_data_t *procdata, ldcs_message_t *m
    memcpy(&file_exists, buffer + pos, sizeof(int));
    pos += sizeof(int);
 
-   memcpy(&pathlen, buffer + pos, sizeof(int));
+   memcpy(&pathlen, buffer + pos, sizeof(size_t));
    pos += sizeof(int);
-   assert(pathlen >= 0 && pathlen <= MAX_PATH_LEN);
+   assert(pathlen <= MAX_PATH_LEN);
 
-   memcpy(&mount_len, buffer + pos, sizeof(int));
+   memcpy(&mount_len, buffer + pos, sizeof(size_t));
    pos += sizeof(int);
-   assert(mount_len >= 0 && mount_len <= MAX_PATH_LEN);
+   assert(mount_len <= MAX_PATH_LEN);
    
    memcpy(pathname, buffer + pos, pathlen);
    pos += pathlen;
@@ -3063,6 +3071,7 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
  **/
 static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg)
 {
+   msg=msg;
    debug_printf2("Got exit ready message\n");
    procdata->exit_readys_recvd++;
    return handle_send_exit_ready_if_done(procdata);
@@ -3075,6 +3084,7 @@ static int handle_exit_ready_msg(ldcs_process_data_t *procdata, ldcs_message_t *
  **/
 static int handle_exit_cancel_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg)
 {
+   msg=msg;
    debug_printf2("Got exit cancel\n");
    assert(procdata->exit_readys_recvd > 0);
    procdata->exit_readys_recvd--;
@@ -3128,6 +3138,7 @@ static int handle_close_client_query(ldcs_process_data_t *procdata, int nc)
  **/
 int exit_note_cb(int fd, int serverid, void *data)
 {
+   serverid=serverid;
    int result;
    ldcs_process_data_t *procdata = (ldcs_process_data_t *) data;
    int eresult = 0;

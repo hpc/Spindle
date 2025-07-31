@@ -102,6 +102,7 @@ int getForceExitFd()
 extern int set_exit_on_client_close(ldcs_process_data_t *procdata);
 int forceExitCB(int fd, int serverid, void *data)
 {
+   serverid=serverid;
    char c;
    int result;
    ldcs_process_data_t *procdata = (ldcs_process_data_t *) data;

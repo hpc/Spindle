@@ -27,6 +27,7 @@
 #include "ldcs_audit_server_handlers.h"
 
 int _ldcs_server_CB ( int infd, int serverid, void *data ) {
+   infd=infd;
    int rc=0;
    ldcs_process_data_t *ldcs_process_data = (ldcs_process_data_t *) data ;
    int nc, fd, more_avail;

@@ -51,7 +51,7 @@ static int initialize_numa_lib() {
    char buffer[MAX_PATH_LEN+1];                    \
    char *end;                                      \
    char *start = colon_seperated_list;             \
-   int str_len;                                    \
+   size_t str_len;                                 \
    while (*start != '\0') {                        \
      while (*start == ':') {                       \
        start++;                                    \
@@ -77,7 +77,7 @@ static int initialize_numa_lib() {
    start = end;                                 \
    } 
 
-static int pattern_match(char *pattern, char *filename, int filename_len) {
+static int pattern_match(char *pattern, char *filename, size_t filename_len) {
    int should_match_at_start = 0, should_match_at_end = 0;
    size_t pattern_len = strlen(pattern);
    if (pattern[0] == '^') {

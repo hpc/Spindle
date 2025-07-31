@@ -38,7 +38,7 @@ void msgbundle_init(ldcs_process_data_t *procdata)
    assert(procdata->msgbundle_cache_size_kb);
    assert(procdata->msgbundle_timeout_ms);
    procdata->msgbundle_entries = NULL;
-   debug_printf("Initializing message bundling with buffer of size %u kb and "
+   debug_printf("Initializing message bundling with buffer of size %zu kb and "
                 "send timeout of %u ms\n", procdata->msgbundle_cache_size_kb,
                 procdata->msgbundle_timeout_ms);
 
@@ -54,6 +54,7 @@ void msgbundle_init(ldcs_process_data_t *procdata)
 
 void msgbundle_done(ldcs_process_data_t *procdata)
 {   
+   procdata=procdata;
    void *retval;
    if (!initialized)
       return;
@@ -173,6 +174,7 @@ static int flush_msgbuffer(msgbundle_entry_t *mb, ldcs_process_data_t *procdata)
 
 static int flush_msgbuffer_cb(int fd, int serverid, void *data)
 {
+   serverid=serverid;
    msgbundle_entry_t *mb;
    ldcs_process_data_t *procdata = (ldcs_process_data_t *) data;
    char throwaway_byte;
@@ -201,6 +203,8 @@ void msgbundle_force_flush(ldcs_process_data_t *procdata)
 
 static void start_cache_timeout(int timeout_ms, ldcs_process_data_t *procdata)
 {
+   timeout_ms=timeout_ms;
+   procdata=procdata;
    pthread_mutex_lock(&mut);
 
    if (!active_timeout) {
@@ -224,8 +228,8 @@ int spindle_send_worker(ldcs_process_data_t *procdata, ldcs_message_t *msg, node
       return 0;
    }
    
-   debug_printf2("Processing message of size header:%lu + body:%lu (secondary:%lu) = %lu for message bundling\n",
-                 sizeof(ldcs_message_header_t), (unsigned long) msg->header.len, secondary_size,
+   debug_printf2("Processing message of size header:%zu + body:%zu (secondary:%zu) = %zu for message bundling\n",
+                 sizeof(ldcs_message_header_t), msg->header.len, secondary_size,
                  sizeof(ldcs_message_header_t) + msg->header.len);
 
    for (mb = procdata->msgbundle_entries; mb && mb->node != node; mb = mb->next);
@@ -233,8 +237,8 @@ int spindle_send_worker(ldcs_process_data_t *procdata, ldcs_message_t *msg, node
    if (sizeof(msg->header)*2 + msg->header.len >=
        procdata->msgbundle_cache_size_kb*1024)
    {
-      debug_printf2("Not using message bundling because packet size (%ld) is greater than"
-                    "cache size %d.\n",
+      debug_printf2("Not using message bundling because packet size (%zu) is greater than"
+                    "cache size %zu.\n",
                     sizeof(msg->header)*2 + msg->header.len,
                     procdata->msgbundle_cache_size_kb*1024);
       if (mb)
@@ -269,7 +273,7 @@ int spindle_send_worker(ldcs_process_data_t *procdata, ldcs_message_t *msg, node
        procdata->msgbundle_cache_size_kb*1024)
    {
       debug_printf2("Flushing message buffer due to no space for adding new message."
-                    "Current size = %u, new message size = %lu, capacity = %u\n",
+                    "Current size = %zu, new message size = %zu, capacity = %zu\n",
                     mb->position,
                     sizeof(msg->header) + msg->header.len,
                     procdata->msgbundle_cache_size_kb*1024);
@@ -280,7 +284,7 @@ int spindle_send_worker(ldcs_process_data_t *procdata, ldcs_message_t *msg, node
       debug_printf2("Starting new message buffer\n");
    }
    else {
-      debug_printf2("Appending message at position %d\n", mb->position);
+      debug_printf2("Appending message at position %zu\n", mb->position);
    }
 
    memcpy(mb->cache + mb->position, &msg->header, sizeof(ldcs_message_header_t));
@@ -291,8 +295,8 @@ int spindle_send_worker(ldcs_process_data_t *procdata, ldcs_message_t *msg, node
       memcpy(mb->cache + mb->position, secondary_data, secondary_size);
       mb->position += secondary_size;
    }
-   debug_printf2("Cached data in message buffer to node %s, which is %u of %u bytes full.\n",
-                 mb->name, (int) mb->position, procdata->msgbundle_cache_size_kb*1024);
+   debug_printf2("Cached data in message buffer to node %s, which is %zu of %zu bytes full.\n",
+                 mb->name, mb->position, procdata->msgbundle_cache_size_kb*1024);
 
    start_cache_timeout(procdata->msgbundle_timeout_ms, procdata);
    return 0;

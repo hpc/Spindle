@@ -106,7 +106,7 @@ typedef struct ldcs_client_struct ldcs_client_t;
 
 typedef struct msgbundle_entry_t {
    unsigned char *cache;
-   int position;
+   size_t position;
    void* node;
    struct msgbundle_entry_t *next;
    char name[16];
@@ -133,7 +133,7 @@ struct ldcs_process_data_struct
   char *numa_substrs;
   char *numa_excludes;   
   msgbundle_entry_t *msgbundle_entries;
-  int msgbundle_cache_size_kb;
+  size_t msgbundle_cache_size_kb;
   int msgbundle_timeout_ms;
   int handling_bundle;
   number_t number;

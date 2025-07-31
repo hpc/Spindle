@@ -21,7 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 struct requested_file_struct
 {
    char *path;
-   int hash_val;
+   unsigned int hash_val;
    int requestors_num;
    int requestors_size;
    node_peer_t *requestors;
