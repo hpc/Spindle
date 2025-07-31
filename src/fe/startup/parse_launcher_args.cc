@@ -444,7 +444,7 @@ bool LauncherParser::parseCustomArg(int /*argc*/, char** /*argv*/, int /*arg_pos
 /**
  * Return false if a launcher argument should be stripped from the command line.
  **/
-bool LauncherParser::includeArg(int argc, char **argv, int pos)
+bool LauncherParser::includeArg(int /*argc*/, char **argv, int pos)
 {
    if (argv[pos][0] == '\0')
       return false;
@@ -668,7 +668,7 @@ bool SerialParser::usesLauncher() const
    return false;
 }
 
-bool SerialParser::isExecutable(int argc, char **argv, int pos, const set<string> &exedirs) const
+bool SerialParser::isExecutable(int /*argc*/, char ** /*argv*/, int pos, const set<string> & /*exedirs*/) const
 {
    return (pos == 0);
 }
@@ -682,7 +682,7 @@ OpenMPIParser::~OpenMPIParser()
 {
 }
 
-bool OpenMPIParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const
+bool OpenMPIParser::parseCustomArg(int /*argc*/, char **argv, int arg_pos, int & /*inc_argc*/) const
 {
    fprintf(stderr, "%s under OpenMPI is not yet supported by Spindle\n", argv[arg_pos]);
    exit(-1);
@@ -697,7 +697,7 @@ JSRunParser::~JSRunParser()
 {
 }
 
-bool JSRunParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const
+bool JSRunParser::parseCustomArg(int /*argc*/, char **argv, int arg_pos, int & /*inc_argc*/) const
 {
    if (strcmp(argv[arg_pos], "--use_spindle") == 0 || (strcmp(argv[arg_pos], "-L") == 0)) {
       fprintf(stderr, "Error: Do not mix spindle job launch wrapper with the jsrun spindle option %s. "
@@ -718,7 +718,7 @@ LRunParser::~LRunParser()
 {
 }
 
-bool LRunParser::parseCustomArg(int argc, char **argv, int arg_pos, int &inc_argc) const
+bool LRunParser::parseCustomArg(int /*argc*/, char **argv, int arg_pos, int & /*inc_argc*/) const
 {
    if (strcmp(argv[arg_pos], "--use_spindle") == 0 || (strcmp(argv[arg_pos], "-L") == 0)) {
       fprintf(stderr, "Error: Do not mix spindle job launch wrapper with the lrun spindle option %s. "
@@ -767,7 +767,7 @@ cmdoption_t *MarkerParser::getArg(int argc, char **argv, int pos) const
    return NULL;
 }
 
-bool MarkerParser::isExecutable(int argc, char **argv, int pos, const std::set<std::string> &exedirs) const
+bool MarkerParser::isExecutable(int /*argc*/, char **argv, int pos, const std::set<std::string> & /*exedirs*/) const
 {
    return (pos > 0 && strcmp(argv[pos-1], "spindlemarker") == 0);
 }

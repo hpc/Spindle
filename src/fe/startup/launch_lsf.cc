@@ -95,6 +95,7 @@ const char *LSFLauncher::getNextLSBHost(const char *prev)
 
 void LSFLauncher::countHost(const char *host, void *data, int)
 {
+   host=host;
    int *count = (int *) data;
    (*count)++;
 }
@@ -156,6 +157,7 @@ bool LSFLauncher::spawnDaemon()
 
 bool LSFLauncher::spawnJob(app_id_t id, int app_argc, char **app_argv)
 {
+   app_argc=app_argc;
    debug_printf("Spindle launching LSF job with app-id %lu: %s\n", id, app_argv[0]);
    int pid = fork();
    if (pid == -1) {

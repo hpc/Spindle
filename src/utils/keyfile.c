@@ -45,6 +45,9 @@ void get_keyfile_path(char *pathname, int pathname_len, uint64_t unique_id)
    snprintf(pathname, pathname_len, "%s/spindle_key.%d.%lu", demangled_loc, getuid(), (unsigned long) unique_id);
    pathname[pathname_len-1] = '\0';
 #else
+   pathname=pathname;
+   pathname_len=pathname_len;
+   unique_id=unique_id;
    assert(0 && "Tried to use keyfile when not compiled with keyfile.");
 #endif
 }
@@ -80,7 +83,7 @@ void create_keyfile(uint64_t unique_id)
 {
    char path[MAX_PATH_LEN+1];
    int key_fd, result;
-   int bytes_written;
+   size_t bytes_written;
    char *last_slash;
    struct stat buf;
    unsigned char key[KEY_SIZE_BYTES];

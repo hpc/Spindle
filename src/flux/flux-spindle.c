@@ -124,7 +124,7 @@ static int spindle_in_session_mode(flux_t *flux_handle, int *argc, char ***argv)
    return 1;
 }
 
-static void free_bootstrap_args(int argc, char **argv)
+static void free_bootstrap_args(char **argv)
 {
    int i;
    for (i = 0; argv[i] != NULL; i++)
@@ -242,6 +242,7 @@ static void spindle_ctx_destroy (struct spindle_ctx *ctx)
 
 static void onTermSignal(int sig)
 {
+   sig=sig;
    //Force an exit in the child.
    spindleForceExitBE(SPINDLE_EXIT_TYPE_SOFT);
    alarm(5); //Force shutdown in 5 seconds if not otherwise down
@@ -249,6 +250,7 @@ static void onTermSignal(int sig)
 
 static void onAlarm(int sig)
 {
+   sig=sig;
    spindleForceExitBE(SPINDLE_EXIT_TYPE_HARD);
    _exit(-1);
 }
@@ -514,6 +516,9 @@ static int sp_init (flux_plugin_t *p,
                     flux_plugin_arg_t *arg,
                     void *data)
 {
+    topic=topic;
+    arg=arg;
+    data=data;
     struct spindle_ctx *ctx;
     flux_shell_t *shell = flux_plugin_get_shell (p);
     flux_t *h = flux_shell_get_flux (shell);
@@ -666,6 +671,9 @@ static int sp_task (flux_plugin_t *p,
                     flux_plugin_arg_t *arg,
                     void *data)
 {
+    topic=topic;
+    arg=arg;
+    data=data;
     int session_mode;
     int bootstrap_argc;
     char **bootstrap_argv;
@@ -709,7 +717,7 @@ static int sp_task (flux_plugin_t *p,
     free (s);
 
     if (session_mode)
-       free_bootstrap_args(bootstrap_argc, bootstrap_argv);
+       free_bootstrap_args(bootstrap_argv);
     
     return 0;
 }
@@ -722,7 +730,10 @@ static int sp_exit (flux_plugin_t *p,
                     flux_plugin_arg_t *arg,
                     void *data)
 {
-   flux_shell_t *shell = flux_plugin_get_shell (p);
+    topic=topic;
+    arg=arg;
+    data=data;
+    flux_shell_t *shell = flux_plugin_get_shell (p);
     flux_t *h = flux_shell_get_flux (shell);
     
     debug_printf(1, "In flux plugin sp_exit\n");

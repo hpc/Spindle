@@ -29,6 +29,7 @@ static int decode_daemon_args(char *daemon_arg_str, unsigned int *port, unsigned
 
 static int post_setup(spindle_args_t *params)
 {
+   params=params;
    ping_readymsg(0);
    clean_readymsg();
    return 0;
@@ -36,6 +37,8 @@ static int post_setup(spindle_args_t *params)
 
 int run_be(int argc, char **argv)
 {
+   argc=argc;
+   argv=argv;
    int result;
    char *daemon_arg_str;
    unsigned int port, num_ports;

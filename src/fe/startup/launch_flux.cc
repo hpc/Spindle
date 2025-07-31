@@ -157,7 +157,7 @@ bool FluxLauncher::spawnDaemon()
    return true;
 }
 
-bool FluxLauncher::spawnJob(app_id_t id, int app_argc, char **app_argv)
+bool FluxLauncher::spawnJob(app_id_t /*id*/, int /*app_argc*/, char ** /*app_argv*/)
 {
    //Unsed for flux session launcher. Rather than launch jobs under spindle, we will
    // put spindle launch information in the flux KVS, then let the flux run spindle

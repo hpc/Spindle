@@ -227,6 +227,7 @@ int fluxmgr_get_from_kvs(char **daemon_args, int timeout_seconds)
 
 int fluxmgr_get_bootstrap(flux_t *fhandle, char **bootstrap_args)
 {
+   fhandle=fhandle;
    int result;
    result = get_from_kvs(NULL, "bootstrap_args", bootstrap_args, 0);
    if (result == GET_FROM_KVS_ERR || result == GET_FROM_KVS_TIMEOUT)

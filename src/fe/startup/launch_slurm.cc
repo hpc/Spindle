@@ -195,6 +195,7 @@ bool SlurmLauncher::spawnDaemon()
 
 bool SlurmLauncher::spawnJob(app_id_t id, int app_argc, char **app_argv)
 {
+   app_argc=app_argc;
    debug_printf("Spindle launching slurm job with app-id %lu: %s\n", id, app_argv[0]);
    int pid = fork();
    if (pid == -1) {

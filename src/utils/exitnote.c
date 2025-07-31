@@ -56,10 +56,10 @@ static char *exitSocketPath(const char *location)
       endslash = "/";
 
    result = snprintf(socketpath, sizeof(socketpath), "%s%sspindle_bext_%s", location, endslash, hostname);
-   if (result > sizeof(socketpath)) {
+   if (result > (int)sizeof(socketpath)) {
       snprintf(socketpath, sizeof(socketpath), "%s%s%x", location, endslash, badhash(hostname));
    }
-   if (result > sizeof(socketpath)) {
+   if (result > (int)sizeof(socketpath)) {
       err_printf("Could not fit socket path %s%sspindle_bext_%s into max socket path of %lu\n",
                  location, endslash, hostname, (unsigned long) sizeof(socketpath));
       return NULL;

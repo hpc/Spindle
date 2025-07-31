@@ -40,6 +40,9 @@ static volatile int doing_read = 0;
 
 void on_sigsegv(int sig, siginfo_t *info, void *ctx)
 {
+   sig=sig;
+   info=info;
+   ctx=ctx;
    if (!doing_read)
       return;
    siglongjmp(env, -1);
@@ -69,6 +72,7 @@ static int check_proctable_entry(MPIR_PROCDESC *e)
 
 static void *monitor_main(void *arg)
 {
+   arg=arg;
    struct sigaction act, oact;
    int i, ready = 0;
 
