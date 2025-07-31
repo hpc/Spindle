@@ -208,7 +208,7 @@ int send_orig_path_request(int fd, const char *path, char *newpath)
 int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free)
 {
    ldcs_message_t message;
-   int local_len, ee_len;
+   size_t local_len, ee_len;
    char *buffer;
    size_t buffer_pos = 0;
    
@@ -221,17 +221,25 @@ int send_dirlists_request(int fd, char **local_result, char **exece_result, char
    client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
    COMM_UNLOCK;
 
+   debug_printf("QQQ After client_recv_msg_dynamic, message.header.len=%zu.\n", message.header.len);
+   debug_printf("QQQ After buffer_pos initialized, buffer_pos=%zu.\n", buffer_pos);
+
    buffer = (char *) message.data;
    memcpy(&local_len, buffer+buffer_pos, sizeof(local_len));
    buffer_pos += sizeof(local_len);
    if (local_result)
       *local_result = buffer+buffer_pos;
    buffer_pos += local_len;
+   debug_printf("QQQ After buffer_pos += local_len, buffer_pos=%zu.\n", buffer_pos);
    memcpy(&ee_len, buffer+buffer_pos, sizeof(ee_len));
    buffer_pos += sizeof(ee_len);
+   debug_printf("QQQ After buffer_pos += sizeof(ee_len), buffer_pos=%zu.\n", buffer_pos);
    if (exece_result)
       *exece_result = buffer+buffer_pos;
    buffer_pos += ee_len;
+   debug_printf("QQQ After buffer_pos += ee_len, buffer_pos=%zu.\n", buffer_pos);
+
+   debug_printf("QQQ After parsing message, buffer_pos=%zu.\n", buffer_pos);
    assert(buffer_pos == message.header.len);
 
    *to_free = buffer;
