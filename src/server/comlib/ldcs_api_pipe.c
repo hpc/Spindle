@@ -114,7 +114,6 @@ int ldcs_create_server_pipe(char* location, number_t number) {
      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
      _error("mkdir failed");
   }
-  debug_printf2("QQQ Created directory '%s'.\n", staging_dir);
 
   char readypath[MAX_PATH_LEN];
   snprintf(readypath, MAX_PATH_LEN, "%s/ready", staging_dir);
