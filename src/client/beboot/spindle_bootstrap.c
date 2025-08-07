@@ -133,7 +133,7 @@ static void setup_environment()
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
    setenv("LDCS_ORIG_LOCATION", orig_location, 1);
-   setenv("LDCS_CACHPATH", cachepath, 1);
+   setenv("LDCS_CACHEPATH", cachepath, 1);
    setenv("LDCS_COMMPATH", commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);

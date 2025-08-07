@@ -25,6 +25,7 @@ extern "C" {
 #include "spindle_launch.h"
 #include "stat_cache.h"   
 #include "force_exit.h"
+#include <stdint.h>
    
 typedef void* requestor_list_t;
 
@@ -145,6 +146,9 @@ struct ldcs_process_data_struct
   int num_exited_children_peers;
   int num_exited_parents;
   int num_alives;
+  uint64_t valid_cachepaths;
+  uint64_t valid_commpaths;
+  uint64_t valid_locations;
   opt_t opts;
   requestor_list_t dso_requests;
   requestor_list_t file_requests;   
