@@ -2949,11 +2949,11 @@ static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message
 
     // FIXME:  Modify either the process data or the message with a bit index of working
     // directories.
-    ldcs_audit_server_md_consensus(procdata, msg);
     if (num_children) {
         spindle_broadcast(procdata, msg);
         msgbundle_force_flush(procdata);
     }
+    ldcs_audit_server_md_consensus(procdata, msg);
     // FIXME:  After this call returns we should have a consensus index.  Update our
     // paths and pass either the index or (ideally) the paths themselves to the clients.
     debug_printf2("QQQ Server caught the LDCS_MSG_LOCATION_CONSENSUS message.\n" );

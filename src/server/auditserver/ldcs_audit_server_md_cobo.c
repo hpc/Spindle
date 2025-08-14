@@ -21,6 +21,8 @@
 #include <sys/inotify.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "ldcs_api.h"
 #include "ldcs_api_listen.h"
@@ -399,8 +401,10 @@ int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
 }
 
 void ldcs_audit_server_md_consensus(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg){
+    int64_t x=1;
     ldcs_process_data = ldcs_process_data;
     msg = msg;
-    debug_printf2("QQQ Made it all the way to ldcs_audit_server_md_consensus().\n" );
+    cobo_allreduce( &x, COBO_OP_SUM );
+    debug_printf2("QQQ allreduce result = %"PRId64".\n", x);
 }
 

@@ -1451,6 +1451,7 @@ int cobo_allreduce( int64_t *pval, cobo_op_t op ){
             case COBO_OP_BITWISE_OR:    *pval |= child_val; break;
             case COBO_OP_LOGICAL_AND:   *pval = *pval && child_val; break;
             case COBO_OP_LOGICAL_OR:    *pval = *pval || child_val; break;
+            case COBO_OP_SUM:           *pval += child_val; break;
             case COBO_OP_NOOP:          break;
             default:
                 err_printf("Illegal op (%d).  Ignoring.\n", op);

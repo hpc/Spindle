@@ -76,6 +76,7 @@ typedef enum{
     COBO_OP_BITWISE_OR,
     COBO_OP_LOGICAL_AND,
     COBO_OP_LOGICAL_OR,
+    COBO_OP_SUM,
     COBO_OP_NOOP,
     NUM_COBO_OP
 } cobo_op_t;
