@@ -178,6 +178,7 @@ static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, cha
 static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc);
 static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 static int handle_alive_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -1980,6 +1981,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_ALIVE_REQ:
       case LDCS_MSG_ALIVE_RESP:
          return handle_alive_msg(procdata, msg);
+      case LDCS_MSG_LOCATION_CONSENSUS:
+         return handle_location_consensus(procdata, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -2934,6 +2937,27 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
       debug_printf2("Responding to pickone of key %s with 'not you' because this node is not reponsible\n", key);
       return handle_client_pickone_resp(procdata, nc, 0);
    }
+}
+
+/**
+ * Handle LDCS_MSG_LOCATION_CONSENSUS to determine which of the locations, commpaths, and cachepaths are
+ * available across all of the servers.
+ */
+
+static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
+    int num_children = ldcs_audit_server_md_get_num_children(procdata);
+
+    // FIXME:  Modify either the process data or the message with a bit index of working
+    // directories.
+    ldcs_audit_server_md_consensus(procdata, msg);
+    if (num_children) {
+        spindle_broadcast(procdata, msg);
+        msgbundle_force_flush(procdata);
+    }
+    // FIXME:  After this call returns we should have a consensus index.  Update our
+    // paths and pass either the index or (ideally) the paths themselves to the clients.
+    debug_printf2("QQQ Server caught the LDCS_MSG_LOCATION_CONSENSUS message.\n" );
+    return 0;
 }
 
 /**

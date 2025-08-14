@@ -41,6 +41,7 @@ static const char *logging_file = NULL;
 #endif
 static const char spindle_bootstrap[] = LIBEXECDIR "/spindle_bootstrap";
 static bool sendAndWaitForAlive();
+static void determineLocationConsensus();
 
 #define STARTUP_TIMEOUT 60
 
@@ -435,6 +436,7 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
 
    /* Wait for servers to indicate startup */
    sendAndWaitForAlive();
+   determineLocationConsensus();
 
    return 0;   
 }
@@ -489,6 +491,17 @@ pid_t getRSHPidFE()
 void markRSHPidReapedFE()
 {
    clear_fe_rsh_pid();
+}
+
+static void determineLocationConsensus( void ){
+   ldcs_message_t consensus_req_msg;
+   consensus_req_msg.header.type = LDCS_MSG_LOCATION_CONSENSUS;
+   consensus_req_msg.header.len = 0;
+   consensus_req_msg.data = NULL;
+   int result = ldcs_audit_server_fe_broadcast(&consensus_req_msg, NULL);
+   if (result == -1) {
+      debug_printf("Failure sending location consensus message\n");
+   }
 }
 
 static bool sendAndWaitForAlive()

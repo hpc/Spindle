@@ -397,3 +397,10 @@ int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
    cobo_get_num_childs(&num_childs);
    return num_childs;
 }
+
+void ldcs_audit_server_md_consensus(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg){
+    ldcs_process_data = ldcs_process_data;
+    msg = msg;
+    debug_printf2("QQQ Made it all the way to ldcs_audit_server_md_consensus().\n" );
+}
+
