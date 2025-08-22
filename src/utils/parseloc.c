@@ -302,47 +302,98 @@ int is_local_prefix(const char *path, char **local_prefixes) {
    return 0;
 }
 
-/**
- * Iterates through a colon-separated list of candidate paths in origPathList along with the session
- * number and attempts to create each path.
+/* validateCandidatePath determines if candidatePath passes parse_location(), realize(), and spindle_mkdir(), which is to say, can
+ * spindle create a directory from this path?
  *
- * If not NULL, symbolicPath will contain a pointer to the symbolic version of the first valid path.
- *  That is to say, environment variables in the path will not be expanded.
- * If not NULL, parsedPath will contain a pointer to a version of that path with environment variables
- *  substituted with their values, e.g., $TMP.
- * If not NULL, realizedPath will contain a pointer to a canonical version of the path, e.g.,
- *  symbolic links replaced with the actual directory names.
- * If no valid paths are found, the values in realizedPath, parsedPath, and symbolicPath will be
- *  unchanged.
+ * If not NULL, then realizedPath, parsedPath, and/or symbolicPath will hold the respective intermediate/final results.
+ *
+ * Return 1 if the candidatePath is valid, otherwise 0.
  */
-void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number ){
-
-    char * pathList = strdup( origPathList );
-    char *saveptr, *candidatePath, *parsedCandidatePath, *realizedCandidatePath;
+static int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number ){
     int rc;
+    char *parsedCandidatePath, *realizedCandidatePath;
+    parsedCandidatePath = parse_location( candidatePath, number );
+    if( parsedCandidatePath ){
+       realizedCandidatePath = realize( parsedCandidatePath );
+       if( realizedCandidatePath ){
+           rc = spindle_mkdir( parsedCandidatePath );
+           if( 0 == rc ){
+               if( symbolicPath) *symbolicPath = candidatePath;
+               if( parsedPath  ) *parsedPath   = parsedCandidatePath;
+               if( realizedPath) *realizedPath = realizedCandidatePath;
+               return 1;
+           }else{
+               debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", realizedCandidatePath );
+           }
+        }else{
+            debug_printf2( "Unable to realize candidate %s, moving on to the next candidate.\n", parsedCandidatePath );
+        }
+    }else{
+        debug_printf2("Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
+    }
+    return 0;
+}
+
+/**
+ * getFirstValidPath is designed to work with the commpaths parameter, but is generic enough to handle any list of
+ * colon-separated paths.
+ */
+void getFirstValidPath( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number ){
+
+    char *saveptr, *candidatePath, *pathList = strdup( origPathList );
 
     debug_printf2("origPathList='%s', number='%lu'.\n", origPathList, number );
+
     candidatePath = strtok_r( pathList, ":", &saveptr );
-    while( NULL != candidatePath ){
-        parsedCandidatePath = parse_location( candidatePath, number );
-        if( parsedCandidatePath ){
-           realizedCandidatePath = realize( parsedCandidatePath );
-           if( realizedCandidatePath ){
-               rc = spindle_mkdir( parsedCandidatePath );
-               if( 0 == rc ){
-                   if( symbolicPath) *symbolicPath = candidatePath;
-                   if( parsedPath  ) *parsedPath   = parsedCandidatePath;
-                   if( realizedPath) *realizedPath = realizedCandidatePath;
-                   return;
-               }else{
-                   debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", realizedCandidatePath );
-               }
-            }else{
-                debug_printf2( "Unable to realize candidate %s, moving on to the next candidate.\n", parsedCandidatePath );
-            }
-        }else{
-            debug_printf2("Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
-        }
+    while( (NULL != candidatePath) && ( validateCandidatePath(
+                                            candidatePath,
+                                            realizedPath,
+                                            parsedPath,
+                                            symbolicPath,
+                                            number ) == 0 ) ){
         candidatePath = strtok_r( NULL, ":", &saveptr );
     }
+}
+
+/**
+ * determineValidCachePaths()  works exclusively with the cachepaths parameter.  Because not all paths may be valid on all
+ * compute nodes, and because we want to have all nodes reach a consensus on which cache path to use, we
+ * determine the validity of all paths in the origPathList, save the intermediate results, and return a bit
+ * index to the user.  Via allReduce() all nodes reach a consensus on the set of valid paths, and retrieves
+ * that informatino via getValidPathByIndex().
+ */
+static char *realizedCachePaths[64], *parsedCachePaths[64], *symbolicCachePaths[64];
+
+void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number ){
+
+    char *saveptr, *candidatePath, *pathList = strdup( origPathList );
+    uint64_t bitoffset = 0;
+
+    *validBitIdx = 0;
+    debug_printf2("origPathList='%s', number='%lu'.\n", origPathList, number );
+
+    candidatePath = strtok_r( pathList, ":", &saveptr );
+    while( NULL != candidatePath && bitoffset < 64 ){
+        *validBitIdx |= validateCandidatePath(
+                            candidatePath,
+                            &realizedCachePaths[bitoffset],
+                            &parsedCachePaths[bitoffset],
+                            &symbolicCachePaths[bitoffset], number ) << bitoffset;
+        bitoffset++;
+        candidatePath = strtok_r( NULL, ":", &saveptr );
+    }
+    free( pathList );
+}
+
+void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath ){
+    uint64_t bitoffset = 0;
+    if (!validBitIdx){
+        return;
+    }
+    while( (bitoffset < 64) && (((1 << bitoffset) & validBitIdx) == 0) ){
+        bitoffset++;
+    }
+    if( realizedCachePath ) *realizedCachePath = realizedCachePaths[bitoffset];
+    if( parsedCachePath   ) *parsedCachePath   = parsedCachePaths[bitoffset];
+    if( symbolicCachePath ) *symbolicCachePath = symbolicCachePaths[bitoffset];
 }

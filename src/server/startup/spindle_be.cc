@@ -36,7 +36,9 @@ extern int releaseApplication();
 extern "C" {
 #endif
 
-void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
+extern void getFirstValidPath( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
+extern void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number );
+extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
 
 #if defined(__cplusplus)
 }
@@ -132,6 +134,7 @@ static void initSecurity(int security_type, uint64_t unique_id)
 int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
                  int (*post_setup)(spindle_args_t *))
 {
+   uint64_t bitidx=0;
    int result;
    spindle_args_t args;
 
@@ -162,7 +165,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    // values) and attempt to create that directory.  On success, replace the list
    // of paths with the path to the created directory.
    char *new_path = NULL;
-   parsePaths( &new_path, NULL, NULL, args.location, args.number );
+
+   getFirstValidPath( &new_path,  NULL,  NULL,  args.location, args.number );
    if( new_path ){
        args.location = new_path;
    }else{
@@ -171,16 +175,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    }
 
    new_path = NULL;
-   parsePaths( &new_path, NULL, NULL, args.cachepaths, args.number );
-   if( new_path ){
-       args.cachepaths = new_path;
-   }else{
-       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
-       args.cachepaths = args.location;
-   }
-
-   new_path = NULL;
-   parsePaths( &new_path, NULL, NULL, args.commpaths, args.number );
+   getFirstValidPath( &new_path,  NULL,  NULL,  args.commpaths, args.number );
    if( new_path ){
        args.commpaths = new_path;
    }else{
@@ -188,11 +183,22 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
        args.commpaths = args.location;
    }
 
+   new_path = NULL;
+   determineValidCachePaths( &bitidx, args.cachepaths, args.number);
+   getValidCachePathByIndex( bitidx, &new_path, NULL, NULL );
+   if( new_path ){
+       args.cachepaths = new_path;
+   }else{
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
+       args.cachepaths = args.location;
+   }
+   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n", args.location, args.commpaths, args.cachepaths );
+
    // The test verifier is isolated behind the logger.  To set these paths, we
    // pass in "magic" logging messages.
    test_printf("<internal> location=%s\n", args.location);
    test_printf("<internal> cachepath=%s\n", args.cachepaths);
-   test_printf("<internal> compath=%s\n", args.commpaths);
+   test_printf("<internal> commpath=%s\n", args.commpaths);
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {

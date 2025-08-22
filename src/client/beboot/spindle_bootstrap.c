@@ -102,7 +102,11 @@ static char *default_subaudit_libstr = libstr_biter_subaudit;
 extern int spindle_mkdir(char *path);
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
-extern void parsePaths( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
+
+extern void getFirstValidPath( char **realizedPath, char **parsedPath, char **symbolicPath, char *origPathList, number_t number );
+extern void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number );
+extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
+
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
@@ -345,6 +349,7 @@ int main(int argc, char *argv[])
 {
    int result;
    char **j, *spindle_env;
+   uint64_t bitidx=0;
 
    LOGGING_INIT_PREEXEC("Client");
    debug_printf("Launched Spindle Bootstrapper\n");
@@ -364,14 +369,18 @@ int main(int argc, char *argv[])
       }
    }
 
-   parsePaths( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
-   parsePaths( &cachepath, &orig_cachepath, &symbolic_cachepath, symbolic_cachepaths,    number );
-   parsePaths( &commpath,  &orig_commpath,  &symbolic_commpath,  symbolic_commpaths,     number );
+   getFirstValidPath( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
+   getFirstValidPath( &commpath,  &orig_commpath,  &symbolic_commpath,  symbolic_commpaths,     number );
+
+   determineValidCachePaths( &bitidx, symbolic_cachepaths, number);
+   getValidCachePathByIndex( bitidx, &cachepath, &orig_cachepath, &symbolic_cachepath );
+
+   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n", location, commpath, cachepath );
 
    if (daemon_args) {
       launch_daemon(location);
    }
-   
+
    result = establish_connection();
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");
