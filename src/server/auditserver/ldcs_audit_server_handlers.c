@@ -2947,6 +2947,10 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
 static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
     int num_children = ldcs_audit_server_md_get_num_children(procdata);
 
+    debug_printf3("Initializing file cache location %s\n", procdata->location);
+    ldcs_audit_server_filemngt_init(procdata->location, procdata->commpaths, procdata->cachepaths);
+
+
     // FIXME:  Modify either the process data or the message with a bit index of working
     // directories.
     if (num_children) {
