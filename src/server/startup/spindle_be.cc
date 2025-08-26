@@ -72,9 +72,9 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->use_launcher, buf, pos);
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
-   unpack_param(args->location, buf, pos);
-   unpack_param(args->cachepaths, buf, pos);
-   unpack_param(args->commpaths, buf, pos);
+   unpack_param(args->candidate_locations, buf, pos);
+   unpack_param(args->candidate_cachepaths, buf, pos);
+   unpack_param(args->candidate_commpaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
    unpack_param(args->bundle_timeout_ms, buf, pos);
@@ -134,7 +134,6 @@ static void initSecurity(int security_type, uint64_t unique_id)
 int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type,
                  int (*post_setup)(spindle_args_t *))
 {
-   uint64_t bitidx=0;
    int result;
    spindle_args_t args;
 
@@ -164,41 +163,34 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    // candidate directory in the list (replacing environment variables with their
    // values) and attempt to create that directory.  On success, replace the list
    // of paths with the path to the created directory.
-   char *new_path = NULL;
 
-   getFirstValidPath( &new_path,  NULL,  NULL,  args.location, args.number );
-   if( new_path ){
-       args.location = new_path;
-   }else{
+   getFirstValidPath( &args.chosen_location,  NULL,  NULL,  args.candidate_locations, args.number );
+   if( NULL == args.chosen_location ){
        err_printf("No valid location path available.\n");
        return -1;
    }
 
-   new_path = NULL;
-   getFirstValidPath( &new_path,  NULL,  NULL,  args.commpaths, args.number );
-   if( new_path ){
-       args.commpaths = new_path;
-   }else{
-       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
-       args.commpaths = args.location;
+   getFirstValidPath( &args.chosen_commpath,  NULL,  NULL,  args.candidate_commpaths, args.number );
+   if( NULL == args.chosen_commpath ){
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.chosen_location);
+       args.chosen_commpath = args.chosen_location;
    }
 
-   new_path = NULL;
-   determineValidCachePaths( &bitidx, args.cachepaths, args.number);
-   getValidCachePathByIndex( bitidx, &new_path, NULL, NULL );
-   if( new_path ){
-       args.cachepaths = new_path;
-   }else{
-       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.location);
-       args.cachepaths = args.location;
+   determineValidCachePaths( &args.cachepath_bitidx, args.candidate_cachepaths, args.number);
+   /* QQQ FIXME Eventually this call will be moved to the LDCS_MSG_LOCATION_CONSENSUS message handler. */
+   getValidCachePathByIndex( args.cachepath_bitidx, &args.chosen_cachepath, NULL, NULL );
+   if( NULL == args.chosen_cachepath ){
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.chosen_location);
+       args.chosen_cachepath = args.chosen_location;
    }
-   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n", args.location, args.commpaths, args.cachepaths );
+   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n",
+           args.chosen_location, args.chosen_commpath, args.chosen_cachepath );
 
    // The test verifier is isolated behind the logger.  To set these paths, we
    // pass in "magic" logging messages.
-   test_printf("<internal> location=%s\n", args.location);
-   test_printf("<internal> cachepath=%s\n", args.cachepaths);
-   test_printf("<internal> commpath=%s\n", args.commpaths);
+   test_printf("<internal> location=%s\n", args.chosen_location);
+   test_printf("<internal> cachepath=%s\n", args.chosen_cachepath);
+   test_printf("<internal> commpath=%s\n", args.chosen_commpath); /* QQQ Move to message handler */
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {

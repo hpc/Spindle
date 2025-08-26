@@ -412,7 +412,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "reloc-exec", &relocexec,
                         "reloc-python", &relocpython,
                         "python-prefix", &pyprefix,
-                        "location", &location,
+                        "location", &location,  /* QQQ FIXME need candidate_cachepaths and candidate_commpaths */
                         "numa", &numa,
                         "numa-files", &numafiles,
                         "preload", &preload,
@@ -460,7 +460,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
         ctx->params.pythonprefix = tmp;
     }
     if (location) {
-       ctx->params.location = (char *) location;
+       ctx->params.candidate_locations = (char *) location;
     }
     if (level) {
        if (strcmp(level, "high") == 0) {

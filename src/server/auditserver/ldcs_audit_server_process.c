@@ -140,9 +140,11 @@ int ldcs_audit_server_process(spindle_args_t *args)
    startprofile(args);
 
    debug_printf3("Initializing server data structures\n");
-   ldcs_process_data.location = args->location;
-   ldcs_process_data.commpaths = args->commpaths;
-   ldcs_process_data.cachepaths = args->cachepaths;
+   ldcs_process_data.location = args->chosen_location;
+   ldcs_process_data.commpath = args->chosen_commpath;
+   ldcs_process_data.cachepaths = args->candidate_cachepaths;
+   ldcs_process_data.cachepath = args->chosen_cachepath; // QQQ FIXME make NULL when initialized by msg handler
+   ldcs_process_data.cachepath_bitidx = args->cachepath_bitidx;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.localprefix = args->local_prefixes;
@@ -194,8 +196,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
       init_cleanup_proc(ldcs_process_data.location);
    debug_printf3("Initializing connections for clients at %s and %lu\n",
-                 ldcs_process_data.cachepaths, (unsigned long) ldcs_process_data.number);
-   serverid = ldcs_create_server(ldcs_process_data.commpaths, ldcs_process_data.number);
+                 ldcs_process_data.commpath, (unsigned long) ldcs_process_data.number);
+   serverid = ldcs_create_server(ldcs_process_data.commpath, ldcs_process_data.number);
    if (serverid == -1) {
       err_printf("Unable to setup area for client connections\n");
       return -1;
@@ -211,7 +213,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
       ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
 
    if (args->opts & OPT_BEEXIT) {
-      fd = createExitNote(args->location);
+      fd = createExitNote(args->chosen_location);
       if (fd != -1) {
          ldcs_listen_register_fd(fd, serverid, exit_note_cb, (void *) &ldcs_process_data);
       }

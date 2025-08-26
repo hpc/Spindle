@@ -126,9 +126,13 @@ struct ldcs_process_data_struct
   int exit_readys_recvd;
   ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
+
   char *location;
   char *cachepaths;
-  char *commpaths;
+  char *cachepath;
+  uint64_t cachepath_bitidx;
+  char *commpath;
+
   char *hostname;
   char *pythonprefix;
   char *localprefix;

@@ -745,9 +745,9 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
          case confNumPorts:
             args.num_ports = numresult;
             break;
-         case confLocation: {
+         case confLocation: {   /* QQQ FIXME This doesn't work if location is a colon-separated list of paths. */
             string loc = strresult + "/spindle.$NUMBER";
-            args.location = strdup(loc.c_str());
+            args.candidate_locations = strdup(loc.c_str());
             break;
          }
          case confCachePaths:
@@ -764,9 +764,9 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             };
             paths += number_var_without_colon;
             if( name == confCachePaths ){
-                args.cachepaths = strdup(paths.c_str());
+                args.candidate_cachepaths = strdup(paths.c_str());
             }else{
-                args.commpaths  = strdup(paths.c_str());
+                args.candidate_commpaths  = strdup(paths.c_str());
             }
             break;
          }

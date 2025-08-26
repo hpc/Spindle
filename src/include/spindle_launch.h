@@ -123,14 +123,19 @@ typedef struct {
    /* Size of client shared memory cache */
    unsigned int shm_cache_size;
 
-   /* The local-disk location where Spindle will store its cache */
-   char *location;
+   /* [Deprecated] The local-disk location where Spindle will store its cache.
+    *   Use cachepaths and commpaths for future code. */
+   char *candidate_locations;   /* Colon-separated list of candidate paths. */
+   char *chosen_location;       /* Chosen path. */
 
-   /* Colon-separated list of candidate paths for cached libraries. */
-   char *cachepaths;
+   /* Path[s] for cached libraries. */
+   char *candidate_cachepaths;  /* Colon-separated list of candidate paths (max 64) */
+   char *chosen_cachepath;      /* The consensus path (same across all nodes). */
+   uint64_t cachepath_bitidx;   /* Bit index used by allReduce() to arrive at consensus. */
 
-   /* Colon-separated list of candidate paths for local fifos and other filesystem-based communication. */
-   char *commpaths;
+   /* Path[s] for local fifos and other filesystem-based communication. */
+   char *candidate_commpaths;   /* Colon-separated list of candidate paths. */
+   char *chosen_commpath;       /* The chosen path (can be node-specific). */
 
    /* Colon-seperated list of directories where Python is installed */
    char *pythonprefix;
