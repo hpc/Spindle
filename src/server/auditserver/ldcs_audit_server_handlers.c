@@ -179,6 +179,8 @@ static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc);
 static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 static int handle_alive_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata);
+static int handle_chosen_location_request(ldcs_process_data_t *procdata);
 
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
@@ -1983,6 +1985,10 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_alive_msg(procdata, msg);
       case LDCS_MSG_LOCATION_CONSENSUS:
          return handle_location_consensus(procdata, msg);
+      case LDCS_MSG_REQUEST_CHOSEN_CACHEPATH:
+         return handle_chosen_cachepath_request(procdata);
+      case LDCS_MSG_REQUEST_CHOSEN_LOCATION:
+         return handle_chosen_location_request(procdata);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -2961,6 +2967,31 @@ static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message
     // FIXME:  After this call returns we should have a consensus index.  Update our
     // paths and pass either the index or (ideally) the paths themselves to the clients.
     debug_printf2("QQQ Server caught the LDCS_MSG_LOCATION_CONSENSUS message.\n" );
+    return 0;
+}
+
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata){
+   ldcs_message_t msg;
+   int connid;
+   ldcs_client_t *client;
+
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   connid = client->connid;
+   if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
+      return 0;
+
+   msg.header.type = LDCS_MSG_PYTHONPREFIX_RESP;
+   msg.header.len = strlen(procdata->pythonprefix) + 1;
+   msg.data = procdata->pythonprefix;
+   
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+   return 0;
+    return 0;
+}
+static int handle_chosen_location_request(ldcs_process_data_t *procdata){
     return 0;
 }
 

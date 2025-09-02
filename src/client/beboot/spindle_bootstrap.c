@@ -58,16 +58,18 @@ static unsigned int cachesize;
 static char *number_s;
 
 // Unmodified colon-separated lists of paths.
-static char *symbolic_locationpaths, *symbolic_cachepaths, *symbolic_commpaths;
+//static char *symbolic_locationpaths, *symbolic_cachepaths, *symbolic_commpaths;   // QQQ FIXME remove once it's working
+static char *candidate_locations, *candidate_cachepaths, *candidate_commpaths;
 
 // Unmodified version of the first valid path in each list.
-static char *symbolic_location, *symbolic_cachepath, *symbolic_commpath;
+//static char *symbolic_location, *symbolic_cachepath, *symbolic_commpath;  // QQQ FIXME remove once it's working
 
 // Path resulting from removal of environment variables (e.g., $TMP).
-static char *orig_location, *orig_cachepath, *orig_commpath;
+//static char *orig_location, *orig_cachepath, *orig_commpath;  // QQQ FIXME remove once it's working
 
 // Path resulting from converting symlinks to canonical form.
-static char *location, *cachepath, *commpath;
+//static char *location, *cachepath, *commpath; // QQQ FIXME remove once it's working
+static char chosen_location[MAX_PATH_LEN+1], chosen_cachepath[MAX_PATH_LEN+1], chosen_commpath[MAX_PATH_LEN+1];
 
 static char **cmdline;
 static char *executable;
@@ -184,9 +186,12 @@ static int parse_cmdline(int argc, char *argv[])
          daemon_args[i - 3] = argv[i];
       daemon_args[i - 3] = NULL;
    }
-   symbolic_locationpaths = argv[i++];
-   symbolic_cachepaths = argv[i++];
-   symbolic_commpaths = argv[i++];
+   //symbolic_locationpaths = argv[i++];
+   //symbolic_cachepaths = argv[i++];
+   //symbolic_commpaths = argv[i++];
+   candidate_locations = argv[i++];
+   candidate_cachepaths = argv[i++];
+   candidate_commpaths = argv[i++];
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
    opts_s = argv[i++];
@@ -369,19 +374,30 @@ int main(int argc, char *argv[])
       }
    }
 
-   getFirstValidPath( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
+   // Need the commpath to set up the network connection.  Get the first
+   // valid path out of candidate_commpaths, just like the server did.
    getFirstValidPath( &commpath,  &orig_commpath,  &symbolic_commpath,  symbolic_commpaths,     number );
 
+/*
+   getFirstValidPath( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
    determineValidCachePaths( &bitidx, symbolic_cachepaths, number);
    getValidCachePathByIndex( bitidx, &cachepath, &orig_cachepath, &symbolic_cachepath );
-
-   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n", location, commpath, cachepath );
+*/
 
    if (daemon_args) {
       launch_daemon(location);
    }
 
    result = establish_connection();
+
+   // "location" is deprecated but we'll keep it around for now.
+   send_location_path_query( ldcsid, chosen_location );
+
+   // Server consensus was required to determine chose_cachepath, and
+   // can't replicate that as a client.  Just ask the server for the
+   // right answer.
+   send_cache_path_query( ldcsid, chosen_cachepath );
+
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");
       return -1;
