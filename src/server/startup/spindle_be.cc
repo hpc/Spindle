@@ -198,16 +198,16 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    }
 
    debug_printf("Setup done.  Running server.\n");
-   ldcs_audit_server_run();
+   result = ldcs_audit_server_run();
    if (result == -1) {
       err_printf("Error in ldcs_audit_server_process\n");
       return -1;
    }
 
 
-   if (args.startup_type == startup_external)   
+   if (args.startup_type == startup_external){
       LOGGING_FINI;
-
+   }
    return 0;
 }
 

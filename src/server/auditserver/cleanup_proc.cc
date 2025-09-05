@@ -276,5 +276,6 @@ void cleanup_created_dirs(const char *prefix_dir)
    else {
       debug_printf("Cleaning files with local unlink/rmdirs.\n");
       rmDirSet(local_dircache, prefix_dir);
-   }      
+   }
+   debug_printf("QQQ Exiting cleanup_created_dirs.\n");
 }

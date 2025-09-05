@@ -45,42 +45,46 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #error LIBEXECDIR must be defined
 #endif
 
-char *_ldcs_audit_server_tmpdir;
+// QQQ char *_ldcs_audit_server_tmpdir;
 static char *_ldcs_audit_server_cachepath;
 static char *_ldcs_audit_server_commpath;
-static char *normalized_tmpdir;
+// QQQ static char *normalized_tmpdir;
 
 extern int spindle_mkdir(char *path);
 
-static char *filemngt_normalize_dir(char *dir) {
+/* QQQ static char *filemngt_normalize_dir(char *dir) {
    char *newpath = realpath(dir, NULL);
    return newpath ? newpath : dir;
-}
+}*/
 
 int ldcs_audit_server_filemngt_init (char* location, char *cachepath, char *commpath) {
    int rc=0;
-
-   _ldcs_audit_server_tmpdir = location;
+   location=location;
+   // QQQ _ldcs_audit_server_tmpdir = location;
    _ldcs_audit_server_cachepath = cachepath;
    _ldcs_audit_server_commpath  = commpath;
+   /* QQQ
    if (-1 == spindle_mkdir(_ldcs_audit_server_tmpdir)) {
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_tmpdir);
       _error("mkdir failed");
    }
-   normalized_tmpdir = filemngt_normalize_dir(location);
-   
+   */
+   // QQQ normalized_tmpdir = filemngt_normalize_dir(location);
+
    return(rc);
 }
 
 /* Returns NULL if not a cached file. Otherwise, returns pointer to global portion of string */
 char* ldcs_is_a_cachedfile (char* filename) {
-  int len = strlen(_ldcs_audit_server_tmpdir);
-  int norm_len = strlen(normalized_tmpdir);
+  int len = strlen(_ldcs_audit_server_cachepath);
+  // QQQ int norm_len = strlen(normalized_tmpdir);
 
-  if ( strncmp(_ldcs_audit_server_tmpdir, filename, len) == 0 )
+  if ( strncmp(_ldcs_audit_server_cachepath, filename, len) == 0 )
      return filename + len + 1;
+  /* QQQ MATT REVIEW
   if ( strncmp(normalized_tmpdir, filename, norm_len) == 0 )
      return filename + norm_len + 1;
+  */
   return NULL;
 }
 
@@ -109,7 +113,7 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
    size_t dirpart_size, filepart_size;
    int cut_dirpart_slash;
 
-   lastslash = strrchr(_ldcs_audit_server_tmpdir, '/');
+   lastslash = strrchr(_ldcs_audit_server_cachepath, '/');
    if (lastslash && lastslash[1] == '\0')
       endslash = "";
    else
@@ -157,10 +161,10 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
 
    cut_dirpart_slash = (dirpart[0] == '/') ? 1 : 0;
    
-   snprintf(target, sizeof(target), "%s%s%s", _ldcs_audit_server_tmpdir, endslash, dirpart+cut_dirpart_slash);
+   snprintf(target, sizeof(target), "%s%s%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash);
    spindle_mkdir(target);
 
-   snprintf(target, sizeof(target), "%s%s%s/%s", _ldcs_audit_server_tmpdir, endslash, dirpart+cut_dirpart_slash, filepart);
+   snprintf(target, sizeof(target), "%s%s%s/%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash, filepart);
 
    GCC7_ENABLE_WARNING;
       
@@ -291,9 +295,10 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
  **/
 int ldcs_audit_server_filemngt_clean()
 {
-   cleanup_created_dirs(_ldcs_audit_server_tmpdir);
+   // QQQ cleanup_created_dirs(_ldcs_audit_server_tmpdir);
    cleanup_created_dirs(_ldcs_audit_server_cachepath);
    cleanup_created_dirs(_ldcs_audit_server_commpath);
+   debug_printf("QQQ directory cleanup complete.\n");
    return 0;
 }
 
@@ -835,7 +840,7 @@ int filemngt_convert_proc_maps(int pid, char *new_maps_filename, int new_maps_fi
    int result;
    debug_printf2("Asked to convert /proc/%d/maps to remove spindle paths\n", pid);
    
-   result = translate_proc_pid_maps(_ldcs_audit_server_tmpdir, pid, new_maps_filename, new_maps_filename_size);
+   result = translate_proc_pid_maps(_ldcs_audit_server_cachepath, pid, new_maps_filename, new_maps_filename_size);
    if (result == -1) {
       new_maps_filename[0] = '\0';
       return -1;

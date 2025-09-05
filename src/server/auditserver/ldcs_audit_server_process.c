@@ -266,7 +266,7 @@ int ldcs_audit_server_run()
       snprintf(shm_name, sizeof(shm_name), "biter_shm.%lu", (unsigned long) ldcs_process_data.number);
       shm_unlink(shm_name);
    }
-  
+  debug_printf("QQQ leaving ldcs_audit_server_run()\n"); 
    return 0;
 }
 

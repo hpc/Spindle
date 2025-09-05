@@ -52,7 +52,7 @@ int send_location_path_query( int fd, char **chosen_location ){ QQQ kill
 
    debug_printf3("sending message of type: request_location_path.\n" );
    client_send_msg(fd, &message);
-   client_recv_msg_static(fd, &message, LDCS_MSG_CHOSEN_LOCATION);
+   client_recv_msg_static(fd, &message, LDCS_READ_BLCOK);
 
    COMM_UNLOCK;
 
@@ -78,7 +78,7 @@ int send_cachepath_query( int fd, char **chosen_cachepath ){
 
    debug_printf3("sending message of type: request_location_path.\n" );
    client_send_msg(fd, &message);
-   client_recv_msg_static(fd, &message, LDCS_MSG_CHOSEN_CACHEPATH);
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
 
    COMM_UNLOCK;
 

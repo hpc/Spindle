@@ -2288,7 +2288,7 @@ static int handle_client_fileexist_msg(ldcs_process_data_t *procdata, int nc, ld
    return handle_client_progress(procdata, nc);
 }
 
-extern char *_ldcs_audit_server_tmpdir;
+// QQQ extern char *_ldcs_audit_server_tmpdir;
 static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldcs_message_t *msg)
 {
    ldcs_client_t *client;
@@ -2303,7 +2303,8 @@ static int handle_client_origpath_msg(ldcs_process_data_t *procdata, int nc, ldc
 
    lookuppath[MAX_PATH_LEN] = '\0';
    if (*origpath != '/' && *origpath != '.')
-      snprintf(lookuppath, MAX_PATH_LEN, "%s/%s", _ldcs_audit_server_tmpdir, origpath);
+      // QQQ replace with below snprintf(lookuppath, MAX_PATH_LEN, "%s/%s", _ldcs_audit_server_tmpdir, origpath);
+      snprintf(lookuppath, MAX_PATH_LEN, "%s/%s", procdata->cachepath, origpath);
    else
       strncpy(lookuppath, origpath, MAX_PATH_LEN);
 
