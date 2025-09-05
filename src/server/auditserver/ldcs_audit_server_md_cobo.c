@@ -401,10 +401,9 @@ int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
 }
 
 void ldcs_audit_server_md_consensus(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg){
-    int64_t x=1;
-    ldcs_process_data = ldcs_process_data;
-    msg = msg;
-    cobo_allreduce( &x, COBO_OP_SUM );
-    debug_printf2("QQQ allreduce result = %"PRId64".\n", x);
+    if( msg->header.type == LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS ){
+        cobo_allreduce( &ldcs_process_data->cachepath_bitidx, COBO_OP_BITWISE_AND );
+        debug_printf2("QQQ allreduce result = %#"PRIx64".\n", ldcs_process_data->cachepath_bitidx);
+    }
 }
 

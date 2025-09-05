@@ -177,19 +177,10 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    }
 
    determineValidCachePaths( &args.cachepath_bitidx, args.candidate_cachepaths, args.number);
-   /* QQQ FIXME Eventually this call will be moved to the LDCS_MSG_LOCATION_CONSENSUS message handler. */
-   getValidCachePathByIndex( args.cachepath_bitidx, &args.chosen_cachepath, NULL, NULL );
-   if( NULL == args.chosen_cachepath ){
-       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", args.chosen_location);
-       args.chosen_cachepath = args.chosen_location;
-   }
-   debug_printf( "QQQ location=%s, commpath=%s, cachepath=%s\n",
-           args.chosen_location, args.chosen_commpath, args.chosen_cachepath );
 
    // The test verifier is isolated behind the logger.  To set these paths, we
    // pass in "magic" logging messages.
    test_printf("<internal> location=%s\n", args.chosen_location);
-   test_printf("<internal> cachepath=%s\n", args.chosen_cachepath);
    test_printf("<internal> commpath=%s\n", args.chosen_commpath); /* QQQ Move to message handler */
 
    result = ldcs_audit_server_process(&args);

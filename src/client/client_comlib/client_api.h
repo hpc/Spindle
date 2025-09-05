@@ -31,7 +31,7 @@ int send_dir_cwd(int fd, char *cwd);
 int send_cwd(int fd);
 int send_pid(int fd);
 int send_cpu(int fd, int cpu);
-int send_location(int fd, char *location);
+// int send_location(int fd, char *location); QQQ Kill
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize);
 int send_end(int fd);
 int send_existance_test(int fd, char *path, int *exists);
@@ -42,8 +42,8 @@ int send_orig_path_request(int fd, const char *path, char *newpath);
 int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free);
 int send_procmaps_query(int fd, int pid, char *result);
 int send_pickone_query(int fd, char *key, int *result);
-int send_location_path_query( int fd, char *chosen_location );
-int send_cachepath_query( int fd, char *chosen_cachepath );
+// int send_location_path_query( int fd, char **chosen_location ); QQQ kill
+int send_cachepath_query( int fd, char **chosen_cachepath );
 
 
 int get_python_prefix(int fd, char **prefix);

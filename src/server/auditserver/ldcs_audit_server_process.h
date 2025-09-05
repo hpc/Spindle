@@ -85,7 +85,7 @@ struct ldcs_client_struct
   int                  lrank;
   int                  null_msg_cnt;
   ldcs_client_status_t state;
-  char                 remote_location[MAX_PATH_LEN+1];
+//  char                 remote_location[MAX_PATH_LEN+1]; // QQQ kill
   int                  remote_pid;
   char                 remote_cwd[MAX_PATH_LEN+1];
   int                  query_open;
@@ -127,11 +127,11 @@ struct ldcs_process_data_struct
   ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
 
-  char *location;
-  char *cachepaths;
-  char *cachepath;
-  uint64_t cachepath_bitidx;
-  char *commpath;
+  char *location;               // QQQ remove
+  char *cachepaths;             // QQQ rename to candidate_cachepaths
+  char *cachepath;              // QQQ rename to chosen_cachepath
+  int64_t cachepath_bitidx;
+  char *commpath;               // QQQ rename to chosen_commpath
 
   char *hostname;
   char *pythonprefix;
@@ -150,9 +150,11 @@ struct ldcs_process_data_struct
   int num_exited_children_peers;
   int num_exited_parents;
   int num_alives;
-  uint64_t valid_cachepaths;
-  uint64_t valid_commpaths;
-  uint64_t valid_locations;
+  /*
+  uint64_t valid_cachepaths;    // QQQ remove
+  uint64_t valid_commpaths;     // QQQ remove
+  uint64_t valid_locations;     // QQQ remove
+  */
   opt_t opts;
   requestor_list_t dso_requests;
   requestor_list_t file_requests;   

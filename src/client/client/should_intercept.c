@@ -31,20 +31,22 @@
 extern int relocate_spindleapi();
 
 extern char *location;
-extern char *orig_location;
+// extern char *orig_location; // QQQ fix the underlying issue
 
 int is_in_spindle_cache(const char *pathname)
 {
    static int location_size = 0;
-   static int orig_location_size = 0;
+   // static int orig_location_size = 0; // QQQ Fix the underlying issue.
    if (!location_size) {
       location_size = strlen(location);
    }
+   /* QQQ Fix the underlying issue
    if (!orig_location_size) {
       orig_location_size = strlen(orig_location);
    }
-   return ((strncmp(pathname, location, location_size) == 0) ||
-           (strncmp(pathname, orig_location, orig_location_size) == 0));
+   */
+   return (strncmp(pathname, location, location_size) == 0);
+        //   || (strncmp(pathname, orig_location, orig_location_size) == 0)) QQQ Fix the underlying issue.
 }
 
 extern int is_local_prefix(const char *path, char **cached_local_prefixes);

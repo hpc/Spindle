@@ -69,7 +69,8 @@ static char *candidate_locations, *candidate_cachepaths, *candidate_commpaths;
 
 // Path resulting from converting symlinks to canonical form.
 //static char *location, *cachepath, *commpath; // QQQ FIXME remove once it's working
-static char chosen_location[MAX_PATH_LEN+1], chosen_cachepath[MAX_PATH_LEN+1], chosen_commpath[MAX_PATH_LEN+1];
+// static char *chosen_location; QQQ kill
+static char *chosen_cachepath, *chosen_commpath;
 
 static char **cmdline;
 static char *executable;
@@ -112,7 +113,7 @@ extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCache
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
-   ldcsid = client_open_connection(commpath, number);
+   ldcsid = client_open_connection(chosen_commpath, number);
    if (ldcsid == -1){
       return -1;
    }
@@ -137,10 +138,10 @@ static void setup_environment()
    }
 
    setenv("LD_AUDIT", client_lib, 1);
-   setenv("LDCS_LOCATION", location, 1);
-   setenv("LDCS_ORIG_LOCATION", orig_location, 1);
-   setenv("LDCS_CACHEPATH", cachepath, 1);
-   setenv("LDCS_COMMPATH", commpath, 1);
+//   setenv("LDCS_LOCATION", chosen_location, 1); QQQ kill
+//   setenv("LDCS_ORIG_LOCATION", orig_location, 1); QQQ Fix the underlying issue.
+   setenv("LDCS_CACHEPATH", chosen_cachepath, 1);
+   setenv("LDCS_COMMPATH", chosen_commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str){
@@ -186,9 +187,9 @@ static int parse_cmdline(int argc, char *argv[])
          daemon_args[i - 3] = argv[i];
       daemon_args[i - 3] = NULL;
    }
-   //symbolic_locationpaths = argv[i++];
-   //symbolic_cachepaths = argv[i++];
-   //symbolic_commpaths = argv[i++];
+   //symbolic_locationpaths = argv[i++];    // QQQ remove if unneeded
+   //symbolic_cachepaths = argv[i++];       // QQQ remove if unneeded
+   //symbolic_commpaths = argv[i++];        // QQQ remove if unneeded
    candidate_locations = argv[i++];
    candidate_cachepaths = argv[i++];
    candidate_commpaths = argv[i++];
@@ -354,7 +355,7 @@ int main(int argc, char *argv[])
 {
    int result;
    char **j, *spindle_env;
-   uint64_t bitidx=0;
+   //uint64_t bitidx=0; QQQ cleanup if not needed.
 
    LOGGING_INIT_PREEXEC("Client");
    debug_printf("Launched Spindle Bootstrapper\n");
@@ -376,27 +377,27 @@ int main(int argc, char *argv[])
 
    // Need the commpath to set up the network connection.  Get the first
    // valid path out of candidate_commpaths, just like the server did.
-   getFirstValidPath( &commpath,  &orig_commpath,  &symbolic_commpath,  symbolic_commpaths,     number );
+   getFirstValidPath( &chosen_commpath,  NULL/*&orig_commpath*/,  NULL/*&symbolic_commpath*/,  candidate_commpaths, number ); // QQQ cleanup
 
 /*
-   getFirstValidPath( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );
-   determineValidCachePaths( &bitidx, symbolic_cachepaths, number);
-   getValidCachePathByIndex( bitidx, &cachepath, &orig_cachepath, &symbolic_cachepath );
+   getFirstValidPath( &location,  &orig_location,  &symbolic_location,  symbolic_locationpaths, number );   // QQQ cleanup
+   determineValidCachePaths( &bitidx, symbolic_cachepaths, number);                                         // QQQ cleanup
+   getValidCachePathByIndex( bitidx, &cachepath, &orig_cachepath, &symbolic_cachepath );                    // QQQ cleanup
 */
 
    if (daemon_args) {
-      launch_daemon(location);
+      launch_daemon(chosen_commpath);
    }
 
    result = establish_connection();
 
    // "location" is deprecated but we'll keep it around for now.
-   send_location_path_query( ldcsid, chosen_location );
+   // send_location_path_query( ldcsid, &chosen_location ); // QQQ cleanup if not needed
 
    // Server consensus was required to determine chose_cachepath, and
    // can't replicate that as a client.  Just ask the server for the
    // right answer.
-   send_cache_path_query( ldcsid, chosen_cachepath );
+   send_cachepath_query( ldcsid, &chosen_cachepath );
 
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");
@@ -418,7 +419,7 @@ int main(int argc, char *argv[])
 #else
       shm_cache_limit = cachesize;
 #endif
-      shmcache_init(location, number, cachesize, shm_cache_limit);
+      shmcache_init(chosen_commpath, number, cachesize, shm_cache_limit);
       use_cache = 1;
    }      
    

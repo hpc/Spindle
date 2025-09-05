@@ -178,10 +178,10 @@ static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, cha
 static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc);
 static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 static int handle_alive_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
-static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
-static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata);
-static int handle_chosen_location_request(ldcs_process_data_t *procdata);
+static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc);
 
+extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
  **/
@@ -199,11 +199,13 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       client->remote_pid=mypid;
       debug_printf2("Server recvd pid %d from %d\n", mypid, nc);
    } 
+   /* QQQ kill
    else if(msg->header.type == LDCS_MSG_LOCATION) {
       strncpy(client->remote_location, msg->data, sizeof(client->remote_location)-1);
       client->remote_location[sizeof(client->remote_location)-1] = '\0';
       debug_printf2("Server recvd location %s from %d\n", msg->data, nc);
    }
+   */
    else if (msg->header.type == LDCS_MSG_CPU) {
       int clientcpu;
       sscanf(msg->data, "%d", &clientcpu);
@@ -1859,7 +1861,7 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
    switch (msg->header.type) {
       case LDCS_MSG_CWD:
       case LDCS_MSG_PID:
-      case LDCS_MSG_LOCATION:
+      //case LDCS_MSG_LOCATION: QQQ Kill
       case LDCS_MSG_CPU:
          return handle_client_info_msg(procdata, nc, msg);
       case LDCS_MSG_PYTHONPREFIX_REQ:
@@ -1886,6 +1888,8 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
          return handle_client_pickone_msg(procdata, nc, msg);
       case LDCS_MSG_END:
          return handle_client_end(procdata, nc);
+      case LDCS_MSG_CHOSEN_CACHEPATH_REQUEST:
+         return handle_chosen_cachepath_request(procdata, nc);
       default:
          err_printf("Received unexpected message from client %d: %d\n", nc, (int) msg->header.type);
          assert(0);
@@ -1983,12 +1987,12 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_ALIVE_REQ:
       case LDCS_MSG_ALIVE_RESP:
          return handle_alive_msg(procdata, msg);
-      case LDCS_MSG_LOCATION_CONSENSUS:
-         return handle_location_consensus(procdata, msg);
-      case LDCS_MSG_REQUEST_CHOSEN_CACHEPATH:
-         return handle_chosen_cachepath_request(procdata);
+      case LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS:
+         return handle_cachepath_consensus(procdata, msg);
+         /* QQQ remove when everything else works
       case LDCS_MSG_REQUEST_CHOSEN_LOCATION:
          return handle_chosen_location_request(procdata);
+      */
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -2946,31 +2950,40 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
 }
 
 /**
- * Handle LDCS_MSG_LOCATION_CONSENSUS to determine which of the locations, commpaths, and cachepaths are
+ * Handle LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS to determine which of the locations, commpaths, and cachepaths are
  * available across all of the servers.
  */
 
-static int handle_location_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
+static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
+    debug_printf2("QQQ Server caught the LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS message.\n" );
+
     int num_children = ldcs_audit_server_md_get_num_children(procdata);
 
-    debug_printf3("Initializing file cache location %s\n", procdata->location);
-    ldcs_audit_server_filemngt_init(procdata->location, procdata->commpath, procdata->cachepath);
-
-
-    // FIXME:  Modify either the process data or the message with a bit index of working
-    // directories.
     if (num_children) {
         spindle_broadcast(procdata, msg);
         msgbundle_force_flush(procdata);
     }
+
     ldcs_audit_server_md_consensus(procdata, msg);
-    // FIXME:  After this call returns we should have a consensus index.  Update our
-    // paths and pass either the index or (ideally) the paths themselves to the clients.
-    debug_printf2("QQQ Server caught the LDCS_MSG_LOCATION_CONSENSUS message.\n" );
+
+    if( procdata->cachepath_bitidx == 0 ){
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", procdata->location);
+       procdata->cachepath = procdata->location;  // FIXME better way to think about this?
+    }else{
+        getValidCachePathByIndex( procdata->cachepath_bitidx, &procdata->cachepath, NULL, NULL );
+    }
+
+    debug_printf3("Initializing file cache location %s\n", procdata->location);
+    ldcs_audit_server_filemngt_init(procdata->location, procdata->commpath, procdata->cachepath);
+
+   test_printf("<internal> cachepath=%s\n", procdata->cachepath);
     return 0;
 }
 
-static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata){
+/**
+ * Handle LDCS_MSG_CHOSEN_CACHEPATH_REQUEST
+ */
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc){
    ldcs_message_t msg;
    int connid;
    ldcs_client_t *client;
@@ -2981,19 +2994,16 @@ static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata){
    if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
       return 0;
 
-   msg.header.type = LDCS_MSG_PYTHONPREFIX_RESP;
-   msg.header.len = strlen(procdata->pythonprefix) + 1;
-   msg.data = procdata->pythonprefix;
-   
+   msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
+   msg.header.len = strlen(procdata->cachepath) + 1;
+   msg.data = procdata->cachepath;
+
    ldcs_send_msg(connid, &msg);
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
    return 0;
-    return 0;
 }
-static int handle_chosen_location_request(ldcs_process_data_t *procdata){
-    return 0;
-}
+
 
 /**
  * Handle alive message, which is a broadcast/response ping through all servers

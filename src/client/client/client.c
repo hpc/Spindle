@@ -75,7 +75,7 @@ ElfW(Addr) libc_loadoffset, interp_loadoffset;
  * may contain symlinks
  */
 char *location, *cachepath, *commpath;
-char *orig_location;
+// char *orig_location; // QQQ Fix the underlying issue
 number_t number;
 static int have_stat_patches;
 
@@ -202,7 +202,7 @@ static int init_server_connection()
    }
 
    location = getenv("LDCS_LOCATION");
-   orig_location = getenv("LDCS_ORIG_LOCATION");
+   //orig_location = getenv("LDCS_ORIG_LOCATION"); // QQQ Fix the underlying issue.
    commpath = getenv("LDCS_COMMPATH");
    cachepath = getenv("LDCS_CACHEPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
@@ -264,7 +264,7 @@ static int init_server_connection()
       }
 
       send_pid(ldcsid);
-      send_location(ldcsid, location);
+      //send_location(ldcsid, location); QQQ kill
       send_rankinfo_query(ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
 #if defined(LIBNUMA)      
       if (opts & OPT_NUMA)

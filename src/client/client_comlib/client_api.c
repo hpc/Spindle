@@ -37,7 +37,9 @@ static struct lock_t comm_lock;
 #define COMM_LOCK do { if (lock(&comm_lock) == -1) return -1; } while (0)
 #define COMM_UNLOCK unlock(&comm_lock)
 
-int send_location_path_query( int fd, char *chosen_location ){
+#if 0
+// QQQ cleanup if not needed.
+int send_location_path_query( int fd, char **chosen_location ){ QQQ kill
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
@@ -54,22 +56,21 @@ int send_location_path_query( int fd, char *chosen_location ){
 
    COMM_UNLOCK;
 
-   if (message.header.type != LDCS_MSG_LOCATION_PATH || message.header.len > MAX_PATH_LEN) {
+   if (message.header.type != LDCS_MSG_CHOSEN_LOCATION || message.header.len > MAX_PATH_LEN) {
       err_printf("Got unexpected message of type %d\n", (int) message.header.type);
       assert(0);
    }
-   strncpy( chosen_location, buffer, MAX_PATH_LEN+1 );
-
-    return 0;
+   *chosen_location = strdup( buffer );
+   return 0;
 }
+#endif
 
-
-int send_cachepath_query( int fd, char *chosen_cachepath ){
+int send_cachepath_query( int fd, char **chosen_cachepath ){
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
 
-   message.header.type = LDCS_MSG_REQUEST_CHOSEN_CACHEPATH;
+   message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
    message.header.len = MAX_PATH_LEN;
    message.data = buffer;
 
@@ -81,11 +82,11 @@ int send_cachepath_query( int fd, char *chosen_cachepath ){
 
    COMM_UNLOCK;
 
-   if (message.header.type != LDCS_MSG_LOCATION_PATH || message.header.len > MAX_PATH_LEN) {
+   if (message.header.type != LDCS_MSG_CHOSEN_CACHEPATH || message.header.len > MAX_PATH_LEN) {
       err_printf("Got unexpected message of type %d\n", (int) message.header.type);
       assert(0);
    }
-   strncpy( chosen_location, buffer, MAX_PATH_LEN+1 );
+   *chosen_cachepath = strdup( buffer );
 
     return 0;
 }
@@ -365,7 +366,8 @@ int send_cpu(int fd, int cpu) {
    return(rc);
 }
 
-int send_location(int fd, char *location) {
+/*
+int send_location(int fd, char *location) { QQQ kill
    ldcs_message_t message;
 
    message.header.type = LDCS_MSG_LOCATION;
@@ -382,6 +384,7 @@ int send_location(int fd, char *location) {
 
    return 0;
 }
+*/
 
 int send_ldso_info_request(int fd, const char *ldso_path, char *result_path)
 {
