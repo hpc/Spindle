@@ -22,6 +22,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 
 #if !defined(USE_PLUGIN_DEBUG)
 #include "spindle_debug.h"
@@ -34,13 +35,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "spindle_launch.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-   char *parse_location(char *loc, number_t number);
-#if defined(__cplusplus)
-}
-#endif
+//char *parse_location(char *loc, number_t number);
+extern int spindle_mkdir(char *orig_path);
 
 #if defined(CUSTOM_GETENV)
 extern char *custom_getenv();
@@ -166,38 +162,64 @@ char *parse_location_noerr(char *loc, number_t number)
  **/
 char *realize(char *path)
 {
+   int local_errno;
    char *result;
-   char *origpath, *cur_slash = NULL, *trailing;
-   struct stat buf;
+   char *origpath, *cur_slash = NULL, *prev_slash = NULL;
+   struct stat *buf = calloc( 1, sizeof( struct stat ) );
    char newpath[MAX_PATH_LEN+1];
    int lastpos;
    newpath[MAX_PATH_LEN] = '\0';
 
    origpath = strdup(path);
-   for (;;) {
-      if (stat(origpath, &buf) != -1)
-         break;
-      if (cur_slash)
-         *cur_slash = '/';
+   errno=0;
+   while( stat( origpath, buf ) == -1 ){
+      local_errno = errno;
+      debug_printf("Failed to stat '%s' (%s).\n", origpath, strerror(local_errno));
+      prev_slash = cur_slash;
       cur_slash = strrchr(origpath, '/');
-      if (!cur_slash)
-         break;
-      *cur_slash = '\0';
+      if( prev_slash )
+          *prev_slash = '/';
+      if( cur_slash )
+          *cur_slash = '\0';
+      else{
+          debug_printf("Nothing in the original path can be stat'ed.  (%s)\n", path);
+          return NULL;
+      }
    }
-   if (cur_slash)
-      trailing = cur_slash + 1;
-   else
-      trailing = "";
 
+   errno = 0;
    result = realpath(origpath, newpath);
    if (!result) {
+      local_errno = errno;
+      err_printf(
+          "Error:  realpath(3) failed to create canonical version of '%s' (%s).  Returning '%s'.\n",
+          origpath, strerror(local_errno), path );
+      errno = 0;
+      int rc = stat( origpath, buf );
+      local_errno = errno;
+      err_printf(
+          "        Statting that path results in rc=%d, errno=%d, error='%s'.\n",
+          rc, local_errno, strerror(local_errno));
       free(origpath);
-      return path;
+      return NULL;
    }
+   free(buf);
 
-   strncat(newpath, "/", MAX_PATH_LEN);
-   strncat(newpath, trailing, MAX_PATH_LEN);
-   newpath[MAX_PATH_LEN] = '\0';
+   if( cur_slash ){
+       if( strlen( newpath ) + strlen( cur_slash+1 ) > MAX_PATH_LEN ){
+            err_printf(
+                    "Error:  The realized path exceeds MAX_PATH_LEN (%d).\n"
+                    "  Original path:     '%s'\n"
+                    "  Statable part:     '%s'\n"
+                    "  Canonical version: '%s'\n"
+                    "  Returning original path.\n",
+                    MAX_PATH_LEN, path, origpath, newpath);
+            free(origpath);
+            return path;
+       }
+       strncat(newpath, "/",         2);
+       strncat(newpath, cur_slash+1, MAX_PATH_LEN - strlen( newpath ));
+   }
    free(origpath);
 
    lastpos = strlen(newpath)-1;
@@ -223,13 +245,13 @@ char **parse_colonsep_prefixes(char *colonsep_list, number_t number)
       prefixes[0] = NULL;
       return prefixes;
    }
-   int numprefixes = 1;
+   size_t numprefixes = 1;
    for (size_t i = 0; s[i] != '\0'; i++) {
       if (s[i] == ':') {
          numprefixes++;
       }
    }   
-   int num_strs = numprefixes + 1;
+   size_t num_strs = numprefixes + 1;
    
    prefixes = (char **) malloc(sizeof(char*) * num_strs);
    size_t i = 0, cur = 0;
@@ -278,3 +300,77 @@ int is_local_prefix(const char *path, char **local_prefixes) {
    return 0;
 }
 
+/* validateCandidatePath determines if candidatePath passes parse_location(), realize(), and spindle_mkdir(), which is to say, can
+ * spindle create a directory from this path?
+ *
+ * If not NULL, then realizedPath, parsedPath, and/or symbolicPath will hold the respective intermediate/final results.
+ *
+ * Return 1 if the candidatePath is valid, otherwise 0.
+ */
+static int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number ){
+    int rc;
+    char *parsedCandidatePath, *realizedCandidatePath;
+    parsedCandidatePath = parse_location( candidatePath, number );
+    if( parsedCandidatePath ){
+       realizedCandidatePath = realize( parsedCandidatePath );
+       if( realizedCandidatePath ){
+           rc = spindle_mkdir( parsedCandidatePath );
+           if( 0 == rc ){
+               if( symbolicPath) *symbolicPath = candidatePath;
+               if( parsedPath  ) *parsedPath   = parsedCandidatePath;
+               if( realizedPath) *realizedPath = realizedCandidatePath;
+               return 1;
+           }else{
+               debug_printf2("Unable to create directory %s, moving on to the next candidate.\n", realizedCandidatePath );
+           }
+        }else{
+            debug_printf2( "Unable to realize candidate %s, moving on to the next candidate.\n", parsedCandidatePath );
+        }
+    }else{
+        debug_printf2("Unable to parse candidate %s, moving on to the next candidate.\n", candidatePath );
+    }
+    return 0;
+}
+
+/**
+ * determineValidCachePaths()  works exclusively with the cachepaths parameter.  Because not all paths may be valid on all
+ * compute nodes, and because we want to have all nodes reach a consensus on which cache path to use, we
+ * determine the validity of all paths in the origPathList, save the intermediate results, and return a bit
+ * index to the user.  Via allReduce() all nodes reach a consensus on the set of valid paths, and retrieves
+ * that informatino via getValidPathByIndex().
+ */
+static char *realizedCachePaths[64], *parsedCachePaths[64], *symbolicCachePaths[64];
+
+void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number ){
+
+    char *saveptr, *candidatePath, *pathList = strdup( origPathList );
+    uint64_t bitoffset = 0;
+
+    *validBitIdx = 0;
+    debug_printf2("origPathList='%s', number='%lu'.\n", origPathList, number );
+
+    candidatePath = strtok_r( pathList, ":", &saveptr );
+    while( NULL != candidatePath && bitoffset < 64 ){
+        *validBitIdx |= validateCandidatePath(
+                            candidatePath,
+                            &realizedCachePaths[bitoffset],
+                            &parsedCachePaths[bitoffset],
+                            &symbolicCachePaths[bitoffset], number ) << bitoffset;
+        bitoffset++;
+        candidatePath = strtok_r( NULL, ":", &saveptr );
+    }
+    free( pathList );
+}
+
+void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath ){
+    uint64_t bitoffset = 0;
+    if (!validBitIdx){
+        return;
+    }
+    while( (bitoffset < 64) && (((1 << bitoffset) & validBitIdx) == 0) ){
+        bitoffset++;
+    }
+    if( realizedCachePath ) *realizedCachePath = realizedCachePaths[bitoffset];
+    if( parsedCachePath   ) *parsedCachePath   = parsedCachePaths[bitoffset];
+    if( symbolicCachePath ) *symbolicCachePath = symbolicCachePaths[bitoffset];
+}
