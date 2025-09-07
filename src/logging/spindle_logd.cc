@@ -201,7 +201,7 @@ private:
    std::vector<std::string> err_strings;
    std::set<std::pair<int, std::string> > target_libs;
    std::set<std::pair<int, std::string> > libs_loaded;
-   char *location;
+   char *location, *cachepath;
 
    void logerror(std::string s)
    {
@@ -248,7 +248,9 @@ public:
          tmp_s = getenv("TEMPDIR");
       if (!tmp_s)
          tmp_s = "/tmp";
-      location = strdup(tmp_s);
+      // These are reasonable fallbacks that should be replaced via <internal> messages, below.
+      location  = strdup(tmp_s);
+      cachepath = strdup(tmp_s);
    }
 
    ~TestVerifier()
@@ -299,6 +301,12 @@ public:
         size_t loc_len = strlen( loc_start );
         location = strdup( loc_start );
         location[ loc_len - 1 ] = '\0'; // Remove trailing '\n'.
+      }else if (strstr(s, "<internal> cachepath=" ) == s ){
+        free( cachepath );
+        const char *loc_start = strstr( s, "=") + 1;
+        size_t loc_len = strlen( loc_start );
+        cachepath = strdup( loc_start );
+        cachepath[ loc_len - 1 ] = '\0';
       }
       if (strstr(s, "open(") == s) {
          const char *first_quote, *last_quote, *equals;
