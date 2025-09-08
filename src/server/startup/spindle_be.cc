@@ -59,6 +59,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
    unpack_param(args->location, buf, pos);
+   unpack_param(args->candidate_cachepaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
    unpack_param(args->bundle_timeout_ms, buf, pos);

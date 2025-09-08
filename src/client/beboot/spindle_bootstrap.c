@@ -54,6 +54,10 @@ number_t number;
 static int use_cache;
 static unsigned int cachesize;
 static char *location, *number_s, *orig_location, *symbolic_location;
+
+   static char *candidate_cachepaths; // Not needed, but has to be removed from upstream too.
+// static char *chosen_cachepath; // Uncomment when we enable send_cachepath_query().
+
 static char **cmdline;
 static char *executable;
 static char *client_lib;
@@ -115,6 +119,7 @@ static void setup_environment()
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
    setenv("LDCS_ORIG_LOCATION", orig_location, 1);
+   setenv("LDCS_CACHEPATH", location, 1);  // change to chosen_cachepath once that's populated.
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
@@ -161,6 +166,7 @@ static int parse_cmdline(int argc, char *argv[])
    }
 
    symbolic_location = argv[i++];
+   candidate_cachepaths = argv[i++]; // Remove once send_cachepath_query() is online.
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
    opts_s = argv[i++];
@@ -348,11 +354,19 @@ int main(int argc, char *argv[])
    }
    location = realize(orig_location);
 
+
    if (daemon_args) {
       launch_daemon(location);
    }
    
+
    result = establish_connection();
+
+   // Server consensus was required to determine chose_cachepath, and
+   // can't replicate that as a client.  Just ask the server for the
+   // right answer.
+   // send_cachepath_query( ldcsid, &chosen_cachepath );
+
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");
       return -1;
