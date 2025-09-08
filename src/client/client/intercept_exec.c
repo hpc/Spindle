@@ -198,13 +198,14 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
    if (envp) {
       debug_printf2("Propogating spindle environment by copying it to new envp list\n");
       for (cur = (char **) envp; *cur; cur++, orig_size++);
-      new_size = orig_size + 10;
+      new_size = orig_size + 20;
       newenv = (char **) malloc(new_size * sizeof(char*));
       
       propogateEnvironmentStr(envp, newenv, &pos, "SPINDLE");   
       propogateEnvironmentStr(envp, newenv, &pos, "LD_AUDIT");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_LOCATION");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_ORIG_LOCATION");
+      propogateEnvironmentStr(envp, newenv, &pos, "LDCS_CACHEPATH");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_CONNECTION");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_RANKINFO");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_OPTIONS");
