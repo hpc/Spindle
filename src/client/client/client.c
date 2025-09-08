@@ -72,8 +72,7 @@ ElfW(Addr) libc_loadoffset, interp_loadoffset;
 /* location has the realize'd path to the local file cache. orig_location is not realized and
  * may contain symlinks
  */
-char *location;
-char *orig_location;
+char *location, *orig_location, *cachepath;
 number_t number;
 static int have_stat_patches;
 
@@ -199,6 +198,7 @@ static int init_server_connection()
 
    location = getenv("LDCS_LOCATION");
    orig_location = getenv("LDCS_ORIG_LOCATION");
+   cachepath = getenv("LDCS_CACHEPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
@@ -219,6 +219,7 @@ static int init_server_connection()
       unsetenv("LD_AUDIT");
       unsetenv("LDCS_LOCATION");
       unsetenv("LDCS_ORIG_LOCATION");
+      unsetenv("LDCS_CACHEPATH");
       unsetenv("LDCS_NUMBER");
       unsetenv("LDCS_CONNECTION");
       unsetenv("LDCS_RANKINFO");
