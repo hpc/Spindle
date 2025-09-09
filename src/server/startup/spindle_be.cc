@@ -153,7 +153,6 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    debug_printf("Translated location from %s to %s\n", args.location, new_location);
    free(args.location);
    args.location = new_location;
-   test_printf("<internal> location=%s\n", args.location);
 
    determineValidCachePaths( &args.cachepath_bitidx, args.candidate_cachepaths, args.number);
 
