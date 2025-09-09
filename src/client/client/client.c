@@ -255,6 +255,7 @@ static int init_server_connection()
       if (ldcsid == -1)
          return -1;
 
+      send_cachepath_query( ldcsid, &cachepath );
       send_pid(ldcsid);
       send_location(ldcsid, location);
       send_rankinfo_query(ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
