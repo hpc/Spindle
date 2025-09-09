@@ -128,6 +128,8 @@ struct ldcs_process_data_struct
   char *location;
   char *cachepaths;
   char *cachepath;
+  char *symbolic_cachepath;
+  char *parsed_cachepath;
   int64_t cachepath_bitidx;
   char *hostname;
   char *pythonprefix;

@@ -40,6 +40,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "exec_util.h"
 #include "intercept.h"
+#include "should_intercept.h"
 
 errno_location_t app_errno_location;
 
@@ -72,7 +73,8 @@ ElfW(Addr) libc_loadoffset, interp_loadoffset;
 /* location has the realize'd path to the local file cache. orig_location is not realized and
  * may contain symlinks
  */
-char *location, *orig_location, *cachepath;
+static char *location, *orig_location;
+static char *chosen_realized_cachepath, *chosen_parsed_cachepath, *chosen_symbolic_cachepath;
 number_t number;
 static int have_stat_patches;
 
@@ -186,6 +188,7 @@ void int_spindle_test_log_msg(char *buffer)
 
 static int init_server_connection()
 {
+   char *cachepath; // QQQ Remove after send_cachepath_query() is working
    char *connection, *rankinfo_s, *opts_s, *cachesize_s;
    int old_ldcsid;
 
@@ -197,8 +200,8 @@ static int init_server_connection()
       return 0;
 
    location = getenv("LDCS_LOCATION");
-   orig_location = getenv("LDCS_ORIG_LOCATION");
-   cachepath = getenv("LDCS_CACHEPATH");
+   orig_location = getenv("LDCS_ORIG_LOCATION");    // QQQ can we remove this?
+   cachepath = getenv("LDCS_CACHEPATH"); // QQQ Remove after send_cachepath_query() is working
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
@@ -255,7 +258,6 @@ static int init_server_connection()
       if (ldcsid == -1)
          return -1;
 
-      send_cachepath_query( ldcsid, &cachepath );
       send_pid(ldcsid);
       send_location(ldcsid, location);
       send_rankinfo_query(ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
@@ -264,6 +266,10 @@ static int init_server_connection()
          send_cpu(ldcsid, get_cur_cpu());
 #endif
    }
+   send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath, &chosen_symbolic_cachepath );
+//    fprintf( stderr, "QQQ %s:%d:%s chosen_realized_cachepath=%s\n", __FILE__, __LINE__, __func__, chosen_realized_cachepath );
+   set_should_intercept_cachepath(   chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
+   set_intercept_readlink_cachepath( chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
    
    snprintf(debugging_name, 32, "Client.%d", rankinfo[0]);
    LOGGING_INIT(debugging_name);
@@ -469,7 +475,7 @@ char *client_library_load(const char *name)
 
    char *orig_file_name = (char *) name;
    if (is_in_spindle_cache(name)) {
-      debug_printf2("Library %s is in spindle cache (%s). Translating request\n", name, location);
+      debug_printf2("Library %s is in spindle cache (%s). Translating request\n", name, chosen_realized_cachepath);
       memset(fixed_name, 0, MAX_PATH_LEN+1);
       send_orig_path_request(ldcsid, orig_file_name, fixed_name);
       orig_file_name = fixed_name;

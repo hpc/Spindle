@@ -2961,16 +2961,19 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
 
     if( procdata->cachepath_bitidx == 0 ){
        err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", procdata->location);
-       procdata->cachepath = procdata->location;  // FIXME better way to think about this?
+       procdata->cachepath = procdata->location;
     }else{
         // ldcs_audit_server_filemngt_init() does it's own realize() pass.
-        getValidCachePathByIndex( procdata->cachepath_bitidx, NULL, &procdata->cachepath, NULL);
+        getValidCachePathByIndex( procdata->cachepath_bitidx,
+                &procdata->cachepath,
+                &procdata->parsed_cachepath,
+                &procdata->symbolic_cachepath);
     }
 
     debug_printf3("Initializing file cache location %s\n", procdata->location);
     // Enable use of cachepath here.
-    ldcs_audit_server_filemngt_init(procdata->location);
-    // ldcs_audit_server_filemngt_init(procdata->cachepath);
+    // ldcs_audit_server_filemngt_init(procdata->location); // QQQ remove when cachepath works
+    ldcs_audit_server_filemngt_init(procdata->cachepath);
 
     test_printf("<internal> cachepath=%s\n", procdata->cachepath);
     return 0;
@@ -2990,13 +2993,27 @@ static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc
    if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
       return 0;
 
+
    msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
+
    msg.header.len = strlen(procdata->cachepath) + 1;
    msg.data = procdata->cachepath;
-
    ldcs_send_msg(connid, &msg);
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   msg.header.len = strlen(procdata->parsed_cachepath) + 1;
+   msg.data = procdata->parsed_cachepath;
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   msg.header.len = strlen(procdata->symbolic_cachepath) + 1;
+   msg.data = procdata->symbolic_cachepath;
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
    return 0;
 }
 
