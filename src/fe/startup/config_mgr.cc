@@ -56,8 +56,8 @@ using namespace std;
 #define SPINDLE_LOC_STR "$TMPDIR"
 #endif
 
-#if defined(SPINDLE_CACHEPATHS)
-#define SPINDLE_CACHEPATHS_STR SPINDLE_CACHEPATHS
+#if defined(CACHEPATHS)
+#define SPINDLE_CACHEPATHS_STR CACHEPATHS
 #else
 #define SPINDLE_CACHEPATHS_STR "$TMPDIR"
 #endif
