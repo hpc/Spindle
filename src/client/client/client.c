@@ -267,7 +267,6 @@ static int init_server_connection()
 #endif
    }
    send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath, &chosen_symbolic_cachepath );
-//    fprintf( stderr, "QQQ %s:%d:%s chosen_realized_cachepath=%s\n", __FILE__, __LINE__, __func__, chosen_realized_cachepath );
    set_should_intercept_cachepath(   chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
    set_intercept_readlink_cachepath( chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
    
