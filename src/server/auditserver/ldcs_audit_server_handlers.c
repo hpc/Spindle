@@ -2971,8 +2971,6 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
     }
 
     debug_printf3("Initializing file cache location %s\n", procdata->location);
-    // Enable use of cachepath here.
-    // ldcs_audit_server_filemngt_init(procdata->location); // QQQ remove when cachepath works
     ldcs_audit_server_filemngt_init(procdata->cachepath);
 
     test_printf("<internal> cachepath=%s\n", procdata->cachepath);

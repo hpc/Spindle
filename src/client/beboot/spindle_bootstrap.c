@@ -118,8 +118,6 @@ static void setup_environment()
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
-   setenv("LDCS_ORIG_LOCATION", orig_location, 1);
-   setenv("LDCS_CACHEPATH", location, 1);  // change to chosen_cachepath once that's populated.
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)

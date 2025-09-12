@@ -70,10 +70,7 @@ static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
 static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
 
-/* location has the realize'd path to the local file cache. orig_location is not realized and
- * may contain symlinks
- */
-static char *location, *orig_location;
+static char *location;
 static char *chosen_realized_cachepath, *chosen_parsed_cachepath, *chosen_symbolic_cachepath;
 number_t number;
 static int have_stat_patches;
@@ -188,7 +185,6 @@ void int_spindle_test_log_msg(char *buffer)
 
 static int init_server_connection()
 {
-   char *cachepath; // QQQ Remove after send_cachepath_query() is working
    char *connection, *rankinfo_s, *opts_s, *cachesize_s;
    int old_ldcsid;
 
@@ -200,8 +196,6 @@ static int init_server_connection()
       return 0;
 
    location = getenv("LDCS_LOCATION");
-   orig_location = getenv("LDCS_ORIG_LOCATION");    // QQQ can we remove this?
-   cachepath = getenv("LDCS_CACHEPATH"); // QQQ Remove after send_cachepath_query() is working
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
@@ -221,8 +215,6 @@ static int init_server_connection()
       debug_printf("Disabling environment variables because we're not following forks\n");
       unsetenv("LD_AUDIT");
       unsetenv("LDCS_LOCATION");
-      unsetenv("LDCS_ORIG_LOCATION");
-      unsetenv("LDCS_CACHEPATH");
       unsetenv("LDCS_NUMBER");
       unsetenv("LDCS_CONNECTION");
       unsetenv("LDCS_RANKINFO");
