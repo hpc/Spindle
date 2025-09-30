@@ -1,0 +1,21 @@
+name: Linting & Style Checks
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+        with:
+          cache: 'pip'
+          cache-dependency-path: '.github/workflows/requirements/style.txt'
+
+      - name: Run Typos
+        run: typos README INSTALL

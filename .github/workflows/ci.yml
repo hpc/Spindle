@@ -1,0 +1,59 @@
+name: ci
+on:
+  push:
+    branches:
+      - devel
+  pull_request:
+    branches:
+      - devel
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{github.ref}}-${{github.event.pull_request.number || github.run_number}}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      style: ${{ steps.filter.outputs.style }}
+      security: ${{ steps.filter.outputs.security }}
+      unit-tests: ${{ steps.filter.outputs.unit-tests }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # @v2
+        if: ${{ github.event_name == 'push' }}
+        with:
+          fetch-depth: 0
+
+        # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: filter
+        with:
+          filters: |
+            style:
+              - '.github/**/*'
+              - 'INSTALL'
+              - 'README'
+
+  style:
+    if: ${{ needs.changes.outputs.style == 'true' }}
+    needs: changes
+    uses: ./.github/workflows/style.yml
+
+  all:
+    needs:
+     - changes
+     - style
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Status summary
+      run: |
+        if ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}; then
+          echo "One or more required jobs failed or were cancelled"
+          exit 1
+        else
+          echo "All jobs completed successfully"
+        fi
