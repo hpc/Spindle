@@ -17,5 +17,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: '.github/workflows/requirements/style.txt'
 
+      - name: Install Python dependencies
+        run: |
+          pip install -r .github/workflows/requirements/style.txt
+
       - name: Run Typos
         run: typos README INSTALL
