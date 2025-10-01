@@ -8,7 +8,7 @@ options you'll have to pass to Spindle's configure line before it'll
 work with your cluster.  In short, you may have to provide some subset
 of the following to configure:
 
-1) Specify a security model 
+1) Specify a security model
 2) Specify a compiler to use for both front-end and back-end processes
 3) Specify a start-up mechanism that works on your cluster
 4) Specify a back-end local storage location
@@ -61,7 +61,7 @@ runtime:
     broadcasting it with LaunchMON's communication infrastructure.
     Note that this makes the key only as secure as LaunchMON's
     communications.  The (currently pending) LaunchMON 1.0.0 release
-    should have its own security infrastrucure. 
+    should have its own security infrastructure.
 
   --enable-sec-none - This option tells Spindle not to authenticate
     connections into its network.  This should only be used in secure
@@ -104,20 +104,20 @@ run 'configure --help' to see them all.
 If you're integrating Spindle with SLURM, then you can use Spindle's slurm
 wrappers, and optionally use Spindle's slurm plugin.  The wrappers can be
 enabled by --with-rm=slurm.  These let you run spindle on slurm by invoking
-"spindle srun ...".  But you have to get a SLURM allocation before running 
-spindle/srun.  You can also build a SLURM plugin by adding the 
+"spindle srun ...".  But you have to get a SLURM allocation before running
+spindle/srun.  You can also build a SLURM plugin by adding the
 --enable-slurm-plugin option to configure.  By putting the resulting plugin
-file libspindleslurm.so into SLURM's plugstack.conf, you can run Spindle 
-with "srun --spindle ...".  This mode does not nead an allocation already
-setup when you invoke srun (but it doesn't hurt to have one).  The ideal 
+file libspindleslurm.so into SLURM's plugstack.conf, you can run Spindle
+with "srun --spindle ...".  This mode does not need an allocation already
+setup when you invoke srun (but it doesn't hurt to have one).  The ideal
 launch mode would be to enable both.
 
 If you're integrating Spindle with IBM's LSF, then you can use IBM's built-in
 LSF integration, or you can enable Spindle's jsrun/lrun wrappers.  See IBM's
-documentation for using their built-in Spindle integration--it's invoked 
-with something similar to "jsrun --use_spindle=1".  To enable Spindle's 
+documentation for using their built-in Spindle integration--it's invoked
+with something similar to "jsrun --use_spindle=1".  To enable Spindle's
 LSF wrapper, configure spindle with the "--with-rm=jsrun" (if building
-Spindle with LLNL's lrun wrappers to jsrun, then use --with-rm=lrun).  
+Spindle with LLNL's lrun wrappers to jsrun, then use --with-rm=lrun).
 This will let you run Spindle with "spindle jsrun ...".
 
 Otherwise, you can use LaunchMON
@@ -157,7 +157,7 @@ to stdout and then exit with a zero return code.
 
 4) Specify a back-end local storage location
 
-Spindle is transmiting library files to each back-end, and it needs a
+Spindle is transmitting library files to each back-end, and it needs a
 location to store those libraries.  That location does not need to be
 shared across the cluster, and it should provide fast, scalable access
 to files.  A ramdisk or local SSD would be ideal.
@@ -201,4 +201,3 @@ about:
     ports that Spindle will use for communicating between its daemons.
     It's usually okay to leave these at their default values (port
     range 21940-21964), unless there happens to be a conflict.
-
