@@ -382,7 +382,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
     const char *pyprefix = NULL, *location = NULL;
-    char *numafiles = NULL;
+    char *numafiles = NULL, *cachepaths = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
         return -1;
@@ -404,7 +404,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
                         "push", &push,
@@ -419,7 +419,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "numa", &numa,
                         "numa-files", &numafiles,
                         "preload", &preload,
-                        "level", &level) < 0)
+                        "level", &level,
+                        "cachepaths", &cachepaths) < 0)
        logerrno_printf_and_return(1, "Error in spindle option: %s\n", error.text);
 
     if (noclean)
@@ -461,6 +462,9 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
            logerrno_printf_and_return(1, "unable to append to pythonprefix\n");
         free (ctx->params.pythonprefix);
         ctx->params.pythonprefix = tmp;
+    }
+    if( cachepaths ){
+        ctx->params.candidate_cachepaths = cachepaths;
     }
     if (location) {
        ctx->params.location = (char *) location;
