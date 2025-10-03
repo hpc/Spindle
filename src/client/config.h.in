@@ -6,6 +6,9 @@
 /* Whether we are using a broken srun */
 #undef BROKEN_SRUN
 
+/* Colon-separated list of potential back-end cache directories */
+#undef CACHEPATHS
+
 /* Define if were using biter for client/server communication */
 #undef COMM_BITER
 
