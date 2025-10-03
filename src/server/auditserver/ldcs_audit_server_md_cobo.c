@@ -401,3 +401,9 @@ int ldcs_audit_server_md_get_num_children(ldcs_process_data_t *procdata)
    cobo_get_num_childs(&num_childs);
    return num_childs;
 }
+
+void ldcs_audit_server_md_consensus(ldcs_process_data_t *ldcs_process_data, ldcs_message_t *msg){
+    if( msg->header.type == LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS ){
+        cobo_allreduce( &ldcs_process_data->cachepath_bitidx, COBO_OP_BITWISE_AND );
+    }
+}
