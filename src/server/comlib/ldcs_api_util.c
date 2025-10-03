@@ -91,6 +91,9 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
       STR_CASE(LDCS_MSG_PICKONE_RESP);
       STR_CASE(LDCS_MSG_ALIVE_REQ);
       STR_CASE(LDCS_MSG_ALIVE_RESP);      
+      STR_CASE(LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS);
+      STR_CASE(LDCS_MSG_CHOSEN_CACHEPATH_REQUEST);
+      STR_CASE(LDCS_MSG_CHOSEN_CACHEPATH);
       STR_CASE(LDCS_MSG_UNKNOWN);
    }
    return "unknown";

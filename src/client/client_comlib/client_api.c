@@ -37,6 +37,59 @@ static struct lock_t comm_lock;
 #define COMM_LOCK do { if (lock(&comm_lock) == -1) return -1; } while (0)
 #define COMM_UNLOCK unlock(&comm_lock)
    
+
+int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chosen_parsed_cachepath, char **chosen_symbolic_cachepath ){
+   ldcs_message_t message;
+   char buffer[MAX_PATH_LEN+1];
+   buffer[MAX_PATH_LEN] = '\0';
+
+   message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
+   message.header.len = MAX_PATH_LEN;
+   message.data = buffer;
+
+   COMM_LOCK;
+
+   debug_printf3("sending message of type: request_location_path.\n" );
+   client_send_msg(fd, &message);
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_CHOSEN_CACHEPATH || message.header.len > MAX_PATH_LEN) {
+      err_printf("Got unexpected message of type %d\n", (int) message.header.type);
+      assert(0);
+   }
+   if( chosen_realized_cachepath ){
+       *chosen_realized_cachepath = strdup( buffer );
+   }
+
+   COMM_LOCK;
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_CHOSEN_CACHEPATH || message.header.len > MAX_PATH_LEN) {
+      err_printf("Got unexpected message of type %d\n", (int) message.header.type);
+      assert(0);
+   }
+   if( chosen_parsed_cachepath ){
+       *chosen_parsed_cachepath = strdup( buffer );
+   }
+
+   COMM_LOCK;
+   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   COMM_UNLOCK;
+
+   if (message.header.type != LDCS_MSG_CHOSEN_CACHEPATH || message.header.len > MAX_PATH_LEN) {
+      err_printf("Got unexpected message of type %d\n", (int) message.header.type);
+      assert(0);
+   }
+   if( chosen_symbolic_cachepath ){
+       *chosen_symbolic_cachepath = strdup( buffer );
+   }
+
+   return 0;
+}
+
 int send_file_query(int fd, char* path, int dso, char** newpath, int *errcode) {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1+sizeof(int)];

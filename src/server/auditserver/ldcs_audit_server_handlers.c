@@ -178,7 +178,10 @@ static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, cha
 static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc);
 static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 static int handle_alive_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc);
 
+extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
 /**
  * Query from client to server.  Returns info about client's rank in server data structures. 
  **/
@@ -1890,6 +1893,8 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
          return handle_client_pickone_msg(procdata, nc, msg);
       case LDCS_MSG_END:
          return handle_client_end(procdata, nc);
+      case LDCS_MSG_CHOSEN_CACHEPATH_REQUEST:
+         return handle_chosen_cachepath_request(procdata, nc);
       default:
          err_printf("Received unexpected message from client %d: %d\n", nc, (int) msg->header.type);
          assert(0);
@@ -1987,6 +1992,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_ALIVE_REQ:
       case LDCS_MSG_ALIVE_RESP:
          return handle_alive_msg(procdata, msg);
+      case LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS:
+         return handle_cachepath_consensus(procdata, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -2944,6 +2951,79 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
       return handle_client_pickone_resp(procdata, nc, 0);
    }
 }
+
+/**
+ * Handle LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS to determine which of the locations, commpaths, and cachepaths are
+ * available across all of the servers.
+ */
+
+static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
+
+    int num_children = ldcs_audit_server_md_get_num_children(procdata);
+
+    if (num_children) {
+        spindle_broadcast(procdata, msg);
+        msgbundle_force_flush(procdata);
+    }
+
+    ldcs_audit_server_md_consensus(procdata, msg);
+
+    if( procdata->cachepath_bitidx == 0 ){
+       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", procdata->location);
+       procdata->cachepath = procdata->location;
+    }else{
+        // ldcs_audit_server_filemngt_init() does it's own realize() pass.
+        getValidCachePathByIndex( procdata->cachepath_bitidx,
+                &procdata->cachepath,
+                &procdata->parsed_cachepath,
+                &procdata->symbolic_cachepath);
+    }
+
+    debug_printf3("Initializing file cache location %s\n", procdata->location);
+    ldcs_audit_server_filemngt_init(procdata->cachepath);
+
+    test_printf("<internal> cachepath=%s\n", procdata->cachepath);
+    return 0;
+}
+
+/**
+ * Handle LDCS_MSG_CHOSEN_CACHEPATH_REQUEST
+ */
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc){
+   ldcs_message_t msg;
+   int connid;
+   ldcs_client_t *client;
+
+   assert(nc != -1);
+   client = procdata->client_table + nc;
+   connid = client->connid;
+   if (client->state != LDCS_CLIENT_STATUS_ACTIVE || connid < 0)
+      return 0;
+
+
+   msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
+
+   msg.header.len = strlen(procdata->cachepath) + 1;
+   msg.data = procdata->cachepath;
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   msg.header.len = strlen(procdata->parsed_cachepath) + 1;
+   msg.data = procdata->parsed_cachepath;
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   msg.header.len = strlen(procdata->symbolic_cachepath) + 1;
+   msg.data = procdata->symbolic_cachepath;
+   ldcs_send_msg(connid, &msg);
+   procdata->server_stat.clientmsg.cnt++;
+   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
+
+   return 0;
+}
+
 
 /**
  * Handle alive message, which is a broadcast/response ping through all servers
