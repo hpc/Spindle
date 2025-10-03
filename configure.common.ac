@@ -17,6 +17,10 @@ AC_ARG_WITH(default-num-ports,
             [AS_HELP_STRING([--with-default-numports=NUM],[Number of TCP/IP ports to scan for Spindle server communication])],
             [NUM_COBO_PORTS=${withval}],
             [NUM_COBO_PORTS=$DEFAULT_NUM_COBO_PORTS])
+AC_ARG_WITH(cachepaths,
+            [AS_HELP_STRING([--with-cachepaths=DIR],[Colon-separated list of potential back-end cache directories])],
+            [CACHEPATHS=${withval}],
+            [CACHEPATHS=$DEFAULT_LOC])
 AC_ARG_WITH(localstorage,
             [AS_HELP_STRING([--with-localstorage=DIR],[Directory on back-ends for storing relocated files])],
             [SPINDLE_LOC=${withval}],
@@ -29,6 +33,7 @@ AC_DEFINE_UNQUOTED([SPINDLE_PORT],[$SPINDLE_PORT],[The default port for Spindle]
 AC_DEFINE_UNQUOTED([NUM_COBO_PORTS],[$NUM_COBO_PORTS],[Number of ports for COBO to search for an open port])
 AC_DEFINE_UNQUOTED([SPINDLE_MAX_PORT],[$(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))],[The maximum port value])
 AC_DEFINE_UNQUOTED([SPINDLE_LOC],"[$SPINDLE_LOC]",[The default local directory for Spindle])
+AC_DEFINE_UNQUOTED([CACHEPATHS],"[$CACHEPATHS]",[Colon-separated list of potential back-end cache directories])
 AC_DEFINE_UNQUOTED([SPINDLE_LOCAL_PREFIX],"[$SPINDLE_LOCAL_PREFIX]",[The default colon-separated list of directories that Spindle will not cache files out of])
 
 TESTRM=unknown
