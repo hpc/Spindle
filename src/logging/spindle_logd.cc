@@ -202,7 +202,7 @@ private:
    std::vector<std::string> err_strings;
    std::set<std::pair<int, std::string> > target_libs;
    std::set<std::pair<int, std::string> > libs_loaded;
-   char *location;
+   char *cachepath;
 
    void logerror(std::string s)
    {
@@ -249,7 +249,8 @@ public:
          tmp_s = getenv("TEMPDIR");
       if (!tmp_s)
          tmp_s = "/tmp";
-      location = strdup(tmp_s);
+      // These are reasonable fallbacks that should be replaced via <internal> messages, below.
+      cachepath  = strdup(tmp_s);
    }
 
    ~TestVerifier()
@@ -268,7 +269,7 @@ public:
           strstr(filename, "retzero") == NULL &&
           strstr(filename, ".py") == NULL)
          return true;
-      bool is_from_temp = (strstr(filename, location) != NULL) && (strncmp(filename, "/__not_exist", 12) != 0);
+      bool is_from_temp = (strstr(filename, cachepath) != NULL) && (strncmp(filename, "/__not_exist", 12) != 0);
       bool is_local_test = strstr(filename, "liblocal") != NULL;
 
       if (is_from_temp && !is_local_test && ret_code == -1) {
@@ -294,12 +295,12 @@ public:
       char buffer[4096];
       int ret;
 
-      if (strstr(s, "<internal> location=" ) == s ){
-        free( location );
-        const char *loc_start = strstr( s, "=") + 1;
-        size_t loc_len = strlen( loc_start );
-        location = strdup( loc_start );
-        location[ loc_len - 1 ] = '\0'; // Remove trailing '\n'.
+      if (strstr(s, "<internal> cachepath=" ) == s ){
+        free( cachepath );
+        const char *cachepath_start = strstr( s, "=") + 1;
+        size_t cachepath_len = strlen( cachepath_start );
+        cachepath = strdup( cachepath_start );
+        cachepath[ cachepath_len - 1 ] = '\0'; // Remove trailing '\n'.
       }
       if (strstr(s, "open(") == s) {
          const char *first_quote, *last_quote, *equals;
