@@ -192,8 +192,10 @@ int ldcs_audit_server_process(spindle_args_t *args)
       ldcs_process_data.hostname = strdup(buffer);
    }
    ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
+
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
       init_cleanup_proc(ldcs_process_data.location);
+
    debug_printf3("Initializing connections for clients at %s and %lu\n",
                  ldcs_process_data.location, (unsigned long) ldcs_process_data.number);
    serverid = ldcs_create_server(ldcs_process_data.location, ldcs_process_data.number);
