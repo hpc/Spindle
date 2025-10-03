@@ -56,6 +56,12 @@ using namespace std;
 #define SPINDLE_LOC_STR "$TMPDIR"
 #endif
 
+#if defined(CACHEPATHS)
+#define SPINDLE_CACHEPATHS_STR CACHEPATHS
+#else
+#define SPINDLE_CACHEPATHS_STR "$TMPDIR"
+#endif
+
 #if defined(SPINDLE_LOCAL_PREFIX)
 #define SPINDLE_LOCAL_PREFIX_STR SPINDLE_LOCAL_PREFIX
 #else
@@ -269,6 +275,8 @@ void initOptionsList()
      "Strip debug and symbol information from binaries before distributing them." },
    { confLocation, "location", shortLocation, groupMisc, cvString, {}, SPINDLE_LOC_STR,
      "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk." },
+   { confCachePaths, "cachepaths", shortCachePaths, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
+     "Colon-separated list of candidate paths for cached libraries."},
    { confNoclean, "noclean", shortNoClean, groupMisc, cvBool, {}, "false",
      "Don't remove local file cache after execution." },
    { confDisableLogging, "disable-logging", shortDisableLogging, groupMisc, cvBool, {}, DISABLE_LOGGING_STR,
@@ -738,6 +746,21 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
          case confLocation: {
             string loc = strresult + "/spindle.$NUMBER";
             args.location = strdup(loc.c_str());
+            break;
+         }
+         case confCachePaths:{
+            // Paramemter values are colon-separated lists of paths.
+            // Append "/spindle.$NUMBER" to each path in the list.
+            string paths = strresult;
+            size_t idx = paths.find(":");
+            string number_var_with_colon("/spindle.$NUMBER:");
+            string number_var_without_colon("/spindle.$NUMBER");
+            while( idx != string::npos ){
+               paths.replace(idx, 1, number_var_with_colon);
+               idx = paths.find(":", idx + number_var_with_colon.size());
+            };
+            paths += number_var_without_colon;
+            args.candidate_cachepaths = strdup(paths.c_str());
             break;
          }
          case confCachePrefix:
