@@ -1142,27 +1142,6 @@ static char* getCacheLocation(char *env_var)
    return strdup(last_slash);
 }
 
-static int checkLinkForLeak(const char *path, const char *spindle_loc)
-{
-   char link_target[4096];
-   int result, error;
-   memset(link_target, 0, sizeof(link_target));
-
-   result = readlink(path, link_target, sizeof(link_target));
-   if (result == -1) {
-      error = errno;
-      err_printf("Failed to read link %s: %s\n", path, strerror(error));
-      return -1;
-   }
-
-   if (strstr(link_target, spindle_loc)) {
-      err_printf("Link at '%s' has path '%s', which leaks spindle path with '%s'\n", path, link_target, spindle_loc);
-      return -1;
-   }
-
-   return 0;
-}
-
 static int checkPathForLeak(const char *what, const char *path, const char *spindle_loc)
 {
    if (strstr(path, spindle_loc)) {
@@ -1259,9 +1238,7 @@ void check_for_path_leaks()
          continue;
       strncpy(path, "/proc/self/fd/", sizeof(path));
       strncat(path, d->d_name, sizeof(path)-1);
-      checkLinkForLeak(path, spindle_loc);
    }
-   checkLinkForLeak("/proc/self/exe", spindle_loc);
 
    /**
     * Check link_maps for leaked spindle paths

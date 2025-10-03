@@ -55,6 +55,7 @@ extern "C" {
 #define cobo_allgather COMBINE(COBO_NAMESPACE, cobo_allgather)
 #define cobo_alltoall  COMBINE(COBO_NAMESPACE, cobo_alltoall )
 #define cobo_allgather_str COMBINE(COBO_NAMESPACE, cobo_allgather_str)
+#define cobo_allreduce COMBINE(COBO_NAMESPACE, cobo_allreduce)
 #define cobo_server_open COMBINE(COBO_NAMESPACE, cobo_server_open)
 #define cobo_server_close COMBINE(COBO_NAMESPACE, cobo_server_close)
 #define cobo_server_get_root_socket COMBINE(COBO_NAMESPACE, cobo_server_get_root_socket)
@@ -66,6 +67,19 @@ extern "C" {
 #define cobo_preconnect_cb_t COMBINE(COBO_NAMESPACE, cobo_preconnect_cb_t)
 #define cobo_register_preconnect_cb COMBINE(COBO_NAMESPACE, cobo_register_preconnect_cb)
 #endif
+
+// Used for cobo_allreduce().
+typedef enum{
+    COBO_OP_MIN,
+    COBO_OP_MAX,
+    COBO_OP_BITWISE_AND,
+    COBO_OP_BITWISE_OR,
+    COBO_OP_LOGICAL_AND,
+    COBO_OP_LOGICAL_OR,
+    COBO_OP_SUM,
+    COBO_OP_NOOP,
+    NUM_COBO_OP
+} cobo_op_t;
 
 /*
  * ==========================================================================
@@ -127,6 +141,8 @@ int cobo_alltoall (void* sendbuf, int sendcount, void* recvbuf);
  *   free(buf);
  */
 int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf);
+
+int cobo_allreduce(int64_t *pval, cobo_op_t op);
 
 /*
  * ==========================================================================

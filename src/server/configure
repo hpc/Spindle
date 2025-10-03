@@ -837,6 +837,7 @@ enable_libtool_lock
 enable_maintainer_mode
 with_default_port
 with_default_num_ports
+with_cachepaths
 with_localstorage
 with_default_local_prefix
 with_testrm
@@ -1567,6 +1568,8 @@ Optional Packages:
   --with-default-numports=NUM
                           Number of TCP/IP ports to scan for Spindle server
                           communication
+  --with-cachepaths=DIR   Colon-separated list of potential back-end cache
+                          directories
   --with-localstorage=DIR Directory on back-ends for storing relocated files
   --with-default-local-prefix=DIRS
                           Colon-seperated list of directories that Spindle
@@ -16434,6 +16437,14 @@ else
 fi
 
 
+# Check whether --with-cachepaths was given.
+if test "${with_cachepaths+set}" = set; then :
+  withval=$with_cachepaths; CACHEPATHS=${withval}
+else
+  CACHEPATHS=$DEFAULT_LOC
+fi
+
+
 # Check whether --with-localstorage was given.
 if test "${with_localstorage+set}" = set; then :
   withval=$with_localstorage; SPINDLE_LOC=${withval}
@@ -16467,6 +16478,11 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define SPINDLE_LOC "$SPINDLE_LOC"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define CACHEPATHS "$CACHEPATHS"
 _ACEOF
 
 
