@@ -54,7 +54,6 @@ number_t number;
 static int use_cache;
 static unsigned int cachesize;
 static char *location, *number_s, *orig_location, *symbolic_location;
-
 static char **cmdline;
 static char *executable;
 static char *client_lib;
@@ -349,14 +348,11 @@ int main(int argc, char *argv[])
    }
    location = realize(orig_location);
 
-
    if (daemon_args) {
       launch_daemon(location);
    }
    
-
    result = establish_connection();
-
    if (result == -1) {
       err_printf("spindle_bootstrap failed to connect to daemons\n");
       return -1;
