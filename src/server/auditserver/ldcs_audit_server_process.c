@@ -142,6 +142,9 @@ int ldcs_audit_server_process(spindle_args_t *args)
 
    debug_printf3("Initializing server data structures\n");
    ldcs_process_data.location = args->location;
+   ldcs_process_data.cachepaths = args->candidate_cachepaths;
+   ldcs_process_data.cachepath = args->chosen_cachepath;
+   ldcs_process_data.cachepath_bitidx = args->cachepath_bitidx;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.localprefix = args->local_prefixes;
@@ -191,8 +194,6 @@ int ldcs_audit_server_process(spindle_args_t *args)
    }
    ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
 
-   debug_printf3("Initializing file cache location %s\n", ldcs_process_data.location);
-   ldcs_audit_server_filemngt_init(ldcs_process_data.location);
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
       init_cleanup_proc(ldcs_process_data.location);
 
