@@ -114,7 +114,6 @@ static void setup_environment()
 
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_LOCATION", location, 1);
-   setenv("LDCS_ORIG_LOCATION", orig_location, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
@@ -161,6 +160,7 @@ static int parse_cmdline(int argc, char *argv[])
    }
 
    symbolic_location = argv[i++];
+   i++; // Skip over candidate_cachepaths.
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
    opts_s = argv[i++];
