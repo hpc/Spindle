@@ -24,6 +24,13 @@ extern "C" {
 #include "spindle_launch.h"
    
 char *parse_location(char *loc, number_t number);
+char *parse_location_noerr(char *loc, number_t number);
+char *realize(char *path);
+char **parse_colonsep_prefixes(char *colonsep_list, number_t number);
+int is_local_prefix(const char *path, char **local_prefixes);
+static int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number );
+void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number );
+void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
 
 #if defined(__cplusplus)
 }
