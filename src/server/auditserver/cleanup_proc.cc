@@ -72,7 +72,8 @@ static void rmDirSet(const set<string> &dirs, const char *prefix_dir)
             continue;
 
          if (strncmp(prefix_dir, componentpath.c_str(), prefix_size) != 0) {
-            err_printf("Tried to clean a file %s that wasn't in our prefix %s\n", componentpath.c_str(), prefix_dir);
+            // We have multiple directory roots.  Not a problem if the directory
+            // we're looking for isn't in this one.
             continue;
          }
          unlink(componentpath.c_str());
@@ -83,7 +84,6 @@ static void rmDirSet(const set<string> &dirs, const char *prefix_dir)
    sort(ordered_dirs.begin(), ordered_dirs.end(), longest_str_first);
    for (vector<string>::iterator i = ordered_dirs.begin(); i != ordered_dirs.end(); i++) {
       if (strncmp(prefix_dir, i->c_str(), prefix_size) != 0) {
-         err_printf("Tried to rmdir directory %s that wasn't in our prefix %s\n", i->c_str(), prefix_dir);
          continue;
       }      
       rmdir(i->c_str());
