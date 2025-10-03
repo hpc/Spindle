@@ -89,6 +89,7 @@ int execvpe_wrapper(const char *path, char *const argv[], const char *envp[]);
 pid_t vfork_wrapper();
 char *dlerror_wrapper();
 
+void set_intercept_readlink_cachepath( char *chosen_realized_cachepath, char *chosen_parsed_cachepath, char *chosen_symbolic_cachepath );
 ssize_t readlink_wrapper(const char *path, char *buf, size_t bufsiz);
 ssize_t readlinkat_wrapper(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 
