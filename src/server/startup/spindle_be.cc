@@ -59,6 +59,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
    unpack_param(args->location, buf, pos);
+   unpack_param(args->candidate_cachepaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
    unpack_param(args->bundle_timeout_ms, buf, pos);
@@ -152,7 +153,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    debug_printf("Translated location from %s to %s\n", args.location, new_location);
    free(args.location);
    args.location = new_location;
-   test_printf("<internal> location=%s\n", args.location);
+
+   determineValidCachePaths( &args.cachepath_bitidx, args.candidate_cachepaths, args.number);
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
