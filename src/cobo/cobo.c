@@ -1434,6 +1434,48 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
     return COBO_SUCCESS;
 }
 
+int cobo_allreduce( int64_t *pval, cobo_op_t op ){
+
+    /* if i have any children, receive their data */
+    int64_t child_val;
+    for(int i=cobo_num_child-1; i>=0; i--) {
+        /* read int64_t from child */
+        if (cobo_read_fd(cobo_child_fd[i], &child_val, sizeof(int64_t)) < 0) {
+            err_printf("Reducing data from child (rank %d) failed\n", cobo_child[i]);
+            exit(1);
+        }
+
+        /* compare child's val to our current val */
+        switch( op ){
+            case COBO_OP_MIN:           if( child_val < *pval ) *pval = child_val; break;
+            case COBO_OP_MAX:           if( child_val > *pval ) *pval = child_val; break;
+            case COBO_OP_BITWISE_AND:   *pval &= child_val; break;
+            case COBO_OP_BITWISE_OR:    *pval |= child_val; break;
+            case COBO_OP_LOGICAL_AND:   *pval = *pval && child_val; break;
+            case COBO_OP_LOGICAL_OR:    *pval = *pval || child_val; break;
+            case COBO_OP_SUM:           *pval += child_val; break;
+            case COBO_OP_NOOP:          break;
+            default:
+                err_printf("Illegal op (%d).  Ignoring.\n", op);
+                break;
+        }
+    }
+
+    /* forward data to parent if we're not rank 0, otherwise set the recvbuf */
+    if (cobo_me != 0) {
+        /* not the root, so forward our reduction result to our parent */
+        if (cobo_write_fd(cobo_parent_fd, pval, sizeof(*pval)) < 0) {
+            err_printf("Sending reduced data to parent failed\n");
+            exit(1);
+        }
+    }
+
+    /* broadcast result of reduction from rank 0 to all tasks */
+    cobo_bcast_tree(pval, sizeof(int64_t));
+
+    return COBO_SUCCESS;
+}
+
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
 int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* num_ranks)
 {
