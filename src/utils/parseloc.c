@@ -35,7 +35,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "spindle_launch.h"
 
-//char *parse_location(char *loc, number_t number);
 extern int spindle_mkdir(char *orig_path);
 
 #if defined(CUSTOM_GETENV)

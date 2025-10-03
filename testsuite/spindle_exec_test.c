@@ -71,9 +71,6 @@ static char **setup_envp(env_t envt, exec_t exect)
                   break;
             }
          }
-         else if (strncmp("SPINDLE_DEBUG=", environ[i], strlen("SPINDLE_DEBUG=")) == 0 ) {
-            newenv[j++] = "SPINDLE_DEBUG=3";
-         }
          else if (!bare_env) {
             newenv[j++] = environ[i];
          }
