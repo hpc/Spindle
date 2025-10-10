@@ -251,16 +251,8 @@ static int prep_exec(const char *filepath, char **argv,
 {
    int result;
    char *interp_name;
-   int i;
 
    debug_printf3("prep_exec for filepath %s to newpath %s\n", filepath, newpath);
-   if (spindle_debug_prints >= 3) {
-      debug_printf3("Args for exec are:\n");
-      for (i = 0; argv[i]; i++) {
-         debug_printf3("%d. %s\n", i, argv[i]);
-      }
-   }
-   
    
    if (errcode == EACCES) {
       strncpy(newpath, filepath, newpath_size);
@@ -327,6 +319,7 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
    int errcode, exists;
    struct stat buf;
    int reloc_exec;
+   int result;
 
    *propogate_spindle = shouldPropogateSpindle(envp, filepath);
 
@@ -353,11 +346,19 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
    sync_cwd();
    
    debug_printf2("Requesting stat on exec of %s to validate file\n", filepath);
-   int result = get_stat_result(ldcsid, (char *) filepath, 0, &exists, &buf);
+   result = get_stat_result(ldcsid, (char *) filepath, 0, &exists, &buf);
    if (result == STAT_SELF_OPEN) {
       result = stat(filepath, &buf);
       exists = (result != -1);
    }
+   else if (result == DISCONNECT) {
+      debug_printf3("Disconnected. Passing through original file %s\n", filepath);
+      *propogate_spindle = 0;
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      return 0;
+   }
+
    if (!exists) {
       set_errno(ENOENT);
       return -1;
@@ -370,7 +371,14 @@ static int find_exec(const char *filepath, char **argv, char *newpath, int newpa
       return -1;
    }
    debug_printf2("Exec operation requesting file: %s\n", filepath);
-   get_relocated_file(ldcsid, (char *) filepath, 1, &newname, &errcode, NULL);
+   result = get_relocated_file(ldcsid, (char *) filepath, 1, &newname, &errcode, NULL);
+   if (result == DISCONNECT) {
+      debug_printf3("Disconnected. Passing through original file %s\n", filepath);
+      *propogate_spindle = 0;
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      return 0;
+   }
    debug_printf("Exec file request returned %s -> %s with errcode %d\n",
                 filepath, newname ? newname : "NULL", errcode);
        
@@ -414,6 +422,13 @@ static int find_exec_pathsearch(const char *filepath, char **argv, char *newpath
    if (result == -1) {
       set_errno(errcode);
       return -1;
+   }
+   if (result == DISCONNECT) {
+      debug_printf3("Disconnected. Passing through original file %s\n", filepath);
+      *propogate_spindle = 0;
+      strncpy(newpath, filepath, newpath_size);
+      newpath[newpath_size-1] = '\0';
+      return 0;
    }
    debug_printf("Exec file request returned %s -> %s with errcode %d\n",
                 filepath, newname ? newname : "NULL", errcode);

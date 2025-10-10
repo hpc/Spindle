@@ -23,36 +23,43 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+//Possible return value from any client_* or send_* call.
+#define DISCONNECT -2
+
+int client_is_disconnected();
+
+#define WARN_UNUSED __attribute__((warn_unused_result))
+
 /**
  * Communication functions for sending messages to the server
  **/
-int send_file_query(int fd, char* path, int dso, char **newpath, int *errcode);
-int send_dir_cwd(int fd, char *cwd);
-int send_cwd(int fd);
+int send_file_query(int fd, char* path, int dso, char **newpath, int *errcode) WARN_UNUSED;
+int send_dir_cwd(int fd, char *cwd) WARN_UNUSED;
+int send_cwd(int fd) WARN_UNUSED;
 int send_pid(int fd);
 int send_cpu(int fd, int cpu);
 int send_location(int fd, char *location);
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize);
 int send_end(int fd);
-int send_existance_test(int fd, char *path, int *exists);
+int send_existance_test(int fd, char *path, int *exists) WARN_UNUSED;
 #define STAT_SELF 1
-int send_stat_request(int fd, char *path, int islstat, char *result);
-int send_ldso_info_request(int fd, const char *ldso_path, char *result_path);
-int send_orig_path_request(int fd, const char *path, char *newpath);
-int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free);
-int send_procmaps_query(int fd, int pid, char *result);
-int send_pickone_query(int fd, char *key, int *result);
+int send_stat_request(int fd, char *path, int islstat, char *result) WARN_UNUSED;
+int send_ldso_info_request(int fd, const char *ldso_path, char *result_path) WARN_UNUSED;
+int send_orig_path_request(int fd, const char *path, char *newpath) WARN_UNUSED;
+int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free) WARN_UNUSED;
+int send_procmaps_query(int fd, int pid, char *result) WARN_UNUSED;
+int send_pickone_query(int fd, char *key, int *result) WARN_UNUSED;
 
-int get_python_prefix(int fd, char **prefix);
+int get_python_prefix(int fd, char **prefix) WARN_UNUSED;
 
 /* client */
-int client_open_connection(char* location, number_t number);
+int client_open_connection(char* location, number_t number) WARN_UNUSED;
 int client_close_connection(int connid);
 int client_register_connection(char *connection_str);
 char *client_get_connection_string(int fd);
-int client_send_msg(int connid, ldcs_message_t * msg);
-int client_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
-int client_recv_msg_dynamic(int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+int client_send_msg(int connid, ldcs_message_t * msg) WARN_UNUSED;
+int client_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block) WARN_UNUSED;
+int client_recv_msg_dynamic(int fd, ldcs_message_t *msg, ldcs_read_block_t block) WARN_UNUSED;
 int is_client_fd(int connfd, int fd);
 
 #endif

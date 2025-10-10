@@ -36,14 +36,32 @@ static struct lock_t comm_lock;
 
 #define COMM_LOCK do { if (lock(&comm_lock) == -1) return -1; } while (0)
 #define COMM_UNLOCK unlock(&comm_lock)
-   
+extern int ldcsid;
+
+static int is_disconnected = 0;
+static int bad_comm(int fd)
+{
+   debug_printf("Connection to server returned error. Setting client to disconnected\n");
+   close(fd);
+   ldcsid = -1;
+   is_disconnected = 1;
+   return DISCONNECT;
+}
+
+int client_is_disconnected()
+{
+   return is_disconnected;
+}
+
 int send_file_query(int fd, char* path, int dso, char** newpath, int *errcode) {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1+sizeof(int)];
    int result;
    int path_len = strlen(path)+1;
    buffer[MAX_PATH_LEN+sizeof(int)] = '\0';
-    
+
+   if (client_is_disconnected()) return DISCONNECT;
+
    if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
       return -1;
@@ -57,12 +75,20 @@ int send_file_query(int fd, char* path, int dso, char** newpath, int *errcode) {
 
    COMM_LOCK;
 
-   debug_printf3("sending message of type: file_query len=%lu data='%s' ...(%s)\n",
+   debug_printf3("sending message of type: file_query len=%d data='%s' ...(%s)\n",
                  message.header.len, message.data, path);  
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    /* get new filename */
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -88,7 +114,10 @@ int send_file_query(int fd, char* path, int dso, char** newpath, int *errcode) {
 int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
 {
    int path_len = strlen(path) + (is_lstat ? 0 : 1) + 1;
+   int result;
    ldcs_message_t message;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    if (path_len >= MAX_PATH_LEN+1) {
       err_printf("stat path of %s is too long for Spindle\n", path);
@@ -105,12 +134,21 @@ int send_stat_request(int fd, char *path, int is_lstat, char *newpath)
    
    COMM_LOCK;
 
-   debug_printf3("sending message of type: %sstat_query len=%lu data='%s' ...(%s)\n",
+   debug_printf3("sending message of type: %sstat_query len=%d data='%s' ...(%s)\n",
                  is_lstat ? "l" : "", message.header.len, message.data, path);  
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
 
    /* get new filename */
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -137,8 +175,10 @@ int send_existance_test(int fd, char *path, int *exists)
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
-   int path_len = strlen(path)+1;
-    
+   int path_len = strlen(path)+1, result;
+
+   if (client_is_disconnected()) return DISCONNECT;
+
    if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
       return -1;
@@ -149,13 +189,21 @@ int send_existance_test(int fd, char *path, int *exists)
    message.header.len = strlen(path) + 1;
    message.data = (void *) buffer;
 
-   debug_printf3("Sending message of type: file_exist_query len=%lu, data=%s\n",
+   debug_printf3("Sending message of type: file_exist_query len=%d, data=%s\n",
                  message.header.len, path);
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -174,8 +222,10 @@ int send_orig_path_request(int fd, const char *path, char *newpath)
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
-   int path_len = strlen(path)+1;
-    
+   int path_len = strlen(path)+1, result;
+
+   if (client_is_disconnected()) return DISCONNECT;
+
    if (path_len > MAX_PATH_LEN) {
       err_printf("Path to long for message");
       return -1;
@@ -186,13 +236,21 @@ int send_orig_path_request(int fd, const char *path, char *newpath)
    message.header.len = strlen(path) + 1;
    message.data = (void *) buffer;
 
-   debug_printf3("Sending message of type: file_orig_path len=%lu, data=%s\n",
+   debug_printf3("Sending message of type: file_orig_path len=%d, data=%s\n",
                  message.header.len, path);
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -208,17 +266,29 @@ int send_orig_path_request(int fd, const char *path, char *newpath)
 int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free)
 {
    ldcs_message_t message;
-   int local_len, ee_len;
+   int local_len, ee_len, result;
    char *buffer;
    int buffer_pos = 0;
+
+   if (client_is_disconnected()) return DISCONNECT;
    
    message.header.type = LDCS_MSG_DIRLISTS_REQ;
    message.header.len = 0;
 
    debug_printf3("Sending message of type: localprefix_req\n");
    COMM_LOCK;
-   client_send_msg(fd, &message);
-   client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
+   result = client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
    COMM_UNLOCK;
 
    buffer = (char *) message.data;
@@ -241,7 +311,10 @@ int send_dirlists_request(int fd, char **local_result, char **exece_result, char
 
 int send_dir_cwd(int fd, char *cwd)
 {
+   int result;
    ldcs_message_t message;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    message.header.type = LDCS_MSG_CWD;
    message.header.len = strlen(cwd) + 1;
@@ -249,7 +322,11 @@ int send_dir_cwd(int fd, char *cwd)
 
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -258,14 +335,21 @@ int send_dir_cwd(int fd, char *cwd)
 
 int send_cwd(int fd)
 {
+   int result;
    char buffer[MAX_PATH_LEN+1];
    buffer[MAX_PATH_LEN] = '\0';
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    if (!getcwd(buffer, MAX_PATH_LEN)) {
       return -1;
    }
 
-   send_dir_cwd(fd, buffer);
+   result = send_dir_cwd(fd, buffer);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    return 0;
 }
@@ -273,7 +357,9 @@ int send_cwd(int fd)
 int send_pid(int fd) {
    ldcs_message_t message;
    char buffer[16];
-   int rc=0;
+   int rc=0, result;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    snprintf(buffer, 16, "%d", getpid());
    message.header.type = LDCS_MSG_PID;
@@ -284,7 +370,11 @@ int send_pid(int fd) {
 
    COMM_LOCK;
 
-   client_send_msg(fd,&message);
+   result = client_send_msg(fd,&message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -294,7 +384,9 @@ int send_pid(int fd) {
 int send_cpu(int fd, int cpu) {
    ldcs_message_t message;
    char buffer[16];
-   int rc=0;
+   int rc=0, result;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    snprintf(buffer, 16, "%d", cpu);
    message.header.type = LDCS_MSG_CPU;
@@ -305,7 +397,11 @@ int send_cpu(int fd, int cpu) {
 
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -314,6 +410,9 @@ int send_cpu(int fd, int cpu) {
 
 int send_location(int fd, char *location) {
    ldcs_message_t message;
+   int result;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    message.header.type = LDCS_MSG_LOCATION;
    message.header.len = strlen(location)+1;
@@ -323,7 +422,11 @@ int send_location(int fd, char *location) {
 
    COMM_LOCK;
 
-   client_send_msg(fd,&message);
+   result = client_send_msg(fd,&message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -333,15 +436,29 @@ int send_location(int fd, char *location) {
 int send_ldso_info_request(int fd, const char *ldso_path, char *result_path)
 {
    ldcs_message_t message;
+   int result;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    message.header.type = LDCS_MSG_LOADER_DATA_REQ;
    message.header.len = strlen(ldso_path)+2;
    message.data = (void *) ldso_path;
    
    COMM_LOCK;
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
    message.data = result_path;
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
    COMM_UNLOCK;
 
    if (message.header.type != LDCS_MSG_LOADER_DATA_RESP) {
@@ -354,13 +471,27 @@ int send_ldso_info_request(int fd, const char *ldso_path, char *result_path)
 int get_python_prefix(int fd, char **prefix)
 {
    ldcs_message_t message;
+   int result;
+
+   if (client_is_disconnected()) return DISCONNECT;
+
    message.header.type = LDCS_MSG_PYTHONPREFIX_REQ;
    message.header.len = 0;
    message.data = NULL;
       
    COMM_LOCK;
-   client_send_msg(fd, &message);
-   client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
+   result = client_recv_msg_dynamic(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
    COMM_UNLOCK;
    *prefix = (char *) message.data;
    return 0;
@@ -369,7 +500,9 @@ int get_python_prefix(int fd, char **prefix)
 int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *mymdsize) {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN];
-   int *p;
+   int *p, result;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    debug_printf3("Sending rankinfo query\n");
 
@@ -379,9 +512,17 @@ int send_rankinfo_query(int fd, int *mylrank, int *mylsize, int *mymdrank, int *
 
    COMM_LOCK;
 
-   client_send_msg(fd,&message);
+   result = client_send_msg(fd,&message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   result = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -405,6 +546,9 @@ int send_procmaps_query(int fd, int pid, char *result)
 {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
+   int iresult;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    debug_printf3("Sending procmaps query\n");
 
@@ -415,9 +559,17 @@ int send_procmaps_query(int fd, int pid, char *result)
 
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
+   iresult = client_send_msg(fd, &message);
+   if (iresult == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   iresult = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (iresult == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -436,6 +588,9 @@ int send_pickone_query(int fd, char *key, int *result)
 {
    ldcs_message_t message;
    char buffer[MAX_PATH_LEN+1];
+   int iresult;
+
+   if (client_is_disconnected()) return DISCONNECT;
 
    debug_printf3("Sending pickone query\n");
 
@@ -447,8 +602,17 @@ int send_pickone_query(int fd, char *key, int *result)
 
    COMM_LOCK;
 
-   client_send_msg(fd, &message);
-   client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   iresult = client_send_msg(fd, &message);
+   if (iresult == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
+
+   iresult = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if (iresult == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
 
    COMM_UNLOCK;
 
@@ -464,6 +628,9 @@ int send_pickone_query(int fd, char *key, int *result)
 
 int send_end(int fd) {
    ldcs_message_t message;
+   int result;
+
+   if (client_is_disconnected()) return DISCONNECT;
    
    message.header.type = LDCS_MSG_END;
    message.header.len = 0;
@@ -471,7 +638,11 @@ int send_end(int fd) {
    
    COMM_LOCK;
    
-   client_send_msg(fd, &message);
+   result = client_send_msg(fd, &message);
+   if (result == -1) {
+      COMM_UNLOCK;
+      return bad_comm(fd);
+   }
    
    COMM_UNLOCK;
    

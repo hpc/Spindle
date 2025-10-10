@@ -53,6 +53,7 @@ static int handle_proc_pid_maps_open(const char *path, char **newpath);
 static int do_check_file(const char *path, char **newpath) {
    char *myname, *newname;
    int errcode;
+   int result;
   
    myname=(char *) path;
    debug_printf2("Open operation requesting file: %s\n", path);
@@ -64,7 +65,11 @@ static int do_check_file(const char *path, char **newpath) {
    }
    sync_cwd();
 
-   get_relocated_file(ldcsid, myname, 0, &newname, &errcode, NULL);
+   result = get_relocated_file(ldcsid, myname, 0, &newname, &errcode, NULL);
+   if (result == DISCONNECT) {
+      debug_printf3("Disconnected. Access original file %s\n", path);
+      return -1;
+   }
 
    if (newname != NULL) {
       *newpath=newname;

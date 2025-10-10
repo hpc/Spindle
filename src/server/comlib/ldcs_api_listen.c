@@ -20,6 +20,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <string.h>
 #include <sys/inotify.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "ldcs_api.h"
 
@@ -139,6 +140,7 @@ int ldcs_listen() {
 
    debug_printf2("Listening for data\n");
    do_listen=(ldcs_listen_data.item_table_used>0);
+assert(0);
    while(do_listen && !do_exit) {
       nfds = 0;
       FD_ZERO(&rd);

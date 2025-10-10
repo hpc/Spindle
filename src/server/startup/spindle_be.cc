@@ -120,7 +120,6 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
 {
    int result;
    spindle_args_t args;
-
    LOGGING_INIT(const_cast<char *>("Server"));
 
    initSecurity(security_type, unique_id);

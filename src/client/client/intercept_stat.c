@@ -52,7 +52,8 @@ int handle_stat(const char *path, struct stat *buf, int flags)
    if (ldcsid < 0 || !use_ldcs || !path || !buf) {
       debug_printf3("no ldcs: stat query %s\n", path ? path : "NULL");
       if (path)
-         test_log(path);      
+         test_log(path);
+      debug_printf3("Returning ORIG_STAT (%d)\n", (int) ORIG_STAT);
       return ORIG_STAT;
    }
    sync_cwd();
@@ -75,7 +76,11 @@ int handle_stat(const char *path, struct stat *buf, int flags)
       debug_printf3("Allowing original stat on %s\n", path);
       return ORIG_STAT;
    }
-   if (result == -1) {
+   else if (result == DISCONNECT) {
+      debug_printf3("Disconnected. Using riginal stat on %s\n", path);
+      return ORIG_STAT;
+   }
+   else if (result == -1) {
       /* Spindle level error */
       debug_printf3("Allowing original stat on %s\n", path);
       return ORIG_STAT;
@@ -128,7 +133,7 @@ static int handle_fstat(int fd, struct stat* buf, int flags)
    if (get_pathname_from_fd(fd, path, sizeof(path)) < 0)
       return -1;
 
-   debug_printf3("%s Redirecting fstat(%s) to the spindle\n", __func__, path);
+   debug_printf3("Redirecting fstat(%d=%s) to spindle\n", fd, path);
    return handle_stat(path, buf, flags);
 }
 
@@ -222,8 +227,10 @@ int rtcache_lxstat64(int vers, const char *path, struct stat *buf)
 int rtcache_fstat(int fd, struct stat *buf)
 {
    int result = handle_fstat(fd, buf, 0);
+   debug_printf3("handle_fstat returned %d (ORIG_STAT = %d)\n", result, (int) ORIG_STAT);
    if (result != ORIG_STAT)
       return result;
+   debug_printf3("Calling orig_fstat on fd %d\n", fd);
    result = orig_fstat(fd, buf);
    if (result == -1) {
       errno = get_errno();
@@ -235,8 +242,10 @@ int rtcache_fstat(int fd, struct stat *buf)
 int rtcache_fxstat(int vers, int fd, struct stat *buf)
 {
    int result = handle_fstat(fd, buf, IS_XSTAT);
+   debug_printf3("handle_fstat returned %d (ORIG_STAT = %d)\n", result, (int) ORIG_STAT);
    if (result != ORIG_STAT)
       return result;
+   debug_printf3("Calling orig_fxstat on fd %d\n", fd);
    result = orig_fxstat(vers, fd, buf);
    if (result == -1) {
       errno = get_errno();
@@ -247,9 +256,12 @@ int rtcache_fxstat(int vers, int fd, struct stat *buf)
 
 int rtcache_fxstat64(int vers, int fd, struct stat *buf)
 {
-   int result = handle_fstat(fd, buf, IS_XSTAT | IS_64);
+   int result;
+   result = handle_fstat(fd, buf, IS_XSTAT | IS_64);
+   debug_printf3("handle_fstat returned %d (ORIG_STAT = %d)\n", result, (int) ORIG_STAT);
    if (result != ORIG_STAT)
       return result;
+  debug_printf3("Calling orig_fxstat64 on fd %d\n", fd);
    result = orig_fxstat64(vers, fd, buf);
    if (result == -1) {
       errno = get_errno();

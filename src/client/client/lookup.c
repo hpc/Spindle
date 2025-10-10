@@ -258,14 +258,17 @@ static int get_metadata_result(int fd, const char *path, int is_lstat, int *exis
    if (!found_file) {
       debug_printf2("Sending request for %sstat of %s to server\n", is_lstat ? "l" : "", path);
       network_result = send_stat_request(fd, (char *) path, is_lstat, buffer);
-      debug_printf2("Server returned stat result for %s: %s\n", path, buffer);
-      
       if (network_result == -1)
          buffer[0] = '\0';
       if (network_result == STAT_SELF) {
          debug_printf3("Returning STAT_SELF_OPEN from get_metadata for %s\n", path);
          return STAT_SELF_OPEN;
       }
+      if (network_result == DISCONNECT) {
+         debug_printf3("Disconnected. Returning original stat for %s\n", path);
+         return STAT_SELF_OPEN;
+      }
+      debug_printf2("Server returned stat result for %s: %s\n", path, buffer);
 
       if (use_cache)
          update_cache(cache_name, dir_name, buffer, &errcode, ENOENT);
@@ -336,6 +339,9 @@ int get_relocated_file(int fd, const char *name, int dso, char** newname, int *e
 
    debug_printf2("Send file request to server: %s\n", name);
    result = send_file_query(fd, (char *) name, dso, newname, errorcode);
+   if (result == DISCONNECT) {
+      return DISCONNECT;
+   }
    debug_printf2("Recv file from server: %s\n", *newname ? *newname : "NONE");
 
    if (use_cache) {

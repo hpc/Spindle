@@ -312,6 +312,8 @@ void test_log(const char *name)
    int result;
    if (!run_tests)
       return;
+   if (client_is_disconnected() && strcmp(getenv("SPINDLE_TEST"), "TEST_RELIABILITY") == 0)
+      return;
    result = open(name, O_RDONLY);
    if (result != -1)
       close(result);
@@ -445,6 +447,7 @@ char *client_library_load(const char *name)
 {
    char *newname;
    int errcode, direxists;
+   int result;
    char fixed_name[MAX_PATH_LEN+1];
 
    check_for_fork();
@@ -469,7 +472,11 @@ char *client_library_load(const char *name)
    if (is_in_spindle_cache(name)) {
       debug_printf2("Library %s is in spindle cache (%s). Translating request\n", name, location);
       memset(fixed_name, 0, MAX_PATH_LEN+1);
-      send_orig_path_request(ldcsid, orig_file_name, fixed_name);
+      result = send_orig_path_request(ldcsid, orig_file_name, fixed_name);
+      if (result == DISCONNECT) {
+         debug_printf2("Client is in disconnected state. Returning %s for loading\n", name);
+         return (char *) name;
+      }
       orig_file_name = fixed_name;
       debug_printf2("Spindle cache library %s translated to original path %s\n", name, orig_file_name);
    }
@@ -488,8 +495,12 @@ char *client_library_load(const char *name)
       return (char *) name;
    }
    
-   get_relocated_file(ldcsid, orig_file_name, 1, &newname, &errcode, &direxists);
- 
+   result = get_relocated_file(ldcsid, orig_file_name, 1, &newname, &errcode, &direxists);
+   if (result == DISCONNECT) {
+      debug_printf2("Client is in disconnected state. Returning %s for loading\n", name);
+      return (char *) name;
+   }
+
    if(!newname) {
       newname = concatStrings(NOT_FOUND_PREFIX, orig_file_name);
       if (!direxists)
@@ -508,13 +519,18 @@ static void read_python_prefixes(int fd, char **path)
 {
    int use_cache = (opts & OPT_SHMCACHE) && (shm_cachesize > 0);
    int found_file = 0;
+   int result;
 
    if (use_cache) {
       debug_printf2("Looking up python prefixes in shared cache\n");
       found_file = fetch_from_cache("*SPINDLE_PYTHON_PREFIXES", path);
    }
    if (!found_file) {
-      get_python_prefix(fd, path);
+      result = get_python_prefix(fd, path);
+      if (result == DISCONNECT) {
+         debug_printf2("Spindle disconnected. Using empty python prefixes\n");
+         (*path)[0] = '\0';
+      }
       if (use_cache)
          shmcache_update("*SPINDLE_PYTHON_PREFIXES", *path);
    }
@@ -600,7 +616,11 @@ static ldso_info_t *load_ldso_metadata()
    }
 
    if (!found_file) {
-      send_ldso_info_request(ldcsid, interp_name, filename);
+      result = send_ldso_info_request(ldcsid, interp_name, filename);
+      if (result == DISCONNECT) {
+         debug_printf2("Client disconnected. No ldso info\n");
+         return NULL;
+      }
       if (use_cache)
          shmcache_update(cachename, filename);
       ldso_info_name = filename;

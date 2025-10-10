@@ -75,11 +75,13 @@ ssize_t readlink_wrapper(const char *path, char *buf, size_t bufsiz)
    else if (intercept_result == REDIRECT) {
       debug_printf3("Intercepting readlink(%s)\n", path);
       result = get_readlink_result(ldcsid, path, resultpath, &rl_result, &readlink_errcode);
-      if (result == -1 || result == STAT_SELF_OPEN) {
+      if (result == -1 || result == STAT_SELF_OPEN || result == DISCONNECT) {
          if (result == -1)
             err_printf("Spindle readlink returned error. Using orig readlink\n");
-         else
+         else if (result == STAT_SELF_OPEN)
             debug_printf3("Spindle readlink returned self open. Using orig readlink\n");
+         else if (result == DISCONNECT)
+            debug_printf3("Spindle disconnected. Using orig readlink\n");
          result = orig_readlink(path, resultpath, sizeof(resultpath));
          if (result == -1) {
             errno = get_errno();            

@@ -220,6 +220,7 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *e
 {
    char *saveptr = NULL, *path, *cur;
    char newexec[MAX_PATH_LEN+1];
+   int result;
 
    if (!orig_exec) {
       err_printf("Null exec passed to exec_pathsearch\n");
@@ -228,14 +229,22 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *e
    }
    
    if (orig_exec[0] == '/' || orig_exec[0] == '.') {
-      get_relocated_file(ldcsid, (char *) orig_exec, 1, reloc_exec, errcode, NULL);
+      result = get_relocated_file(ldcsid, (char *) orig_exec, 1, reloc_exec, errcode, NULL);
+      if (result == DISCONNECT) {
+         debug_printf3("Disconnected during exec\n");
+         return DISCONNECT;
+      }
       debug_printf3("exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
       return 0;
    }
 
    path = getenv("PATH");
    if (!path) {
-      get_relocated_file(ldcsid, (char *) orig_exec, 1, reloc_exec, errcode, NULL);
+      result = get_relocated_file(ldcsid, (char *) orig_exec, 1, reloc_exec, errcode, NULL);
+      if (result == DISCONNECT) {
+         debug_printf3("Disconnected during exec\n");
+         return DISCONNECT;
+      }
       debug_printf3("No path.  exec_pathsearch translated %s to %s\n", orig_exec, *reloc_exec);
       return 0;
    }
@@ -256,6 +265,11 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *e
          result = stat(newexec, &buf);
          exists = (result != -1);
       }
+      if (result == DISCONNECT) {
+         debug_printf3("Disconnected during exec\n");
+         if (path) spindle_free(path);
+         return DISCONNECT;
+      }
       if (!exists)
          continue;
       if (buf.st_mode & S_IFDIR) {
@@ -269,7 +283,12 @@ int exec_pathsearch(int ldcsid, const char *orig_exec, char **reloc_exec, int *e
          continue;
       }
       debug_printf2("File %s exists and has execute set, requesting full file\n", newexec);
-      get_relocated_file(ldcsid, newexec, 1, reloc_exec, errcode, NULL);
+      result = get_relocated_file(ldcsid, newexec, 1, reloc_exec, errcode, NULL);
+      if (result == DISCONNECT) {
+         debug_printf3("Disconnected during exec\n");
+         if (path) spindle_free(path);
+         return DISCONNECT;
+      }
       debug_printf2("Exec search request returned %s -> %s\n", newexec, *reloc_exec ? *reloc_exec : "NULL");
       if (*reloc_exec) {
          found = 1;
