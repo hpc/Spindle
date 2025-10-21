@@ -196,7 +196,7 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
    if (envp) {
       debug_printf2("Propogating spindle environment by copying it to new envp list\n");
       for (cur = (char **) envp; *cur; cur++, orig_size++);
-      new_size = orig_size + 20;
+      new_size = orig_size + 9;
       newenv = (char **) malloc(new_size * sizeof(char*));
       
       propogateEnvironmentStr(envp, newenv, &pos, "SPINDLE");   
