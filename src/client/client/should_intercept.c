@@ -29,27 +29,20 @@
 #include "spindle_debug.h"
 
 extern int relocate_spindleapi();
-static char *cachepath, *orig_cachepath;
-
-void set_should_intercept_cachepath( char *chosen_realized_cachepath, char *chosen_parsed_cachepath, char *chosen_symbolic_cachepath ){
-    cachepath = chosen_realized_cachepath;
-    orig_cachepath = chosen_parsed_cachepath;
-    chosen_symbolic_cachepath = chosen_symbolic_cachepath;
-}
-
 
 int is_in_spindle_cache(const char *pathname)
 {
    static int cachepath_size = 0;
    static int orig_cachepath_size = 0;
+   extern char *chosen_realized_cachepath, *chosen_parsed_cachepath;
    if (!cachepath_size) {
-      cachepath_size = strlen(cachepath);
+      cachepath_size = strlen(chosen_realized_cachepath);
    }
    if (!orig_cachepath_size) {
-      orig_cachepath_size = strlen(orig_cachepath);
+      orig_cachepath_size = strlen(chosen_parsed_cachepath);
    }
-   return ((strncmp(pathname, cachepath, cachepath_size) == 0) ||
-           (strncmp(pathname, orig_cachepath, orig_cachepath_size) == 0));
+   return ((strncmp(pathname, chosen_realized_cachepath, cachepath_size) == 0) ||
+           (strncmp(pathname, chosen_parsed_cachepath, orig_cachepath_size) == 0));
 }
 
 extern int is_local_prefix(const char *path, char **cached_local_prefixes);

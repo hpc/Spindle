@@ -27,7 +27,6 @@
 #define EXCL_OPEN 2
 #define ERR_CALL 3
 
-void set_should_intercept_cachepath( char *chosen_realized_cachepath, char *chosen_parsed_cachepath, char *chosen_symbolic_cachepath );
 int open_filter(const char *fname, int flags);
 int fopen_filter(const char *fname, const char *flags);
 int exec_filter(const char *fname);
