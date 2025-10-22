@@ -72,7 +72,7 @@ static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
 
 static char *location;
-static char *chosen_realized_cachepath, *chosen_parsed_cachepath, *chosen_symbolic_cachepath;
+char *chosen_realized_cachepath, *chosen_parsed_cachepath;
 number_t number;
 static int have_stat_patches;
 
@@ -261,10 +261,7 @@ static int init_server_connection()
          send_cpu(ldcsid, get_cur_cpu());
 #endif
    }
-   send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath, &chosen_symbolic_cachepath );
-   set_should_intercept_cachepath(   chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
-   set_intercept_readlink_cachepath( chosen_realized_cachepath, chosen_parsed_cachepath, chosen_symbolic_cachepath );
-   
+   send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath, NULL);
    snprintf(debugging_name, 32, "Client.%d", rankinfo[0]);
    LOGGING_INIT(debugging_name);
 
