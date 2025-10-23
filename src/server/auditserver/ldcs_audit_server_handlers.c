@@ -2957,7 +2957,7 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
         msgbundle_force_flush(procdata);
     }
 
-    ldcs_audit_server_md_consensus(procdata, msg);
+    ldcs_audit_server_md_allreduce_AND( &procdata->cachepath_bitidx );
 
     if( procdata->cachepath_bitidx == 0 ){
        err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", procdata->location);
