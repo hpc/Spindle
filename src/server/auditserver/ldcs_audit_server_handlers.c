@@ -2994,21 +2994,12 @@ static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc
 
    msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
 
-   msg.header.len = strlen(procdata->cachepath) + 1;
-   msg.data = procdata->cachepath;
+   msg.header.len = strlen(procdata->cachepath) + 1 + strlen(procdata->parsed_cachepath) + 1;
+   msg.data = calloc( 1, msg.header.len );
+   strcpy( msg.data, procdata->cachepath );
+   strcpy( &msg.data[ strlen(procdata->cachepath)+1 ], procdata->parsed_cachepath );
    ldcs_send_msg(connid, &msg);
-   procdata->server_stat.clientmsg.cnt++;
-   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
-
-   msg.header.len = strlen(procdata->parsed_cachepath) + 1;
-   msg.data = procdata->parsed_cachepath;
-   ldcs_send_msg(connid, &msg);
-   procdata->server_stat.clientmsg.cnt++;
-   procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
-
-   msg.header.len = strlen(procdata->symbolic_cachepath) + 1;
-   msg.data = procdata->symbolic_cachepath;
-   ldcs_send_msg(connid, &msg);
+   free( msg.data );
    procdata->server_stat.clientmsg.cnt++;
    procdata->server_stat.clientmsg.time += ldcs_get_time() - client->query_arrival_time;
 

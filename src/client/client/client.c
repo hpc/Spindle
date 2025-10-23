@@ -258,7 +258,7 @@ static int init_server_connection()
          send_cpu(ldcsid, get_cur_cpu());
 #endif
    }
-   send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath, NULL);
+   send_cachepath_query( ldcsid, &chosen_realized_cachepath, &chosen_parsed_cachepath );
    snprintf(debugging_name, 32, "Client.%d", rankinfo[0]);
    LOGGING_INIT(debugging_name);
 
