@@ -42,7 +42,7 @@ int send_orig_path_request(int fd, const char *path, char *newpath);
 int send_dirlists_request(int fd, char **local_result, char **exece_result, char **to_free);
 int send_procmaps_query(int fd, int pid, char *result);
 int send_pickone_query(int fd, char *key, int *result);
-int send_cachepath_query( int fd, char **chosen_symbolic_cachepath, char **chosen_parsed_cachepath, char **chosen_realized_cachepath );
+int send_cachepath_query( int fd, char **chosen_symbolic_cachepath, char **chosen_parsed_cachepath);
 
 int get_python_prefix(int fd, char **prefix);
 
