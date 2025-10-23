@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "msgbundle.h"
 #include "exitnote.h"
 #include "cleanup_proc.h"
+#include "parseloc.h"
 
 //#define GPERFTOOLS
 #if defined(GPERFTOOLS)
@@ -143,8 +144,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    debug_printf3("Initializing server data structures\n");
    ldcs_process_data.location = args->location;
    ldcs_process_data.cachepaths = args->candidate_cachepaths;
-   ldcs_process_data.cachepath = args->chosen_cachepath;
-   ldcs_process_data.cachepath_bitidx = args->cachepath_bitidx;
+   ldcs_process_data.cachepath = NULL;
+   ldcs_process_data.cachepath_bitidx = 0;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.localprefix = args->local_prefixes;
@@ -230,6 +231,10 @@ int ldcs_audit_server_process(spindle_args_t *args)
    if (fd != -1) {
       ldcs_listen_register_fd(fd, serverid, forceExitCB, (void *) &ldcs_process_data);
    }
+   determineValidCachePaths(
+           &ldcs_process_data.cachepath_bitidx,
+           ldcs_process_data.cachepaths,
+           ldcs_process_data.number );
    return 0;
 }  
 

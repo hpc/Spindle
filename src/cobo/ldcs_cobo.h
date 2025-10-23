@@ -142,7 +142,7 @@ int cobo_alltoall (void* sendbuf, int sendcount, void* recvbuf);
  */
 int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf);
 
-int cobo_allreduce(int64_t *pval, cobo_op_t op);
+int cobo_allreduce(uint64_t *pval, cobo_op_t op);
 
 /*
  * ==========================================================================

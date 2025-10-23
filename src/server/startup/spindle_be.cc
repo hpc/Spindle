@@ -154,8 +154,6 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    free(args.location);
    args.location = new_location;
 
-   determineValidCachePaths( &args.cachepath_bitidx, args.candidate_cachepaths, args.number);
-
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
       err_printf("Error in ldcs_audit_server_process\n");

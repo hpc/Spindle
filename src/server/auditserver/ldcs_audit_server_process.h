@@ -133,7 +133,7 @@ struct ldcs_process_data_struct
   char *symbolic_cachepath;     /* The original representation of the cachepath. */
   char *parsed_cachepath;       /* The cachepath with environment variables replaced. */
                                 /*   (Symbolic links, if any, remain.) */
-  int64_t cachepath_bitidx;     /* Bit index of valid cachepaths on a given server. */
+  uint64_t cachepath_bitidx;    /* Bit index of valid cachepaths on a given server. */
   char *hostname;
   char *pythonprefix;
   char *localprefix;
