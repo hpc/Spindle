@@ -160,7 +160,7 @@ static char* cobo_getenv(char* envvar, int type)
     char* str = getenv(envvar);
     if (str == NULL && type == ENV_REQUIRED) {
         err_printf("Missing required environment variable: %s\n", envvar);
-        exit(1);
+        return NULL;
     }
     return str;
 }
@@ -171,7 +171,7 @@ static void* cobo_malloc(size_t n, char* msg)
     void* p = malloc(n);
     if (!p) {
         err_printf("Call to malloc(%lu) failed: %s (%m errno %d)\n", n, msg, errno);
-        exit(1);
+        return NULL;
     }
     return p;
 }
@@ -514,7 +514,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
                       break;
                    case HSHAKE_INTERNAL_ERROR:
                       err_printf("Internal error doing handshake: %s", spindle_handshake_last_error_str());
-                      exit(-1);
+                      return -1;
                       break;
                    case HSHAKE_DROP_CONNECTION:
                       debug_printf3("Handshake said to drop connection\n");
@@ -769,7 +769,7 @@ static int cobo_open_tree()
     if (sockfd < 0) {
         err_printf("Creating parent socket (socket() %m errno=%d)\n",
                    errno);
-        exit(1);
+        return -1;
     }
     setCloseOnExec(sockfd);
 
@@ -818,7 +818,7 @@ static int cobo_open_tree()
     if (!port_is_bound) {
         /* TODO: would like to send an abort back to server */
         err_printf("Failed to open socket on any port\n");
-        exit(1);
+        return -1;
     }
 
     /* accept a connection from parent and receive socket table */
@@ -838,7 +838,7 @@ static int cobo_open_tree()
               break;
            case HSHAKE_INTERNAL_ERROR:
               err_printf("Internal error doing handshake: %s", spindle_handshake_last_error_str());
-              exit(-1);
+              return -1;
               break;
            case HSHAKE_DROP_CONNECTION:
               debug_printf3("Handshake said to drop connection\n");
@@ -908,26 +908,26 @@ static int cobo_open_tree()
     /* read our rank number */
     if (cobo_read_fd(cobo_parent_fd, &cobo_me, sizeof(int)) < 0) {
         err_printf("Receiving my rank from parent failed\n");
-        exit(1);
+        return -1;
     }
 
     /* discover how many ranks are in our world */
     if (cobo_read_fd(cobo_parent_fd, &cobo_nprocs, sizeof(int)) < 0) {
         err_printf("Receiving number of tasks from parent failed\n");
-        exit(1);
+        return -1;
     }
 
     /* read the size of the hostlist (in bytes) */
     if (cobo_read_fd(cobo_parent_fd, &cobo_hostlist_size, sizeof(int)) < 0) {
         err_printf("Receiving size of hostname table from parent failed\n");
-        exit(1);
+        return -1;
     }
 
     /* allocate space for the hostlist and read it in */
     cobo_hostlist = (void*) cobo_malloc(cobo_hostlist_size, "Hostlist data buffer");
     if (cobo_read_fd(cobo_parent_fd, cobo_hostlist, cobo_hostlist_size) < 0) {
         err_printf("Receiving hostname table from parent failed\n");
-        exit(1);
+        return -1;
     }
 
 /*
@@ -970,7 +970,7 @@ static int cobo_open_tree()
         if (cobo_child_fd[i] == -1) {
             err_printf("Failed to connect to child (rank %d) on %s failed\n",
                        c, child_hostname);
-            exit(1);
+            return -1;
         }
 
         /* tell child what rank he is and forward the hostname table to him */
@@ -979,7 +979,7 @@ static int cobo_open_tree()
         if (forward != COBO_SUCCESS) {
             err_printf("Failed to forward hostname table to child (rank %d) on %s failed\n",
                        c, child_hostname);
-            exit(1);
+            return -1;
         }
 
         /* free the child hostname string */
@@ -1034,7 +1034,7 @@ static int cobo_bcast_tree(void* buf, int size)
     if (cobo_me != 0) {
         if (cobo_read_fd(cobo_parent_fd, buf, size) < 0) {
             err_printf("Receiving broadcast data from parent failed\n");
-            exit(1);
+            return -1;
         }
     }
 
@@ -1043,7 +1043,7 @@ static int cobo_bcast_tree(void* buf, int size)
         if (cobo_write_fd(cobo_child_fd[i], buf, size) < 0) {
             err_printf("Broadcasting data to child (rank %d) failed\n",
                        cobo_child[i]);
-            exit(1);
+            return -1;
         }
     }
 
@@ -1059,7 +1059,7 @@ int cobo_bcast_down(void* buf, int size)
       if (cobo_write_fd(cobo_child_fd[i], buf, size) < 0) {
          err_printf("Broadcasting data to child (rank %d) failed\n",
                     cobo_child[i]);
-         exit(1);
+         return -1;
       }
    }   
    return rc;
@@ -1081,7 +1081,7 @@ static int cobo_allreduce_max_int_tree(int* sendbuf, int* recvbuf)
         if (cobo_read_fd(cobo_child_fd[i], &child_val, sizeof(child_val)) < 0) {
             err_printf("Reducing data from child (rank %d) failed\n",
                        cobo_child[i]);
-            exit(1);
+            return -1;
         }
 
         /* compare child's max to our current max */
@@ -1095,7 +1095,7 @@ static int cobo_allreduce_max_int_tree(int* sendbuf, int* recvbuf)
         /* not the root, so forward our reduction result to our parent */
         if (cobo_write_fd(cobo_parent_fd, &max_val, sizeof(max_val)) < 0) {
             err_printf("Sending reduced data to parent failed\n");
-            exit(1);
+            return -1;
         }
     } else {
         /* we're the root, got the result, set the recvbuf */
@@ -1130,7 +1130,7 @@ static int cobo_gather_tree(void* sendbuf, int sendcount, void* recvbuf)
         if (cobo_read_fd(cobo_child_fd[i], (char*)bigbuf + offset, sendcount * cobo_child_incl[i]) < 0) {
             err_printf("Gathering data from child (rank %d) failed\n",
                        cobo_child[i]);
-            exit(1);
+            return -1;
         }
         offset += sendcount * cobo_child_incl[i];
     }
@@ -1139,7 +1139,7 @@ static int cobo_gather_tree(void* sendbuf, int sendcount, void* recvbuf)
     if (cobo_me != 0) {
         if (cobo_write_fd(cobo_parent_fd, bigbuf, bigcount) < 0) {
             err_printf("Sending gathered data to parent failed\n");
-            exit(1);
+            return -1;
         }
         cobo_free(bigbuf);
     }
@@ -1159,7 +1159,7 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
         bigbuf = (void*) cobo_malloc(bigcount, "Temporary scatter buffer in cobo_scatter_tree");
         if (cobo_read_fd(cobo_parent_fd, bigbuf, bigcount) < 0) {
             err_printf("Receiving scatter data from parent failed\n");
-            exit(1);
+            return -1;
         }
     }
 
@@ -1170,7 +1170,7 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
         if (cobo_write_fd(cobo_child_fd[i], (char*)bigbuf + offset, sendcount * cobo_child_incl[i]) < 0) {
             err_printf("Scattering data to child (rank %d) failed\n",
                        cobo_child[i]);
-            exit(1);
+            return -1;
         }
         offset += sendcount * cobo_child_incl[i];
     }
@@ -1258,7 +1258,7 @@ int cobo_bcast(void* buf, int sendcount, int root)
         rc = cobo_bcast_tree(buf, sendcount);
     } else {
         err_printf("Cannot execute bcast from non-zero root\n");
-        exit(1);
+        return -1;
     }
 
     cobo_gettimeofday(&end);
@@ -1284,7 +1284,7 @@ int cobo_gather(void* sendbuf, int sendcount, void* recvbuf, int root)
         rc = cobo_gather_tree(sendbuf, sendcount, recvbuf);
     } else {
         err_printf("Cannot execute gather to non-zero root\n");
-        exit(1);
+        return -1;
     }
 
     cobo_gettimeofday(&end);
@@ -1310,7 +1310,7 @@ int cobo_scatter(void* sendbuf, int sendcount, void* recvbuf, int root)
         rc = cobo_scatter_tree(sendbuf, sendcount, recvbuf);
     } else {
         err_printf("Cannot execute scatter from non-zero root\n");
-        exit(1);
+        return -1;
     }
 
     cobo_gettimeofday(&end);
@@ -1352,7 +1352,7 @@ int cobo_alltoall(void* sendbuf, int sendcount, void* recvbuf)
     int rc = COBO_SUCCESS;
 
     err_printf("Cannot execute alltoall\n");
-    exit(1);
+    return -1;
 
     cobo_gettimeofday(&end);
     debug_printf3("Exiting cobo_alltoall(), took %f seconds for %d procs\n", cobo_getsecs(&end,&start), cobo_nprocs);
@@ -1440,7 +1440,7 @@ int cobo_allreduce( uint64_t *pval, cobo_op_t op ){
         /* read int64_t from child */
         if (cobo_read_fd(cobo_child_fd[i], &child_val, sizeof(int64_t)) < 0) {
             err_printf("Reducing data from child (rank %d) failed\n", cobo_child[i]);
-            exit(1);
+            return -1;
         }
 
         /* compare child's val to our current val */
@@ -1464,7 +1464,7 @@ int cobo_allreduce( uint64_t *pval, cobo_op_t op ){
         /* not the root, so forward our reduction result to our parent */
         if (cobo_write_fd(cobo_parent_fd, pval, sizeof(*pval)) < 0) {
             err_printf("Sending reduced data to parent failed\n");
-            exit(1);
+            return -1;
         }
     }
 
@@ -1522,7 +1522,7 @@ int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* 
     cobo_ports = cobo_int_dup(portlist, num_ports);
     if (cobo_ports == NULL) {
         err_printf("Failed to copy port list\n");
-        exit(1);
+        return -1;
     }
 
     /* open the tree */
@@ -1531,7 +1531,7 @@ int cobo_open(uint64_t sessionid, int* portlist, int num_ports, int* rank, int* 
     /* need to check that tree opened successfully before returning, so do a barrier */
     if (cobo_barrier() != COBO_SUCCESS) {
         err_printf("Failed to open tree\n");
-        exit(1);
+        return -1;
     }
 
     if (cobo_me == 0) {
