@@ -1434,7 +1434,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
     return COBO_SUCCESS;
 }
 
-int cobo_allreduce( int64_t *pval, cobo_op_t op ){
+int cobo_allreduce( uint64_t *pval, cobo_op_t op ){
 
     /* if i have any children, receive their data */
     int64_t child_val;

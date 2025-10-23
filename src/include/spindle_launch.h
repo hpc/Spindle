@@ -128,8 +128,6 @@ typedef struct {
 
    /* Path[s] for cached libraries. */
    char *candidate_cachepaths;  /* Colon-separated list of candidate paths (max 64) */
-   char *chosen_cachepath;      /* The consensus path (same across all nodes). */
-   uint64_t cachepath_bitidx;   /* Bit index used by allReduce() to arrive at consensus. */
 
    /* Colon-seperated list of directories where Python is installed */
    char *pythonprefix;
