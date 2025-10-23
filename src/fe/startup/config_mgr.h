@@ -126,8 +126,8 @@ enum CmdlineShortOptions {
    shortSpindleLevel = 296,
    shortLocalPrefix = 297,
    shortExecExcludes = 298,
-   shortPatchLdso,
-   shortCachePaths,
+   shortPatchLdso = 299,
+   shortCachePaths = 300,
 };
 
 enum CmdlineGroups {
