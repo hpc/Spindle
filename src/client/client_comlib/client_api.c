@@ -349,7 +349,7 @@ int send_cpu(int fd, int cpu) {
 int send_location(int fd, char *location) {
    ldcs_message_t message;
 
-   message.header.type = LDCS_MSG_LOCATION;
+   message.header.type = LDCS_MSG_COMMPATH;
    message.header.len = strlen(location)+1;
    message.data = location;
 
