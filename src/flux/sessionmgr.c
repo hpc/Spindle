@@ -109,16 +109,16 @@ char **strip_start_from_argv(int argc, char **argv)
 extern char *parse_location(char *loc, int number);
 extern int spindle_mkdir(char *orig_path);
 
-#if !defined(SPINDLE_LOC)
-#error SPINDLE_LOC must be defined in config.h
+#if !defined(COMMPATH)
+#error COMMPATH must be defined in config.h
 #endif
 const char *get_session_dir()
 {
    int result;
    char *dir;
-   dir = parse_location((char *) (SPINDLE_LOC "/spindle_session"), 0);
+   dir = parse_location((char *) (COMMPATH "/spindle_session"), 0);
    if (!dir) {
-      spindle_debug_printf(1, "ERROR: Could not parse directory for spindle session location from %s/spindle_session\n", SPINDLE_LOC);
+      spindle_debug_printf(1, "ERROR: Could not parse directory for spindle session location from %s/spindle_session\n", COMMPATH);
       return NULL;
    }
       
