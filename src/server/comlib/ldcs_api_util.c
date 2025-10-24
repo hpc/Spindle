@@ -51,7 +51,7 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
       STR_CASE(LDCS_MSG_END);
       STR_CASE(LDCS_MSG_CWD);
       STR_CASE(LDCS_MSG_PID);
-      STR_CASE(LDCS_MSG_LOCATION);
+      STR_CASE(LDCS_MSG_COMMPATH);
       STR_CASE(LDCS_MSG_CPU);      
       STR_CASE(LDCS_MSG_MYRANKINFO_QUERY);
       STR_CASE(LDCS_MSG_MYRANKINFO_QUERY_ANSWER);

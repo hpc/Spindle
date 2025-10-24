@@ -141,7 +141,7 @@ static char **removeEnvironmentStrs(char **envp)
          continue;
       if (strIsPrefix("LD", envp[i])) {
          if (strIsPrefix("LD_AUDIT=", envp[i]) ||
-             strIsPrefix("LDCS_LOCATION=", envp[i]) ||
+             strIsPrefix("LDCS_COMMPATH=", envp[i]) ||
              strIsPrefix("LDCS_CONNECTION=", envp[i]) ||
              strIsPrefix("LDCS_RANKINFO=", envp[i]) ||
              strIsPrefix("LDCS_OPTIONS=", envp[i]) ||
@@ -175,7 +175,7 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
          unsetf = orig_unsetenv ? orig_unsetenv : unsetenv;
          unsetf("SPINDLE");
          unsetf("LD_AUDIT");
-         unsetf("LDCS_LOCATION");
+         unsetf("LDCS_COMMPATH");
          unsetf("LDCS_CONNECTION");
          unsetf("LDCS_RANKINFO");
          unsetf("LDCS_OPTIONS");
@@ -201,7 +201,7 @@ static char **updateEnvironment(char **envp, int *num_modified, int propogate_sp
       
       propogateEnvironmentStr(envp, newenv, &pos, "SPINDLE");   
       propogateEnvironmentStr(envp, newenv, &pos, "LD_AUDIT");
-      propogateEnvironmentStr(envp, newenv, &pos, "LDCS_LOCATION");
+      propogateEnvironmentStr(envp, newenv, &pos, "LDCS_COMMPATH");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_CONNECTION");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_RANKINFO");
       propogateEnvironmentStr(envp, newenv, &pos, "LDCS_OPTIONS");

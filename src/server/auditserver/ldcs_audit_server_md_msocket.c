@@ -62,7 +62,7 @@ int ldcs_audit_server_md_init ( ldcs_process_data_t *ldcs_process_data ) {
   int rc=0;
 
   char* ldcs_nportsstr=getenv("LDCS_NPORTS");
-  char* ldcs_locmodstr=getenv("LDCS_LOCATION_MOD");
+  char* ldcs_locmodstr=getenv("LDCS_COMMPATH_MOD");
 
   int usedport;
   int serverfd, serverid, i;

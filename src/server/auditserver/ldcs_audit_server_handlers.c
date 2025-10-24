@@ -199,7 +199,7 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
       client->remote_pid=mypid;
       debug_printf2("Server recvd pid %d from %d\n", mypid, nc);
    } 
-   else if(msg->header.type == LDCS_MSG_LOCATION) {
+   else if(msg->header.type == LDCS_MSG_COMMPATH) {
       strncpy(client->remote_location, msg->data, sizeof(client->remote_location)-1);
       client->remote_location[sizeof(client->remote_location)-1] = '\0';
       debug_printf2("Server recvd remote_location %s from %d\n", msg->data, nc);
@@ -1866,7 +1866,7 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
    switch (msg->header.type) {
       case LDCS_MSG_CWD:
       case LDCS_MSG_PID:
-      case LDCS_MSG_LOCATION:
+      case LDCS_MSG_COMMPATH:
       case LDCS_MSG_CPU:
          return handle_client_info_msg(procdata, nc, msg);
       case LDCS_MSG_PYTHONPREFIX_REQ:

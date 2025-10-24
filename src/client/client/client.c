@@ -198,7 +198,7 @@ static int init_server_connection()
    if (!use_ldcs)
       return 0;
 
-   location = getenv("LDCS_LOCATION");
+   location = getenv("LDCS_COMMPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
@@ -217,7 +217,7 @@ static int init_server_connection()
    if (!(opts & OPT_FOLLOWFORK)) {
       debug_printf("Disabling environment variables because we're not following forks\n");
       unsetenv("LD_AUDIT");
-      unsetenv("LDCS_LOCATION");
+      unsetenv("LDCS_COMMPATH");
       unsetenv("LDCS_NUMBER");
       unsetenv("LDCS_CONNECTION");
       unsetenv("LDCS_RANKINFO");
