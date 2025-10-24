@@ -113,7 +113,7 @@ void startprofile(spindle_args_t *args)
    char hostname[257];
    char *home = getenv("HOME");
    if (!home || !*home)
-      home = ldcs_process_data.location;
+      home = ldcs_process_data.commpath;
    gethostname(hostname, sizeof(hostname));
    snprintf(filename, 4096, "%s/spindled.%lu.%s.%d.prof", home, (unsigned long) args->number, hostname, getpid());
    ProfilerStart(filename);
@@ -142,7 +142,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    startprofile(args);
 
    debug_printf3("Initializing server data structures\n");
-   ldcs_process_data.location = args->location;
+   ldcs_process_data.commpath = args->commpath;
    ldcs_process_data.cachepaths = args->candidate_cachepaths;
    ldcs_process_data.cachepath = NULL;
    ldcs_process_data.cachepath_bitidx = 0;
@@ -196,11 +196,11 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
 
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
-      init_cleanup_proc(ldcs_process_data.location);
+      init_cleanup_proc(ldcs_process_data.commpath);
 
    debug_printf3("Initializing connections for clients at %s and %lu\n",
-                 ldcs_process_data.location, (unsigned long) ldcs_process_data.number);
-   serverid = ldcs_create_server(ldcs_process_data.location, ldcs_process_data.number);
+                 ldcs_process_data.commpath, (unsigned long) ldcs_process_data.number);
+   serverid = ldcs_create_server(ldcs_process_data.commpath, ldcs_process_data.number);
    if (serverid == -1) {
       err_printf("Unable to setup area for client connections\n");
       return -1;
@@ -216,7 +216,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
       ldcs_listen_register_fd(fd, serverid, &_ldcs_server_CB, (void *) &ldcs_process_data);
 
    if (args->opts & OPT_BEEXIT) {
-      fd = createExitNote(args->location);
+      fd = createExitNote(args->commpath);
       if (fd != -1) {
          ldcs_listen_register_fd(fd, serverid, exit_note_cb, (void *) &ldcs_process_data);
       }
@@ -254,7 +254,7 @@ int ldcs_audit_server_run()
 
    _ldcs_server_stat_print(&ldcs_process_data.server_stat);
   
-   debug_printf("destroy server (%s,%lu)\n", ldcs_process_data.location, (unsigned long) ldcs_process_data.number);
+   debug_printf("destroy server (%s,%lu)\n", ldcs_process_data.commpath, (unsigned long) ldcs_process_data.number);
    ldcs_destroy_server(ldcs_process_data.serverid);
   
    /* destroy md support (multi-daemon) */

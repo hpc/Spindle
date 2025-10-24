@@ -58,7 +58,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->use_launcher, buf, pos);
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
-   unpack_param(args->location, buf, pos);
+   unpack_param(args->commpath, buf, pos);
    unpack_param(args->candidate_cachepaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
@@ -144,15 +144,15 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    assert(args.port == port);
    
    
-   /* Expand environment variables in location. */
-   char *new_location = parse_location(args.location, args.number);
-   if (!new_location) {
-      err_printf("Failed to convert location %s\n", args.location);
+   /* Expand environment variables in commpath. */
+   char *new_commpath = parse_location(args.commpath, args.number);
+   if (!new_commpath) {
+      err_printf("Failed to convert commpath %s\n", args.commpath);
       return -1;
    }
-   debug_printf("Translated location from %s to %s\n", args.location, new_location);
-   free(args.location);
-   args.location = new_location;
+   debug_printf("Translated commpath from %s to %s\n", args.commpath, new_commpath);
+   free(args.commpath);
+   args.commpath = new_commpath;
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {

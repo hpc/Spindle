@@ -381,7 +381,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int numa = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
-    const char *pyprefix = NULL, *location = NULL;
+    const char *pyprefix = NULL, *commpath = NULL;
     char *numafiles = NULL, *cachepaths = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
@@ -415,7 +415,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "reloc-exec", &relocexec,
                         "reloc-python", &relocpython,
                         "python-prefix", &pyprefix,
-                        "location", &location,
+                        "commpath", &commpath,
                         "numa", &numa,
                         "numa-files", &numafiles,
                         "preload", &preload,
@@ -466,8 +466,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     if( cachepaths ){
         ctx->params.candidate_cachepaths = cachepaths;
     }
-    if (location) {
-       ctx->params.location = (char *) location;
+    if (commpath) {
+       ctx->params.commpath = (char *) commpath;
     }
     if (level) {
        if (strcmp(level, "high") == 0) {

@@ -123,8 +123,8 @@ typedef struct {
    /* Size of client shared memory cache */
    unsigned int shm_cache_size;
 
-   /* The local-disk location where Spindle will store its cache */
-   char *location;
+   /* The local-disk location for communication and housekeeping. */
+   char *commpath;
 
    /* Path[s] for cached libraries. */
    char *candidate_cachepaths;  /* Colon-separated list of candidate paths (max 64) */

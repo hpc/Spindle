@@ -125,7 +125,7 @@ struct ldcs_process_data_struct
   int exit_readys_recvd;
   ldcs_dist_model_t dist_model;
   ldcs_client_t* client_table;
-  char *location;               /* Single user-specified path for fifo, daemons, etc. */
+  char *commpath;               /* Single user-specified path for fifo, daemons, etc. */
                                 /*   (Everything except the cachepath.) */
   char *cachepaths;             /* Up to 64 colon-separated list of candidate cachepaths. */
   char *cachepath;              /* The earliest path in the list available to all servers. */

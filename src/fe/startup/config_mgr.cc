@@ -745,7 +745,7 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             break;
          case confCommPath: {
             string path = strresult + "/spindle.$NUMBER";
-            args.location = strdup(path.c_str());
+            args.commpath = strdup(path.c_str());
             break;
          }
          case confCachePaths:{
