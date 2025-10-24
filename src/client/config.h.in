@@ -9,6 +9,9 @@
 /* Colon-separated list of potential back-end cache directories */
 #undef CACHEPATHS
 
+/* Back-end directory for communication and housekeeping */
+#undef COMMPATH
+
 /* Define if were using biter for client/server communication */
 #undef COMM_BITER
 
@@ -120,9 +123,6 @@
 
 /* Default mode for slurm launch */
 #undef SLURMLAUNCH_ENABLED
-
-/* The default local directory for Spindle */
-#undef SPINDLE_LOC
 
 /* The default colon-separated list of directories that Spindle will not cache
    files out of */

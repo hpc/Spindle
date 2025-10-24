@@ -50,10 +50,10 @@ using namespace std;
 #define SPINDLE_NUM_PORTS_STR "250"
 #endif
 
-#if defined(SPINDLE_LOC)
-#define SPINDLE_LOC_STR SPINDLE_LOC
+#if defined(COMMPATH)
+#define SPINDLE_COMMPATH_STR COMMPATH
 #else
-#define SPINDLE_LOC_STR "$TMPDIR"
+#define SPINDLE_COMMPATH_STR "$TMPDIR"
 #endif
 
 #if defined(CACHEPATHS)
@@ -273,8 +273,8 @@ void initOptionsList()
      "Provides a text file containing a white-space separated list of files that should be relocated to each node before execution begins" },
    { confStrip, "strip", shortStrip, groupMisc, cvBool, {}, "true", 
      "Strip debug and symbol information from binaries before distributing them." },
-   { confLocation, "location", shortLocation, groupMisc, cvString, {}, SPINDLE_LOC_STR,
-     "Back-end directory for storing relocated files.  Should be a non-shared location such as a ramdisk." },
+   { confCommPath, "commpath", shortCommPath, groupMisc, cvString, {}, SPINDLE_COMMPATH_STR,
+     "Back-end directory communication and housekeeping.  Should be a non-shared location such as a ramdisk." },
    { confCachePaths, "cachepaths", shortCachePaths, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
      "Colon-separated list of candidate paths for cached libraries."},
    { confNoclean, "noclean", shortNoClean, groupMisc, cvBool, {}, "false",
@@ -743,9 +743,9 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
          case confNumPorts:
             args.num_ports = numresult;
             break;
-         case confLocation: {
-            string loc = strresult + "/spindle.$NUMBER";
-            args.location = strdup(loc.c_str());
+         case confCommPath: {
+            string path = strresult + "/spindle.$NUMBER";
+            args.location = strdup(path.c_str());
             break;
          }
          case confCachePaths:{
