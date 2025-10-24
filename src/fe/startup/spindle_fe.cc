@@ -71,7 +71,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += sizeof(number_t);
    buffer_size += sizeof(opt_t);
    buffer_size += sizeof(unique_id_t);
-   buffer_size += args->location ? strlen(args->location) + 1 : 1;
+   buffer_size += args->commpath ? strlen(args->commpath) + 1 : 1;
    buffer_size += args->candidate_cachepaths ? strlen(args->candidate_cachepaths) + 1 : 1;
    buffer_size += args->pythonprefix ? strlen(args->pythonprefix) + 1 : 1;
    buffer_size += args->preloadfile ? strlen(args->preloadfile) + 1 : 1;
@@ -92,7 +92,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->use_launcher, buf, pos);
    pack_param(args->startup_type, buf, pos);
    pack_param(args->shm_cache_size, buf, pos);
-   pack_param(args->location, buf, pos);
+   pack_param(args->commpath, buf, pos);
    pack_param(args->candidate_cachepaths, buf, pos);
    pack_param(args->pythonprefix, buf, pos);
    pack_param(args->preloadfile, buf, pos);
@@ -232,7 +232,7 @@ int getApplicationArgsFE(spindle_args_t *params, int *spindle_argc, char ***spin
       (*spindle_argv)[n++] = strdup(numports_s);
       (*spindle_argv)[n++] = strdup(uniqueid_s);
    }
-   (*spindle_argv)[n++] = strdup(params->location);
+   (*spindle_argv)[n++] = strdup(params->commpath);
    (*spindle_argv)[n++] = strdup(params->candidate_cachepaths);
    (*spindle_argv)[n++] = strdup(number_s);
    (*spindle_argv)[n++] = strdup(opt_s);
@@ -398,11 +398,11 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    
    /* Start FE server */
    debug_printf("spindle_args_t { number = %lu; port = %u; num_ports = %u; opts = %lu; unique_id = %lu; "
-                "use_launcher = %u; startup_type = %u; shm_cache_size = %u; location = %s; "
+                "use_launcher = %u; startup_type = %u; shm_cache_size = %u; commpath = %s; "
                 "cachepaths = %s; "
                 "pythonprefix = %s; preloadfile = %s; bundle_timeout_ms = %u; bundle_cachesize_kb = %u }\n",
                 (unsigned long) params->number, params->port, params->num_ports, params->opts, params->unique_id,
-                params->use_launcher, params->startup_type, params->shm_cache_size, params->location,
+                params->use_launcher, params->startup_type, params->shm_cache_size, params->commpath,
                 params->candidate_cachepaths,
                 params->pythonprefix, params->preloadfile, params->bundle_timeout_ms,
                 params->bundle_cachesize_kb);

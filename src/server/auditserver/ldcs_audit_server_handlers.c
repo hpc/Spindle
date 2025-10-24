@@ -202,7 +202,7 @@ static int handle_client_info_msg(ldcs_process_data_t *procdata, int nc, ldcs_me
    else if(msg->header.type == LDCS_MSG_LOCATION) {
       strncpy(client->remote_location, msg->data, sizeof(client->remote_location)-1);
       client->remote_location[sizeof(client->remote_location)-1] = '\0';
-      debug_printf2("Server recvd location %s from %d\n", msg->data, nc);
+      debug_printf2("Server recvd remote_location %s from %d\n", msg->data, nc);
    }
    else if (msg->header.type == LDCS_MSG_CPU) {
       int clientcpu;
@@ -2953,7 +2953,7 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
 }
 
 /**
- * Handle LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS to determine which of the locations, commpaths, and cachepaths are
+ * Handle LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS to determine which cachepaths are
  * available across all of the servers.
  */
 
@@ -2969,8 +2969,8 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
     ldcs_audit_server_md_allreduce_AND( &procdata->cachepath_bitidx );
 
     if( procdata->cachepath_bitidx == 0 ){
-       err_printf("No valid cachepath path available.  Falling back to \"location\" path (%s).\n", procdata->location);
-       procdata->cachepath = procdata->location;
+       err_printf("No valid cachepath path available.  Falling back to \"commpath\" path (%s).\n", procdata->commpath);
+       procdata->cachepath = procdata->commpath;
     }else{
         // ldcs_audit_server_filemngt_init() does it's own realize() pass.
         getValidCachePathByIndex( procdata->cachepath_bitidx,
@@ -2979,7 +2979,7 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
                 &procdata->symbolic_cachepath);
     }
 
-    debug_printf3("Initializing file cache location %s\n", procdata->location);
+    debug_printf3("Initializing file cache cachepath %s\n", procdata->cachepath);
     ldcs_audit_server_filemngt_init(procdata->cachepath);
 
     test_printf("<internal> cachepath=%s\n", procdata->cachepath);
@@ -3224,7 +3224,7 @@ int exit_note_cb(int fd, int serverid, void *data)
       eresult = -1;
    }
 
-   result = handleExitNote(fd, procdata->location);
+   result = handleExitNote(fd, procdata->commpath);
    if (result == -1) {
       debug_printf("handleExitNote failed\n");
       eresult = -1;
