@@ -152,7 +152,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    }
    debug_printf("Translated commpath from %s to %s\n", args.commpath, new_commpath);
    free(args.commpath);
-   args.commpath = new_commpath;
+   args.commpath = strdup(new_commpath);
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
