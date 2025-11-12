@@ -198,7 +198,7 @@ static int init_server_connection()
    if (!use_ldcs)
       return 0;
 
-   location = getenv("LDCS_COMMPATH");
+   location = getenv("LDCS_LOCATION");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
