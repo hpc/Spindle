@@ -71,7 +71,7 @@ static const ElfW(Phdr) *libc_phdrs, *interp_phdrs;
 static int num_libc_phdrs, num_interp_phdrs;
 ElfW(Addr) libc_loadoffset, interp_loadoffset;
 
-static char *location;
+static char *commpath;
 char *chosen_realized_cachepath, *chosen_parsed_cachepath;
 number_t number;
 static int have_stat_patches;
@@ -198,7 +198,7 @@ static int init_server_connection()
    if (!use_ldcs)
       return 0;
 
-   location = getenv("LDCS_LOCATION");
+   commpath = getenv("LDCS_COMMPATH");
    number = (number_t) strtoul(getenv("LDCS_NUMBER"), NULL, 0);
    connection = getenv("LDCS_CONNECTION");
    rankinfo_s = getenv("LDCS_RANKINFO");
@@ -207,9 +207,9 @@ static int init_server_connection()
    opts = strtoul(opts_s, NULL, 10);
    shm_cachesize = atoi(cachesize_s) * 1024;
 
-   if (strchr(location, '$')) {
-      location = parse_location(location, number);
-      if (!location) {
+   if (strchr(commpath, '$')) {
+      commpath = parse_location(commpath, number);
+      if (!commpath) {
          exit(-1);
       }
    }
@@ -231,14 +231,14 @@ static int init_server_connection()
 #else
       shm_cache_limit = shm_cachesize;
 #endif
-      shmcache_init(location, number, shm_cachesize, shm_cache_limit);
+      shmcache_init(commpath, number, shm_cachesize, shm_cache_limit);
    }
 
    if (connection) {
       /* boostrapper established the connection for us.  Reuse it. */
       debug_printf("Recreating existing connection to server\n");
-      debug_printf3("location = %s, number = %lu, connection = %s, rankinfo = %s\n",
-                    location, (unsigned long) number, connection, rankinfo_s);
+      debug_printf3("commpath = %s, number = %lu, connection = %s, rankinfo = %s\n",
+                    commpath, (unsigned long) number, connection, rankinfo_s);
       ldcsid  = client_register_connection(connection);
       if (ldcsid == -1)
          return -1;
@@ -248,13 +248,13 @@ static int init_server_connection()
    }
    else {
       /* Establish a new connection */
-      debug_printf("open connection to ldcs %s %lu\n", location, (unsigned long) number);
-      ldcsid = client_open_connection(location, number);
+      debug_printf("open connection to ldcs %s %lu\n", commpath, (unsigned long) number);
+      ldcsid = client_open_connection(commpath, number);
       if (ldcsid == -1)
          return -1;
 
       send_pid(ldcsid);
-      send_location(ldcsid, location);
+      send_location(ldcsid, commpath);
       send_rankinfo_query(ldcsid, rankinfo+0, rankinfo+1, rankinfo+2, rankinfo+3);
 #if defined(LIBNUMA)      
       if (opts & OPT_NUMA)
