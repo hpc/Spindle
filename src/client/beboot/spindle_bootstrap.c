@@ -53,7 +53,7 @@ static int rankinfo[4]={-1,-1,-1,-1};
 number_t number;
 static int use_cache;
 static unsigned int cachesize;
-static char *location, *number_s, *orig_location, *symbolic_location;
+static char *commpath, *number_s, *symbolic_commpath;
 static char **cmdline;
 static char *executable;
 static char *client_lib;
@@ -91,7 +91,7 @@ extern char *realize(char *path);
 static int establish_connection()
 {
    debug_printf2("Opening connection to server\n");
-   ldcsid = client_open_connection(location, number);
+   ldcsid = client_open_connection(commpath, number);
    if (ldcsid == -1) 
       return -1;
 
@@ -113,7 +113,7 @@ static void setup_environment()
       connection_str = client_get_connection_string(ldcsid);
 
    setenv("LD_AUDIT", client_lib, 1);
-   setenv("LDCS_LOCATION", location, 1);
+   setenv("LDCS_COMMPATH", commpath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
@@ -159,7 +159,7 @@ static int parse_cmdline(int argc, char *argv[])
       daemon_args[i - 3] = NULL;
    }
 
-   symbolic_location = argv[i++];
+   symbolic_commpath = argv[i++];
    i++; // Skip over candidate_cachepaths.
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
@@ -173,7 +173,7 @@ static int parse_cmdline(int argc, char *argv[])
    return 0;
 }
 
-static void launch_daemon(char *location)
+static void launch_daemon(char *commpath)
 {
    /*grand-child fork, then execv daemon.  By grand-child forking we ensure that
      the app won't get confused by seeing an unknown process as a child. */
@@ -183,12 +183,12 @@ static void launch_daemon(char *location)
    char unique_file[MAX_PATH_LEN+1];
    char buffer[32];
 
-   result = spindle_mkdir(location);
+   result = spindle_mkdir(commpath);
    if (result == -1) {
       debug_printf("Exiting due to spindle_mkdir error\n");
       exit(-1);
    }
-   snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", location);
+   snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", commpath);
    unique_file[MAX_PATH_LEN] = '\0';
    fd = open(unique_file, O_CREAT | O_EXCL | O_WRONLY, 0600);
    if (fd == -1) {
@@ -343,14 +343,14 @@ int main(int argc, char *argv[])
       }
    }
 
-   orig_location = parse_location(symbolic_location, number);
-   if (!orig_location) {
+   char *orig_commpath = parse_location(symbolic_commpath, number);
+   if (!orig_commpath) {
       return -1;
    }
-   location = realize(orig_location);
+   commpath = realize(orig_commpath);
 
    if (daemon_args) {
-      launch_daemon(location);
+      launch_daemon(commpath);
    }
    
    result = establish_connection();
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
 #else
       shm_cache_limit = cachesize;
 #endif
-      shmcache_init(location, number, cachesize, shm_cache_limit);
+      shmcache_init(commpath, number, cachesize, shm_cache_limit);
       use_cache = 1;
    }      
    
