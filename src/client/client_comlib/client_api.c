@@ -67,6 +67,8 @@ int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chose
    if( chosen_parsed_cachepath ){
        *chosen_parsed_cachepath = local_cpc;
    }
+   // Required by testsuite/test_driver.c
+   setenv("LDCS_CHOSEN_PARSED_CACHEPATH", local_cpc, 1);
 
    return 0;
 }

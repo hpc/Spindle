@@ -1169,7 +1169,7 @@ static char* getCacheLocation(char *env_var)
    return strdup(last_slash);
 }
 
-static int checkLinkForLeak(const char *path, const char *spindle_loc)
+static int checkLinkForLeak(const char *path, const char *cachepath)
 {
    char link_target[4096];
    int result, error;
@@ -1182,8 +1182,8 @@ static int checkLinkForLeak(const char *path, const char *spindle_loc)
       return -1;
    }
 
-   if (strstr(link_target, spindle_loc)) {
-      err_printf("Link at '%s' has path '%s', which leaks spindle path with '%s'\n", path, link_target, spindle_loc);
+   if (strstr(link_target, cachepath)) {
+      err_printf("Link at '%s' has path '%s', which leaks spindle path with '%s'\n", path, link_target, cachepath);
       return -1;
    }
 
@@ -1191,10 +1191,10 @@ static int checkLinkForLeak(const char *path, const char *spindle_loc)
 }
 
 
-static int checkPathForLeak(const char *what, const char *path, const char *spindle_loc)
+static int checkPathForLeak(const char *what, const char *path, const char *cachepath)
 {
-   if (strstr(path, spindle_loc)) {
-      err_printf("%s: Path '%s' leaks spindle path with '%s'\n", what, path, spindle_loc);
+   if (strstr(path, cachepath)) {
+      err_printf("%s: Path '%s' leaks spindle path with '%s'\n", what, path, cachepath);
       return -1;
    }
    return 0;
@@ -1202,14 +1202,14 @@ static int checkPathForLeak(const char *what, const char *path, const char *spin
 
 static int leak_check_cb(struct dl_phdr_info *p, size_t psize, void *opaque)
 {
-   char *spindle_loc = (char *) opaque;
+   char *cachepath = (char *) opaque;
    if (!p->dlpi_name || p->dlpi_name[0] == '\0')
       return 0;
-   checkPathForLeak("dl_iterate_phdr", p->dlpi_name, spindle_loc);
+   checkPathForLeak("dl_iterate_phdr", p->dlpi_name, cachepath);
    return 0;
 }
 
-static int check_proc_maps(char *path, char *spindle_loc)
+static int check_proc_maps(char *path, char *cachepath)
 {
    int fd, error, result;
    struct stat statbuf;
@@ -1248,8 +1248,8 @@ static int check_proc_maps(char *path, char *spindle_loc)
    maps[filesize] = '\0';
    close(fd);
 
-   if (strstr(maps, spindle_loc)) {
-      err_printf("Found leaked spindle path '%s' in maps '%s'\n", spindle_loc, path);
+   if (strstr(maps, cachepath)) {
+      err_printf("Found leaked spindle path '%s' in maps '%s'\n", cachepath, path);
       return -1;
    }
 
@@ -1259,17 +1259,15 @@ static int check_proc_maps(char *path, char *spindle_loc)
 
 void check_for_path_leaks()
 {
-   char *spindle_loc = NULL;
+   char *cachepath = NULL;
    DIR *proc_fds = NULL;
    struct dirent *d;
    char path[4096];
    struct link_map *lm;
    char *dlerr_msg = NULL;
 
-   spindle_loc = getCacheLocation("LDCS_LOCATION");
-   if (!spindle_loc)
-      spindle_loc = getCacheLocation("LDCS_ORIG_LOCATION");
-   if (!spindle_loc) {
+   cachepath = getCacheLocation("LDCS_CHOSEN_PARSED_CACHEPATH");
+   if (!cachepath) {
       err_printf("Failed to calculate cache location");
       goto done;
    }
@@ -1287,9 +1285,9 @@ void check_for_path_leaks()
          continue;
       strncpy(path, "/proc/self/fd/", sizeof(path));
       strncat(path, d->d_name, sizeof(path)-1);
-      checkLinkForLeak(path, spindle_loc);
+      checkLinkForLeak(path, cachepath);
    }
-   checkLinkForLeak("/proc/self/exe", spindle_loc);
+   checkLinkForLeak("/proc/self/exe", cachepath);
 
    /**
     * Check link_maps for leaked spindle paths
@@ -1297,22 +1295,22 @@ void check_for_path_leaks()
    for (lm = _r_debug.r_map; lm != NULL; lm = lm->l_next) {
       if (!lm->l_name || lm->l_name[0] == '\0')
          continue;
-      checkPathForLeak("link_map", lm->l_name, spindle_loc);
+      checkPathForLeak("link_map", lm->l_name, cachepath);
    }
 
    /**
     * Check libraries in dl_iterate_phdr for leaked paths
     **/
-   dl_iterate_phdr(leak_check_cb, spindle_loc);
+   dl_iterate_phdr(leak_check_cb, cachepath);
 
    /**
     * Check /proc/pid/maps under various aliases for leaked names
     **/
-   check_proc_maps("/proc/self/maps", spindle_loc);
+   check_proc_maps("/proc/self/maps", cachepath);
    snprintf(path, sizeof(path), "/proc/self/task/%d/maps", getpid());
-   check_proc_maps(path, spindle_loc);
+   check_proc_maps(path, cachepath);
    snprintf(path, sizeof(path), "/proc/%d/maps", getpid());
-   check_proc_maps(path, spindle_loc);
+   check_proc_maps(path, cachepath);
 
    /**
     * Check that dlerror doesn't leak the /__not_exists/ prefix
@@ -1324,8 +1322,8 @@ void check_for_path_leaks()
    }
    
   done:
-   if (spindle_loc)
-      free(spindle_loc);
+   if (cachepath)
+      free(cachepath);
    if (proc_fds)
       closedir(proc_fds);
 }
