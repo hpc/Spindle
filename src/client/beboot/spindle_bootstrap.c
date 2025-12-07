@@ -107,13 +107,17 @@ static void setup_environment()
 {
    char rankinfo_str[256];
    snprintf(rankinfo_str, 256, "%d %d %d %d %d", ldcsid, rankinfo[0], rankinfo[1], rankinfo[2], rankinfo[3]);
-   
+
    char *connection_str = NULL;
    if (opts & OPT_RELOCAOUT) 
       connection_str = client_get_connection_string(ldcsid);
 
+   char *chosen_parsed_cachepath;
+   send_cachepath_query( ldcsid , NULL, &chosen_parsed_cachepath);
+
    setenv("LD_AUDIT", client_lib, 1);
    setenv("LDCS_COMMPATH", commpath, 1);
+   setenv("LDCS_CHOSEN_PARSED_CACHEPATH", chosen_parsed_cachepath, 1);
    setenv("LDCS_NUMBER", number_s, 1);
    setenv("LDCS_RANKINFO", rankinfo_str, 1);
    if (connection_str)
