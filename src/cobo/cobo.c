@@ -1437,7 +1437,7 @@ int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf)
 int cobo_allreduce( uint64_t *pval, cobo_op_t op ){
 
     /* if i have any children, receive their data */
-    int64_t child_val;
+    uint64_t child_val;
     for(int i=cobo_num_child-1; i>=0; i--) {
         /* read int64_t from child */
         if (cobo_read_fd(cobo_child_fd[i], &child_val, sizeof(int64_t)) < 0) {
