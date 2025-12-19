@@ -1283,6 +1283,11 @@ void check_for_path_leaks()
    for (d = readdir(proc_fds); d != NULL; d = readdir(proc_fds)) {
       if (d->d_name[0] == '.')
          continue;
+      // Ignore Spindle fifo files for now.
+      if ( strncmp( "315", d->d_name, 3 ) == 0 )
+          continue;
+      if ( strncmp( "316", d->d_name, 3 ) == 0 )
+          continue;
       strncpy(path, "/proc/self/fd/", sizeof(path));
       strncat(path, d->d_name, sizeof(path)-1);
       checkLinkForLeak(path, cachepath);
