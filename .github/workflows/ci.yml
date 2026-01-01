@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Setup Docker Compose
         uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
@@ -68,7 +68,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Setup Docker Compose
         uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Setup Docker Compose
         uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
