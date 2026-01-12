@@ -1,6 +1,8 @@
 ARG UBUNTU_VERSION=noble
 FROM ubuntu:${UBUNTU_VERSION}
 USER root
+ENV TMPDIR=/tmp
+RUN echo 'TMPDIR="/tmp"' >> /etc/environment
 
 RUN apt-get update \
  && DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y --no-install-recommends \
