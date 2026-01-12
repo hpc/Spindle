@@ -2,6 +2,8 @@ ARG BASE_VERSION=latest
 FROM ghcr.io/llnl/spindle-slurm-base:${BASE_VERSION}
 ARG replicas=4
 ENV workers=${replicas}
+ENV TMPDIR=/tmp
+RUN echo 'TMPDIR="/tmp"' >> /etc/environment
 
 ARG BUILD_ROOT=containers/spindle-slurm-ubuntu/testing
 

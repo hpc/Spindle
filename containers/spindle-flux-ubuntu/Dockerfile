@@ -5,6 +5,8 @@ FROM fluxrm/flux-sched:${flux_sched_version} AS builder
 ARG replicas=4
 ENV workers=${replicas}
 USER root
+ENV TMPDIR=/tmp
+RUN echo 'TMPDIR="/tmp"' >> /etc/environment
 
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update \
     && apt-get -qq install -y --no-install-recommends \
