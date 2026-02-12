@@ -17,6 +17,10 @@ AC_ARG_WITH(default-num-ports,
             [AS_HELP_STRING([--with-default-numports=NUM],[Number of TCP/IP ports to scan for Spindle server communication])],
             [NUM_COBO_PORTS=${withval}],
             [NUM_COBO_PORTS=$DEFAULT_NUM_COBO_PORTS])
+AC_ARG_WITH(localstorage,
+            [AS_HELP_STRING([--with-localstorage=DIR (obsolete)],[Use --with-cachepaths and --with-commpath instead.])],
+            [AC_MSG_ERROR(requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpath instead.)],
+            [])
 AC_ARG_WITH(cachepaths,
             [AS_HELP_STRING([--with-cachepaths=DIR],[Colon-separated list of potential back-end cache directories])],
             [CACHEPATHS=${withval}],
