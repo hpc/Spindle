@@ -7,9 +7,10 @@ x-shared-workers:
   &workers
   replicas: 4 
 
-# Ubuntu version to use (noble = 24.04)
+# Base flux image version to use
+# ${ubuntu_version}-${flux_version}-${arch}
 x-shared-build-args: &shared-build-args
-  flux_sched_version: noble
+  flux_sched_version: noble-v0.48.0-amd64
   <<: *workers
 
 # Docker prohibits copying files from outside of the build context.
