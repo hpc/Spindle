@@ -837,6 +837,7 @@ enable_libtool_lock
 enable_maintainer_mode
 with_default_port
 with_default_num_ports
+with_localstorage
 with_cachepaths
 with_commpath
 with_default_local_prefix
@@ -1568,6 +1569,8 @@ Optional Packages:
   --with-default-numports=NUM
                           Number of TCP/IP ports to scan for Spindle server
                           communication
+  --with-localstorage=DIR (obsolete)
+                          Use --with-cachepaths and --with-commpath instead.
   --with-cachepaths=DIR   Colon-separated list of potential back-end cache
                           directories
   --with-compath=DIR      Back-end directory for communication and
@@ -16435,6 +16438,12 @@ if test "${with_default_num_ports+set}" = set; then :
   withval=$with_default_num_ports; NUM_COBO_PORTS=${withval}
 else
   NUM_COBO_PORTS=$DEFAULT_NUM_COBO_PORTS
+fi
+
+
+# Check whether --with-localstorage was given.
+if test "${with_localstorage+set}" = set; then :
+  withval=$with_localstorage; as_fn_error $? "requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpath instead." "$LINENO" 5
 fi
 
 
