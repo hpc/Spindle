@@ -70,6 +70,7 @@ static int enable_spindle = 0;
 
 extern char **environ;
 extern char *parse_location(char *loc, number_t number);
+extern char *realize(char *path);
 
 struct spank_option spank_options[] =
 {
@@ -228,7 +229,7 @@ static unique_id_t getUniqueID(spank_t spank)
 static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv, unique_id_t unique_id)
 {
    int result;
-   char *oldlocation;
+   char *symbolic_commpath, *orig_commpath;
    char *err_string;
 
    args->unique_id = unique_id;
@@ -247,10 +248,14 @@ static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv
    args->use_launcher = slurm_plugin_launcher;
    args->startup_type = startup_external;
 
-   oldlocation = args->location;
+   symbolic_commpath = args->commpath;
+   orig_commpath = parse_location(xmbolic_commpath, args->number);
+   if( !orig_commpath ){
+       return -1;
+   }
+   args->commpath = realize(orig_commpath)
+
    current_spank = spank;
-   args->location = parse_location(oldlocation, args->number);
-   free(oldlocation);
 
    return 0;
 }
@@ -663,16 +668,16 @@ static int handleExit(void *params, char **output_str)
       return 0;
    }
 
-   if (!args.location) {
-      sdprintf(2, "WARNING: spindleExitBE not called since location is NULL\n");
+   if (!args.commpath) {
+      sdprintf(2, "WARNING: spindleExitBE not called since commpath is NULL\n");
    } else {
       // The task_exit callback is run for _each proc_, so we use
       // isBEProc to pick only one proc per node to call spindleExitBE.
       is_be_leader = isBEProc(&args, 1);
       if (is_be_leader) {
-         result = spindleExitBE(args.location);
+         result = spindleExitBE(args.commpath);
          if (result == -1) {
-             sdprintf(1, "ERROR: spindleExitBE returned an error on location %s\n", args.location);
+             sdprintf(1, "ERROR: spindleExitBE returned an error on commpath %s\n", args.commpath);
              return -1;
          }
       }
