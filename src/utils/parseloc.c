@@ -129,7 +129,9 @@ static char *parse_location_impl(char *loc, number_t number, int print_on_error)
          i += envvar_len + 1;
          j += env_value_len;
 #if defined(CUSTOM_GETENV) && defined(CUSTOM_GETENV_FREE)
-         free(env_value);
+         if(env_value != env_value_str) {
+            free(env_value);
+         }
 #endif
       }
       else {

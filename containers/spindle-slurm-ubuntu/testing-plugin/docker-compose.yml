@@ -1,0 +1,126 @@
+# `replicas` must match the number of nodes defined in the services section
+x-shared-workers:
+  &workers
+  replicas: 4 
+
+# Base image version to use
+x-shared-build-args: &shared-build-args
+  BASE_VERSION: latest
+  <<: *workers
+
+# Docker prohibits copying files from outside of the build context.
+# In order to be able to copy the whole repo into the container,
+# we have to set the context to be the root of the repo.
+# We then have to specify the path from there to the Dockerfile.
+x-shared-build-context: &shared-build-context
+  context: ../../..
+  dockerfile: containers/spindle-slurm-ubuntu/testing-plugin/Dockerfile
+  args: *shared-build-args
+
+# Name of the head node
+x-shared-environment: &shared-environment
+  SLURM_HEAD_NODE: slurm-head
+  <<: *workers
+
+# The entrypoint runs different services depending
+# on the node's role. Valid options are:
+#   - worker: runs slurmd
+#   - db:     runs slurmdbd
+#   - ctl:    runs slurmctld
+x-worker-environment: &worker-environment
+  SLURM_ROLE: worker
+  <<: *shared-environment
+
+networks:
+  slurm:
+    driver: bridge
+
+# Common parameters for all nodes.
+x-shared-node-parameters: &shared-node-parameters
+  build: *shared-build-context
+  networks:
+    - slurm
+  cap_add:
+    - SYS_NICE # Required for libnuma
+
+x-healthcheck-parameters: &healthcheck-parameters
+  start_period: 3s
+  interval: 3s
+  timeout: 5s
+  retries: 5
+
+x-worker-parameters: &worker-node-parameters
+  <<: *shared-node-parameters
+  environment: *worker-environment
+  depends_on:
+    slurm-head:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "stat", "/var/run/slurmd/slurmd.pid"]
+    <<: *healthcheck-parameters
+
+services:
+  slurm-mariadb:
+    image: mariadb:12
+    networks:
+      - slurm
+    hostname: slurm-mariadb
+    container_name: slurm-plugin-mariadb
+    env_file: mariadb.env
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: "slurm_acct_db"
+      MYSQL_USER: "slurm"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      <<: *healthcheck-parameters
+
+  slurm-db:
+    <<: *shared-node-parameters
+    hostname: slurm-db
+    container_name: slurm-plugin-db
+    environment:
+      SLURM_ROLE: db
+      <<: *shared-environment
+    depends_on:
+      slurm-mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "stat", "/var/run/slurmdbd/slurmdbd.pid"]
+      <<: *healthcheck-parameters
+
+  slurm-head:
+    <<: *shared-node-parameters
+    hostname: slurm-head
+    container_name: slurm-plugin-head
+    tty: true
+    environment:
+      SLURM_ROLE: ctl
+      <<: *shared-environment
+    depends_on:
+      slurm-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "stat", "/var/run/slurmd/slurmctld.pid"]
+      <<: *healthcheck-parameters
+
+  slurm-node-1:
+    <<: *worker-node-parameters
+    hostname: slurm-node-1
+    container_name: slurm-plugin-node-1
+
+  slurm-node-2:
+    <<: *worker-node-parameters
+    hostname: slurm-node-2
+    container_name: slurm-plugin-node-2
+
+  slurm-node-3:
+    <<: *worker-node-parameters
+    hostname: slurm-node-3
+    container_name: slurm-plugin-node-3
+
+  slurm-node-4:
+    <<: *worker-node-parameters
+    hostname: slurm-node-4
+    container_name: slurm-plugin-node-4
+

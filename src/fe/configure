@@ -16759,7 +16759,7 @@ $as_echo "yes" >&6; }
 $as_echo "$as_me: WARNING: Slurm launching was explicitly requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You might still be able to get spindle to work by running jobs with srun's --overlap option.  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster." >&2;}
   fi
 
-  if [ "x$ENABLE_RSH_LAUNCH" != "x1" ] && [ "x$ENABLE_SLURM_LAUNCH" != "x1" ] ; then
+  if [ "x$ENABLE_RSH_LAUNCH" != "x1" ] && [ "x$ENABLE_SLURM_LAUNCH" != "x1" ] && [ "x$ENABLE_SLURM_PLUGIN" != "xtrue" ] ; then
     if test "x$BROKEN_SRUN" == "x1"; then
       as_fn_error $? "Slurm support was requested, but slurm $srun_version, which is later than $bad_srun_major.$bad_srun_minor, was detected.  This version of slurm breaks spindle daemon launch.  You can disable this error message and build spindle with slurm-based daemon launching anyways by explicitly passing the --with-slurm-launch option (you might still be able to get spindle to work by running jobs with srun's --overlap option).  Or you could switch to having spindle launch daemons with rsh/ssh by passing the --with-rsh-launch option, and ensuring that rsh/ssh to nodes works on your cluster." "$LINENO" 5
     else

@@ -76,6 +76,7 @@ void spawnLogDaemon(char *tempdir)
       if (result == 0) {
          char *params[7];
          int cur = 0;
+         setpgid(0, 0); /* escape to own process group */
          params[cur++] = spindle_log_daemon_name;
          params[cur++] = tempdir;
          if (spindle_debug_prints) {

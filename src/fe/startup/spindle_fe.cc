@@ -262,9 +262,9 @@ int fillInSpindleArgsCmdlineFE(spindle_args_t *params, unsigned int options, int
    for (i = 0; i < sargc && sargv && sargv[i] != NULL; i++) {
       mod_argv[i+1] = sargv[i];
    }
-   i++;
-   mod_argv[i++] = const_cast<char*>("launcher");
-   mod_argv[i] = NULL;
+   mod_argv[i+1] = const_cast<char*>("launcher");
+   mod_argv[i+2] = NULL;
+   mod_argc = i+2;
 
    string errmsg;
    bool result = gatherAllConfigInfo(mod_argc, mod_argv, false, config, errmsg);

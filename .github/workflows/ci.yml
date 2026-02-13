@@ -163,3 +163,61 @@ jobs:
           cd containers/spindle-slurm-ubuntu/testing
           docker compose down
 
+  spindle-slurm-plugin-ubuntu:
+    name: Testsuite (Slurm Plugin, Ubuntu)
+    environment: Spindle CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Spindle
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
+        with:
+          version: latest
+
+      - name: Login to GitHub Container Registry
+        if: ${{ !env.ACT }}
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate MariaDB configuration
+        id: slurm-ubuntu-mariadb
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          ./generate_config.sh
+
+      - name: Build spindle-slurm-plugin-ubuntu image
+        id: slurm-ubuntu-build
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose --progress=plain build
+
+      - name: Bring spindle-slurm-plugin-ubuntu up
+        id: slurm-ubuntu-up
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose up -d --wait --wait-timeout 120
+
+      - name: Verify munge works in spindle-slurm-plugin-ubuntu
+        id: slurm-ubuntu-munge
+        run: |
+          docker exec slurm-plugin-head bash -c 'munge -n | unmunge'
+
+      - name: Run spindle-slurm-plugin-ubuntu testsuite
+        id: slurm-ubuntu-testsuite
+        run: |
+          docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
+
+      - name: Bring spindle-slurm-plugin-ubuntu down
+        id: slurm-ubuntu-down
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose down
+
