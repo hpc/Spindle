@@ -281,11 +281,11 @@ static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv
    args->startup_type = startup_external;
 
    symbolic_commpath = args->commpath;
-   orig_commpath = parse_location(xmbolic_commpath, args->number);
+   orig_commpath = parse_location(symbolic_commpath, args->number);
    if( !orig_commpath ){
        return -1;
    }
-   args->commpath = realize(orig_commpath)
+   args->commpath = realize(orig_commpath);
 
    current_spank = spank;
 

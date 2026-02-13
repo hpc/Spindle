@@ -269,7 +269,7 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
    int beproc_result = -1;
    int fd = -1, error;
    
-   dir = params->location;
+   dir = params->commpath;
    if (!dir) {
       sdprintf(1, "ERROR: Location not filled in\n");
       goto done;
@@ -615,7 +615,7 @@ int registerFEPid(pid_t pid, spindle_args_t *args)
    int fd;
    int result;
 
-   snprintf(pid_file, sizeof(pid_file), "%s/fepid", args->location);
+   snprintf(pid_file, sizeof(pid_file), "%s/fepid", args->commpath);
    pid_file[sizeof(pid_file)-1] = '\0';
 
    snprintf(pid_s, sizeof(pid_s), "%d\n", (int) pid);
@@ -646,7 +646,7 @@ int readFEPid(pid_t *pid, spindle_args_t *args)
    pid_t pid_result;
    int fd, result;
 
-   snprintf(pid_file, sizeof(pid_file), "%s/fepid", args->location);
+   snprintf(pid_file, sizeof(pid_file), "%s/fepid", args->commpath);
    pid_file[sizeof(pid_file)-1] = '\0';
 
    sdprintf(2, "Reading FE pid from %s\n", pid_file);
