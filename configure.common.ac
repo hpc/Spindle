@@ -25,6 +25,10 @@ AC_ARG_WITH(cachepaths,
             [AS_HELP_STRING([--with-cachepaths=DIR],[Colon-separated list of potential back-end cache directories])],
             [CACHEPATHS=${withval}],
             [CACHEPATHS=$DEFAULT_LOC])
+AC_ARG_WITH(cachepath,
+            [[],[]],
+            [AC_MSG_ERROR(use --with-cachepaths=DIRS (plural) instead of --with-cachepath=DIR to specify one or more cache paths)],
+            [])
 AC_ARG_WITH(commpath,
             [AS_HELP_STRING([--with-compath=DIR],[Back-end directory for communication and housekeeping])],
             [COMMPATH=${withval}],

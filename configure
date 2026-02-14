@@ -849,6 +849,7 @@ with_default_port
 with_default_num_ports
 with_localstorage
 with_cachepaths
+with_cachepath
 with_commpath
 with_default_local_prefix
 with_testrm
@@ -1596,6 +1597,7 @@ Optional Packages:
                           Use --with-cachepaths and --with-commpath instead.
   --with-cachepaths=DIR   Colon-separated list of potential back-end cache
                           directories
+,
   --with-compath=DIR      Back-end directory for communication and
                           housekeeping
   --with-default-local-prefix=DIRS
@@ -16680,6 +16682,12 @@ if test "${with_cachepaths+set}" = set; then :
   withval=$with_cachepaths; CACHEPATHS=${withval}
 else
   CACHEPATHS=$DEFAULT_LOC
+fi
+
+
+# Check whether --with-cachepath was given.
+if test "${with_cachepath+set}" = set; then :
+  withval=$with_cachepath; as_fn_error $? "use --with-cachepaths=DIRS (plural) instead of --with-cachepath=DIR to specify one or more cache paths" "$LINENO" 5
 fi
 
 
