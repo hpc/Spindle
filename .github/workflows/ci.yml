@@ -358,11 +358,11 @@ jobs:
         id: slurm-ubuntu-testsuite
         run: |
             if [ "${{ matrix.debug }}" = "0" ]; then
-              docker exec slurm-plugin-head bash -c
-              'cd Spindle-build/testsuite &&
+              docker exec slurm-plugin-head bash -c \
+              'cd Spindle-build/testsuite && \
               salloc -n${workers} -N${workers} ./runTests ${workers}'
             else
-              docker exec slurm-plugin-head bash -c
+              docker exec slurm-plugin-head bash -c \
               'cd Spindle-build/testsuite && SPINDLE_DEBUG=${{ matrix.debug }} \
               salloc -n${workers} -N${workers} ./runTests ${workers}'
             fi
