@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu serial logs tarball
-          path: ./ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2
+          path: /home/spindleuser/ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -180,10 +180,10 @@ jobs:
         with:
           name: Ubuntu flux logs tarball
           path: |
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
 
       - name: spindle-flux-ubuntu teardown container
         id: flux-ubuntu-down
@@ -249,7 +249,6 @@ jobs:
       - name: Run spindle-slurm-ubuntu testsuite
         timeout-minutes: 8
         id: slurm-ubuntu-debug3-testsuite
-        if: ${{ success() }}
         run: |
             if [ "${{ matrix.debug }}" = "0" ]; then
               docker exec slurm-head bash -c \
@@ -288,10 +287,10 @@ jobs:
         with:
           name: Ubuntu slurm logs tarball
           path: |
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
 
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
@@ -301,61 +300,110 @@ jobs:
           cd containers/spindle-slurm-ubuntu/testing
           docker compose down
 
-##  spindle-slurm-plugin-ubuntu:
-##    name: Testsuite (Slurm Plugin, Ubuntu)
-##    environment: Spindle CI
-##    runs-on: ubuntu-latest
-##    timeout-minutes: 20
-##    steps:
-##      - name: Check out Spindle
-##        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
-##
-##      - name: Setup Docker Compose
-##        uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
-##        with:
-##          version: latest
-##
-##      - name: Login to GitHub Container Registry
-##        if: ${{ !env.ACT }}
-##        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
-##        with:
-##          registry: ghcr.io
-##          username: ${{ github.actor }}
-##          password: ${{ secrets.GITHUB_TOKEN }}
-##
-##      - name: Generate MariaDB configuration
-##        id: slurm-ubuntu-mariadb
-##        run: |
-##          cd containers/spindle-slurm-ubuntu/testing-plugin
-##          ./generate_config.sh
-##
-##      - name: Build spindle-slurm-plugin-ubuntu image
-##        id: slurm-ubuntu-build
-##        run: |
-##          cd containers/spindle-slurm-ubuntu/testing-plugin
-##          docker compose --progress=plain build
-##
-##      - name: Bring spindle-slurm-plugin-ubuntu up
-##        id: slurm-ubuntu-up
-##        run: |
-##          cd containers/spindle-slurm-ubuntu/testing-plugin
-##          docker compose up -d --wait --wait-timeout 120
-##
-##      - name: Verify munge works in spindle-slurm-plugin-ubuntu
-##        id: slurm-ubuntu-munge
-##        run: |
-##          docker exec slurm-plugin-head bash -c 'munge -n | unmunge'
-##
-##      - name: Run spindle-slurm-plugin-ubuntu testsuite
-##        id: slurm-ubuntu-testsuite
-##        run: |
-##          docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
-##
-##      - name: Bring spindle-slurm-plugin-ubuntu down
-##        id: slurm-ubuntu-down
-##        if: ${{ always() }}
-##        continue-on-error: true
-##        run: |
-##          cd containers/spindle-slurm-ubuntu/testing-plugin
-##          docker compose down
-##
+################################################################################
+# spindle-slurm-plugin-ubuntu
+################################################################################
+  spindle-slurm-plugin-ubuntu:
+    name: Testsuite (Slurm Plugin, Ubuntu)
+    environment: Spindle CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+        fail-fast: false
+        matrix:
+            debug: [3, 2, 1, 0]
+    steps:
+      - name: Check out Spindle
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
+        with:
+          version: latest
+
+      - name: Login to GitHub Container Registry
+        if: ${{ !env.ACT }}
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate MariaDB configuration
+        id: slurm-ubuntu-mariadb
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          ./generate_config.sh
+
+      - name: Build spindle-slurm-plugin-ubuntu image
+        id: slurm-ubuntu-build
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose --progress=plain build
+
+      - name: Bring spindle-slurm-plugin-ubuntu up
+        id: slurm-ubuntu-up
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose up -d --wait --wait-timeout 120
+
+      - name: Verify munge works in spindle-slurm-plugin-ubuntu
+        id: slurm-ubuntu-munge
+        run: |
+          docker exec slurm-plugin-head bash -c 'munge -n | unmunge'
+
+# Matrix across "debug"
+      - name: Run spindle-slurm-plugin-ubuntu testsuite
+        timeout-minutes: 8
+        id: slurm-ubuntu-testsuite
+        run: |
+            if [ "${{ matrix.debug }}" = "0" ]; then
+              docker exec slurm-plugin-head bash -c
+              'cd Spindle-build/testsuite &&
+              salloc -n${workers} -N${workers} ./runTests ${workers}'
+            else
+              docker exec slurm-plugin-head bash -c
+              'cd Spindle-build/testsuite && SPINDLE_DEBUG=${{ matrix.debug }} \
+              salloc -n${workers} -N${workers} ./runTests ${workers}'
+            fi
+# Remove logs on failure
+      - name: Pull logs out of the container(s)
+        id: slurm-ubuntu-copy-from-container
+        if: ${{ failure() && matrix.debug != 0 }}
+        continue-on-error: true
+        run: |
+          docker exec slurm-plugin-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
+          docker exec slurm-plugin-node-1 bash -c 'cd /home/slurmuser && \
+            tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-plugin-node-1:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker exec slurm-plugin-node-2 bash -c 'cd /home/slurmuser && \
+            tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-plugin-node-2:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker exec slurm-plugin-node-3 bash -c 'cd /home/slurmuser && \
+            tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-plugin-node-3:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker exec slurm-plugin-node-4 bash -c 'cd /home/slurmuser && \
+            tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-plugin-node-4:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+
+      - name: Upload slurm ubuntu logs
+        id: slurm-ubuntu-copy-to-artifact
+        if: ${{ failure() && matrix.debug != 0 }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ubuntu slurm logs tarball
+          path: |
+            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+
+
+      - name: Bring spindle-slurm-plugin-ubuntu down
+        id: slurm-ubuntu-down
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing-plugin
+          docker compose down
+
