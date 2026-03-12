@@ -1,3 +1,5 @@
+# FIXME Handle case where only a subset of nodes generate logs.
+# FIXME More refactoring, possibly with bash functions and filename templates as ENV variables
 name: ci
 on:
   push:
@@ -100,7 +102,7 @@ jobs:
 # spindle-flux-ubuntu
 ################################################################################
   spindle-flux-ubuntu-debug3:
-    name: Testsuite (Flux, Ubuntu, SPINDLE_DEBUG=3)
+    name: Testsuite (Flux, Ubuntu)
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -141,12 +143,12 @@ jobs:
         run: |
             if [ "${{ matrix.debug }}" = "0" ]; then
                docker exec node-1 bash -c \
-               'cd Spindle-build/testsuite && \
+               'cd /home/fluxuser/Spindle-build/testsuite && \
                flux alloc --nodes=${workers} \
                ./runTests --nodes=${workers} --tasks-per-node=3'
             else
                docker exec node-1 bash -c \
-               'cd Spindle-build/testsuite && \
+               'cd /home/fluxuser/Spindle-build/testsuite && \
                SPINDLE_DEBUG=${{ matrix.debug }} \
                flux alloc --nodes=${workers} \
                ./runTests --nodes=${workers} --tasks-per-node=3'
@@ -160,18 +162,18 @@ jobs:
         continue-on-error: true
         run: |
           docker exec node-1 bash -c 'ls /home/fluxuser/Spindle-build/testsuite'
-          docker exec node-1 bash -c 'cd /home/fluxuser && \
+          docker exec node-1 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp node-1:/home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
-          docker exec node-2 bash -c 'cd /home/fluxuser && \
+          docker cp node-1:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker exec node-2 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp node-2:/home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
-          docker exec node-3 bash -c 'cd /home/fluxuser && \
+          docker cp node-2:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker exec node-3 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp node-3:/home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
-          docker exec node-4 bash -c 'cd /home/fluxuser && \
+          docker cp node-3:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker exec node-4 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp node-4:/home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp node-4:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
 
       - name: Upload logs to artifacts
         id: flux-ubuntu-artifact
@@ -180,10 +182,10 @@ jobs:
         with:
           name: Ubuntu flux logs tarball
           path: |
-            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            /home/fluxuser/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
 
       - name: spindle-flux-ubuntu teardown container
         id: flux-ubuntu-down
@@ -267,18 +269,21 @@ jobs:
         continue-on-error: true
         run: |
           docker exec slurm-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
-          docker exec slurm-node-1 bash -c 'cd /home/slurmuser && \
+          docker exec slurm-node-1 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-1:/home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
-          docker exec slurm-node-2 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-node-1:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker exec slurm-node-2 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-2:/home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
-          docker exec slurm-node-3 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-node-2:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker exec slurm-node-3 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-3:/home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
-          docker exec slurm-node-4 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-node-3:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker exec slurm-node-4 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-4:/home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp slurm-node-4:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker exec slurm-head bash -c 'cd /home/slurmuser/Spindle-build && \
+            tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-head:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 .
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
@@ -291,6 +296,7 @@ jobs:
             /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
             /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
             /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
 
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
@@ -373,18 +379,21 @@ jobs:
         continue-on-error: true
         run: |
           docker exec slurm-plugin-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
-          docker exec slurm-plugin-node-1 bash -c 'cd /home/slurmuser && \
+          docker exec slurm-plugin-node-1 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-1:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
-          docker exec slurm-plugin-node-2 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-plugin-node-1:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker exec slurm-plugin-node-2 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-2:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
-          docker exec slurm-plugin-node-3 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-plugin-node-2:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker exec slurm-plugin-node-3 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-3:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
-          docker exec slurm-plugin-node-4 bash -c 'cd /home/slurmuser && \
+          docker cp slurm-plugin-node-3:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker exec slurm-plugin-node-4 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-4:/home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp slurm-plugin-node-4:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker exec slurm-plugin-head bash -c 'cd /home/slurmuser/Spindle-build && \
+            tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 testsuite/spindle_output*'
+          docker cp slurm-plugin-head:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 .
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
@@ -397,6 +406,7 @@ jobs:
             /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
             /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
             /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
 
 
       - name: Bring spindle-slurm-plugin-ubuntu down
