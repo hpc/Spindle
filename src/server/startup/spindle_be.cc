@@ -136,6 +136,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    result = ldcs_audit_server_network_setup(port, num_ports, unique_id, &setup_data, &setup_data_size);
    if (result == -1) {
       err_printf("Error setting up network in spindleRunBE\n");
+      if (args.startup_type == startup_external)
+        LOGGING_FINI;
       return -1;
    }
    unpack_data(&args, setup_data, setup_data_size);
@@ -148,6 +150,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    char *new_commpath = parse_location(args.commpath, args.number);
    if (!new_commpath) {
       err_printf("Failed to convert commpath %s\n", args.commpath);
+      if (args.startup_type == startup_external)
+        LOGGING_FINI;
       return -1;
    }
    debug_printf("Translated commpath from %s to %s\n", args.commpath, new_commpath);
@@ -157,6 +161,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    result = ldcs_audit_server_process(&args);
    if (result == -1) {
       err_printf("Error in ldcs_audit_server_process\n");
+      if (args.startup_type == startup_external)
+        LOGGING_FINI;
       return -1;
    }
 
@@ -164,6 +170,8 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
       result = post_setup(&args);
       if (result == -1) {
          err_printf("post_setup callback errored.  Returning\n");
+         if (args.startup_type == startup_external)
+            LOGGING_FINI;
          return -1;
       }
    }
@@ -172,11 +180,12 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    ldcs_audit_server_run();
    if (result == -1) {
       err_printf("Error in ldcs_audit_server_process\n");
+      if (args.startup_type == startup_external)
+         LOGGING_FINI;
       return -1;
    }
 
-
-   if (args.startup_type == startup_external)   
+   if (args.startup_type == startup_external)
       LOGGING_FINI;
 
    return 0;

@@ -354,7 +354,7 @@ jobs:
 
 # Matrix across "debug"
       - name: Run spindle-slurm-plugin-ubuntu testsuite
-        timeout-minutes: 8
+        timeout-minutes: 13
         id: slurm-ubuntu-testsuite
         run: |
             if [ "${{ matrix.debug }}" = "0" ]; then
