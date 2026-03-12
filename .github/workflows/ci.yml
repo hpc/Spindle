@@ -88,7 +88,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu serial logs tarball
-          path: /home/spindleuser/ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2
+          # NOTE:  This is the runner path, not the container path.
+          path: ./ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -181,11 +182,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu flux logs tarball
+          # NOTE:  This is the runner path, not the container path.
           path: |
-            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            /home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            ./flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            ./flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            ./flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            ./flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
 
       - name: spindle-flux-ubuntu teardown container
         id: flux-ubuntu-down
@@ -291,12 +293,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu slurm logs tarball
+          # NOTE:  This is the runner path, not the container path.
           path: |
-            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
-            /home/slurmuser/slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
+            ./slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            ./slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            ./slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            ./slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            ./slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
 
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
@@ -401,12 +404,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu slurm logs tarball
+          # NOTE:  This is the runner path, not the container path.
           path: |
-            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
-            /home/slurmuser/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
+            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
+            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
+            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
+            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
 
 
       - name: Bring spindle-slurm-plugin-ubuntu down
