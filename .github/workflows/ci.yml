@@ -81,7 +81,7 @@ jobs:
 # If we saw any failures, tar up the logfiles for extraction.
       - name: On failure, pull logs out of the container(s)
         id: serial-ubuntu-copy-from-container
-        if: ${{ success() && matrix.debug != 0}}                # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         continue-on-error: true
         run: |
           docker exec spindlenode bash -c "tar cjvf /home/spindleuser/ubuntu_serial_logs.tar.bz2 /home/spindleuser/Spindle-build//testsuite/spindle_output*"
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload ubuntu-serial logs
         id: serial-ubuntu-copy-to-artifact
-        if: ${{ success() }}                                    # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.UNIQNAME }}
@@ -173,7 +173,7 @@ jobs:
       - name: Extract logs from spindle-flux-ubuntu
         timeout-minutes: 9
         id: flux-ubuntu-tar
-        if: ${{ success() && matrix.debug != 0 }}                       # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         continue-on-error: true
         run: |
           docker exec node-1 bash -c "ls /home/fluxuser/Spindle-build/testsuite/spindle_output*"
@@ -188,7 +188,7 @@ jobs:
 
       - name: Upload logs to artifacts
         id: flux-ubuntu-artifact
-        if: ${{ success() && matrix.debug != 0 }}                       # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.UNIQNAME }}
@@ -284,7 +284,7 @@ jobs:
 # Extract logs on failure
       - name: Pull logs out of the container(s)
         id: slurm-ubuntu-copy-from-container
-        if: ${{ success() && matrix.debug != 0 }}                      # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         continue-on-error: true
         run: |
           docker exec slurm-node-1 bash -c "ls /home/slurmuser/Spindle-build/testsuite/spindle_output*"
@@ -301,7 +301,7 @@ jobs:
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
-        if: ${{ success() && matrix.debug != 0 }}                      # REVERT
+        if: ${{ failure() && matrix.debug != 0 }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.UNIQNAME }}
@@ -397,7 +397,7 @@ jobs:
 # Extract logs on failure
       - name: Pull logs out of the container(s)
         id: plugin-ubuntu-copy-from-container
-        if: ${{ success() && matrix.debug != 0 }}                      # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         continue-on-error: true
         run: |
           docker exec slurm-plugin-node-1 bash -c "ls /home/slurmuser/Spindle-build/testsuite/spindle_output*"
@@ -414,7 +414,7 @@ jobs:
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
-        if: ${{ success() && matrix.debug != 0 }}                      # REVERT!
+        if: ${{ failure() && matrix.debug != 0 }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.UNIQNAME }}
