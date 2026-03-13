@@ -1,5 +1,10 @@
 # FIXME Handle case where only a subset of nodes generate logs.
 # FIXME More refactoring, possibly with bash functions and filename templates as ENV variables
+# Lessons learned:
+#   Invoking tar via bash -c really wants full paths for both parameters.
+#     Given that, there's no need for a cd call ahead of it.
+#   YAML env variables don't get translated in bash -c strings.
+#   Use ${{ env.FOO }} to dereference YAML environment variables.
 name: ci
 on:
   push:
@@ -32,7 +37,7 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            debug: [3]  # revert!
+            debug: [3]                                      # REVERT!
     steps:
       - name: Check out Spindle
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -100,105 +105,105 @@ jobs:
           cd containers/spindle-serial-ubuntu
           docker compose down
 
-#################################################################################
-## spindle-flux-ubuntu
-#################################################################################
-#  spindle-flux-ubuntu-debug3:
-#    name: Testsuite (Flux, Ubuntu)
-#    environment: Spindle CI
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 20
-#    env:
-#        TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-#        TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-#        TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-#        TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-#    strategy:
-#        fail-fast: false
-#        matrix:
-#            debug: [3, 2, 1, 0]
-#    steps:
-#      - name: Check out Spindle (spindle-flux-ubuntu-debug3)
-#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-#
-#      - name: Setup Docker Compose (spindle-flux-ubuntu-debug3)
-#        uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
-#        with:
-#          version: latest
-#
-#      - name: Build spindle-flux-ubuntu-debug3 image
-#        id: flux-ubuntu-build
-#        run: |
-#          cd containers/spindle-flux-ubuntu
-#          docker compose --progress=plain build
-#
-#      - name: Bring spindle-flux-ubuntu up
-#        id: flux-ubuntu--up
-#        run: |
-#          cd containers/spindle-flux-ubuntu
-#          docker compose up -d --wait --wait-timeout 60
-#
-#      - name: Verify munge works in spindle-flux-ubuntu-debug3
-#        id: flux-ubuntu-debug3-munge
-#        run: |
-#          docker exec node-1 bash -c 'munge -n | unmunge'
-#
-#      # Observed time:  5m 12s
-#      - name: Run spindle-flux-ubuntu testsuite
-#        timeout-minutes: 7
-#        id: flux-ubuntu-testsuite
-#        run: |
-#            if [ "${{ matrix.debug }}" = "0" ]; then
-#               docker exec node-1 bash -c \
-#               'cd /home/fluxuser/Spindle-build/testsuite && \
-#               flux alloc --nodes=${workers} \
-#               ./runTests --nodes=${workers} --tasks-per-node=3'
-#            else
-#               docker exec node-1 bash -c \
-#               'cd /home/fluxuser/Spindle-build/testsuite && \
-#               SPINDLE_DEBUG=${{ matrix.debug }} \
-#               flux alloc --nodes=${workers} \
-#               ./runTests --nodes=${workers} --tasks-per-node=3'
-#            fi
-#
-#      # If we saw any failures, tar up the logfiles for extraction.  Observed time:  7m 51s
-#      - name: Extract logs from spindle-flux-ubuntu
-#        timeout-minutes: 9
-#        id: flux-ubuntu-tar
-#        if: ${{ failure() && matrix.debug != 0 }}
-#        continue-on-error: true
-#        run: |
-#          docker exec node-1 bash -c "ls /home/fluxuser/Spindle-build/testsuite/spindle_output*"
-#          docker exec node-1 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node1.tar.bz2 ./testsuite/spindle_output*"
-#          docker exec node-2 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node2.tar.bz2 ./testsuite/spindle_output*"
-#          docker exec node-3 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node3.tar.bz2 ./testsuite/spindle_output*"
-#          docker exec node-4 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node4.tar.bz2 ./testsuite/spindle_output*"
-#          docker cp node-1:/home/fluxuser/Spindle-build/node1.tar.bz2 $TARBALL1
-#          docker cp node-2:/home/fluxuser/Spindle-build/node2.tar.bz2 $TARBALL2
-#          docker cp node-3:/home/fluxuser/Spindle-build/node3.tar.bz2 $TARBALL3
-#          docker cp node-4:/home/fluxuser/Spindle-build/node4.tar.bz2 $TARBALL4
-#
-#      - name: Upload logs to artifacts
-#        id: flux-ubuntu-artifact
-#        if: ${{ failure() && matrix.debug != 0 }}
-#        uses: actions/upload-artifact@v6
-#        with:
-#          name: Ubuntu flux logs tarball
-#          # NOTE:  This is the runner path, not the container path.
-#          path: |
-#            $TARBALL1
-#            $TARBALL2
-#            $TARBALL3
-#            $TARBALL4
-#
-#      - name: spindle-flux-ubuntu teardown container
-#        id: flux-ubuntu-down
-#        if: ${{ always() }}
-#        continue-on-error: true
-#        run: |
-#          cd containers/spindle-flux-ubuntu
-#          docker compose down
-#
+################################################################################
+# spindle-flux-ubuntu
+################################################################################
+  spindle-flux-ubuntu:
+    name: Testsuite (Flux, Ubuntu)
+    environment: Spindle CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+        TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+    strategy:
+        fail-fast: false
+        matrix:
+            debug: [0, 1, 2, 3]
+    steps:
+      - name: Check out Spindle (spindle-flux-ubuntu-debug3)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Docker Compose (spindle-flux-ubuntu-debug3)
+        uses: docker/setup-compose-action@364cc21a5de5b1ee4a7f5f9d3fa374ce0ccde746
+        with:
+          version: latest
+
+      - name: Build spindle-flux-ubuntu-debug3 image
+        id: flux-ubuntu-build
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose --progress=plain build
+
+      - name: Bring spindle-flux-ubuntu up
+        id: flux-ubuntu--up
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose up -d --wait --wait-timeout 60
+
+      - name: Verify munge works in spindle-flux-ubuntu-debug3
+        id: flux-ubuntu-debug3-munge
+        run: |
+          docker exec node-1 bash -c 'munge -n | unmunge'
+
+      # Observed time:  5m 12s
+      - name: Run spindle-flux-ubuntu testsuite
+        timeout-minutes: 7
+        id: flux-ubuntu-testsuite
+        run: |
+            if [ "${{ matrix.debug }}" = "0" ]; then
+               docker exec node-1 bash -c \
+               'cd /home/fluxuser/Spindle-build/testsuite && \
+               flux alloc --nodes=${workers} \
+               ./runTests --nodes=${workers} --tasks-per-node=3'
+            else
+               docker exec node-1 bash -c \
+               'cd /home/fluxuser/Spindle-build/testsuite && \
+               SPINDLE_DEBUG=${{ matrix.debug }} \
+               flux alloc --nodes=${workers} \
+               ./runTests --nodes=${workers} --tasks-per-node=3'
+            fi
+
+      # If we saw any failures, tar up the logfiles for extraction.  Observed time:  7m 51s
+      - name: Extract logs from spindle-flux-ubuntu
+        timeout-minutes: 9
+        id: flux-ubuntu-tar
+        if: ${{ success() && matrix.debug != 0 }}                       # REVERT!
+        continue-on-error: true
+        run: |
+          docker exec node-1 bash -c "ls /home/fluxuser/Spindle-build/testsuite/spindle_output*"
+          docker exec node-1 bash -c "tar cjvf /home/fluxuser/node1.tar.bz2 /home/fluxuser/Spindle-build/testsuite/spindle_output*"
+          docker exec node-2 bash -c "tar cjvf /home/fluxuser/node2.tar.bz2 /home/fluxuser/Spindle-build/testsuite/spindle_output*"
+          docker exec node-3 bash -c "tar cjvf /home/fluxuser/node3.tar.bz2 /home/fluxuser/Spindle-build/testsuite/spindle_output*"
+          docker exec node-4 bash -c "tar cjvf /home/fluxuser/node4.tar.bz2 /home/fluxuser/Spindle-build/testsuite/spindle_output*"
+          docker cp node-1:/home/fluxuser/node1.tar.bz2 ${{ env.TARBALL1 }}
+          docker cp node-2:/home/fluxuser/node2.tar.bz2 ${{ env.TARBALL2 }}
+          docker cp node-3:/home/fluxuser/node3.tar.bz2 ${{ env.TARBALL3 }}
+          docker cp node-4:/home/fluxuser/node4.tar.bz2 ${{ env.TARBALL4 }}
+
+      - name: Upload logs to artifacts
+        id: flux-ubuntu-artifact
+        if: ${{ success() && matrix.debug != 0 }}                       # REVERT!
+        uses: actions/upload-artifact@v6
+        with:
+          name: Ubuntu flux logs tarball
+          # NOTE:  This is the runner path, not the container path.
+          path: |
+            ${{ env.TARBALL1 }}
+            ${{ env.TARBALL2 }}
+            ${{ env.TARBALL3 }}
+            ${{ env.TARBALL4 }}
+
+      - name: spindle-flux-ubuntu teardown container
+        id: flux-ubuntu-down
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose down
+
 #################################################################################
 ## spindle-slurm-ubuntu
 #################################################################################
