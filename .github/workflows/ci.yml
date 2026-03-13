@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
         run: |
           docker exec spindlenode bash -c "tar cjvf /home/spindleuser/ubuntu_serial_logs.tar.bz2 /home/spindleuser/Spindle-build//testsuite/spindle_output*"
-          docker cp spindlenode:/home/spindleuser/ubuntu_serial_logs.tar.bz2 ./ubuntu_serial_logs.tar.bz2
+          docker cp spindlenode:/home/spindleuser/ubuntu_serial_logs.tar.bz2 ./ubuntu_serial_logs_${{ maxtrix.debug }}.tar.bz2
 
       - name: Upload ubuntu-serial logs
         id: serial-ubuntu-copy-to-artifact
@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: Ubuntu serial logs tarball
-          path: ./ubuntu_serial_logs.tar.bz2
+          path: ./ubuntu_serial_logs_${{ matrix.debug }}.tar.bz2
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
