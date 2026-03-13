@@ -37,7 +37,7 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            debug: [3]                                      # REVERT!
+            debug: [0, 1, 2, 3]
     steps:
       - name: Check out Spindle
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -114,10 +114,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-        TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-        TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-        TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-        TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
+        TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
+        TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
+        TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
+        UNIQNAME: ./flux_node4_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}
     strategy:
         fail-fast: false
         matrix:
@@ -188,7 +189,7 @@ jobs:
         if: ${{ success() && matrix.debug != 0 }}                       # REVERT!
         uses: actions/upload-artifact@v6
         with:
-          name: Ubuntu flux logs tarball
+          name: ${{ env.UNIQNAME }}
           # NOTE:  This is the runner path, not the container path.
           path: |
             ${{ env.TARBALL1 }}
