@@ -292,12 +292,12 @@ jobs:
           docker exec slurm-node-2 bash -c "tar cjvf /home/slurmuser/node2.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
           docker exec slurm-node-3 bash -c "tar cjvf /home/slurmuser/node3.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
           docker exec slurm-node-4 bash -c "tar cjvf /home/slurmuser/node4.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
-          docker exec slurm-head   bash -c "tar cjvf /home/slurmuser/head.tar.bz2  /home/slurmuser/Spindle-build/testsuite/spindle_output*"
+          docker exec slurm-head   bash -c "tar cjvf /home/slurmuser/head.tar.bz2  /home/slurmuser/Spindle-build/testsuite/spindle_output* || /bin/true "
           docker cp slurm-node-1:/home/slurmuser/node1.tar.bz2 ${{ env.TARBALL1 }}
           docker cp slurm-node-2:/home/slurmuser/node2.tar.bz2 ${{ env.TARBALL2 }}
           docker cp slurm-node-3:/home/slurmuser/node3.tar.bz2 ${{ env.TARBALL3 }}
           docker cp slurm-node-4:/home/slurmuser/node4.tar.bz2 ${{ env.TARBALL4 }}
-          docker cp slurm-head:/home/slurmuser/head.tar.bz2    ${{ env.TARBALLH }}
+          docker cp slurm-head:/home/slurmuser/head.tar.bz2    ${{ env.TARBALLH }} || /bin/true
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
@@ -405,12 +405,12 @@ jobs:
           docker exec slurm-plugin-node-2 bash -c "tar cjvf /home/slurmuser/node2.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
           docker exec slurm-plugin-node-3 bash -c "tar cjvf /home/slurmuser/node3.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
           docker exec slurm-plugin-node-4 bash -c "tar cjvf /home/slurmuser/node4.tar.bz2 /home/slurmuser/Spindle-build/testsuite/spindle_output*"
-          docker exec slurm-plugin-head   bash -c "tar cjvf /home/slurmuser/head.tar.bz2  /home/slurmuser/Spindle-build/testsuite/spindle_output*"
+          docker exec slurm-plugin-head   bash -c "tar cjvf /home/slurmuser/head.tar.bz2  /home/slurmuser/Spindle-build/testsuite/spindle_output* || /bin/true"
           docker cp slurm-plugin-node-1:/home/slurmuser/node1.tar.bz2 ${{ env.TARBALL1 }}
           docker cp slurm-plugin-node-2:/home/slurmuser/node2.tar.bz2 ${{ env.TARBALL2 }}
           docker cp slurm-plugin-node-3:/home/slurmuser/node3.tar.bz2 ${{ env.TARBALL3 }}
           docker cp slurm-plugin-node-4:/home/slurmuser/node4.tar.bz2 ${{ env.TARBALL4 }}
-          docker cp   slurm-plugin-head:/home/slurmuser/head.tar.bz2  ${{ env.TARBALLH }}
+          docker cp   slurm-plugin-head:/home/slurmuser/head.tar.bz2  ${{ env.TARBALLH }} || /bin/true
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
