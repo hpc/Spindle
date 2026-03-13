@@ -27,6 +27,8 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+        TARBALL: ./serial_ubunutu_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
     strategy:
         fail-fast: false
         matrix:
@@ -80,7 +82,8 @@ jobs:
            tar cjvf ./ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2 \
            ./testsuite/spindle_output*"
           docker cp \
-           spindlenode:/home/spindleuser/ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2 .
+           spindlenode:/home/spindleuser/ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2 \
+           $TARBALL
 
       - name: Upload ubuntu-serial logs
         id: serial-ubuntu-copy-to-artifact
@@ -89,7 +92,7 @@ jobs:
         with:
           name: Ubuntu serial logs tarball
           # NOTE:  This is the runner path, not the container path.
-          path: ./ubuntu_serial_logs_dbg${{ matrix.debug }}.tar.bz2
+          path: $TARBALL
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -107,6 +110,11 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env: |
+        TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
     strategy:
         fail-fast: false
         matrix:
@@ -165,16 +173,24 @@ jobs:
           docker exec node-1 bash -c 'ls /home/fluxuser/Spindle-build/testsuite'
           docker exec node-1 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp node-1:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker cp \
+            node-1:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 \
+            $TARBALL1
           docker exec node-2 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp node-2:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker cp \
+            node-2:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 \
+            $TARBALL2
           docker exec node-3 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp node-3:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker cp \
+            node-3:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 \
+            $TARBALL3
           docker exec node-4 bash -c 'cd /home/fluxuser/Spindle-build && \
             tar cjvf ./flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp node-4:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp \
+            node-4:/home/fluxuser/Spindle-build/flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 \
+            $TARBALL4
 
       - name: Upload logs to artifacts
         id: flux-ubuntu-artifact
@@ -184,10 +200,10 @@ jobs:
           name: Ubuntu flux logs tarball
           # NOTE:  This is the runner path, not the container path.
           path: |
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            ./flux_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
+            $TARBALL1
+            $TARBALL2
+            $TARBALL3
+            $TARBALL4
 
       - name: spindle-flux-ubuntu teardown container
         id: flux-ubuntu-down
@@ -205,6 +221,12 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env: |
+        TARBALL1: ./slurm_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL2: ./slurm_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL3: ./slurm_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL4: ./slurm_node4_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL5: ./slurm_nodeH_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
     strategy:
         fail-fast: false
         matrix:
@@ -264,7 +286,7 @@ jobs:
               salloc -n${workers} -N${workers} ./runTests ${workers}'
             fi
 
-# Remove logs on failure
+# Extract logs on failure
       - name: Pull logs out of the container(s)
         id: slurm-ubuntu-copy-from-container
         if: ${{ failure() && matrix.debug != 0 }}
@@ -273,19 +295,29 @@ jobs:
           docker exec slurm-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
           docker exec slurm-node-1 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-1:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker cp \
+            slurm-node-1:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 \
+            $TARBALL1
           docker exec slurm-node-2 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-2:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker cp \
+            slurm-node-2:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 \
+            $TARBALL2
           docker exec slurm-node-3 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-3:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker cp \
+            slurm-node-3:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 \
+            $TARBALL3
           docker exec slurm-node-4 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-node-4:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp \
+            slurm-node-4:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 \
+            $TARBALL4
           docker exec slurm-head bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-head:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 .
+          docker cp \
+            slurm-head:/home/slurmuser/Spindle-build/slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 \
+            $TARBALLH
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
@@ -295,11 +327,11 @@ jobs:
           name: Ubuntu slurm logs tarball
           # NOTE:  This is the runner path, not the container path.
           path: |
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
-            ./slurm_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
+              $TARBALL1
+              $TARBALL2
+              $TARBALL3
+              $TARBALL4
+              $TARBALLH
 
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
@@ -317,6 +349,12 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env: |
+        TARBALL1: ./plugin_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL2: ./plugin_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL3: ./plugin_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL4: ./plugin_node4_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
+        TARBALL5: ./plugin_nodeH_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
     strategy:
         fail-fast: false
         matrix:
@@ -375,7 +413,7 @@ jobs:
               'cd Spindle-build/testsuite && SPINDLE_DEBUG=${{ matrix.debug }} \
               salloc -n${workers} -N${workers} ./runTests ${workers}'
             fi
-# Remove logs on failure
+# Extract logs on failure
       - name: Pull logs out of the container(s)
         id: slurm-ubuntu-copy-from-container
         if: ${{ failure() && matrix.debug != 0 }}
@@ -384,19 +422,29 @@ jobs:
           docker exec slurm-plugin-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
           docker exec slurm-plugin-node-1 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-1:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 .
+          docker cp
+            slurm-plugin-node-1:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 \
+            $TARBALL1
           docker exec slurm-plugin-node-2 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-2:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 .
+          docker cp \
+          slurm-plugin-node-2:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2 \
+            $TARBALL2
           docker exec slurm-plugin-node-3 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-3:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 .
+          docker cp \
+            slurm-plugin-node-3:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2 \
+            $TARBALL3
           docker exec slurm-plugin-node-4 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-node-4:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 .
+          docker cp \
+            slurm-plugin-node-4:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2 \
+            $TARBALL4
           docker exec slurm-plugin-head bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 testsuite/spindle_output*'
-          docker cp slurm-plugin-head:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 .
+          docker cp \
+            slurm-plugin-head:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2 \
+            $TARBALLH
 
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
@@ -406,12 +454,11 @@ jobs:
           name: Ubuntu slurm logs tarball
           # NOTE:  This is the runner path, not the container path.
           path: |
-            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2
-            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node2.tar.bz2
-            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node3.tar.bz2
-            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node4.tar.bz2
-            ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_head.tar.bz2
-
+            $TARBALL1
+            $TARBALL2
+            $TARBALL3
+            $TARBALL4
+            $TARBALLH
 
       - name: Bring spindle-slurm-plugin-ubuntu down
         id: slurm-ubuntu-down
