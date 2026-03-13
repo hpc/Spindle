@@ -45,19 +45,6 @@ jobs:
       - name: Build spindle-serial-ubuntu image
         id: serial-ubuntu-build
         run: |
-          echo "Testing unquoted:"
-          echo $TARBALL
-          echo "Testing quoted:"
-          echo "$TARBALL"
-          echo "Testing context:"
-          echo ${{ env.TARBALL }}
-          echo "Testing quoted context"
-          echo "${{ env.TARBALL }}"
-          echo "Testing single quote:"
-          echo '$TARBALL'                       # This is the only one that doesn't work
-          echo "Testing single-quote context:"
-          echo '${{ env.TARBALL }}'
-
           cd containers/spindle-serial-ubuntu
           docker compose --progress=plain build
 
@@ -179,10 +166,10 @@ jobs:
         continue-on-error: true
         run: |
           docker exec node-1 bash -c "ls /home/fluxuser/Spindle-build/testsuite/spindle_output*"
-          docker exec node-1 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node1.tar.bz2 testsuite/spindle_output*"
-          docker exec node-2 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node2.tar.bz2 testsuite/spindle_output*"
-          docker exec node-3 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node3.tar.bz2 testsuite/spindle_output*"
-          docker exec node-4 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node4.tar.bz2 testsuite/spindle_output*"
+          docker exec node-1 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node1.tar.bz2 ./testsuite/spindle_output*"
+          docker exec node-2 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node2.tar.bz2 ./testsuite/spindle_output*"
+          docker exec node-3 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node3.tar.bz2 ./testsuite/spindle_output*"
+          docker exec node-4 bash -c "cd /home/fluxuser/Spindle-build && tar cjvf ./node4.tar.bz2 ./testsuite/spindle_output*"
           docker cp node-1:/home/fluxuser/Spindle-build/node1.tar.bz2 $TARBALL1
           docker cp node-2:/home/fluxuser/Spindle-build/node2.tar.bz2 $TARBALL2
           docker cp node-3:/home/fluxuser/Spindle-build/node3.tar.bz2 $TARBALL3
@@ -289,11 +276,11 @@ jobs:
         continue-on-error: true
         run: |
           docker exec slurm-node-1 bash -c "ls /home/slurmuser/Spindle-build/testsuite/spindle_output*"
-          docker exec slurm-node-1 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node1.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-node-2 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node2.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-node-3 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node3.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-node-4 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node4.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-head   bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./head.tar.bz2  testsuite/spindle_output*"
+          docker exec slurm-node-1 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node1.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-node-2 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node2.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-node-3 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node3.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-node-4 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./node4.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-head   bash -c "cd /home/slurmuser/Spindle-build && tar cjvf ./head.tar.bz2  ./testsuite/spindle_output*"
           docker cp slurm-node-1:/home/slurmuser/Spindle-build/node1.tar.bz2 $TARBALL1
           docker cp slurm-node-2:/home/slurmuser/Spindle-build/node2.tar.bz2 $TARBALL2
           docker cp slurm-node-3:/home/slurmuser/Spindle-build/node3.tar.bz2 $TARBALL3
@@ -401,11 +388,11 @@ jobs:
         continue-on-error: true
         run: |
           docker exec slurm-plugin-node-1 bash -c "ls /home/slurmuser/Spindle-build/testsuite/spindle_output*"
-          docker exec slurm-plugin-node-1 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node1.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-plugin-node-2 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node2.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-plugin-node-3 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node3.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-plugin-node-4 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node4.tar.bz2 testsuite/spindle_output*"
-          docker exec slurm-plugin-head   bash -c "cd /home/slurmuser/Spindle-build && tar cjvf head.tar.bz2  testsuite/spindle_output*"
+          docker exec slurm-plugin-node-1 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node1.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-plugin-node-2 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node2.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-plugin-node-3 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node3.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-plugin-node-4 bash -c "cd /home/slurmuser/Spindle-build && tar cjvf node4.tar.bz2 ./testsuite/spindle_output*"
+          docker exec slurm-plugin-head   bash -c "cd /home/slurmuser/Spindle-build && tar cjvf head.tar.bz2  ./testsuite/spindle_output*"
           docker cp slurm-plugin-node-1:/home/slurmuser/Spindle-build/node1.tar.bz2 $TARBALL1
           docker cp slurm-plugin-node-2:/home/slurmuser/Spindle-build/node2.tar.bz2 $TARBALL2
           docker cp slurm-plugin-node-3:/home/slurmuser/Spindle-build/node3.tar.bz2 $TARBALL3
