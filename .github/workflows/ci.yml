@@ -5,6 +5,7 @@
 #     Given that, there's no need for a cd call ahead of it.
 #   YAML env variables don't get translated in bash -c strings.
 #   Use ${{ env.FOO }} to dereference YAML environment variables.
+#   The env space is global across jobs.
 name: ci
 on:
   push:
@@ -34,7 +35,7 @@ jobs:
     timeout-minutes: 20
     env:
         TARBALL: ./serial_ubunutu_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
-        UNIQNAME: flux_node4_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}
+        UNIQNAME: spindle_serial_ubuntu_${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}
     strategy:
         fail-fast: false
         matrix:
@@ -119,7 +120,7 @@ jobs:
         TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
         TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
         TARBALL4: ./flux_node4_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}.tar.bz2
-        UNIQNAME: flux_node4_dbg${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}
+        UNIQNAME: spindle_flux_ubutnu_${{ matrix.debug }}_sha${{ github.sha }}_run${{ github.run_id }}_attempt${{ github.run_attempt }}
     strategy:
         fail-fast: false
         matrix:
