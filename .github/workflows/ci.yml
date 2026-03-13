@@ -54,7 +54,7 @@ jobs:
           echo "Testing quoted context"
           echo "${{ env.TARBALL }}"
           echo "Testing single quote:"
-          echo '$TARBALL'
+          echo '$TARBALL'                       # This is the only one that doesn't work
           echo "Testing single-quote context:"
           echo '${{ env.TARBALL }}'
 
@@ -101,7 +101,7 @@ jobs:
       - name: Upload ubuntu-serial logs
         id: serial-ubuntu-copy-to-artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Ubuntu serial logs tarball
           # NOTE:  This is the runner path, not the container path.
@@ -208,7 +208,7 @@ jobs:
       - name: Upload logs to artifacts
         id: flux-ubuntu-artifact
         if: ${{ failure() && matrix.debug != 0 }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Ubuntu flux logs tarball
           # NOTE:  This is the runner path, not the container path.
@@ -335,7 +335,7 @@ jobs:
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
         if: ${{ failure() && matrix.debug != 0 }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Ubuntu slurm logs tarball
           # NOTE:  This is the runner path, not the container path.
@@ -435,7 +435,7 @@ jobs:
           docker exec slurm-plugin-node-1 bash -c 'ls /home/slurmuser/Spindle-build/testsuite'
           docker exec slurm-plugin-node-1 bash -c 'cd /home/slurmuser/Spindle-build && \
             tar cjvf ./slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 testsuite/spindle_output*'
-          docker cp
+          docker cp \
             slurm-plugin-node-1:/home/slurmuser/Spindle-build/slurm_plugin_ubuntu_dbg${{ matrix.debug }}_node1.tar.bz2 \
             $TARBALL1
           docker exec slurm-plugin-node-2 bash -c 'cd /home/slurmuser/Spindle-build && \
@@ -462,7 +462,7 @@ jobs:
       - name: Upload slurm ubuntu logs
         id: slurm-ubuntu-copy-to-artifact
         if: ${{ failure() && matrix.debug != 0 }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Ubuntu slurm logs tarball
           # NOTE:  This is the runner path, not the container path.
