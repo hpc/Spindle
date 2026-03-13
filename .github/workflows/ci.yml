@@ -32,7 +32,7 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            debug: [3, 2, 1, 0]
+            debug: [3]  # revert!
     steps:
       - name: Check out Spindle
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
         run: |
           docker exec spindlenode bash -c "tar cjvf /home/spindleuser/ubuntu_serial_logs.tar.bz2 /home/spindleuser/Spindle-build//testsuite/spindle_output*"
-          docker cp spindlenode:/home/spindleuser/ubuntu_serial_logs.tar.bz2 $TARBALL
+          docker cp spindlenode:/home/spindleuser/ubuntu_serial_logs.tar.bz2 ./ubuntu_serial_logs.tar.bz2
 
       - name: Upload ubuntu-serial logs
         id: serial-ubuntu-copy-to-artifact
@@ -86,8 +86,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: Ubuntu serial logs tarball
-          # NOTE:  This is the runner path, not the container path.
-          path: $TARBALL
+          path: ./ubuntu_serial_logs.tar.bz2
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
