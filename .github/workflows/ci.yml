@@ -45,6 +45,19 @@ jobs:
       - name: Build spindle-serial-ubuntu image
         id: serial-ubuntu-build
         run: |
+          echo "Testing unquoted:"
+          echo $TARBALL
+          echo "Testing quoted:"
+          echo "$TARBALL"
+          echo "Testing context:"
+          echo ${{ env.TARBALL }}
+          echo "Testing quoted context"
+          echo "${{ env.TARBALL }}"
+          echo "Testing single quote:"
+          echo '$TARBALL'
+          echo "Testing single-quote context:"
+          echo '${{ env.TARBALL }}'
+
           cd containers/spindle-serial-ubuntu
           docker compose --progress=plain build
 
