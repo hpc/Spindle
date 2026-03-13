@@ -110,7 +110,7 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env: |
+    env:
         TARBALL1: ./flux_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL2: ./flux_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL3: ./flux_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
@@ -221,7 +221,7 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env: |
+    env:
         TARBALL1: ./slurm_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL2: ./slurm_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL3: ./slurm_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
@@ -349,7 +349,7 @@ jobs:
     environment: Spindle CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env: |
+    env:
         TARBALL1: ./plugin_node1_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL2: ./plugin_node2_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
         TARBALL3: ./plugin_node3_dbg${{ matrix.debug }}_${{ github.run_id }}_${{ github.run_attempt }}.tar.bz2
