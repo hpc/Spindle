@@ -29,9 +29,8 @@ extern void restore_pathpatch();
 
 unsigned int spindle_la_version(unsigned int version)
 {
-   (void)version;
    patchDTV_init();
-   return 1;
+   return version;
 }
 
 void spindle_la_activity (uintptr_t *cookie, unsigned int flag)

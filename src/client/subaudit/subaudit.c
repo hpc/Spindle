@@ -27,7 +27,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 unsigned int spindle_la_version(unsigned int version)
 {
-   (void)version;
    int result;
    int binding_offset = 0;
 
@@ -39,7 +38,7 @@ unsigned int spindle_la_version(unsigned int version)
    debug_printf3("Updating subaudit bindings with offset %d\n", binding_offset);
    init_plt_binding_func(binding_offset);
 
-   return 1;
+   return version;
 }
 
 static void bind_to_libc()

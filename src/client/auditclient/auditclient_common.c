@@ -48,7 +48,11 @@ unsigned int la_version(unsigned int version)
    debug_printf("la_version function is loaded at %p\n", la_version);
    debug_printf3("la_version(): %d\n", version);
    init_bindings_hash();
-   return spindle_la_version(version);
+   
+   result = spindle_la_version(version);
+   if (result == -1)
+      return 0;
+   return result;
 }
 
 char *la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
