@@ -304,13 +304,13 @@ int crash_handler_install(int global_rank, int ldcsid_in)
       /* If a signal handler was already installed by the time Spindle
          registers its signal handler, we save it to use in
          signal handler chaining. */
-      struct sigaction kernel_old;
-      memset(&kernel_old, 0, sizeof kernel_old);
-      if (sigaction(sigs[i], &sa, &kernel_old) != 0) {
-         debug_printf("sigaction(%d) failed when installing crash handler\n", sigs[i]);
+      struct sigaction handler_old;
+      memset(&handler_old, 0, sizeof handler_old);
+      if (sigaction(sigs[i], &sa, &handler_old) != 0) {
+         debug_printf("sigaction failed when installing crash handler for signal %d\n", sigs[i]);
          continue;
       }
-      crash_sigchain_register_existing_handler(sigs[i], &kernel_old);
+      crash_sigchain_register_existing_handler(sigs[i], &handler_old);
    }
 
    crash_installed = 1;

@@ -93,6 +93,12 @@ target_triplet = @target@
 @SOCKETS_TRUE@am__append_1 = libspindlec_socket.la
 @PIPES_TRUE@am__append_2 = libspindlec_pipe.la
 @BITER_TRUE@am__append_3 = libspindlec_biter.la
+@BLD_CRASH_HANDLER_TRUE@am__append_4 = $(top_srcdir)/crash_handler/crash_io.c \
+@BLD_CRASH_HANDLER_TRUE@             $(top_srcdir)/crash_handler/crash_fmt.c \
+@BLD_CRASH_HANDLER_TRUE@             $(top_srcdir)/crash_handler/crash_handler.c \
+@BLD_CRASH_HANDLER_TRUE@             $(top_srcdir)/crash_handler/crash_lib_offset.c \
+@BLD_CRASH_HANDLER_TRUE@             $(top_srcdir)/crash_handler/crash_sigchain.c
+
 subdir = client
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -134,25 +140,57 @@ libspindlec_biter_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_biter.la \
 	$(top_builddir)/logging/libspindleclogc.la \
 	$(top_builddir)/shm_cache/libshmcache.la
-am__objects_2 = client.lo lookup.lo should_intercept.lo exec_util.lo \
-	remap_exec.lo lookup_libc.lo \
+am__libspindlec_biter_la_SOURCES_DIST = client.c lookup.c \
+	should_intercept.c exec_util.c remap_exec.c lookup_libc.c \
+	adjust_argv.c $(top_srcdir)/../utils/parseloc.c \
+	$(top_srcdir)/../utils/getcpu.c \
+	$(top_srcdir)/crash_handler/crash_io.c \
+	$(top_srcdir)/crash_handler/crash_fmt.c \
+	$(top_srcdir)/crash_handler/crash_handler.c \
+	$(top_srcdir)/crash_handler/crash_lib_offset.c \
+	$(top_srcdir)/crash_handler/crash_sigchain.c
+@BLD_CRASH_HANDLER_TRUE@am__objects_2 = $(top_builddir)/crash_handler/crash_io.lo \
+@BLD_CRASH_HANDLER_TRUE@	$(top_builddir)/crash_handler/crash_fmt.lo \
+@BLD_CRASH_HANDLER_TRUE@	$(top_builddir)/crash_handler/crash_handler.lo \
+@BLD_CRASH_HANDLER_TRUE@	$(top_builddir)/crash_handler/crash_lib_offset.lo \
+@BLD_CRASH_HANDLER_TRUE@	$(top_builddir)/crash_handler/crash_sigchain.lo
+am__objects_3 = client.lo lookup.lo should_intercept.lo exec_util.lo \
+	remap_exec.lo lookup_libc.lo adjust_argv.lo \
 	$(top_builddir)/../utils/parseloc.lo \
-	$(top_builddir)/../utils/getcpu.lo adjust_argv.lo
-am_libspindlec_biter_la_OBJECTS = $(am__objects_2)
+	$(top_builddir)/../utils/getcpu.lo $(am__objects_2)
+am_libspindlec_biter_la_OBJECTS = $(am__objects_3)
 libspindlec_biter_la_OBJECTS = $(am_libspindlec_biter_la_OBJECTS)
 @BITER_TRUE@am_libspindlec_biter_la_rpath =
 libspindlec_pipe_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_pipe.la \
 	$(top_builddir)/logging/libspindleclogc.la \
 	$(top_builddir)/shm_cache/libshmcache.la
-am_libspindlec_pipe_la_OBJECTS = $(am__objects_2)
+am__libspindlec_pipe_la_SOURCES_DIST = client.c lookup.c \
+	should_intercept.c exec_util.c remap_exec.c lookup_libc.c \
+	adjust_argv.c $(top_srcdir)/../utils/parseloc.c \
+	$(top_srcdir)/../utils/getcpu.c \
+	$(top_srcdir)/crash_handler/crash_io.c \
+	$(top_srcdir)/crash_handler/crash_fmt.c \
+	$(top_srcdir)/crash_handler/crash_handler.c \
+	$(top_srcdir)/crash_handler/crash_lib_offset.c \
+	$(top_srcdir)/crash_handler/crash_sigchain.c
+am_libspindlec_pipe_la_OBJECTS = $(am__objects_3)
 libspindlec_pipe_la_OBJECTS = $(am_libspindlec_pipe_la_OBJECTS)
 @PIPES_TRUE@am_libspindlec_pipe_la_rpath =
 libspindlec_socket_la_DEPENDENCIES =  \
 	$(top_builddir)/client_comlib/libclient_socket.la \
 	$(top_builddir)/logging/libspindleclogc.la \
 	$(top_builddir)/shm_cache/libshmcache.la
-am_libspindlec_socket_la_OBJECTS = $(am__objects_2)
+am__libspindlec_socket_la_SOURCES_DIST = client.c lookup.c \
+	should_intercept.c exec_util.c remap_exec.c lookup_libc.c \
+	adjust_argv.c $(top_srcdir)/../utils/parseloc.c \
+	$(top_srcdir)/../utils/getcpu.c \
+	$(top_srcdir)/crash_handler/crash_io.c \
+	$(top_srcdir)/crash_handler/crash_fmt.c \
+	$(top_srcdir)/crash_handler/crash_handler.c \
+	$(top_srcdir)/crash_handler/crash_lib_offset.c \
+	$(top_srcdir)/crash_handler/crash_sigchain.c
+am_libspindlec_socket_la_OBJECTS = $(am__objects_3)
 libspindlec_socket_la_OBJECTS = $(am_libspindlec_socket_la_OBJECTS)
 @SOCKETS_TRUE@am_libspindlec_socket_la_rpath =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -173,6 +211,11 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/libspindle_audit_la-fileutil.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo \
+	$(top_builddir)/crash_handler/$(DEPDIR)/crash_fmt.Plo \
+	$(top_builddir)/crash_handler/$(DEPDIR)/crash_handler.Plo \
+	$(top_builddir)/crash_handler/$(DEPDIR)/crash_io.Plo \
+	$(top_builddir)/crash_handler/$(DEPDIR)/crash_lib_offset.Plo \
+	$(top_builddir)/crash_handler/$(DEPDIR)/crash_sigchain.Plo \
 	./$(DEPDIR)/adjust_argv.Plo ./$(DEPDIR)/client.Plo \
 	./$(DEPDIR)/exec_util.Plo \
 	./$(DEPDIR)/libspindle_audit_la-intercept.Plo \
@@ -209,8 +252,9 @@ SOURCES = $(libspindle_audit_la_SOURCES) \
 	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES) \
 	$(libspindlec_socket_la_SOURCES)
 DIST_SOURCES = $(libspindle_audit_la_SOURCES) \
-	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES) \
-	$(libspindlec_socket_la_SOURCES)
+	$(am__libspindlec_biter_la_SOURCES_DIST) \
+	$(am__libspindlec_pipe_la_SOURCES_DIST) \
+	$(am__libspindlec_socket_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -375,9 +419,12 @@ top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1) \
 	$(am__append_2) $(am__append_3)
 AM_CFLAGS = -fvisibility=hidden
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient -I$(top_srcdir)/client -I$(top_srcdir)/crash_handler
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c spindle_regex.c patch_interception.c realpath.c $(top_srcdir)/../utils/fileutil.c
-BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c lookup_libc.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/getcpu.c adjust_argv.c
+BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c \
+	remap_exec.c lookup_libc.c adjust_argv.c \
+	$(top_srcdir)/../utils/parseloc.c \
+	$(top_srcdir)/../utils/getcpu.c $(am__append_4)
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 libspindlec_pipe_la_SOURCES = $(BASE_SRCS)
@@ -448,6 +495,27 @@ $(top_builddir)/../utils/parseloc.lo:  \
 $(top_builddir)/../utils/getcpu.lo:  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/$(am__dirstamp):
+	@$(MKDIR_P) $(top_builddir)/crash_handler
+	@: > $(top_builddir)/crash_handler/$(am__dirstamp)
+$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) $(top_builddir)/crash_handler/$(DEPDIR)
+	@: > $(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/crash_io.lo:  \
+	$(top_builddir)/crash_handler/$(am__dirstamp) \
+	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/crash_fmt.lo:  \
+	$(top_builddir)/crash_handler/$(am__dirstamp) \
+	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/crash_handler.lo:  \
+	$(top_builddir)/crash_handler/$(am__dirstamp) \
+	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/crash_lib_offset.lo:  \
+	$(top_builddir)/crash_handler/$(am__dirstamp) \
+	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/crash_handler/crash_sigchain.lo:  \
+	$(top_builddir)/crash_handler/$(am__dirstamp) \
+	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
 
 libspindlec_biter.la: $(libspindlec_biter_la_OBJECTS) $(libspindlec_biter_la_DEPENDENCIES) $(EXTRA_libspindlec_biter_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libspindlec_biter_la_rpath) $(libspindlec_biter_la_OBJECTS) $(libspindlec_biter_la_LIBADD) $(LIBS)
@@ -462,6 +530,8 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f $(top_builddir)/../utils/*.$(OBJEXT)
 	-rm -f $(top_builddir)/../utils/*.lo
+	-rm -f $(top_builddir)/crash_handler/*.$(OBJEXT)
+	-rm -f $(top_builddir)/crash_handler/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -469,6 +539,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindle_audit_la-fileutil.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/crash_handler/$(DEPDIR)/crash_fmt.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/crash_handler/$(DEPDIR)/crash_handler.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/crash_handler/$(DEPDIR)/crash_io.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/crash_handler/$(DEPDIR)/crash_lib_offset.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/crash_handler/$(DEPDIR)/crash_sigchain.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adjust_argv.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exec_util.Plo@am__quote@ # am--include-marker
@@ -591,6 +666,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf $(top_builddir)/../utils/.libs $(top_builddir)/../utils/_libs
+	-rm -rf $(top_builddir)/crash_handler/.libs $(top_builddir)/crash_handler/_libs
 	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
@@ -710,6 +786,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-test -z "$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)" || rm -f $(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
 	-test -z "$(top_builddir)/../utils/$(am__dirstamp)" || rm -f $(top_builddir)/../utils/$(am__dirstamp)
+	-test -z "$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)" || rm -f $(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
+	-test -z "$(top_builddir)/crash_handler/$(am__dirstamp)" || rm -f $(top_builddir)/crash_handler/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -723,6 +801,11 @@ distclean: distclean-am
 		-rm -f $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindle_audit_la-fileutil.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_fmt.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_handler.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_io.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_lib_offset.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_sigchain.Plo
 	-rm -f ./$(DEPDIR)/adjust_argv.Plo
 	-rm -f ./$(DEPDIR)/client.Plo
 	-rm -f ./$(DEPDIR)/exec_util.Plo
@@ -787,6 +870,11 @@ maintainer-clean: maintainer-clean-am
 		-rm -f $(top_builddir)/../utils/$(DEPDIR)/getcpu.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindle_audit_la-fileutil.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/parseloc.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_fmt.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_handler.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_io.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_lib_offset.Plo
+	-rm -f $(top_builddir)/crash_handler/$(DEPDIR)/crash_sigchain.Plo
 	-rm -f ./$(DEPDIR)/adjust_argv.Plo
 	-rm -f ./$(DEPDIR)/client.Plo
 	-rm -f ./$(DEPDIR)/exec_util.Plo
