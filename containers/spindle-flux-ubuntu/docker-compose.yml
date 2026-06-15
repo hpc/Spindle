@@ -31,12 +31,19 @@ networks:
   flux:
     driver: bridge
 
+# Shared scratch volume so run_crash_tests.sh can count coredumps
+# produced by any rank on any node from a single location.
+volumes:
+  crash_scratch:
+
 # Common parameters for all nodes.
 x-shared-node-parameters: &shared-node-parameters
   build: *shared-build-context
   networks:
     - flux
   environment: *shared-environment
+  volumes:
+    - crash_scratch:/shared
   cap_add:
     - SYS_NICE # Required for libnuma
 

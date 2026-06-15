@@ -22,6 +22,11 @@ thisHost=${thisHost[0]}
 echo $thisHost
 export FLUX_FAKE_HOSTNAME=$thisHost
 
+if [ -d /shared ]; then
+    sudo chown -R "$(id -un):$(id -gn)" /shared
+    sudo chmod 755 /shared
+fi
+
 # Start munged
 sudo -u munge /usr/sbin/munged
 

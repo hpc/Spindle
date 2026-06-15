@@ -4,8 +4,13 @@ ARG replicas=4
 ENV workers=${replicas}
 ENV TMPDIR=/tmp
 RUN echo 'TMPDIR="/tmp"' >> /etc/environment
+ENV SPINDLE_TEST_CONTAINER=1
 
 ARG BUILD_ROOT=containers/spindle-slurm-ubuntu/testing-plugin
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y --no-install-recommends \
+    gdb
 
 # Slurm daemons run as $SLURM_USER
 ARG SLURM_USER=slurm
