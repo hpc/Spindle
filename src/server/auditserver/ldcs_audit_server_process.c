@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_filemngt.h"
 #include "ldcs_audit_server_md.h"
 #include "ldcs_audit_server_handlers.h"
+#include "ldcs_audit_server_crash_handler.h"
 #include "ldcs_cache.h"
 #include "spindle_launch.h"
 #include "ldcs_audit_server_requestors.h"
@@ -172,7 +173,10 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.num_exited_children_peers = 0;
    ldcs_process_data.num_exited_parents = 0;
    ldcs_process_data.num_alives = 0;
-   
+   ldcs_process_data.crash_sites = NULL;
+   ldcs_process_data.crash_sites_count = 0;
+   ldcs_process_data.crash_sites_cap = 0;
+
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");
       ldcs_process_data.dist_model = LDCS_PULL;
@@ -246,7 +250,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    }
    
    return 0;
-}  
+}
 
 int ldcs_audit_server_run()
 {
@@ -271,7 +275,9 @@ int ldcs_audit_server_run()
    ldcs_audit_server_md_destroy(&ldcs_process_data);
 
    msgbundle_done(&ldcs_process_data);
-   
+
+   crash_free_tables(&ldcs_process_data);
+
    /* destroy file cache */
    if (!(ldcs_process_data.opts & OPT_NOCLEAN)) {
       ldcs_audit_server_filemngt_clean();
