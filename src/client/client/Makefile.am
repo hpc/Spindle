@@ -17,7 +17,18 @@ AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_s
 
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c spindle_regex.c patch_interception.c realpath.c $(top_srcdir)/../utils/fileutil.c
 
-BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c remap_exec.c lookup_libc.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/getcpu.c adjust_argv.c
+BASE_SRCS = client.c \
+            lookup.c should_intercept.c exec_util.c remap_exec.c \
+            lookup_libc.c adjust_argv.c $(top_srcdir)/../utils/parseloc.c \
+            $(top_srcdir)/../utils/getcpu.c
+
+if BLD_CRASH_HANDLER
+BASE_SRCS += $(top_srcdir)/crash_handler/crash_io.c \
+             $(top_srcdir)/crash_handler/crash_fmt.c \
+             $(top_srcdir)/crash_handler/crash_handler.c \
+             $(top_srcdir)/crash_handler/crash_lib_offset.c \
+             $(top_srcdir)/crash_handler/crash_sigchain.c
+endif
 
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)
 libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la

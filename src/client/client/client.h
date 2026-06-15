@@ -107,6 +107,10 @@ extern void int_spindle_test_log_msg(char *buffer);
 typedef void* (*malloc_sig_t)(size_t);
 malloc_sig_t get_libc_malloc();
 
+#if defined(CRASH_HANDLER_ENABLED)
+void *get_libc_abort_msg();
+#endif
+
 int lookup_libc_symbols();
 
 /* ERRNO_NAME currently refers to a glibc internal symbol. */

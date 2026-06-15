@@ -54,6 +54,11 @@ extern int (*orig_unsetenv)(const char *name);
 extern char* (*orig_dlerror)();
 extern char* (*orig_realpath)(const char *, char *);
 
+extern void *orig_sigaction;
+extern void *orig_signal;
+extern void *orig_bsd_signal;
+extern void *orig_sysv_signal;
+
 extern int (*orig_spindle_open)(const char *pathname, int flags, ...);
 extern FILE* (*orig_spindle_fopen)(const char *path, const char *opts);
 extern int (*orig_spindle_stat)(const char *path, struct stat *buf);

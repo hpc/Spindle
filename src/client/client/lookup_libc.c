@@ -47,6 +47,10 @@ struct gnu_hash_header {
 
 static malloc_sig_t mallocfunc = NULL;
 
+#if defined(CRASH_HANDLER_ENABLED)
+static void *volatile abort_msg_addr = NULL;
+#endif
+
 static signed long lookup_gnu_hash_symbol(const char *name, ElfW(Sym) *syms, char *symnames, struct gnu_hash_header *header)
 {
    uint32_t *buckets, *vals;
@@ -214,7 +218,24 @@ int lookup_libc_symbols()
          mallocfunc = (malloc_sig_t) (symtab[result].st_value + libc->l_addr);
          debug_printf3("Bound mallocfunc to %p\n", mallocfunc);
          found++;
-      }      
+      }
+
+#if defined(CRASH_HANDLER_ENABLED)
+      result = -1;
+      if (gnu_hash)
+         result = lookup_gnu_hash_symbol("__abort_msg", symtab, strtab, (struct gnu_hash_header *) gnu_hash);
+      if (elf_hash && result == -1)
+         result = lookup_elf_hash_symbol("__abort_msg", symtab, strtab, (ElfW(Word) *) elf_hash);
+      if (result == -1) {
+         debug_printf3("Warning, Could not find symbol __abort_msg in libc\n");
+         not_found++;
+      }
+      else {
+         abort_msg_addr = (void *) (symtab[result].st_value + libc->l_addr);
+         debug_printf3("Bound __abort_msg slot to %p\n", abort_msg_addr);
+         found++;
+      }
+#endif
    }
 
    libdl_result = lookup_libdl_symbols();
@@ -282,3 +303,10 @@ malloc_sig_t get_libc_malloc()
    lookup_libc_symbols();
    return mallocfunc;
 }
+
+#if defined(CRASH_HANDLER_ENABLED)
+void *get_libc_abort_msg()
+{
+   return abort_msg_addr;
+}
+#endif
