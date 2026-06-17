@@ -427,6 +427,30 @@ AC_ARG_ENABLE(sec-none,
               [AS_HELP_STRING([--enable-sec-none],[Disable security authentication of connections])],
               [WANT_NOSEC="true";EXPLICIT_SEC="true"],)
 
+AC_ARG_ENABLE([crash-handler],
+  [AS_HELP_STRING([--disable-crash-handler],
+     [Build the crash handler (default: enabled)])],
+  [enable_crash_handler=$enableval],
+  [enable_crash_handler=yes])
+
+AS_IF([test "x$enable_crash_handler" != xno],
+  [AC_DEFINE([CRASH_HANDLER_ENABLED], [1],
+             [Define to 1 if the crash handler is built])])
+AM_CONDITIONAL([BLD_CRASH_HANDLER], [test "x$enable_crash_handler" != xno])
+
+AC_ARG_ENABLE([crash-dedup],
+  [AS_HELP_STRING([--enable-crash-dedup],
+     [Enable --crash-dedup by default (default: disabled)])],
+  [enable_crash_dedup=$enableval],
+  [enable_crash_dedup=no])
+
+AS_IF([test "x$enable_crash_dedup" = xyes && test "x$enable_crash_handler" = xno],
+  [AC_MSG_WARN([--enable-crash-dedup ignored because --disable-crash-handler was given])])
+
+AS_IF([test "x$enable_crash_dedup" = xyes && test "x$enable_crash_handler" != xno],
+  [AC_DEFINE([CRASH_DEDUP_ENABLED_BY_DEFAULT], [1],
+             [Enable --crash-dedup by default])])
+
 AC_ARG_WITH(gcrypt-dir,
             [AS_HELP_STRING([--with-gcrypt-dir=DIR],[Look in DIR for gcrypt installation])],
             [GCRYPT_CFLAGS="-I${withval}/include";GCRYPT_LIBS="-L${withval}/lib"],)

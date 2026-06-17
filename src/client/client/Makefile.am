@@ -13,7 +13,7 @@ endif
 
 AM_CFLAGS = -fvisibility=hidden
 
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient -I$(top_srcdir)/client -I$(top_srcdir)/crash_handler
 
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c spindle_regex.c patch_interception.c realpath.c $(top_srcdir)/../utils/fileutil.c
 
