@@ -28,6 +28,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y --no-install-recomme
         gcc-13 \
         g++-13 \
         gdb \
+        libc6-dbg \
         munge \
         libmunge-dev \
         libhwloc-dev \

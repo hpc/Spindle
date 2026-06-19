@@ -10,7 +10,8 @@ ARG BUILD_ROOT=containers/spindle-slurm-ubuntu/testing
 
 RUN apt-get update \
     && DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y --no-install-recommends \
-    gdb
+    gdb \
+    libc6-dbg
 
 # Slurm daemons run as $SLURM_USER
 ARG SLURM_USER=slurm
