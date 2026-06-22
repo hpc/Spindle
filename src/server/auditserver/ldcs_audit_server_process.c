@@ -137,7 +137,7 @@ void stopprofile()
 
 int ldcs_audit_server_process(spindle_args_t *args)
 {
-   int serverid, fd;
+   int serverid, fd, result;
 
    startprofile(args);
 
@@ -198,7 +198,20 @@ int ldcs_audit_server_process(spindle_args_t *args)
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
       init_cleanup_proc(ldcs_process_data.cachepath, ldcs_process_data.commpath);
 
-   debug_printf3("Initializing connections for clients at %s and %lu\n",
+   /* Calculate location of cache */
+   debug_printf2("Calculating cache path location\n");
+   determineValidCachePaths(
+           &ldcs_process_data.cachepath_bitidx,
+           ldcs_process_data.cachepaths,
+           ldcs_process_data.number );
+   result = handle_cachepath_consensus(&ldcs_process_data);
+   if (result == -1) {
+      err_printf("Could not determine cachepath consensus\n");
+      return -1;
+   }   
+
+   /* Setup connections for clients to start connecting */
+   debug_printf2("Initializing connections for clients at %s and %lu\n",
                  ldcs_process_data.commpath, (unsigned long) ldcs_process_data.number);
    serverid = ldcs_create_server(ldcs_process_data.commpath, ldcs_process_data.number);
    if (serverid == -1) {
@@ -231,10 +244,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    if (fd != -1) {
       ldcs_listen_register_fd(fd, serverid, forceExitCB, (void *) &ldcs_process_data);
    }
-   determineValidCachePaths(
-           &ldcs_process_data.cachepath_bitidx,
-           ldcs_process_data.cachepaths,
-           ldcs_process_data.number );
+   
    return 0;
 }  
 
