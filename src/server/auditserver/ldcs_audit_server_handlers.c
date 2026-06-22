@@ -181,7 +181,6 @@ static int handle_setup_alias(ldcs_process_data_t *procdata, char *pathname, cha
 static int handle_client_dirlists_req(ldcs_process_data_t *procdata, int nc);
 static int handle_close_client_query(ldcs_process_data_t *procdata, int nc);
 static int handle_alive_msg(ldcs_process_data_t *procdata, ldcs_message_t *msg);
-static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg);
 static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc);
 
 extern void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
@@ -1997,8 +1996,6 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
       case LDCS_MSG_ALIVE_REQ:
       case LDCS_MSG_ALIVE_RESP:
          return handle_alive_msg(procdata, msg);
-      case LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS:
-         return handle_cachepath_consensus(procdata, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -2961,35 +2958,26 @@ static int handle_client_pickone_msg(ldcs_process_data_t *procdata, int nc, ldcs
 }
 
 /**
- * Handle LDCS_MSG_REQUEST_CACHEPATH_CONSENSUS to determine which cachepaths are
- * available across all of the servers.
+ * Determine which cachepaths are available across all of the servers.
  */
-static int cachepath_consensus_reached;
-static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_message_t *msg){
-
+int handle_cachepath_consensus(ldcs_process_data_t *procdata)
+{
     int num_children = ldcs_audit_server_md_get_num_children(procdata);
 
-    debug_printf( "Processing REQUEST_CACHEPATH_CONSENSUS.\n" );
+    debug_printf( "Calculating cachepath consensus.\n" );
     debug_printf3( "  procdata->cachepath_bitidx = %#"PRIx64"\n", procdata->cachepath_bitidx );
     debug_printf3( "  procdata->cachepaths       = %s\n", procdata->cachepaths );
     debug_printf3( "  procdata->cachepath        = %s [should be null]\n", procdata->cachepath  );
     debug_printf3( "  procdata->commpath         = %s\n", procdata->commpath );
     debug_printf3( "  num_children               = %d\n", num_children );
 
-    if (num_children) {
-        spindle_broadcast(procdata, msg);
-        debug_printf3( "Successfully broadcast REQUEST_CACHEPATH_CONSENSUS\n" );
-        msgbundle_force_flush(procdata);
-        debug_printf3( "Successfully flushed the broadcast of REQUEST_CACHEPATH_CONSENSUS\n" );
-    }
-
     ldcs_audit_server_md_allreduce_AND( &procdata->cachepath_bitidx );
     debug_printf3( "The consensus value for procdata->cachepath_bitidx is:  %#"PRIx64"\n", procdata->cachepath_bitidx );
 
-    if( procdata->cachepath_bitidx == 0 ){
-       err_printf("No valid cachepath path available.  Falling back to \"commpath\" path (%s).\n", procdata->commpath);
+    if( procdata->cachepath_bitidx == 0 ) {
+       debug_printf("No valid cachepath path available.  Falling back to \"commpath\" path (%s).\n", procdata->commpath);
        procdata->cachepath = procdata->commpath;
-    }else{
+    } else {
         getValidCachePathByIndex( procdata->cachepath_bitidx,
                 &procdata->cachepath,
                 &procdata->parsed_cachepath,
@@ -3003,14 +2991,10 @@ static int handle_cachepath_consensus(ldcs_process_data_t *procdata, ldcs_messag
     ldcs_audit_server_filemngt_init(procdata->cachepath, procdata->commpath);
 
     test_printf("<internal> cachepath=%s\n", procdata->cachepath);
-    cachepath_consensus_reached = 1;
     return 0;
 }
 
-/**
- * Handle LDCS_MSG_CHOSEN_CACHEPATH_REQUEST
- */
-static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc){
+static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc) {
    ldcs_message_t msg;
    int connid;
    ldcs_client_t *client;
@@ -3022,18 +3006,12 @@ static int handle_chosen_cachepath_request(ldcs_process_data_t *procdata, int nc
       return 0;
 
 
-   if( cachepath_consensus_reached ){
-       msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
-       msg.header.len = strlen(procdata->cachepath) + 1 + strlen(procdata->parsed_cachepath) + 1;
-       msg.data = calloc( 1, msg.header.len );
-       strcpy( msg.data, procdata->cachepath );
-       strcpy( &msg.data[ strlen(procdata->cachepath)+1 ], procdata->parsed_cachepath );
-   }else{
-       msg.header.type = LDCS_MSG_NO_CACHEPATH_CONSENSUS_YET;
-       msg.header.len = 0;
-       msg.data = NULL;
-   }
-
+   msg.header.type = LDCS_MSG_CHOSEN_CACHEPATH;
+   msg.header.len = strlen(procdata->cachepath) + 1 + strlen(procdata->parsed_cachepath) + 1;
+   msg.data = calloc( 1, msg.header.len );
+   strcpy( msg.data, procdata->cachepath );
+   strcpy( &msg.data[ strlen(procdata->cachepath)+1 ], procdata->parsed_cachepath );
+   
    ldcs_send_msg(connid, &msg);
    free( msg.data );
    procdata->server_stat.clientmsg.cnt++;
