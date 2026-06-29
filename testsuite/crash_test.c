@@ -30,6 +30,12 @@ Place, Suite 330, Boston, MA 02111-1307 USA
  *                  crash_in_library()
  *   in-dlmopen-library
  *                  every rank dlmopen()s libcrashfuncs.so and calls crash_in_library()
+ *   in-fixed-library
+ *                  every rank dlopens() a library with a fixed load address
+ *                  and calls a crashing function
+ *   in-fixed-dlmopen-library
+ *                  every rank dlmopen()s a fixed-load-address library into a new
+ *                  namespace and calls a crashing function
  *   in-library-ctor rank 0 dlopen()s libcrashctor.so, whose constructor
  *                  crashes inside dlopen; others exit cleanly
  *   span-read      no app handler; a read spans two pages (PROT_READ then
@@ -94,7 +100,8 @@ static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s --crash-mode {all-same|all-different|partial|"
             "late-straggler|two-groups|one-crashes|in-library|"
-            "in-dlmopen-library|in-library-ctor|sigabrt|assert|"
+            "in-dlmopen-library|in-fixed-library|in-fixed-dlmopen-library|"
+            "in-library-ctor|sigabrt|assert|"
             "long-assert|mixed-abort-segv|span-read|"
             "safepoint|safepoint-then-crash|"
             "safepoint-bad|safepoint-bad-write|safepoint-fix-write|"
@@ -156,6 +163,29 @@ static void call_crash_in_library_common(int rank, int use_dlmopen) {
     void (*fn)(int) = (void (*)(int)) dlsym(h, "crash_in_library");
     if (!fn) {
         fprintf(stderr, "rank=%d dlsym of crash_in_library failed: %s\n",
+                rank, dlerror());
+        MPI_Abort(MPI_COMM_WORLD, 3);
+        return;
+    }
+    fn(rank);
+}
+
+static void call_crash_in_fixed_library_common(int rank, int use_dlmopen) {
+    const char *dlopen_name = use_dlmopen ? "dlmopen" : "dlopen";
+    void *h = use_dlmopen ? dlmopen(LM_ID_NEWLM, "./libcrashfixed.so", RTLD_NOW)
+                          : dlopen("./libcrashfixed.so", RTLD_NOW);
+    if (!h)
+        h = use_dlmopen ? dlmopen(LM_ID_NEWLM, "libcrashfixed.so", RTLD_NOW)
+                        : dlopen("libcrashfixed.so", RTLD_NOW);
+    if (!h) {
+        fprintf(stderr, "rank=%d %s of libcrashfixed.so failed: %s\n",
+                rank, dlopen_name, dlerror());
+        MPI_Abort(MPI_COMM_WORLD, 3);
+        return;
+    }
+    void (*fn)(int) = (void (*)(int)) dlsym(h, "crash_in_fixed_library");
+    if (!fn) {
+        fprintf(stderr, "rank=%d dlsym of crash_in_fixed_library failed: %s\n",
                 rank, dlerror());
         MPI_Abort(MPI_COMM_WORLD, 3);
         return;
@@ -654,6 +684,10 @@ int main(int argc, char **argv) {
         call_crash_in_library_common(rank, 0);
     } else if (strcmp(mode, "in-dlmopen-library") == 0) {
         call_crash_in_library_common(rank, 1);
+    } else if (strcmp(mode, "in-fixed-library") == 0) {
+        call_crash_in_fixed_library_common(rank, 0);
+    } else if (strcmp(mode, "in-fixed-dlmopen-library") == 0) {
+        call_crash_in_fixed_library_common(rank, 1);
     } else if (strcmp(mode, "in-library-ctor") == 0) {
         crash_in_library_ctor(rank);
     } else if (strcmp(mode, "sigabrt") == 0) {

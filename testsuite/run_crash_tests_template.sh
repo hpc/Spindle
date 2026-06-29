@@ -27,19 +27,27 @@ die() { echo "FAIL: $*" >&2; exit 1; }
 #  top_frame_regex: regex that should match the top frame in produced coredumps.
 #    Note that all threads will be checked, so in multithreaded examples the regex should
 #    also match anything that could be on threads other than the one that faulted.
+#  site_regex: optional regex for the crash-site dedup key; if present, the crash site key must
+#    match the regex for the test to pass
+#  binary: optional alternate executable to run in place of the default crash_test.
+#  crash_mode: optional alternate crash mode argument to executable
 CRASH_TESTS=(
-# mode                           ; cores ; flags             ; top_frame_regex
- 'all-same                       ; 1     ;                   ; crash_function_A'
+# mode                           ; cores ; flags             ; top_frame_regex                              ; site_regex                                   ; binary               ; crash_mode
+ 'all-same                       ; 1     ;                   ; crash_function_A                             ; crash_test\+0x'
+ 'fixed-address-exe              ; 1     ;                   ; crash_function_A                             ; crash_test_fixedaddr\+0x                     ; crash_test_fixedaddr ; all-same'
+ 'pie-exe                        ; 1     ;                   ; crash_function_A                             ; crash_test_pie\+0x                           ; crash_test_pie       ; all-same'
  'all-different                  ; N     ;                   ; crash_function_[0-9]+'
  'two-groups                     ; 2     ;                   ; crash_function_(A|B)'
  'one-crashes                    ; 1     ;                   ; crash_function_A'
  'partial                        ; 1     ;                   ; crash_function_A'
  'late-straggler                 ; 1     ;                   ; crash_function_A'
- 'in-library                     ; 1     ;                   ; crash_in_library'
- 'in-dlmopen-library             ; 1     ;                   ; crash_in_library'
+ 'in-library                     ; 1     ;                   ; crash_in_library                             ; libcrashfuncs\.so\+0x'
+ 'in-dlmopen-library             ; 1     ;                   ; crash_in_library                             ; libcrashfuncs\.so\+0x'
+ 'in-fixed-library               ; 1     ;                   ; crash_in_fixed_library                       ; libcrashfixed\.so\+0x'
+ 'in-fixed-dlmopen-library       ; 1     ;                   ; crash_in_fixed_library                       ; libcrashfixed\.so\+0x'
  'in-library-ctor                ; 1     ;                   ; ctor_crash'
  'sigabrt                        ; 1     ;                   ; (__GI_)?raise|abort|pthread_kill'
- 'assert                         ; 1     ;                   ; (__GI_)?raise|abort|pthread_kill'
+ 'assert                         ; 1     ;                   ; (__GI_)?raise|abort|pthread_kill             ; abort:.*Assertion'
  'mixed-abort-segv               ; 2     ; multi-rank        ; (__GI_)?raise|abort|pthread_kill|do_mixed_abort_segv'
  'span-read                      ; 1     ;                   ; do_span_read'
  'safepoint                      ; 0     ; clean             ; -'
@@ -55,7 +63,7 @@ CRASH_TESTS=(
  'no-crash                       ; 0     ; clean             ; -'
 )
 
-declare -A TEST_CORES TEST_FLAGS TEST_TOPFRAME
+declare -A TEST_CORES TEST_FLAGS TEST_TOPFRAME TEST_SITE TEST_BINARY TEST_CRASHMODE
 DEFAULT_MODES=()
 
 trim() {
@@ -66,17 +74,25 @@ trim() {
 }
 
 parse_table() {
-   local row mode cores flags top
+   local row mode cores flags top site bin cmode
    for row in "${CRASH_TESTS[@]}"; do
-      IFS=';' read -r mode cores flags top <<<"$row"
+      IFS=';' read -r mode cores flags top site bin cmode <<<"$row"
       mode=$(trim "$mode")
       [ -n "$mode" ] || continue
       cores=$(trim "$cores")
       flags=$(trim "$flags")
       top=$(trim "$top")
+      site=$(trim "$site")
+      bin=$(trim "$bin")
+      cmode=$(trim "$cmode")
+      [ -n "$bin" ]   || bin="crash_test"
+      [ -n "$cmode" ] || cmode="$mode"
       TEST_CORES[$mode]="$cores"
       TEST_FLAGS[$mode]="$flags"
       TEST_TOPFRAME[$mode]="$top"
+      TEST_SITE[$mode]="$site"
+      TEST_BINARY[$mode]="$bin"
+      TEST_CRASHMODE[$mode]="$cmode"
       DEFAULT_MODES+=("$mode")
    done
 }
@@ -170,12 +186,17 @@ check_prereqs() {
       die "--nodes must be a positive integer (was '$NODES')"
    fi
 
-   test -x "$TESTDIR/crash_test"       || die "can't find crash test executable"
-   test -f "$TESTDIR/libcrashfuncs.so" || die "can't find libcrashfuncs.so"
+   test -x "$TESTDIR/crash_test"            || die "can't find crash test executable"
+   test -x "$TESTDIR/crash_test_fixedaddr"  || die "can't find crash_test_fixedaddr executable"
+   test -x "$TESTDIR/crash_test_pie"        || die "can't find crash_test_pie executable"
+   test -f "$TESTDIR/libcrashfuncs.so"      || die "can't find libcrashfuncs.so"
+   test -f "$TESTDIR/libcrashfixed.so"      || die "can't find libcrashfixed.so"
 }
 
 launch() {
    local mode="$1"
+   local binary="$TESTDIR/${TEST_BINARY[$mode]:-crash_test}"
+   local crash_mode="${TEST_CRASHMODE[$mode]:-$mode}"
    ulimit -c unlimited
    # Make libcrashfuncs.so visible to dlopen() from the mode's scratch dir.
    export LD_LIBRARY_PATH="$TESTDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -183,7 +204,7 @@ launch() {
       serial)
          "$SPINDLE" \
             --no-mpi --crash-dedup -- \
-            "$TESTDIR/crash_test" --crash-mode "$mode"
+            "$binary" --crash-mode "$crash_mode"
          ;;
       flux)
          flux run \
@@ -191,17 +212,17 @@ launch() {
             -o spindle.crash-dedup \
             -N"$NODES" -n"$NODES" \
             --env=LD_LIBRARY_PATH \
-            -- "$TESTDIR/crash_test" --crash-mode "$mode"
+            -- "$binary" --crash-mode "$crash_mode"
          ;;
       slurm)
          salloc -N"$NODES" -n"$NODES" \
             "$SPINDLE" --crash-dedup -- \
-               srun "$TESTDIR/crash_test" --crash-mode "$mode"
+               srun "$binary" --crash-mode "$crash_mode"
          ;;
       slurm-plugin)
          salloc -N"$NODES" -n"$NODES" \
             srun --spindle="--crash-dedup" \
-               "$TESTDIR/crash_test" --crash-mode "$mode"
+               "$binary" --crash-mode "$crash_mode"
          ;;
    esac
 }
@@ -233,6 +254,7 @@ verify_top_frames() {
    [ "$expected_top" = "-" ] && return 0
    [ -z "$expected_top" ] && return 0
 
+   local binary="$TESTDIR/${TEST_BINARY[$mode]:-crash_test}"
    local core top cores
    cores=$(core_files "$dir")
    for core in $cores; do
@@ -240,10 +262,60 @@ verify_top_frames() {
       top=$(gdb -batch -nx \
          -iex 'set print demangle off' \
          -ex 'set pagination off' \
-         -ex 'bt 1' "$TESTDIR/crash_test" "$core" 2>/dev/null \
+         -ex 'bt 1' "$binary" "$core" 2>/dev/null \
          | grep -oE '#0\s+.*' | head -1)
       if ! echo "$top" | grep -qE "$expected_top"; then
          echo "   core $core: top frame '$top' does not match '$expected_top'" >&2
+         return 1
+      fi
+   done
+   return 0
+}
+
+# Read the crash site key (library+offset) out of the coredump
+read_crash_site() {
+   local core="$1"
+   local binary="${2:-$TESTDIR/crash_test}"
+   local map base cachepath real
+   # Get the mappings from the coredump and extract the Spindle audit library
+   map=$(gdb -batch -nx -ex 'set debuginfod enabled off' \
+            -ex 'info proc mappings' "$binary" "$core" 2>/dev/null \
+         | awk '/-spindlens-dso-libspindle_audit/ && $4 == "0x0" {print; exit}')
+   base=$(printf '%s' "$map" | awk '{print $1}')
+   cachepath=$(printf '%s' "$map" | awk '{print $NF}')
+   # Figure out the path to the Spindle audit library
+   real=$(printf '%s' "$cachepath" | sed -E 's#^.*/spindle\.[0-9a-f]+##; s#/[0-9]+-spindlens-dso-#/#')
+   # Open the coredump with the Spindle audit library symbols loaded
+   # so we can check crash_site_buf
+   gdb -batch -nx -ex 'set debuginfod enabled off' \
+      -ex "add-symbol-file $real -o $base" \
+      -ex 'printf "CRASH_SITE=%s\n", crash_site_buf' \
+      "$binary" "$core" 2>/dev/null \
+      | sed -n 's/^CRASH_SITE=//p' | head -1
+}
+
+# Check that the crash site key matches the expectation
+# to verify that Spindle identified the correct library
+verify_crash_site() {
+   local mode="$1"
+   local dir="$2"
+   local expected_site="${TEST_SITE[$mode]:-}"
+
+   # If this test doesn't have a crash site specified, there's nothing to do
+   [ "$expected_site" = "-" ] && return 0
+   [ -z "$expected_site" ] && return 0
+
+   local binary="$TESTDIR/${TEST_BINARY[$mode]:-crash_test}"
+   local core cores site
+   cores=$(core_files "$dir")
+   for core in $cores; do
+      site=$(read_crash_site "$core" "$binary")
+      if [ -z "$site" ]; then
+         echo "   core $core: could not read crash site" >&2
+         return 1
+      fi
+      if ! printf '%s' "$site" | grep -qE -- "$expected_site"; then
+         echo "   core $core: crash dedup key '$site' does not match '$expected_site'" >&2
          return 1
       fi
    done
@@ -332,6 +404,13 @@ main() {
       # And verify that the core files show the expected crash sites
       if ! verify_top_frames "$mode" "$dir"; then
          echo "FAIL $mode: dump top-frame verification failed"
+         fail=$((fail+1))
+         continue
+      fi
+
+      # Verify the crash handler's <library>+<offset> dedup key
+      if ! verify_crash_site "$mode" "$dir"; then
+         echo "FAIL $mode: crash site dedup key verification failed"
          fail=$((fail+1))
          continue
       fi
