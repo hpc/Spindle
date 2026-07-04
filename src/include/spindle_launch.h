@@ -126,6 +126,9 @@ typedef struct {
    /* The local-disk location for communication and housekeeping. */
    char *commpath;
 
+   /* The initial colon-separated list of commpath candidates. */
+   char *commpaths;
+
    /* Path[s] for cached libraries. */
    char *candidate_cachepaths;  /* Colon-separated list of candidate paths (max 64) */
 

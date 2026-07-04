@@ -26,7 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <set>
 #include <string>
 #include <map>
-
+#include "parseloc.h"
 #include "spindle_launch.h"
 #include "spindle_debug.h"
 #include "config.h"
@@ -292,6 +292,7 @@ void ModifyArgv::modifyCmdLine()
    snprintf(options_str, 32, "%lu", (unsigned long) params->opts);
    string options(options_str);
    
+   getFirstValidPath( params->commpaths, &( params->commpath ), params->number );
    string commpath(params->commpath);
    
    char number_str[32];

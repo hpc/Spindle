@@ -50,10 +50,10 @@ using namespace std;
 #define SPINDLE_NUM_PORTS_STR "250"
 #endif
 
-#if defined(COMMPATH)
-#define SPINDLE_COMMPATH_STR COMMPATH
+#if defined(COMMPATHS)
+#define SPINDLE_COMMPATHS_STR COMMPATHS
 #else
-#define SPINDLE_COMMPATH_STR "$TMPDIR"
+#define SPINDLE_COMMPATHS_STR "$TMPDIR"
 #endif
 
 #if defined(CACHEPATHS)
@@ -273,7 +273,7 @@ void initOptionsList()
      "Provides a text file containing a white-space separated list of files that should be relocated to each node before execution begins" },
    { confStrip, "strip", shortStrip, groupMisc, cvBool, {}, "true", 
      "Strip debug and symbol information from binaries before distributing them." },
-   { confCommPath, "commpath", shortCommPath, groupMisc, cvString, {}, SPINDLE_COMMPATH_STR,
+   { confCommPaths, "commpaths", shortCommPaths, groupMisc, cvString, {}, SPINDLE_COMMPATHS_STR,
      "Back-end directory communication and housekeeping.  Should be a non-shared location such as a ramdisk." },
    { confCachePaths, "cachepaths", shortCachePaths, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
      "Colon-separated list of candidate paths for cached libraries."},
@@ -743,11 +743,8 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
          case confNumPorts:
             args.num_ports = numresult;
             break;
-         case confCommPath: {
-            string path = strresult + "/spindle.$NUMBER";
-            args.commpath = strdup(path.c_str());
-            break;
-         }
+         case confCommPaths:
+            __attribute__((fallthrough));   // gcc-specific
          case confCachePaths:{
             // Paramemter values are colon-separated lists of paths.
             // Append "/spindle.$NUMBER" to each path in the list.
@@ -760,10 +757,15 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
                idx = paths.find(":", idx + number_var_with_colon.size());
             };
             paths += number_var_without_colon;
-            args.candidate_cachepaths = strdup(paths.c_str());
+            if( name == confCommPaths ){
+                args.commpaths = strdup(paths.c_str());
+            }else if( name == confCachePaths ){
+                args.candidate_cachepaths = strdup(paths.c_str());
+            }
             break;
          }
          case confCachePrefix:
+            __attribute__((fallthrough));   // gcc-specific
          case confPythonPrefix:
             if (args.pythonprefix)
                args.pythonprefix = getstr(string(args.pythonprefix) + string(":") + strresult, true);

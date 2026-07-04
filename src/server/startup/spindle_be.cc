@@ -58,7 +58,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->use_launcher, buf, pos);
    unpack_param(args->startup_type, buf, pos);
    unpack_param(args->shm_cache_size, buf, pos);
-   unpack_param(args->commpath, buf, pos);
+   unpack_param(args->commpaths, buf, pos);
    unpack_param(args->candidate_cachepaths, buf, pos);
    unpack_param(args->pythonprefix, buf, pos);
    unpack_param(args->preloadfile, buf, pos);
@@ -146,17 +146,14 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    assert(args.port == port);
    
    
-   /* Expand environment variables in commpath. */
-   char *new_commpath = parse_location(args.commpath, args.number);
-   if (!new_commpath) {
-      err_printf("Failed to convert commpath %s\n", args.commpath);
-      if (args.startup_type == startup_external)
-        LOGGING_FINI;
-      return -1;
+   /* Find the first valid commpath in the commpaths list. */
+   if( -1 == getFirstValidPath( args.commpaths, &( args.commpath ), args.number ) ){
+       // Failed.
+       err_printf("Failed to find valid commpath in %s\n", args.commpaths);
+       if (args.startup_type == startup_external)
+            LOGGING_FINI;
+       return -1;
    }
-   debug_printf("Translated commpath from %s to %s\n", args.commpath, new_commpath);
-   free(args.commpath);
-   args.commpath = strdup(new_commpath);
 
    result = ldcs_audit_server_process(&args);
    if (result == -1) {

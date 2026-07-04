@@ -106,27 +106,14 @@ char **strip_start_from_argv(int argc, char **argv)
    return new_argv;
 }
 
-extern char *parse_location(char *loc, int number);
-extern int spindle_mkdir(char *orig_path);
-
-#if !defined(COMMPATH)
-#error COMMPATH must be defined in config.h
-#endif
+#define SESSIONPATH "/tmp/spindle/session"
 const char *get_session_dir()
 {
-   int result;
-   char *dir;
-   dir = parse_location((char *) (COMMPATH "/spindle_session"), 0);
-   if (!dir) {
-      spindle_debug_printf(1, "ERROR: Could not parse directory for spindle session location from %s/spindle_session\n", COMMPATH);
-      return NULL;
-   }
-      
-   result = spindle_mkdir(dir);
-   if (result == -1) {
-      spindle_debug_printf(1, "ERROR: Could not mkdir spindle session location at %s\n", dir);
-      free(dir);
-      return NULL;
-   }
-   return dir;
+   /* This function was originally designed to return a realized version of COMMPATH.
+    *   Since then, COMMPATH has been replaced by COMMPATHS, which can be modified by
+    *   the user on a per-job basis and uses the number_t number as part of the path
+    *   name.  Sessions are designed to span multiple jobs, and thus shouldn't be
+    *   piggybacking on COMMPATHS.  For now, we'll put in a hardcoded directory.
+    */
+   return strdup(SESSIONPATH);
 }
