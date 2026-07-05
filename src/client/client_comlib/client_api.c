@@ -40,42 +40,31 @@ static struct lock_t comm_lock;
 
 
 int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chosen_parsed_cachepath){
-   int retries = 0, max_retries = 1000, rc = 0;
-   struct timespec delay_between_retries = { .tv_sec = 0, .tv_nsec = 1000000 };
+   int rc = 0;
    ldcs_message_t message;
-   char buffer[MAX_PATH_LEN+1];
+   char buffer[2*(MAX_PATH_LEN+1)];
    buffer[MAX_PATH_LEN] = '\0';
 
 
-   do{
-       message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
-       message.header.len = 0;
-       message.data = buffer;
+   message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
+   message.header.len = 0;
+   message.data = buffer;
+   
+   debug_printf3("sending message of type: CHOSEN_CACHEPATH_REQUEST.\n" );
+   COMM_LOCK;
 
-       COMM_LOCK;
-
-       debug_printf3("sending message of type: CHOSEN_CACHEPATH_REQUEST.\n" );
-       rc = client_send_msg(fd, &message);
-       if( rc != 0 ){
-           return rc;
-       }
-       rc = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
-       if( rc != 0 ){
-           return rc;
-       }
-
-       COMM_UNLOCK;
-
-       if( message.header.type == LDCS_MSG_NO_CACHEPATH_CONSENSUS_YET ){
-           if( retries++ >= max_retries ){
-               break;
-           }
-           nanosleep( &delay_between_retries, NULL );
-           continue;
-       }
-       break;
-
-   }while( 1 );
+   rc = client_send_msg(fd, &message);
+   if( rc != 0 ){
+      COMM_UNLOCK;
+      return rc;
+   }
+   rc = client_recv_msg_static(fd, &message, LDCS_READ_BLOCK);
+   if( rc != 0 ){
+      COMM_UNLOCK;      
+      return rc;
+   }
+   
+   COMM_UNLOCK;
 
    if (message.header.type != LDCS_MSG_CHOSEN_CACHEPATH || message.header.len > MAX_PATH_LEN) {
       err_printf("Got unexpected message of type %d\n", (int) message.header.type);
