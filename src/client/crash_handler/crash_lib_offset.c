@@ -38,8 +38,11 @@ struct r_debug_ext_mirror {
 
 /* It turns out that we can't get at the program headers via
    dl_phdr_iterate in a signal handler, because dl_phdr_iterate
-   calls malloc, which is not async-signal-safe. So we have get the
-   program headers through getauxval(AT_PHDR) and iterate ourselves. */
+   calls malloc, which is not async-signal-safe, and furthermore
+   dl_phdr_iterate only iterates the objects loaded in the current
+   namespace, so when called from the Spindle auditclient we only
+   see the auditclient and its own libc. Instead, we have to read
+   the program headers from the file. */
 
 static const ElfW(Phdr) *exe_auxv_phdrs;
 static unsigned long exe_auxv_phnum;
@@ -64,37 +67,59 @@ static char *get_executable_path(void)
    return exe_path_cached = exe_path_cache;
 }
 
-static int find_pc_et_dyn(unsigned long load_base, unsigned long pc)
+/* Check the program headers of the file at path for the given address */
+static int pc_in_object_file(const char *path, unsigned long base,
+                             unsigned long pc)
 {
-   const ElfW(Ehdr) *ehdr = (const ElfW(Ehdr) *) load_base;
-   const ElfW(Phdr) *phdrs;
+   ElfW(Ehdr) ehdr;
+   ElfW(Phdr) phdr;
+   long fd, n;
    unsigned int i;
+   unsigned long off;
+   int found = 0;
 
-   if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG) != 0)
+   fd = syscall(SYS_openat, AT_FDCWD, path, O_RDONLY | O_CLOEXEC, 0);
+   if (fd < 0)
       return 0;
 
-   phdrs = (const ElfW(Phdr) *) (load_base + ehdr->e_phoff);
-   for (i = 0; i < ehdr->e_phnum; i++) {
-      if (phdrs[i].p_type != PT_LOAD)
+   n = syscall(SYS_pread64, fd, &ehdr, sizeof(ehdr), (off_t) 0);
+   if (n != (long) sizeof(ehdr))
+      goto done;
+   if (memcmp(ehdr.e_ident, ELFMAG, SELFMAG) != 0)
+      goto done;
+   if (ehdr.e_phnum == 0)
+      goto done;
+
+   off = ehdr.e_phoff;
+   for (i = 0; i < ehdr.e_phnum; i++, off += ehdr.e_phentsize) {
+      n = syscall(SYS_pread64, fd, &phdr, sizeof(phdr), (off_t) off);
+      if (n != (long) sizeof(phdr))
+         break;
+      if (phdr.p_type != PT_LOAD)
          continue;
-      unsigned long start = load_base + phdrs[i].p_vaddr;
-      if (pc >= start && pc < start + phdrs[i].p_memsz)
-         return 1;
+      unsigned long start = base + phdr.p_vaddr;
+      if (pc >= start && pc < start + phdr.p_memsz) {
+         found = 1;
+         break;
+      }
    }
-   return 0;
+
+done:
+   syscall(SYS_close, fd);
+   return found;
 }
 
-static int find_pc_et_exec(unsigned long pc)
+static int pc_in_exe(unsigned long base, unsigned long pc)
 {
-   unsigned long i;
+   unsigned long i, start;
 
    if (!exe_auxv_phdrs)
       return 0;
    for (i = 0; i < exe_auxv_phnum; i++) {
       if (exe_auxv_phdrs[i].p_type != PT_LOAD)
          continue;
-      if (pc >= exe_auxv_phdrs[i].p_vaddr &&
-          pc < exe_auxv_phdrs[i].p_vaddr + exe_auxv_phdrs[i].p_memsz)
+      start = base + exe_auxv_phdrs[i].p_vaddr;
+      if (pc >= start && pc < start + exe_auxv_phdrs[i].p_memsz)
          return 1;
    }
    return 0;
@@ -104,15 +129,12 @@ static int walk_link_map_list(struct link_map *cur, unsigned long pc,
                               char *buf, size_t buflen)
 {
    for (; cur != NULL; cur = cur->l_next) {
-      int hit = (cur->l_addr != 0)
-                   ? find_pc_et_dyn(cur->l_addr, pc)
-                   : find_pc_et_exec(pc);
-      if (hit) {
-         const char *use_name =
-             (cur->l_name && cur->l_name[0]) ? cur->l_name
-                                             : get_executable_path();
+      int is_exe = !(cur->l_name && cur->l_name[0]);
+      const char *use_name = is_exe ? get_executable_path() : cur->l_name;
+      int hit = is_exe ? pc_in_exe(cur->l_addr, pc)
+                       : pc_in_object_file(use_name, cur->l_addr, pc);
+      if (hit)
          return crash_fmt_lib_offset(buf, buflen, use_name, pc - cur->l_addr);
-      }
    }
    return -1;
 }
