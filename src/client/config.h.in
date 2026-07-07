@@ -30,9 +30,6 @@
 /* Enable --crash-dedup by default */
 #undef CRASH_DEDUP_ENABLED_BY_DEFAULT
 
-/* Define to 1 if the crash handler is built */
-#undef CRASH_HANDLER_ENABLED
-
 /* Defined if GLIBC has an allocation bug */
 #undef DTV_ALLOCATION_BUG
 

@@ -35,9 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client.h"
 #include "client_heap.h"
 #include "client_api.h"
-#if defined(CRASH_HANDLER_ENABLED)
 #include "crash_handler.h"
-#endif
 #include "spindle_launch.h"
 #include "shmcache.h"
 #include "ccwarns.h"
@@ -368,12 +366,10 @@ int client_init()
 
   init_server_connection();
 
-#if defined(CRASH_HANDLER_ENABLED)
   if (opts & OPT_CRASH_HANDLER) {
      int global_rank = rankinfo[0] * rankinfo[3] + rankinfo[2];
      (void) crash_handler_install(global_rank, ldcsid);
   }
-#endif /* CRASH_HANDLER_ENABLED */
 
   intercept_open = (opts & OPT_RELOCPY) ? 1 : 0;
   intercept_stat = (opts & OPT_RELOCPY || !(opts & OPT_NOHIDE)) ? 1 : 0;

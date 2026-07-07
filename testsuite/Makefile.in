@@ -90,7 +90,6 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = libgenerator$(EXEEXT)
-@BLD_CRASH_HANDLER_TRUE@am__append_1 = crash_test crash_test_fixedaddr crash_test_pie libcrashfuncs.so libcrashctor.so libcrashfixed.so run_crash_tests.sh
 subdir = testsuite
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -360,7 +359,9 @@ BUILT_SOURCES = libtest10.so libtest11.so libtest12.so libtest13.so \
 	interpreter_test interpreter_test_dir/interpreter_test_perl \
 	alias/aliastest.py exec_shell.sh exec_shell.tcsh \
 	exec_shell_expected_output exec_shell exec_shell_env.sh \
-	$(am__append_1)
+	crash_test crash_test_fixedaddr crash_test_pie \
+	libcrashfuncs.so libcrashctor.so libcrashfixed.so \
+	run_crash_tests.sh
 @BGQ_BLD_FALSE@DYNAMIC_FLAG = 
 @BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
 @BGQ_BLD_FALSE@IS_BLUEGENE = false

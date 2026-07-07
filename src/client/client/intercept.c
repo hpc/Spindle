@@ -21,9 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "intercept.h"
 #include "client.h"
 #include "config.h"
-#if defined(CRASH_HANDLER_ENABLED)
 #include "crash_sigchain.h"
-#endif
 
 struct spindle_binding_t spindle_bindings[] = {
    { "", NULL, "", NULL }, 
@@ -49,12 +47,10 @@ struct spindle_binding_t spindle_bindings[] = {
    { "execvp", (void **) &orig_execvp, "execvp_wrapper", (void *) execvp_wrapper },
    { "execvpe", (void **) &orig_execvpe, "execvpe_wrapper", (void *) execvpe_wrapper },
    { "vfork", (void **) &orig_vfork, "vfork_wrapper", (void *) vfork_wrapper },
-#if defined(CRASH_HANDLER_ENABLED)
    { "sigaction", (void **) &orig_sigaction, "sigaction_wrapper", (void *) sigaction_wrapper },
    { "signal", (void **) &orig_signal, "signal_wrapper", (void *) signal_wrapper },
    { "bsd_signal", (void **) &orig_bsd_signal, "bsd_signal_wrapper", (void *) bsd_signal_wrapper },
    { "sysv_signal", (void **) &orig_sysv_signal, "sysv_signal_wrapper", (void *) sysv_signal_wrapper },
-#endif
    { "readlink", (void **) &orig_readlink, "readlink_wrapper", (void *) readlink_wrapper },
    { "readlinkat", (void **) &orig_readlinkat, "readlinkat_wrapper", (void *) readlinkat_wrapper },
    { "realpath", (void **) &orig_realpath, "spindle_realpath", (void *) spindle_realpath },

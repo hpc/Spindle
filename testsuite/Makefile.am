@@ -3,9 +3,7 @@ noinst_PROGRAMS = libgenerator
 ABS_TEST_DIR = $(abspath $(top_builddir)/testsuite)
 BUILT_SOURCES = libtest10.so libtest11.so libtest12.so libtest13.so libtest14.so libtest15.so libtest16.so libtest17.so libtest18.so libtest19.so libtest20.so libtest50.so libtest100.so libtest500.so libtest1000.so libtest2000.so libtest4000.so libtest6000.so libtest8000.so libtest10000.so libtls1.c libtls2.c libtls3.c libtls4.c libtls5.c libtls6.c libtls7.c libtls8.c libtls9.c libtls10.c libtls11.c libtls12.c libtls13.c libtls14.c libtls15.c libtls16.c libtls17.c libtls18.c libtls19.c libtls20.c libsymlink.so libdepC.so libdepB.so libdepA.so libcxxexceptB.so libcxxexceptA.so origin_dir/liboriginlib.so origin_dir/origin_subdir/liborigintarget.so libtestoutput.so libfuncdict.so runTests run_driver run_driver_rm spindle.rc preload_file_list test_driver test_driver_libs retzero_rx retzero_r retzero_x retzero_ badinterp hello_r.py hello_x.py hello_rx.py hello_.py hello_l.py badlink.py spindle_exec_test spindle_deactivated.sh liblocal.so symbind_test interpreter_test interpreter_test_dir/interpreter_test_perl alias/aliastest.py exec_shell.sh exec_shell.tcsh exec_shell_expected_output exec_shell exec_shell_env.sh
 
-if BLD_CRASH_HANDLER
 BUILT_SOURCES += crash_test crash_test_fixedaddr crash_test_pie libcrashfuncs.so libcrashctor.so libcrashfixed.so run_crash_tests.sh
-endif
 
 if BGQ_BLD
 DYNAMIC_FLAG=-dynamic
