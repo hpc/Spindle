@@ -68,6 +68,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
  *                  app handler returns without fixing a page-spanning read fault
  *   safepoint-span-bad-write
  *                  app handler returns without fixing a page-spanning write fault
+ *   mmap-sigbus-bad
+ *                  app handler does not fix access past the end of an mmap'ed file
+ *   mmap-sigbus-fixed
+ *                  app handler fixes access past the end of an mmap'ed file by extending it
  *
  *   no-crash       every rank exits cleanly
  */
@@ -107,6 +111,7 @@ static void usage(const char *prog) {
             "safepoint-bad|safepoint-bad-write|safepoint-fix-write|"
             "safepoint-span-read|safepoint-span-write|"
             "safepoint-span-bad-read|safepoint-span-bad-write|"
+            "mmap-sigbus-bad|mmap-sigbus-fixed|"
             "safepoint-longjmp|safepoint-longjmp-mt|safepoint-concurrent-chain|no-crash}"
             " [--sleep <seconds>] [--cycles <n>]\n",
             prog);
@@ -586,6 +591,89 @@ static int do_safepoint_span_bad_write(int rank) {
     return SAFEPOINT_RC_NOT_TERMINATED;
 }
 
+static int             mmap_sigbus_fd = -1;
+static long            mmap_sigbus_pagesize;
+static unsigned char  *mmap_sigbus_map;
+
+static volatile char *mmap_sigbus_target(void) {
+    return (volatile char *) (mmap_sigbus_map + mmap_sigbus_pagesize);
+}
+
+static int setup_mmap_sigbus(const char *mode, int rank,
+                             void (*handler)(int, siginfo_t *, void *)) {
+    mmap_sigbus_pagesize = sysconf(_SC_PAGESIZE);
+
+    char path[] = "/tmp/spindle_mmap_sigbus_XXXXXX";
+    mmap_sigbus_fd = mkstemp(path);
+    if (mmap_sigbus_fd < 0) {
+        fprintf(stderr, "%s rank=%d: mkstemp failed\n", mode, rank);
+        return SAFEPOINT_RC_SETUP_FAILED;
+    }
+    (void) unlink(path);
+    if (ftruncate(mmap_sigbus_fd, (off_t) mmap_sigbus_pagesize) != 0) {
+        fprintf(stderr, "%s rank=%d: ftruncate failed\n", mode, rank);
+        return SAFEPOINT_RC_SETUP_FAILED;
+    }
+    mmap_sigbus_map = mmap(NULL, 2 * mmap_sigbus_pagesize,
+                           PROT_READ | PROT_WRITE, MAP_SHARED,
+                           mmap_sigbus_fd, 0);
+    if (mmap_sigbus_map == MAP_FAILED) {
+        fprintf(stderr, "%s rank=%d: mmap failed\n", mode, rank);
+        return SAFEPOINT_RC_SETUP_FAILED;
+    }
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_sigaction = handler;
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGBUS, &sa, NULL) != 0) {
+        fprintf(stderr, "%s rank=%d: sigaction(SIGBUS) failed\n", mode, rank);
+        return SAFEPOINT_RC_SETUP_FAILED;
+    }
+    return 0;
+}
+
+static void mmap_sigbus_fix_handler(int sig, siginfo_t *info, void *uctx) {
+    (void) sig; (void) info; (void) uctx;
+    safepoint_handler_invocations++;
+    /* Increase the size of the file so the retried read succeeds */
+    if (ftruncate(mmap_sigbus_fd, (off_t) (2 * mmap_sigbus_pagesize)) != 0)
+        handler_die("ftruncate failed in handler\n");
+}
+
+static int do_mmap_sigbus_fixed(int rank) {
+    int rc = setup_mmap_sigbus("mmap-sigbus-fixed", rank,
+                               mmap_sigbus_fix_handler);
+    if (rc)
+        return rc;
+
+    /* Read one page past EOF. The app handler extends the file so the retried
+       read succeeds. */
+    volatile char v = *mmap_sigbus_target();
+    (void) v;
+
+    if (safepoint_handler_invocations == 0) {
+        fprintf(stderr, "mmap-sigbus-fixed rank=%d: handler never invoked\n", rank);
+        return SAFEPOINT_RC_INCOMPLETE;
+    }
+    return 0;
+}
+
+static int do_mmap_sigbus_bad(int rank) {
+    int rc = setup_mmap_sigbus("mmap-sigbus-bad", rank, safepoint_nofix_handler);
+    if (rc)
+        return rc;
+
+    volatile char v = *mmap_sigbus_target();
+    (void) v;
+
+    fprintf(stderr,
+            "mmap-sigbus-bad rank=%d: unexpectedly continued after unrecovered SIGBUS\n",
+            rank);
+    return SAFEPOINT_RC_NOT_TERMINATED;
+}
+
 static int sleep_seconds    = 10;
 static int safepoint_cycles = SAFEPOINT_CYCLES_DEFAULT;
 
@@ -728,6 +816,12 @@ int main(int argc, char **argv) {
         return do_safepoint_span_bad_read(rank);
     } else if (strcmp(mode, "safepoint-span-bad-write") == 0) {
         return do_safepoint_span_bad_write(rank);
+    } else if (strcmp(mode, "mmap-sigbus-bad") == 0) {
+        return do_mmap_sigbus_bad(rank);
+    } else if (strcmp(mode, "mmap-sigbus-fixed") == 0) {
+        int rc = do_mmap_sigbus_fixed(rank);
+        MPI_Finalize();
+        return rc;
     } else if (strcmp(mode, "no-crash") == 0) {
         fprintf(stderr, "rank=%d no-crash, exiting cleanly\n", rank);
         fflush(stderr);

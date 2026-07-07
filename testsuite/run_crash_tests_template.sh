@@ -60,6 +60,8 @@ CRASH_TESTS=(
  'safepoint-span-write           ; 0     ; clean             ; -'
  'safepoint-span-bad-read        ; 1     ;                   ; do_safepoint_span_bad_read'
  'safepoint-span-bad-write       ; 1     ;                   ; do_safepoint_span_bad_write'
+ 'mmap-sigbus-bad                ; 1     ;                   ; do_mmap_sigbus_bad'
+ 'mmap-sigbus-fixed              ; 0     ; clean             ; -'
  'no-crash                       ; 0     ; clean             ; -'
 )
 
