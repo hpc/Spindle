@@ -23,6 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 
 #include "config.h"
@@ -47,7 +48,7 @@ static int  crash_read_fd     = -1;
 static int  crash_write_fd    = -1;
 static int  crash_installed   = 0;
 
-static char crash_altstack_buf[CRASH_ALTSTACK_SIZE];
+static char *crash_altstack_buf = NULL;
 static char crash_site_buf[CRASH_SITE_BUF_SIZE];
 
 static volatile sig_atomic_t handler_active = 0;
@@ -275,23 +276,29 @@ int crash_handler_install(int global_rank, int ldcsid_in)
       for the signal handler. However, note that this is per-thread, and currently
       we do not register an alternate stack on any thread other than the main thread.
       TODO: handle alternate stack on other threads */
-   stack_t ss;
-   memset(&ss, 0, sizeof ss);
-   ss.ss_sp = crash_altstack_buf;
-   ss.ss_size = CRASH_ALTSTACK_SIZE;
-   ss.ss_flags = 0;
-   if (sigaltstack(&ss, NULL) != 0) {
-      debug_printf("sigaltstack failed, not installing\n");
-      crash_read_fd = -1;
-      crash_write_fd = -1;
-      return 0;
+   crash_altstack_buf = mmap(NULL, CRASH_ALTSTACK_SIZE, PROT_READ | PROT_WRITE,
+                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+   if (crash_altstack_buf == MAP_FAILED) {
+      crash_altstack_buf = NULL;
+   } else {
+      stack_t ss;
+      memset(&ss, 0, sizeof ss);
+      ss.ss_sp = crash_altstack_buf;
+      ss.ss_size = CRASH_ALTSTACK_SIZE;
+      ss.ss_flags = 0;
+      if (sigaltstack(&ss, NULL) != 0) {
+         munmap(crash_altstack_buf, CRASH_ALTSTACK_SIZE);
+         crash_altstack_buf = NULL;
+      }
    }
 
    /* Install the signal handler. */
    struct sigaction sa;
    memset(&sa, 0, sizeof sa);
    sa.sa_sigaction = crash_handler_entry;
-   sa.sa_flags     = SA_SIGINFO | SA_ONSTACK | SA_RESTART;
+   sa.sa_flags     = SA_SIGINFO | SA_RESTART;
+   if (crash_altstack_buf != NULL)
+      sa.sa_flags |= SA_ONSTACK;
    sigemptyset(&sa.sa_mask);
    sigaddset(&sa.sa_mask, SIGSEGV);
    sigaddset(&sa.sa_mask, SIGBUS);
