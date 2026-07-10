@@ -27,6 +27,9 @@
 /* Define if were using sockets for client/server communication */
 #undef COMM_SOCKET
 
+/* Enable --crash-dedup by default */
+#undef CRASH_DEDUP_ENABLED_BY_DEFAULT
+
 /* Default to using a dedicated process to clean data files */
 #undef DEFAULT_CLEANUP_PROC
 

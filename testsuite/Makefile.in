@@ -358,7 +358,10 @@ BUILT_SOURCES = libtest10.so libtest11.so libtest12.so libtest13.so \
 	spindle_deactivated.sh liblocal.so symbind_test \
 	interpreter_test interpreter_test_dir/interpreter_test_perl \
 	alias/aliastest.py exec_shell.sh exec_shell.tcsh \
-	exec_shell_expected_output exec_shell exec_shell_env.sh
+	exec_shell_expected_output exec_shell exec_shell_env.sh \
+	crash_test crash_test_fixedaddr crash_test_pie \
+	libcrashfuncs.so libcrashctor.so libcrashfixed.so \
+	run_crash_tests.sh
 @BGQ_BLD_FALSE@DYNAMIC_FLAG = 
 @BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
 @BGQ_BLD_FALSE@IS_BLUEGENE = false
@@ -374,6 +377,7 @@ test_driver_libsLDADD = -ltest10 -ltest11 -ltest12 -ltest13 -ltest14 -ltest15 -l
 test_driver_libsLDFLAGS = -Wl,-E -L$(top_builddir)/testsuite $(MPI_CLDFLAGS) -L$(top_builddir)/src/client/spindle_api -L. $(DYNAMIC_FLAG) -no-install $(LDFLAGS) -Wl,-rpath,$(PWD)/origin_dir -L$(PWD)/origin_dir -Wl,-rpath-link,$(PWD)/origin_dir/origin_subdir -I$(top_builddir)
 REGLIB_SRC = $(srcdir)/registerlib.c
 LD_FUNCDICT = -L$(top_builddir)/testsuite -lfuncdict
+EXTRA_DIST = run_crash_tests_template.sh crash_test.c crash_functions.c crash_functions.h libcrashfuncs.c libcrashctor.c libcrashfixed.c
 CLEANFILES = libtest10.c libtest11.c libtest12.c libtest13.c \
 	libtest14.c libtest15.c libtest16.c libtest17.c libtest18.c \
 	libtest19.c libtest20.c libtest10.so libtest50.c libtest50.so \
@@ -400,7 +404,9 @@ CLEANFILES = libtest10.c libtest11.c libtest12.c libtest13.c \
 	libsymbind_g.so interpreter_test \
 	interpreter_test_dir/interpreter_test_perl alias exec_shell.sh \
 	exec_shell.tcsh exec_shell_env.sh exec_shell_expected_output \
-	exec_shell
+	exec_shell crash_test crash_test_fixedaddr crash_test_pie \
+	libcrashfuncs.so libcrashctor.so libcrashfixed.so \
+	run_crash_tests.sh
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1099,6 +1105,37 @@ interpreter_test_dir/interpreter_test_perl: interpreter_test_perl_template inter
 
 interpreter_test: interpreter_test_template
 	$(AM_V_GEN)cp $< $@; chmod 700 $@
+
+crash_test: $(srcdir)/crash_test.c $(srcdir)/crash_functions.c $(srcdir)/crash_functions.h libcrashfuncs.so libcrashctor.so libcrashfixed.so
+	$(AM_V_CCLD)$(MPICC) $(CFLAGS) -O0 -fno-omit-frame-pointer -no-pie -Wl,-E \
+		-o $@ $(srcdir)/crash_test.c $(srcdir)/crash_functions.c -I$(srcdir) -ldl -lpthread
+
+CRASH_FIXED_EXE_ADDR ?= 0x60000000
+crash_test_fixedaddr: $(srcdir)/crash_test.c $(srcdir)/crash_functions.c $(srcdir)/crash_functions.h
+	$(AM_V_CCLD)$(MPICC) $(CFLAGS) -O0 -fno-omit-frame-pointer -no-pie -Wl,-E \
+		-Wl,-Ttext-segment=$(CRASH_FIXED_EXE_ADDR) \
+		-o $@ $(srcdir)/crash_test.c $(srcdir)/crash_functions.c -I$(srcdir) -ldl -lpthread
+
+crash_test_pie: $(srcdir)/crash_test.c $(srcdir)/crash_functions.c $(srcdir)/crash_functions.h
+	$(AM_V_CCLD)$(MPICC) $(CFLAGS) -O0 -fno-omit-frame-pointer -pie -fPIE -Wl,-E \
+		-o $@ $(srcdir)/crash_test.c $(srcdir)/crash_functions.c -I$(srcdir) -ldl -lpthread
+
+libcrashfuncs.so: $(srcdir)/libcrashfuncs.c
+	$(AM_V_CCLD)$(CC) $(CFLAGS) -O0 -fno-omit-frame-pointer -shared -fPIC \
+		-o $@ $(srcdir)/libcrashfuncs.c
+
+libcrashctor.so: $(srcdir)/libcrashctor.c
+	$(AM_V_CCLD)$(CC) $(CFLAGS) -O0 -fno-omit-frame-pointer -shared -fPIC \
+		-o $@ $(srcdir)/libcrashctor.c
+
+CRASH_FIXED_LIB_ADDR ?= 0x10000000
+libcrashfixed.so: $(srcdir)/libcrashfixed.c
+	$(AM_V_CCLD)$(CC) $(CFLAGS) -O0 -fno-omit-frame-pointer -shared -fPIC \
+		-Wl,-Ttext-segment=$(CRASH_FIXED_LIB_ADDR) \
+		-o $@ $(srcdir)/libcrashfixed.c
+
+run_crash_tests.sh: $(srcdir)/run_crash_tests_template.sh $(top_builddir)/Makefile
+	$(AM_V_GEN)$(SED) -e s,TEST_RESOURCE_MANAGER,$(TESTRM),g\;s,SPINDLE_EXEC,$(bindir)/spindle,g\;s,SPINDLE_RC_PATH,$(sysconfdir)/spindle/spindle.rc,g\;s,TEST_RUN_DIR,$(ABS_TEST_DIR),g < $< > $@; chmod 700 $@
 
 exec_shell.sh: $(srcdir)/exec_shell_template.sh 
 	$(AM_V_GEN)cp $< $@; chmod 700 $@

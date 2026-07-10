@@ -23,9 +23,9 @@ extern "C" {
 
 #include "ldcs_api.h"
 #include "spindle_launch.h"
-#include "stat_cache.h"   
+#include "stat_cache.h"
 #include "force_exit.h"
-   
+
 typedef void* requestor_list_t;
 
 /* client description structure */
@@ -111,7 +111,28 @@ typedef struct msgbundle_entry_t {
    struct msgbundle_entry_t *next;
    char name[16];
 } msgbundle_entry_t;
-   
+
+typedef enum {
+   CRASH_WAITER_LOCAL = 0,
+   CRASH_WAITER_CHILD = 1
+} crash_waiter_kind_t;
+
+typedef void* node_peer_t;
+
+typedef struct crash_waiter_t {
+   crash_waiter_kind_t kind;
+   int nc;
+   int global_rank;
+   node_peer_t peer;
+} crash_waiter_t;
+
+typedef struct crash_site_entry_t {
+   char *site;
+   size_t site_len;
+   int resolved;
+   crash_waiter_t waiter;
+} crash_site_entry_t;
+
 struct ldcs_process_data_struct
 {
   int client_table_size; 
@@ -163,6 +184,10 @@ struct ldcs_process_data_struct
   requestor_list_t pending_ldso_requests;
   requestor_list_t completed_ldso_requests;
    
+  crash_site_entry_t *crash_sites;
+  int crash_sites_count;
+  int crash_sites_cap;
+
   /* multi daemon support */
   int md_rank;
   int md_size;

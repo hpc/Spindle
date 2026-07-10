@@ -27,6 +27,7 @@ RUN apt-get update \
         gfortran-13 \
         gcc-13 \
         g++-13 \
+        gdb \
         munge \
         libmunge-dev \
         libhwloc-dev \

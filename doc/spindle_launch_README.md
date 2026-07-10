@@ -122,6 +122,10 @@ we have to break ABI compatibility.
         `spindleRunBE()`.  Whether the daemons are launched via ssh or rsh
         can be controlled through command arguments, configure, or an
         environment variable (SPINDLE_RSH).
+   -    'OPT_CRASH_HANDLER' - When the application crashes (e.g. SIGSEGV),
+        Spindle deduplicates the reports by crash site, selecting one
+        representative per unique site, permitting only those representatives
+        to write a coredump. 
 
 - `typedef struct { ... } spindle_args_t`
 

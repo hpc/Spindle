@@ -381,6 +381,21 @@ int is_client_fd(int connfd, int fd)
    return (fdlist_pipe[connfd].in_fd == fd || fdlist_pipe[connfd].out_fd == fd);
 }
 
+/* Get raw FDs for use in signal handlers.
+   We can't use the send/recv functions here in signal handlers
+   because they are not async-signal-safe. */
+int client_get_raw_fds_pipe(int fd, int *read_fd, int *write_fd)
+{
+   if (fd < 0 || fd >= MAX_FD) {
+      *read_fd = -1;
+      *write_fd = -1;
+      return -1;
+   }
+   *read_fd = fdlist_pipe[fd].in_fd;
+   *write_fd = fdlist_pipe[fd].out_fd;
+   return 0;
+}
+
 int client_close_connection_pipe(int fd)
 {
    int result;

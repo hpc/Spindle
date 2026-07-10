@@ -142,6 +142,12 @@ using namespace std;
 #define RSHCMD_STR ""
 #endif
 
+#if defined(CRASH_DEDUP_ENABLED_BY_DEFAULT)
+#define DEFAULT_CRASH_DEDUP_STR "true"
+#else
+#define DEFAULT_CRASH_DEDUP_STR "false"
+#endif
+
 #if defined(PYTHON_INST_PREFIX)
 #define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
 #else
@@ -294,7 +300,9 @@ void initOptionsList()
    { confEnableRsh, "enable-rsh", shortRSHMode, groupMisc, cvBool, {}, RSHLAUNCH_STR,
      "Enable starting daemons with an rsh tree, if the startup mode supports it." },
    { confRshCommand, "rsh-command", shortRSHCmd, groupMisc, cvString, {}, RSHCMD_STR,
-     "The command to run rsh/ssh, when doing RSH startup mode." }
+     "The command to run rsh/ssh, when doing RSH startup mode." },
+   { confCrashDedup, "crash-dedup", shortCrashDedup, groupMisc, cvBool, {}, DEFAULT_CRASH_DEDUP_STR,
+     "Deduplicate coredumps by crash site, emitting only one coredump per unique site." }
   } );
 }
 
@@ -997,6 +1005,9 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             break;
          case confPatchLdso:
             setopt(args.opts, OPT_PATCHLDSO, boolresult);
+            break;
+         case confCrashDedup:
+            setopt(args.opts, OPT_CRASH_HANDLER, boolresult);
             break;
       }
    }

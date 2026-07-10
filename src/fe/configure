@@ -863,6 +863,7 @@ enable_sec_munge
 enable_sec_keydir
 enable_sec_launchmon
 enable_sec_none
+enable_crash_dedup
 with_gcrypt_dir
 with_munge_dir
 with_glibc_be_dir
@@ -1553,6 +1554,7 @@ Optional Features:
   --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
                           for connections
   --enable-sec-none       Disable security authentication of connections
+  --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
                           Should be false on older linux systems
   --enable-slurm          Enable support for the SLURM job launcher
@@ -17555,6 +17557,20 @@ if test "${enable_sec_none+set}" = set; then :
   enableval=$enable_sec_none; WANT_NOSEC="true";EXPLICIT_SEC="true"
 fi
 
+
+# Check whether --enable-crash-dedup was given.
+if test "${enable_crash_dedup+set}" = set; then :
+  enableval=$enable_crash_dedup; enable_crash_dedup=$enableval
+else
+  enable_crash_dedup=no
+fi
+
+
+if test "x$enable_crash_dedup" = xyes; then :
+
+$as_echo "#define CRASH_DEDUP_ENABLED_BY_DEFAULT 1" >>confdefs.h
+
+fi
 
 
 # Check whether --with-gcrypt-dir was given.

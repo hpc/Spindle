@@ -379,6 +379,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int pull = 0;
     int had_error = 0;
     int numa = 0;
+    int crash_dedup = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
     const char *pyprefix = NULL, *commpath = NULL;
@@ -404,7 +405,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s s?i}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
                         "push", &push,
@@ -420,7 +421,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "numa-files", &numafiles,
                         "preload", &preload,
                         "level", &level,
-                        "cachepaths", &cachepaths) < 0)
+                        "cachepaths", &cachepaths,
+                        "crash-dedup", &crash_dedup) < 0)
        logerrno_printf_and_return(1, "Error in spindle option: %s\n", error.text);
 
     if (noclean)
@@ -468,6 +470,9 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     }
     if (commpath) {
        ctx->params.commpath = (char *) commpath;
+    }
+    if (crash_dedup) {
+       ctx->params.opts |= OPT_CRASH_HANDLER;
     }
     if (level) {
        if (strcmp(level, "high") == 0) {

@@ -54,6 +54,15 @@ jobs:
         run: |
           docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./runTests'
 
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-serial-ubuntu crash tests
+        run: |
+          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=serial --scratch=/tmp/spindle_crash_test'
+
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
         if: ${{ always() }}
@@ -61,7 +70,7 @@ jobs:
         run: |
           cd containers/spindle-serial-ubuntu
           docker compose down
-          
+
   spindle-serial-ubuntu_arm64:
     name: Testsuite (Serial, Ubuntu, arm64)
     environment: Spindle CI
@@ -97,6 +106,15 @@ jobs:
         id: serial-ubuntu-testsuite
         run: |
           docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./runTests'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-serial-ubuntu crash tests
+        run: |
+          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=serial --scratch=/tmp/spindle_crash_test'
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -141,6 +159,15 @@ jobs:
         id: flux-ubuntu-testsuite
         run: |
           docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./runTests --nodes=${workers} --tasks-per-node=3'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-flux-ubuntu crash tests
+        run: |
+          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./run_crash_tests.sh --launcher=flux --nodes=${workers} --scratch=/shared/spindle_crash_test'
 
       - name: Bring spindle-flux-ubuntu down
         id: flux-ubuntu-down
@@ -199,6 +226,15 @@ jobs:
         id: slurm-ubuntu-testsuite
         run: |
           docker exec slurm-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-slurm-ubuntu crash tests
+        run: |
+          docker exec slurm-head bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=slurm --nodes=${workers} --scratch=/shared/spindle_crash_test'
 
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
@@ -320,6 +356,15 @@ jobs:
         id: slurm-ubuntu-testsuite-sessions
         run: |
           docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} --spindle-session ./runTests ${workers}'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-slurm-plugin-ubuntu crash tests
+        run: |
+          docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=slurm-plugin --nodes=${workers} --scratch=/shared/spindle_crash_test'
 
       - name: Bring spindle-slurm-plugin-ubuntu down
         id: slurm-ubuntu-down
