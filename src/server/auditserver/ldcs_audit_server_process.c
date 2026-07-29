@@ -177,6 +177,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.crash_sites = NULL;
    ldcs_process_data.crash_sites_count = 0;
    ldcs_process_data.crash_sites_cap = 0;
+   ldcs_process_data.crash_log_teardown = 0;
 
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");

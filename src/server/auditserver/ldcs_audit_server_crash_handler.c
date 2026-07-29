@@ -26,10 +26,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_launch.h"
 #include "msgbundle.h"
 
-static crash_site_entry_t *crash_site_find(ldcs_process_data_t *procdata,
-                                           const char *site, size_t site_len);
-static crash_site_entry_t *crash_site_insert(ldcs_process_data_t *procdata,
-                                             const char *site, size_t site_len);
 static char *crash_pack(int32_t rank, const char *site, size_t site_len,
                         size_t *out_len);
 static char *crash_pack_report(int32_t dedup_rank, int32_t display_rank,
@@ -54,12 +50,13 @@ static int crash_parse_response(ldcs_message_t *msg, const char *err_str,
 static int crash_report_common(ldcs_process_data_t *procdata,
                                crash_waiter_t *w, int reporter_rank,
                                int reporter_display_rank,
-                               const char *site, size_t site_len);
+                               const char *site, size_t site_len,
+                               crash_site_entry_t **entry_out);
 
 /* INTERNAL HELPER FUNCTIONS */
 
-static crash_site_entry_t *crash_site_find(ldcs_process_data_t *procdata,
-                                           const char *site, size_t site_len)
+crash_site_entry_t *crash_site_find(ldcs_process_data_t *procdata,
+                                    const char *site, size_t site_len)
 {
    int i;
    for (i = 0; i < procdata->crash_sites_count; ++i) {
@@ -72,8 +69,8 @@ static crash_site_entry_t *crash_site_find(ldcs_process_data_t *procdata,
    return NULL;
 }
 
-static crash_site_entry_t *crash_site_insert(ldcs_process_data_t *procdata,
-                                             const char *site, size_t site_len)
+crash_site_entry_t *crash_site_insert(ldcs_process_data_t *procdata,
+                                      const char *site, size_t site_len)
 {
    if (procdata->crash_sites_count >= procdata->crash_sites_cap) {
       int new_cap = procdata->crash_sites_cap ? procdata->crash_sites_cap * 2 : 8;
@@ -85,9 +82,10 @@ static crash_site_entry_t *crash_site_insert(ldcs_process_data_t *procdata,
    memcpy(copy, site, site_len);
    copy[site_len] = '\0';
    crash_site_entry_t *e = &procdata->crash_sites[procdata->crash_sites_count++];
+   memset(e, 0, sizeof(*e));
    e->site = copy;
    e->site_len = site_len;
-   e->resolved = 0;
+   e->exemplar_rank = -1;
    return e;
 }
 
@@ -225,13 +223,16 @@ static int crash_parse_response(ldcs_message_t *msg, const char *err_str,
 static int crash_report_common(ldcs_process_data_t *procdata,
                                crash_waiter_t *w, int reporter_rank,
                                int reporter_display_rank,
-                               const char *site, size_t site_len)
+                               const char *site, size_t site_len,
+                               crash_site_entry_t **entry_out)
 {
    // If we have already seen this crash site before, then we know
    // it can't be the winner and can short-circuit and respond
    // immediately that this rank was not selected.
    crash_site_entry_t *e = crash_site_find(procdata, site, site_len);
    if (e) {
+      if (entry_out)
+         *entry_out = e;
       debug_printf2("known crash site '%s' (%s); suppressing %s reporter rank=%d display=%d\n",
                    e->site, e->resolved ? "resolved" : "in flight",
                    w->kind == CRASH_WAITER_LOCAL ? "local" : "child",
@@ -244,6 +245,8 @@ static int crash_report_common(ldcs_process_data_t *procdata,
    // seen it and forward up the tree for resolution.
    e = crash_site_insert(procdata, site, site_len);
    e->waiter = *w;
+   if (entry_out)
+      *entry_out = e;
 
    // If we reached the root without finding a decision already made,
    // then this was the first instance of this crash site;
@@ -251,6 +254,8 @@ static int crash_report_common(ldcs_process_data_t *procdata,
    if (ldcs_audit_server_md_is_responsible(procdata, "")) {
       debug_printf2("new crash site '%s' at root; selecting rank %d (display %d)\n",
                    e->site, reporter_rank, reporter_display_rank);
+      if (procdata->opts & OPT_CRASH_LOG)
+         e->exemplar_rank = reporter_display_rank;
       return crash_resolve(procdata, e, reporter_rank);
    }
 
@@ -285,8 +290,17 @@ int handle_client_crash_report(ldcs_process_data_t *procdata,
    w.nc = nc;
    w.global_rank = (int) rank_raw;
    w.peer = NULL;
-   return crash_report_common(procdata, &w, (int) rank_raw, (int) display_rank,
-                              site, site_len);
+   crash_site_entry_t *e = NULL;
+   int result = crash_report_common(procdata, &w, (int) rank_raw, (int) display_rank,
+                                    site, site_len, &e);
+
+   if ((procdata->opts & OPT_CRASH_LOG) && e) {
+      crash_log_append_rank(e, display_rank);
+      debug_printf2("crash log: recorded local display rank %d at site '%s' (%d ranks)\n",
+                    (int) display_rank, e->site, e->log_ranks_count);
+      crash_log_updated(procdata);
+   }
+   return result;
 }
 
 // Act on a crash report passed to us from a child
@@ -306,7 +320,7 @@ int handle_crash_report_recv(ldcs_process_data_t *procdata,
    w.global_rank = -1;
    w.peer = peer;
    return crash_report_common(procdata, &w, (int) first_waiter_rank,
-                              (int) first_waiter_display_rank, site, site_len);
+                              (int) first_waiter_display_rank, site, site_len, NULL);
 }
 
 // Act on a crash response passed to us from our parent
@@ -345,6 +359,7 @@ void crash_free_tables(ldcs_process_data_t *procdata)
    if (procdata->crash_sites) {
       for (i = 0; i < procdata->crash_sites_count; ++i) {
          free(procdata->crash_sites[i].site);
+         free(procdata->crash_sites[i].log_ranks);
       }
       free(procdata->crash_sites);
       procdata->crash_sites = NULL;

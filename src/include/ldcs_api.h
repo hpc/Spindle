@@ -89,6 +89,7 @@ typedef enum {
    LDCS_MSG_CHOSEN_CACHEPATH,
    LDCS_MSG_CRASH_REPORT,
    LDCS_MSG_CRASH_RESPONSE,
+   LDCS_MSG_CRASH_LOG,
    LDCS_MSG_UNKNOWN
 } ldcs_message_ids_t;
 

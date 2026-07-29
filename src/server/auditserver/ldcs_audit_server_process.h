@@ -131,6 +131,10 @@ typedef struct crash_site_entry_t {
    size_t site_len;
    int resolved;
    crash_waiter_t waiter;
+   int exemplar_rank;
+   int32_t *log_ranks;
+   int log_ranks_count;
+   int log_ranks_cap;
 } crash_site_entry_t;
 
 struct ldcs_process_data_struct
@@ -188,6 +192,7 @@ struct ldcs_process_data_struct
   crash_site_entry_t *crash_sites;
   int crash_sites_count;
   int crash_sites_cap;
+  int crash_log_teardown;
 
   /* multi daemon support */
   int md_rank;

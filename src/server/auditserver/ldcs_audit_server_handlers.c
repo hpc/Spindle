@@ -1265,6 +1265,10 @@ static int handle_exit_broadcast(ldcs_process_data_t *procdata)
    ldcs_message_t out_msg;
    debug_printf("Setting up Exiting after receiving exit bcast message\n");
 
+   /* Write crash logs before exiting */
+   procdata->crash_log_teardown = 1;
+   crash_log_updated(procdata);
+
    out_msg.header.type = LDCS_MSG_EXIT;
    out_msg.header.len = 0;
    out_msg.data = NULL;
@@ -2003,6 +2007,8 @@ int handle_server_message(ldcs_process_data_t *procdata, node_peer_t peer, ldcs_
          return handle_crash_report_recv(procdata, peer, msg);
       case LDCS_MSG_CRASH_RESPONSE:
          return handle_crash_response_recv(procdata, peer, msg);
+      case LDCS_MSG_CRASH_LOG:
+         return handle_crash_log_recv(procdata, peer, msg);
       default:
          err_printf("Received unexpected message from node: %d\n", (int) msg->header.type);
          assert(0);
@@ -3142,6 +3148,7 @@ static int handle_send_exit_ready_if_done(ldcs_process_data_t *procdata)
       return handle_exit_broadcast(procdata);
    }
    else {
+      crash_log_flush_to_parent(procdata);
       debug_printf2("Sending exit ready message to parent\n");
       result = spindle_forward_query(procdata, &msg);
       msgbundle_force_flush(procdata);
