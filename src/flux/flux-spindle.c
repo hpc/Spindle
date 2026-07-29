@@ -179,6 +179,10 @@ static int spindle_is_enabled(struct spindle_ctx *ctx)
 {
    char *spindle_env;
 
+   if (!ctx) {
+      return 0;
+   }
+
    spindle_env = getenv("SPINDLE");
    if (spindle_env) {
       if (strcasecmp(spindle_env, "false") == 0 || strcmp(spindle_env, "0") == 0) {
