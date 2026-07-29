@@ -1003,7 +1003,13 @@ void decodeCmdArgs(char *cmd, int *sargc, char ***sargv)
       else {
          c = cmd[i];
       }
-      target[t++] = c;      
+      target[t++] = c;
+   }
+
+   /* Flush the final token */
+   if (t) {
+      target[t] = '\0';
+      argv[argc++] = strdup(target);
    }
 
    if (!argc) {

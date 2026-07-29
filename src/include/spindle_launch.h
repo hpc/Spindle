@@ -59,7 +59,7 @@ extern "C" {
 #define OPT_STOPRELOC  (1 << 28)            /* Stops spindle from relocating file contents, but still allow it to intercept file-not-found attempts */
 #define OPT_NUMA       (1 << 29)            /* Enables file replication across NUMA domains */
 #define OPT_OFF        (1 << 30)            /* Turns spindle off, disabling everything */
-#define OPT_PATCHLDSO  (1 << 31)            /* Enables patching of ld.so to intercept stat calls */
+#define OPT_PATCHLDSO  ((opt_t) 1 << 31)    /* Enables patching of ld.so to intercept stat calls */
 #define OPT_CRASH_HANDLER ((opt_t) 1 << 32) /* Enables crash handler with coredump deduplication */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
