@@ -175,7 +175,7 @@ static int should_use_session(spank_t spank) {
    return 0;
 }
 
-/* Slurm stores an absent optional arugment as the string "(null)" */
+/* Slurm stores an absent optional argument as the string "(null)" */
 static const char *filter_session_optval(const char *val)
 {
    if (!val || val[0] == '\0' || strcmp(val, "(null)") == 0)

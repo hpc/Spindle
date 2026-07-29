@@ -61,6 +61,7 @@ extern "C" {
 #define OPT_OFF        (1 << 30)            /* Turns spindle off, disabling everything */
 #define OPT_PATCHLDSO  ((opt_t) 1 << 31)    /* Enables patching of ld.so to intercept stat calls */
 #define OPT_CRASH_HANDLER ((opt_t) 1 << 32) /* Enables crash handler with coredump deduplication */
+#define OPT_CRASH_LOG ((opt_t) 1 << 33)     /* Write a log of crash sites and ranks at job end */
 #define OPT_CRASH_ALTSTACK ((opt_t) 1 << 34) /* Crash handler registers an alternate signal stack */
 
 #define OPT_SET_SEC(OPT, X) OPT |= (X << 19)
@@ -162,6 +163,9 @@ typedef struct {
 
    /* Executable names to exclude from spindle and not run on */
    char *exec_excludes;
+
+   /* Path of the crash log file written by the root server */
+   char *crash_log;
 } spindle_args_t;
 
 /* Functions used to startup Spindle on the front-end. Init returns after finishing start-up,

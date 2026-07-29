@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_launch.h"
 #include "fluxmgr.h"
+#include "parseloc.h"
 
 #define debug_printf(PRIORITY, FORMAT, ...)                         \
    do {                                                             \
@@ -381,6 +382,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int numa = 0;
     int crash_dedup = 0;
     int crash_altstack = 0;
+    json_t *crash_log = NULL;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
     const char *pyprefix = NULL, *commpath = NULL;
@@ -406,7 +408,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s s?i s?i}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s s?i s?i s?o}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
                         "push", &push,
@@ -424,7 +426,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "level", &level,
                         "cachepaths", &cachepaths,
                         "crash-dedup", &crash_dedup,
-                        "crash-altstack", &crash_altstack) < 0)
+                        "crash-altstack", &crash_altstack,
+                        "crash-log", &crash_log) < 0)
        logerrno_printf_and_return(1, "Error in spindle option: %s\n", error.text);
 
     if (noclean)
@@ -478,6 +481,22 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     }
     if (crash_altstack) {
        ctx->params.opts |= OPT_CRASH_ALTSTACK;
+    }
+    if (crash_log) {
+       /*  --crash-log can be a path or true; if true, use the default path. */
+       const char *value = NULL;
+       char *abspath;
+       if (json_is_string (crash_log))
+          value = json_string_value (crash_log);
+       else if (!json_is_true (crash_log)
+                && !(json_is_integer (crash_log) && json_integer_value (crash_log) > 0))
+          logerrno_printf_and_return(1, "Error in spindle option: crash-log must be a path or true\n");
+       abspath = resolve_crash_log_path (value, ctx->params.number);
+       if (!abspath)
+          logerrno_printf_and_return(1, "unable to expand crash-log path\n");
+       ctx->params.crash_log = abspath;
+       ctx->params.opts |= OPT_CRASH_LOG;
+       ctx->params.opts |= OPT_CRASH_HANDLER;
     }
     if (level) {
        if (strcmp(level, "high") == 0) {

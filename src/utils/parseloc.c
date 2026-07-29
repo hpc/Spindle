@@ -155,6 +155,57 @@ char *parse_location_noerr(char *loc, number_t number)
    return parse_location_impl(loc, number, 0);
 }
 
+/*
+ * Resolve the crash-log path to an absolute file path. Defaults to
+ * "spindle-crash-log.$NUMBER" in the working directory; a user-provided
+ * path may name the file or a directory to place the log in.
+ */
+char *resolve_crash_log_path(const char *value, number_t number)
+{
+   char default_template[] = "spindle-crash-log.$NUMBER";
+   char *path;
+   struct stat sb;
+
+   path = parse_location(value && value[0] != '\0' ? (char *) value : default_template,
+                         number);
+   if (!path) {
+      err_printf("Could not expand crash log path %s\n",
+                 value ? value : default_template);
+      return NULL;
+   }
+
+   if (path[0] != '/') {
+      char cwd[MAX_PATH_LEN+1];
+      if (getcwd(cwd, sizeof(cwd)) == NULL) {
+         err_printf("Could not get working directory to resolve crash log path %s\n", path);
+         free(path);
+         return NULL;
+      }
+      char *abspath = malloc(strlen(cwd) + strlen(path) + 2);
+      sprintf(abspath, "%s/%s", cwd, path);
+      free(path);
+      path = abspath;
+   }
+
+   /* If the path is a directory, we write the file into that directory;
+      if not, we use it as the full path to the log file. */
+   if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+      char *filename = parse_location(default_template, number);
+      if (!filename) {
+         err_printf("Could not expand crash log filename\n");
+         free(path);
+         return NULL;
+      }
+      int add_slash = path[strlen(path)-1] != '/';
+      char *fullpath = malloc(strlen(path) + add_slash + strlen(filename) + 1);
+      sprintf(fullpath, "%s%s%s", path, add_slash ? "/" : "", filename);
+      free(filename);
+      free(path);
+      path = fullpath;
+   }
+   return path;
+}
+
 /**
  * Realize takes the 'realpath' of a non-existant location.
  * If later directories in the path don't exist, it'll cut them

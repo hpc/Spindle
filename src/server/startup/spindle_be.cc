@@ -70,6 +70,7 @@ static int unpack_data(spindle_args_t *args, void *buffer, int buffer_size)
    unpack_param(args->local_prefixes, buf, pos);
    unpack_param(args->session_key, buf, pos);
    unpack_param(args->exec_excludes, buf, pos);
+   unpack_param(args->crash_log, buf, pos);
    assert(pos == buffer_size);
    assert( args->candidate_cachepaths );
    return 0;    

@@ -157,6 +157,7 @@ struct ldcs_process_data_struct
   uint64_t cachepath_bitidx;    /* Bit index of valid cachepaths on a given server. */
   char *hostname;
   char *pythonprefix;
+  char *crash_log;              /* Path of the crash-site log written by the root server. */
   char *localprefix;
   char *exec_excludes;
   char *numa_substrs;

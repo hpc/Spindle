@@ -80,7 +80,8 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    buffer_size += args->local_prefixes ? strlen(args->local_prefixes) + 1 : 1;
    buffer_size += args->session_key ? strlen(args->session_key) + 1 : 1;
    buffer_size += args->exec_excludes ? strlen(args->exec_excludes) + 1 : 1;
-   
+   buffer_size += args->crash_log ? strlen(args->crash_log) + 1 : 1;
+
    unsigned int pos = 0;
    char *buf = (char *) malloc(buffer_size);
    pack_param(args->number, buf, pos);
@@ -103,6 +104,7 @@ static int pack_data(spindle_args_t *args, void* &buffer, unsigned &buffer_size)
    pack_param(args->local_prefixes, buf, pos);
    pack_param(args->session_key, buf, pos);
    pack_param(args->exec_excludes, buf, pos);
+   pack_param(args->crash_log, buf, pos);
    assert(pos == buffer_size);
 
    buffer = (void *) buf;
@@ -351,6 +353,7 @@ static void printSpindleFlags(opt_t opts) {
    printFlag(opts, OPT_OFF, "OPT_OFF", ss);
    printFlag(opts, OPT_PATCHLDSO, "OPT_PATCHLDSO", ss);
    printFlag(opts, OPT_CRASH_HANDLER, "OPT_CRASH_HANDLER", ss);
+   printFlag(opts, OPT_CRASH_LOG, "OPT_CRASH_LOG", ss);
    printFlag(opts, OPT_CRASH_ALTSTACK, "OPT_CRASH_ALTSTACK", ss);
    ss << ", ";
    if (OPT_GET_SEC(opts) == OPT_SEC_MUNGE) ss << "OPT_SEC_MUNGE";
@@ -401,12 +404,13 @@ int spindleInitFE(const char **hosts, spindle_args_t *params)
    debug_printf("spindle_args_t { number = %lu; port = %u; num_ports = %u; opts = %lu; unique_id = %lu; "
                 "use_launcher = %u; startup_type = %u; shm_cache_size = %u; commpath = %s; "
                 "cachepaths = %s; "
-                "pythonprefix = %s; preloadfile = %s; bundle_timeout_ms = %u; bundle_cachesize_kb = %u }\n",
+                "pythonprefix = %s; preloadfile = %s; bundle_timeout_ms = %u; bundle_cachesize_kb = %u; "
+                "crash_log = %s }\n",
                 (unsigned long) params->number, params->port, params->num_ports, params->opts, params->unique_id,
                 params->use_launcher, params->startup_type, params->shm_cache_size, params->commpath,
                 params->candidate_cachepaths,
                 params->pythonprefix, params->preloadfile, params->bundle_timeout_ms,
-                params->bundle_cachesize_kb);
+                params->bundle_cachesize_kb, params->crash_log);
    printSpindleFlags(params->opts);
    debug_printf("Starting FE servers with hostlist of size %u on port %u\n", hosts_size, params->port);
    ldcs_audit_server_fe_md_open(const_cast<char **>(hosts), hosts_size, 

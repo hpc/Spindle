@@ -149,6 +149,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.cachepath_bitidx = 0;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.crash_log = args->crash_log;
    ldcs_process_data.localprefix = args->local_prefixes;
    ldcs_process_data.exec_excludes = args->exec_excludes;
    ldcs_process_data.numa_substrs = args->numa_files;
