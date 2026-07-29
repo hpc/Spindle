@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -40,13 +41,14 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define CRASH_ALTSTACK_SIZE 65536
 #define CRASH_SITE_BUF_SIZE (PATH_MAX + 32)
 #define CRASH_REQ_BUF_SIZE \
-    (sizeof(ldcs_message_header_t) + 2 * sizeof(int32_t) + CRASH_SITE_BUF_SIZE)
+    (sizeof(ldcs_message_header_t) + 3 * sizeof(int32_t) + CRASH_SITE_BUF_SIZE)
 #define CRASH_ABORT_MSG_MAX  (64u * 1024u)
 
-static int  crash_global_rank = -1;
-static int  crash_read_fd     = -1;
-static int  crash_write_fd    = -1;
-static int  crash_installed   = 0;
+static int  crash_global_rank  = -1;
+static int  crash_display_rank = -1;
+static int  crash_read_fd      = -1;
+static int  crash_write_fd     = -1;
+static int  crash_installed    = 0;
 
 static char *crash_altstack_buf = NULL;
 static char crash_site_buf[CRASH_SITE_BUF_SIZE];
@@ -72,12 +74,12 @@ static void resolve_pc_to_crash_site(unsigned long pc, char *buf, size_t buflen)
    (void) crash_fmt_lib_offset(buf, buflen, "", pc);
 }
 
-/* Builds the crash report message */
+/* Builds the crash report message. */
 static size_t build_crash_report(char *buf, size_t buflen, int rank,
-                                 const char *site)
+                                 int display_rank, const char *site)
 {
    size_t name_len = strlen(site) + 1;
-   size_t payload_len = 2 * sizeof(int32_t) + name_len;
+   size_t payload_len = 3 * sizeof(int32_t) + name_len;
    size_t total_len = sizeof(ldcs_message_header_t) + payload_len;
    if (total_len > buflen)
       return 0;
@@ -89,10 +91,12 @@ static size_t build_crash_report(char *buf, size_t buflen, int rank,
 
    char *payload = buf + sizeof(hdr);
    int32_t rank32 = (int32_t) rank;
+   int32_t drank32 = (int32_t) display_rank;
    int32_t nlen32 = (int32_t) name_len;
    memcpy(payload, &rank32, sizeof(rank32));
-   memcpy(payload + sizeof(int32_t), &nlen32, sizeof(nlen32));
-   memcpy(payload + 2 * sizeof(int32_t), site, name_len);
+   memcpy(payload + sizeof(int32_t), &drank32, sizeof(drank32));
+   memcpy(payload + 2 * sizeof(int32_t), &nlen32, sizeof(nlen32));
+   memcpy(payload + 3 * sizeof(int32_t), site, name_len);
    return total_len;
 }
 
@@ -145,7 +149,8 @@ static void crash_build_site(int sig, unsigned long pc,
 static int crash_query_server(const char *site, int rank, int32_t *winner)
 {
    char req_buf[CRASH_REQ_BUF_SIZE];
-   size_t req_len = build_crash_report(req_buf, sizeof req_buf, rank, site);
+   size_t req_len = build_crash_report(req_buf, sizeof req_buf, rank,
+                                       crash_display_rank, site);
    if (req_len == 0)
       return -1;
 
@@ -243,6 +248,30 @@ reraise:
    signal(sig, SIG_DFL);
 }
 
+/* Resolves a display rank for use in crash logging from launcher/MPI env vars. */
+static int resolve_display_rank(int fallback)
+{
+   static const char *const rank_vars[] = {
+      "PMIX_RANK", "OMPI_COMM_WORLD_RANK", "PMI_RANK", "JSM_NAMESPACE_RANK",
+      "FLUX_TASK_RANK", "MV2_COMM_WORLD_RANK", "PALS_RANKID", "ALPS_APP_PE",
+      "SLURM_PROCID"
+   };
+   for (size_t i = 0; i < sizeof(rank_vars) / sizeof(rank_vars[0]); i++) {
+      const char *val = getenv(rank_vars[i]);
+      if (val == NULL || val[0] == '\0')
+         continue;
+      char *end = NULL;
+      long rank = strtol(val, &end, 10);
+      if (*end != '\0' || rank < 0 || rank > INT32_MAX)
+         continue;
+      debug_printf2("display rank %ld from %s\n",
+                    rank, rank_vars[i]);
+      return (int) rank;
+   }
+   debug_printf2("could not detect MPI rank from environment\n");
+   return fallback;
+}
+
 /* Performs setup and installs the signal handler. */
 int crash_handler_install(int global_rank, int ldcsid_in)
 {
@@ -252,6 +281,7 @@ int crash_handler_install(int global_rank, int ldcsid_in)
    crash_sigchain_init();
 
    crash_global_rank = global_rank;
+   crash_display_rank = resolve_display_rank(global_rank);
 
    if (client_get_raw_fds(ldcsid_in, &crash_read_fd, &crash_write_fd) != 0 ||
        crash_read_fd < 0 || crash_write_fd < 0) {
