@@ -21,6 +21,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 void crash_lib_offset_prime(void);
 
+const char *crash_lib_offset_exe_path(void);
+
 int crash_lib_offset_get_signal_safe(unsigned long pc,
                                      char *buf, size_t buflen);
 

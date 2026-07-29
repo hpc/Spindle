@@ -161,3 +161,8 @@ void crash_lib_offset_prime(void)
    exe_auxv_phdrs = (const ElfW(Phdr) *) getauxval(AT_PHDR);
    exe_auxv_phnum = getauxval(AT_PHNUM);
 }
+
+const char *crash_lib_offset_exe_path(void)
+{
+   return get_executable_path();
+}

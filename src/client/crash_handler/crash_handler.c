@@ -39,7 +39,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "crash_sigchain.h"
 
 #define CRASH_ALTSTACK_SIZE 65536
-#define CRASH_SITE_BUF_SIZE (PATH_MAX + 32)
+/* Payload has to fit in server's receive buffer which is size MAX_PATH_LEN */
+#define CRASH_SITE_BUF_SIZE (MAX_PATH_LEN - 3 * sizeof(int32_t))
 #define CRASH_REQ_BUF_SIZE \
     (sizeof(ldcs_message_header_t) + 3 * sizeof(int32_t) + CRASH_SITE_BUF_SIZE)
 #define CRASH_ABORT_MSG_MAX  (64u * 1024u)
@@ -125,21 +126,59 @@ static size_t read_abort_msg(char *buf, size_t buflen)
    return n;
 }
 
-/* Builds the crash site string according to the signal type.
-   For SIGABRT, use the abort_msg; otherwise, <library>+<offset>. */
+/* Prefix crash site with executable to distinguish crashes at the same site
+   but from different executables within different jobs of the same session. */
+static size_t crash_write_exe_prefix(char *buf, size_t buflen)
+{
+   static const char trunc_mark[] = "...";
+   const size_t mark_len = sizeof(trunc_mark) - 1;
+   const char *exe = crash_lib_offset_exe_path();
+   size_t exe_len = strlen(exe);
+   size_t max_exe = buflen / 2;
+   size_t pos = 0;
+
+   if (max_exe <= mark_len + 1)
+      return 0;
+   max_exe -= 1;   /* room for '|' */
+
+   if (exe_len > max_exe) {
+      memcpy(buf, trunc_mark, mark_len);
+      pos = mark_len;
+      exe += exe_len - (max_exe - mark_len);
+      exe_len = max_exe - mark_len;
+   }
+   memcpy(buf + pos, exe, exe_len);
+   pos += exe_len;
+   buf[pos++] = '|';
+   return pos;
+}
+
+/* Builds the crash site string <executable>|<site>, where <site> is the
+   abort_msg for SIGABRT and <library>+<offset> otherwise. */
 static void crash_build_site(int sig, unsigned long pc,
                              char *buf, size_t buflen)
 {
+   if (buflen == 0) return;
+   buf[0] = '\0';
+
+   size_t prefix_len = crash_write_exe_prefix(buf, buflen);
+   char *site = buf + prefix_len;
+   size_t site_buflen = buflen - prefix_len;
+
    if (sig == SIGABRT) {
-      static const char prefix[] = "abort:";
-      const size_t prefix_len = sizeof(prefix) - 1;
-      memcpy(buf, prefix, prefix_len);
-      size_t n = read_abort_msg(buf + prefix_len, buflen - prefix_len);
+      static const char abort_prefix[] = "abort:";
+      const size_t abort_len = sizeof(abort_prefix) - 1;
+      size_t n = 0;
+
+      if (site_buflen > abort_len) {
+         memcpy(site, abort_prefix, abort_len);
+         n = read_abort_msg(site + abort_len, site_buflen - abort_len);
+      }
       // if we failed to get the abort string, fall back to <library>+<offset>
       if (n == 0)
-         resolve_pc_to_crash_site(pc, buf, buflen);
+         resolve_pc_to_crash_site(pc, site, site_buflen);
    } else {
-      resolve_pc_to_crash_site(pc, buf, buflen);
+      resolve_pc_to_crash_site(pc, site, site_buflen);
    }
 }
 
