@@ -380,6 +380,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int had_error = 0;
     int numa = 0;
     int crash_dedup = 0;
+    int crash_altstack = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
     const char *pyprefix = NULL, *commpath = NULL;
@@ -405,7 +406,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
      *  supplied by the user, but not unpacked (This handles typos, etc).
      */
     if (json_unpack_ex (opts, &error, JSON_STRICT,
-                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s s?i}",
+                        "{s?i s?i s?i s?i s?s s?s s?s s?s s?s s?s s?s s?i s?s s?s s?s s?s s?i s?i}",
                         "noclean", &noclean,
                         "nostrip", &nostrip,
                         "push", &push,
@@ -422,7 +423,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "preload", &preload,
                         "level", &level,
                         "cachepaths", &cachepaths,
-                        "crash-dedup", &crash_dedup) < 0)
+                        "crash-dedup", &crash_dedup,
+                        "crash-altstack", &crash_altstack) < 0)
        logerrno_printf_and_return(1, "Error in spindle option: %s\n", error.text);
 
     if (noclean)
@@ -473,6 +475,9 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     }
     if (crash_dedup) {
        ctx->params.opts |= OPT_CRASH_HANDLER;
+    }
+    if (crash_altstack) {
+       ctx->params.opts |= OPT_CRASH_ALTSTACK;
     }
     if (level) {
        if (strcmp(level, "high") == 0) {

@@ -351,6 +351,7 @@ static void printSpindleFlags(opt_t opts) {
    printFlag(opts, OPT_OFF, "OPT_OFF", ss);
    printFlag(opts, OPT_PATCHLDSO, "OPT_PATCHLDSO", ss);
    printFlag(opts, OPT_CRASH_HANDLER, "OPT_CRASH_HANDLER", ss);
+   printFlag(opts, OPT_CRASH_ALTSTACK, "OPT_CRASH_ALTSTACK", ss);
    ss << ", ";
    if (OPT_GET_SEC(opts) == OPT_SEC_MUNGE) ss << "OPT_SEC_MUNGE";
    if (OPT_GET_SEC(opts) == OPT_SEC_KEYLMON) ss << "OPT_SEC_KEYLMON";

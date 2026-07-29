@@ -270,26 +270,35 @@ int crash_handler_install(int global_rank, int ldcsid_in)
                            tmp, sizeof tmp);
    }
 
-   /* Set up the altstack.
+   /* Set up the altstack if enabled.
       If the reason for a segfault is a stack overflow, the signal handler itself
       will have no stack available. We handle this by registering an alternate stack
-      for the signal handler. However, note that this is per-thread, and currently
-      we do not register an alternate stack on any thread other than the main thread.
+      for the signal handler if requested with --crash-altstack.
+      However, note that this is per-thread, and currently we do not register an
+      alternate stack on any thread other than the main thread.
       TODO: handle alternate stack on other threads */
-   crash_altstack_buf = mmap(NULL, CRASH_ALTSTACK_SIZE, PROT_READ | PROT_WRITE,
-                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-   if (crash_altstack_buf == MAP_FAILED) {
-      crash_altstack_buf = NULL;
-   } else {
-      stack_t ss;
-      memset(&ss, 0, sizeof ss);
-      ss.ss_sp = crash_altstack_buf;
-      ss.ss_size = CRASH_ALTSTACK_SIZE;
-      ss.ss_flags = 0;
-      if (sigaltstack(&ss, NULL) != 0) {
-         munmap(crash_altstack_buf, CRASH_ALTSTACK_SIZE);
+   if (opts & OPT_CRASH_ALTSTACK) {
+      crash_altstack_buf = mmap(NULL, CRASH_ALTSTACK_SIZE, PROT_READ | PROT_WRITE,
+                                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+      if (crash_altstack_buf == MAP_FAILED) {
          crash_altstack_buf = NULL;
+         debug_printf2("crash handler: failed to mmap altstack\n");
+      } else {
+         stack_t ss;
+         memset(&ss, 0, sizeof ss);
+         ss.ss_sp = crash_altstack_buf;
+         ss.ss_size = CRASH_ALTSTACK_SIZE;
+         ss.ss_flags = 0;
+         if (sigaltstack(&ss, NULL) != 0) {
+            munmap(crash_altstack_buf, CRASH_ALTSTACK_SIZE);
+            crash_altstack_buf = NULL;
+            debug_printf2("crash handler: failed to register altstack\n");
+         } else {
+            debug_printf2("crash handler: registered altstack\n");
+         }
       }
+   } else {
+      crash_altstack_buf = NULL;
    }
 
    /* Install the signal handler. */

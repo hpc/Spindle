@@ -148,6 +148,8 @@ using namespace std;
 #define DEFAULT_CRASH_DEDUP_STR "false"
 #endif
 
+#define DEFAULT_CRASH_ALTSTACK_STR "false"
+
 #if defined(PYTHON_INST_PREFIX)
 #define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
 #else
@@ -302,7 +304,9 @@ void initOptionsList()
    { confRshCommand, "rsh-command", shortRSHCmd, groupMisc, cvString, {}, RSHCMD_STR,
      "The command to run rsh/ssh, when doing RSH startup mode." },
    { confCrashDedup, "crash-dedup", shortCrashDedup, groupMisc, cvBool, {}, DEFAULT_CRASH_DEDUP_STR,
-     "Deduplicate coredumps by crash site, emitting only one coredump per unique site." }
+     "Deduplicate coredumps by crash site, emitting only one coredump per unique site." },
+   { confCrashAltstack, "crash-altstack", shortCrashAltstack, groupMisc, cvBool, {}, DEFAULT_CRASH_ALTSTACK_STR,
+     "Registers an alternate stack for signal handlers used by crash deduplication." }
   } );
 }
 
@@ -1008,6 +1012,9 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             break;
          case confCrashDedup:
             setopt(args.opts, OPT_CRASH_HANDLER, boolresult);
+            break;
+         case confCrashAltstack:
+            setopt(args.opts, OPT_CRASH_ALTSTACK, boolresult);
             break;
       }
    }
