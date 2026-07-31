@@ -89,8 +89,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-#noinst_LTLIBRARIES += libspindle_instr.la
-@PIPES_TRUE@am__append_1 = libspindlec_pipe.la
 subdir = client
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -142,7 +140,6 @@ am__objects_2 = client.lo lookup.lo should_intercept.lo exec_util.lo \
 	$(top_builddir)/crash_handler/crash_sigchain.lo
 am_libspindlec_pipe_la_OBJECTS = $(am__objects_2)
 libspindlec_pipe_la_OBJECTS = $(am_libspindlec_pipe_la_OBJECTS)
-@PIPES_TRUE@am_libspindlec_pipe_la_rpath =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -363,7 +360,8 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1)
+noinst_LTLIBRARIES = libspindle_audit.la libspindlec_pipe.la
+#noinst_LTLIBRARIES += libspindle_instr.la
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient -I$(top_srcdir)/client -I$(top_srcdir)/crash_handler
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c spindle_regex.c patch_interception.c realpath.c $(top_srcdir)/../utils/fileutil.c
@@ -465,7 +463,7 @@ $(top_builddir)/crash_handler/crash_sigchain.lo:  \
 	$(top_builddir)/crash_handler/$(DEPDIR)/$(am__dirstamp)
 
 libspindlec_pipe.la: $(libspindlec_pipe_la_OBJECTS) $(libspindlec_pipe_la_DEPENDENCIES) $(EXTRA_libspindlec_pipe_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) $(am_libspindlec_pipe_la_rpath) $(libspindlec_pipe_la_OBJECTS) $(libspindlec_pipe_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK)  $(libspindlec_pipe_la_OBJECTS) $(libspindlec_pipe_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

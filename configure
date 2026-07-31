@@ -690,8 +690,6 @@ COBO_FALSE
 COBO_TRUE
 MSOCKET_FALSE
 MSOCKET_TRUE
-PIPES_FALSE
-PIPES_TRUE
 SRUN_PATH
 BLD_FLUXPLUGIN_FALSE
 BLD_FLUXPLUGIN_TRUE
@@ -856,7 +854,6 @@ with_hostbin
 with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
-enable_pipes
 enable_msocket
 enable_cobo
 with_python_prefix
@@ -1546,7 +1543,6 @@ Optional Features:
                           launching
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
-  --enable-pipes          Use pipes for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
@@ -17006,16 +17002,8 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-#Runmode detection (pipe/socket or cobo/msocket communications)
-CLIENT_SERVER_COM=pipes
-
+#Runmode detection (cobo/msocket communications for server/server)
 SERVER_SERVER_COM=cobo
-# Check whether --enable-pipes was given.
-if test "${enable_pipes+set}" = set; then :
-  enableval=$enable_pipes; CLIENT_SERVER_COM=pipes;
-fi
-
-
 
 # Check whether --enable-msocket was given.
 if test "${enable_msocket+set}" = set; then :
@@ -17027,14 +17015,6 @@ if test "${enable_cobo+set}" = set; then :
   enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
 fi
 
-
- if test x$CLIENT_SERVER_COM == xpipes; then
-  PIPES_TRUE=
-  PIPES_FALSE='#'
-else
-  PIPES_TRUE='#'
-  PIPES_FALSE=
-fi
 
  if test x$SERVER_SERVER_COM == xmsocket; then
   MSOCKET_TRUE=
@@ -17053,11 +17033,9 @@ else
 fi
 
 
-if test "x$CLIENT_SERVER_COM" == "xpipes"; then
 
 $as_echo "#define COMM_PIPES 1" >>confdefs.h
 
-fi
 if test "x$SERVER_SERVER_COM" == "xmsocket"; then
 
 $as_echo "#define COMM_MSOCKET 1" >>confdefs.h
@@ -17069,8 +17047,8 @@ $as_echo "#define COMM_COBO 1" >>confdefs.h
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&5
-$as_echo "$as_me: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is pipes/$SERVER_SERVER_COM" >&5
+$as_echo "$as_me: Communication is pipes/$SERVER_SERVER_COM" >&6;}
 
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then
@@ -18971,10 +18949,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BLD_FLUXPLUGIN_TRUE}" && test -z "${BLD_FLUXPLUGIN_FALSE}"; then
   as_fn_error $? "conditional \"BLD_FLUXPLUGIN\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
-  as_fn_error $? "conditional \"PIPES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MSOCKET_TRUE}" && test -z "${MSOCKET_FALSE}"; then

@@ -89,7 +89,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@PIPES_TRUE@am__append_1 = libspindle_audit_pipe.la
 subdir = auditclient
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -162,7 +161,6 @@ libspindle_audit_pipe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspindle_audit_pipe_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
-@PIPES_TRUE@am_libspindle_audit_pipe_la_rpath = -rpath $(pkglibdir)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -368,7 +366,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = $(am__append_1)
+pkglib_LTLIBRARIES = libspindle_audit_pipe.la
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/crash_handler
 BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c bindgot.c writablegot.c patch_bad_dtv.c malloc_wrapper.c fixlocale.c
@@ -450,7 +448,7 @@ clean-pkglibLTLIBRARIES:
 	}
 
 libspindle_audit_pipe.la: $(libspindle_audit_pipe_la_OBJECTS) $(libspindle_audit_pipe_la_DEPENDENCIES) $(EXTRA_libspindle_audit_pipe_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspindle_audit_pipe_la_LINK) $(am_libspindle_audit_pipe_la_rpath) $(libspindle_audit_pipe_la_OBJECTS) $(libspindle_audit_pipe_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libspindle_audit_pipe_la_LINK) -rpath $(pkglibdir) $(libspindle_audit_pipe_la_OBJECTS) $(libspindle_audit_pipe_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
