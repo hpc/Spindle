@@ -126,6 +126,13 @@ we have to break ABI compatibility.
         Spindle deduplicates the reports by crash site, selecting one
         representative per unique site, permitting only those representatives
         to write a coredump. 
+   -    'OPT_CRASH_LOG' - Write a log at job end listing which ranks
+        crashed at which crash sites.  The log path is given in the
+        `crash_log` field of `spindle_args_t`.  Requires
+        `OPT_CRASH_HANDLER`.
+   -    'OPT_CRASH_ALTSTACK' - The crash handler registers an alternate
+        signal stack on the application's main thread, allowing it to
+        handle crashes caused by stack overflow.
 
 - `typedef struct { ... } spindle_args_t`
 
@@ -190,6 +197,9 @@ we have to break ABI compatibility.
     -   `char *preloadfile` - Points to a file containing a white-space
         separated list of files that should be staged onto every node in the
         job before the application runs.
+    -   `char *crash_log` - When `OPT_CRASH_LOG` is set, the path of the
+        crash log file.  Should be an absolute path on a file system
+        accessible by the Spindle servers.
 
 The FrontEnd API
 ----------------

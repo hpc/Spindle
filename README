@@ -56,6 +56,10 @@ Spindle can trigger scalable loading of dlopened libraries, dependent
 library, executables, python modules and specified application data
 files.
 
+Spindle can also coordinate coredump creation when a large job
+crashes.  Rather than letting every process write a coredump, Spindle
+selects one representative process per unique crash location, and can
+write a log of which ranks crashed where.
 
 Compilation:
 ============

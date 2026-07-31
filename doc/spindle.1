@@ -117,6 +117,18 @@ By default Spindle will attempt to auto-detect the MPI implementation from the l
 If yes, Spindle will adjust its operations so that debuggers can also attach to spindle-controlled processes.  Note that there may be other factors outside of Spindle's control that may still prevent debuggers from working on Spindle-controlled processes.  As of this writing, \fB\-\-debug=yes\fR will allow gdb to attach to a Spindle process, but not TotalView.  This option may also cause extra overhead when starting processes.  This option defaults to no.
 
 .TP
+\fB\-\-crash\-dedup=\fIyes\fR|\fIno\fR
+If yes, Spindle will coordinate coredump creation when application processes crash.  Processes that crash at the same location are grouped together, with one process for each unique crash site allowed to write a coredump while the others are suppressed. Default is no.
+
+.TP
+\fB\-\-crash\-altstack=\fIyes\fR|\fIno\fR
+If yes, Spindle's crash handling signal handlers will run on an alternate stack.  This allows crashes caused by stack overflow on the main thread to be handled and deduplicated, but this may alter application behavior.  Default is no.
+
+.TP
+\fB\-\-crash\-log\fR[=\fIPATH\fR]
+Write a log file listing the ranks that crashed at each crash location.  This option implies \fB\-\-crash\-dedup\fR.  If \fIPATH\fR is omitted, the log is written to spindle-crash-log.NUMBER in the working directory.  If \fIPATH\fR is an existing directory, the log is written into that directory. Environment variables can be used in \fIPATH\fR by prefixing them with a '$' character.
+
+.TP
 \fB\-e \fIFILE\fR, \fB\-\-preload=\fIFILE\fR
 Provides a text file containing white-space separated filenames.  Spindle will preload the files in \fIFILE\fR onto each node before starting process execution.  
 
