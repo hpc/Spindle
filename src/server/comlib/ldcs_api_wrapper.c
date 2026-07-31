@@ -26,8 +26,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define COMM socket
 #elif defined(COMM_BITER)
 #define COMM biter
-#elif defined(COMM_SHMEM)
-#define COMM shmem
 #else
 #error Unknown communication type
 #endif

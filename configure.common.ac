@@ -206,9 +206,6 @@ AC_ARG_ENABLE(pipes,
 AC_ARG_ENABLE(socket,
               [AS_HELP_STRING([--enable-socket],[Use sockets for server/client communication])],
               [CLIENT_SERVER_COM=sockets;],)
-AC_ARG_ENABLE(shmem,
-              [AS_HELP_STRING([--enable-shmem],[Use shared memory for server/client communication])],
-              [CLIENT_SERVER_COM=shmem;],)
 AC_ARG_ENABLE(biter,
               [AS_HELP_STRING([--enable-biter],[Use biter for server/client communication])],
               [CLIENT_SERVER_COM=biter;],)
@@ -223,7 +220,6 @@ AC_ARG_ENABLE(cobo,
 
 AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
 AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
-AM_CONDITIONAL([SHMEM], [test x$CLIENT_SERVER_COM == xshmem])
 AM_CONDITIONAL([BITER], [test x$CLIENT_SERVER_COM == xbiter])
 AM_CONDITIONAL([MSOCKET], [test x$SERVER_SERVER_COM == xmsocket])
 AM_CONDITIONAL([COBO], [test x$SERVER_SERVER_COM == xcobo])
