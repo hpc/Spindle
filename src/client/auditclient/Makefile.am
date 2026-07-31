@@ -1,8 +1,5 @@
-pkglib_LTLIBRARIES = 
+pkglib_LTLIBRARIES =
 
-if SOCKETS
-pkglib_LTLIBRARIES += libspindle_audit_socket.la
-endif
 if PIPES
 pkglib_LTLIBRARIES += libspindle_audit_pipe.la
 endif
@@ -29,10 +26,6 @@ ARCH_SRCS = auditclient_aarch64.c
 endif
 
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
-
-libspindle_audit_socket_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
-libspindle_audit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)
-libspindle_audit_socket_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
 
 libspindle_audit_pipe_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)

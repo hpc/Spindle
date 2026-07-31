@@ -13,9 +13,6 @@ endif
 if MSOCKET
 CORE_LDADD += $(top_builddir)/auditserver/libaudit_server_msocket.la
 endif
-if SOCKETS
-CORE_LDADD += $(top_builddir)/comlib/libserver_socket.la
-endif
 if PIPES
 CORE_LDADD += $(top_builddir)/comlib/libserver_pipe.la
 endif

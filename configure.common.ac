@@ -203,9 +203,6 @@ SERVER_SERVER_COM=cobo
 AC_ARG_ENABLE(pipes,
               [AS_HELP_STRING([--enable-pipes],[Use pipes for server/client communication])],
               [CLIENT_SERVER_COM=pipes;],)
-AC_ARG_ENABLE(socket,
-              [AS_HELP_STRING([--enable-socket],[Use sockets for server/client communication])],
-              [CLIENT_SERVER_COM=sockets;],)
 AC_ARG_ENABLE(biter,
               [AS_HELP_STRING([--enable-biter],[Use biter for server/client communication])],
               [CLIENT_SERVER_COM=biter;],)
@@ -219,16 +216,12 @@ AC_ARG_ENABLE(cobo,
               [SERVER_SERVER_COM=cobo;],)
 
 AM_CONDITIONAL([PIPES], [test x$CLIENT_SERVER_COM == xpipes])
-AM_CONDITIONAL([SOCKETS], [test x$CLIENT_SERVER_COM == xsocket])
 AM_CONDITIONAL([BITER], [test x$CLIENT_SERVER_COM == xbiter])
 AM_CONDITIONAL([MSOCKET], [test x$SERVER_SERVER_COM == xmsocket])
 AM_CONDITIONAL([COBO], [test x$SERVER_SERVER_COM == xcobo])
 
 if test "x$CLIENT_SERVER_COM" == "xpipes"; then
   AC_DEFINE([COMM_PIPES],[1],[Define if were using pipes for client/server communication])
-fi
-if test "x$CLIENT_SERVER_COM" == "xsocket"; then
-  AC_DEFINE([COMM_SOCKET],[1],[Define if were using sockets for client/server communication])
 fi
 if test "x$CLIENT_SERVER_COM" == "xbiter"; then
   AC_DEFINE([COMM_BITER],[1],[Define if were using biter for client/server communication])

@@ -1,8 +1,5 @@
 pkglib_LTLIBRARIES = libspindleint.la
 
-if SOCKETS
-pkglib_LTLIBRARIES += libspindle_subaudit_socket.la
-endif
 if PIPES
 pkglib_LTLIBRARIES += libspindle_subaudit_pipe.la
 endif
@@ -20,10 +17,6 @@ AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 
 libspindleint_la_SOURCES = preloadlib.c
 libspindleint_la_LDFLAGS = -shared -avoid-version
-
-libspindle_subaudit_socket_la_SOURCES = $(BASE_SRCS)
-libspindle_subaudit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)
-libspindle_subaudit_socket_la_LDFLAGS = -shared -avoid-version
 
 libspindle_subaudit_pipe_la_SOURCES = $(BASE_SRCS)
 libspindle_subaudit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)

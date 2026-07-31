@@ -21,8 +21,6 @@
 #if !defined(COMM)
 #if defined(COMM_PIPES)
 #define COMM pipe
-#elif defined(COMM_SOCKETS)
-#define COMM socket
 #elif defined(COMM_BITER)
 #define COMM biter
 #else

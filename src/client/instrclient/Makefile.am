@@ -1,8 +1,5 @@
-pkglibexec_LTLIBRARIES = 
+pkglibexec_LTLIBRARIES =
 
-if SOCKETS
-pkglibexec_LTLIBRARIES += libspindle_instr_socket.la
-endif
 if PIPES
 pkglibexec_LTLIBRARIES += libspindle_instr_pipe.la
 endif
@@ -17,10 +14,6 @@ BASE_SRCS = intercept.c
 INSTRLIB = $(top_builddir)/client/libspindle_instr.la
 
 AM_CFLAGS = -fvisibility=hidden
-
-libspindle_instr_socket_la_SOURCES = $(BASE_SRCS)
-libspindle_instr_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(INSTRLIB)
-libspindle_instr_socket_la_LDFLAGS = -shared -avoid-version
 
 libspindle_instr_pipe_la_SOURCES = $(BASE_SRCS)
 libspindle_instr_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(INSTRLIB)
