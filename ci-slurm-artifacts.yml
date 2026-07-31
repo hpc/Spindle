@@ -1,0 +1,93 @@
+name: ci-slurm-artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  spindle-slurm-ubuntu:
+    name: Testsuite (Slurm rshlaunch, Ubuntu)
+    environment: Spindle CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Spindle
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        with:
+          version: latest
+
+      - name: Login to GitHub Container Registry
+        if: ${{ !env.ACT }}
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate MariaDB configuration
+        id: slurm-ubuntu-mariadb
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing
+          ./generate_config.sh
+
+      - name: Build spindle-slurm-ubuntu image
+        id: slurm-ubuntu-build
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing
+          docker compose --progress=plain build
+
+      - name: Bring spindle-slurm-ubuntu up
+        id: slurm-ubuntu-up
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing
+          docker compose up -d --wait --wait-timeout 120
+
+      - name: Verify munge works in spindle-slurm-ubuntu
+        id: slurm-ubuntu-munge
+        run: |
+          docker exec slurm-head bash -c 'munge -n | unmunge'
+
+      - name: Run spindle-slurm-ubuntu testsuite
+        id: slurm-ubuntu-testsuite
+        run: |
+          docker exec slurm-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-slurm-ubuntu crash tests
+        run: |
+          docker exec slurm-head bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=slurm --nodes=${workers} --scratch=/shared/spindle_crash_test'
+
+      - name: Collect Spindle logs from container
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          mkdir -p spindle-logs
+          docker cp slurm-head:/Spindle-build/testsuite/. spindle-logs/ || echo "Log collection failed"
+          ls -la spindle-logs/
+
+      - name: Upload Spindle logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: spindle-logs-slurm
+          path: spindle-logs/spindle_output.*
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Bring spindle-slurm-ubuntu down
+        id: slurm-ubuntu-down
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          cd containers/spindle-slurm-ubuntu/testing
+          docker compose down

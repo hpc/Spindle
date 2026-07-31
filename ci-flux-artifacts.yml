@@ -1,0 +1,79 @@
+name: ci-flux-artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  spindle-flux-ubuntu:
+    name: Testsuite (Flux, Ubuntu)
+    environment: Spindle CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Spindle
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        with:
+          version: latest
+
+      - name: Build spindle-flux-ubuntu image
+        id: flux-ubuntu-build
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose --progress=plain build
+
+      - name: Bring spindle-flux-ubuntu up
+        id: flux-ubuntu-up
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose up -d --wait --wait-timeout 60
+
+      - name: Verify munge works in spindle-flux-ubuntu
+        id: flux-ubuntu-munge
+        run: |
+          docker exec node-1 bash -c 'munge -n | unmunge'
+
+      - name: Run spindle-flux-ubuntu testsuite
+        id: flux-ubuntu-testsuite
+        run: |
+          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./runTests --nodes=${workers} --tasks-per-node=3'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-flux-ubuntu crash tests
+        run: |
+          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./run_crash_tests.sh --launcher=flux --nodes=${workers} --scratch=/shared/spindle_crash_test'
+
+      - name: Collect Spindle logs from container
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          mkdir -p spindle-logs
+          docker cp node-1:/Spindle-build/testsuite/. spindle-logs/ || echo "Log collection failed"
+          ls -la spindle-logs/
+
+      - name: Upload Spindle logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: spindle-logs-flux
+          path: spindle-logs/spindle_output.*
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Bring spindle-flux-ubuntu down
+        id: flux-ubuntu-down
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          cd containers/spindle-flux-ubuntu
+          docker compose down
