@@ -863,7 +863,6 @@ enable_numa
 with_numa_excludes
 with_usage_logging
 enable_cleanup_process
-enable_subaudit_as_default
 enable_sec_munge
 enable_sec_keydir
 enable_sec_launchmon
@@ -1545,8 +1544,6 @@ Optional Features:
   --enable-cleanup-process
                           Default to using a dedicated process to clean
                           relocated files
-  --enable-subaudit-as-default
-                          Enable subaudit option as defaulted to on
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
@@ -17087,13 +17084,6 @@ fi
 # Check whether --enable-cleanup-process was given.
 if test "${enable_cleanup_process+set}" = set; then :
   enableval=$enable_cleanup_process; CLEANUP_PROC="true"
-fi
-
-
-#Audit options
-# Check whether --enable-subaudit-as-default was given.
-if test "${enable_subaudit_as_default+set}" = set; then :
-  enableval=$enable_subaudit_as_default; USE_SUBAUDIT_BY_DEFAULT="true"
 fi
 
 
