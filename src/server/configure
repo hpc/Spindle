@@ -643,15 +643,6 @@ LINK_LIBSTDCXX_STATIC_TRUE
 STATIC_LIBSTDCXX
 STATIC_LIBGCC_OPT
 LDD
-LMON_DYNAMIC_FALSE
-LMON_DYNAMIC_TRUE
-LMON_FALSE
-LMON_TRUE
-LAUNCHMON_RMCOMM
-LAUNCHMON_LIB
-LAUNCHMON_INC
-HAVE_LMON
-LAUNCHMON_STATIC_LIBS
 MUNGE_DYN_LIB
 MUNGE_LIBS
 MUNGE_CFLAGS
@@ -847,16 +838,11 @@ with_usage_logging
 enable_cleanup_process
 enable_sec_munge
 enable_sec_keydir
-enable_sec_launchmon
 enable_sec_none
 enable_crash_dedup
 with_gcrypt_dir
 with_munge_dir
 enable_remap_pageone
-with_launchmon
-with_launchmon_incdir
-with_launchmon_libdir
-with_launchmon_rmcommdir
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1523,8 +1509,6 @@ Optional Features:
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
                           authentication key for connections
-  --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
-                          for connections
   --enable-sec-none       Disable security authentication of connections
   --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
@@ -1571,14 +1555,6 @@ Optional Packages:
                           File for writing usage logs
   --with-gcrypt-dir=DIR   Look in DIR for gcrypt installation
   --with-munge-dir=DIR    Look in DIR for munge installation
-  --with-launchmon=DIR    Launchmon directory (must contain ./lib and
-                          ./include)
-  --with-launchmon-incdir=DIR
-                          Launchmon include directory
-  --with-launchmon-libdir=DIR
-                          Launchmon library directory
-  --with-launchmon-rmcommdir=DIR
-                          RM communication library LaunchMON uses
 
 Some influential environment variables:
   CC          C compiler command
@@ -5593,7 +5569,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files logging/Makefile biter/Makefile cache/Makefile auditserver/Makefile cobo/Makefile comlib/Makefile launchmon/Makefile startup/Makefile Makefile"
+ac_config_files="$ac_config_files logging/Makefile biter/Makefile cache/Makefile auditserver/Makefile cobo/Makefile comlib/Makefile startup/Makefile Makefile"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
@@ -17325,11 +17301,6 @@ if test "${enable_sec_keydir+set}" = set; then :
   enableval=$enable_sec_keydir; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
 fi
 
-# Check whether --enable-sec-launchmon was given.
-if test "${enable_sec_launchmon+set}" = set; then :
-  enableval=$enable_sec_launchmon; WANT_SECLMON="true";EXPLICIT_SEC="true"
-fi
-
 # Check whether --enable-sec-none was given.
 if test "${enable_sec_none+set}" = set; then :
   enableval=$enable_sec_none; WANT_NOSEC="true";EXPLICIT_SEC="true"
@@ -17534,7 +17505,6 @@ fi
            fi
            if test "x$HAVE_GCRYPT" == "xtrue"; then
              GCRYPT="true"
-             SECLMON="true"
            fi
         fi
 
@@ -17555,15 +17525,6 @@ fi
            fi
         fi
 
-        if test "x$WANT_SECLMON" == "xtrue"; then
-           if test "x$HAVE_GCRYPT" == "xtrue"; then
-             SECLMON="true"
-             GCRYPT="true"
-           else
-             as_fn_error $? "Could not find gcrypt for lmon authentication" "$LINENO" 5
-           fi
-        fi
-
         if test "x$WANT_NOSEC" == "xtrue"; then
            ENABLE_NULL_ENCRYPTION="true"
         fi
@@ -17572,7 +17533,7 @@ fi
            MUNGE_CFLAGS=""
            MUNGE_LIBS=""
         fi
-        if test "x$KEYFILE x$SECLMON" == "x x"; then
+        if test "x$KEYFILE" != "xtrue"; then
            GCRYPT_CFLAGS=""
            GCRYPT_LIBS=""
            GCRYPT="false"
@@ -17613,13 +17574,6 @@ $as_echo "$as_me: Enabling keyfile for security authentication" >&6;}
 $as_echo "#define KEYFILE 1" >>confdefs.h
 
         fi
-        if test "x$SECLMON" == "xtrue"; then
-           { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling LaunchMON key for security authentication" >&5
-$as_echo "$as_me: Enabling LaunchMON key for security authentication" >&6;}
-
-$as_echo "#define SECLMON 1" >>confdefs.h
-
-        fi
         if test "x$ENABLE_NULL_ENCRYPTION" == "xtrue"; then
            { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling NULL encryption" >&5
 $as_echo "$as_me: Enabling NULL encryption" >&6;};
@@ -17628,238 +17582,19 @@ $as_echo "#define ENABLE_NULL_ENCRYPTION 1" >>confdefs.h
 
         fi
 
-#Include LaunchMON
-#Launchmon processing
-
-# Check whether --with-launchmon was given.
-if test "${with_launchmon+set}" = set; then :
-  withval=$with_launchmon; LAUNCHMON_INC_DIR="${withval}/include";
-        LAUNCHMON_LIB_DIR="${withval}/lib";
-        LAUNCHMON_RMCOMM_DIR="${withval}/lib"
-        EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-incdir was given.
-if test "${with_launchmon_incdir+set}" = set; then :
-  withval=$with_launchmon_incdir; LAUNCHMON_INC_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-libdir was given.
-if test "${with_launchmon_libdir+set}" = set; then :
-  withval=$with_launchmon_libdir; LAUNCHMON_LIB_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-rmcommdir was given.
-if test "${with_launchmon_rmcommdir+set}" = set; then :
-  withval=$with_launchmon_rmcommdir; LAUNCHMON_RMCOMM_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-CPPFLAGS_HOLD=$CPPFLAGS
-if test "x$LAUNCHMON_INC_DIR" != "x"; then
-  LAUNCHMON_INC=-I$LAUNCHMON_INC_DIR
-fi
-CPPFLAGS="$CPPFLAGS $LAUNCHMON_INC"
-ac_fn_c_check_header_mongrel "$LINENO" "lmon_api/lmon_fe.h" "ac_cv_header_lmon_api_lmon_fe_h" "$ac_includes_default"
-if test "x$ac_cv_header_lmon_api_lmon_fe_h" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Found launchmon headers" >&5
-$as_echo "$as_me: Found launchmon headers" >&6;}
-else
-  if test "x$EXPLICIT_LMON" == "xtrue";
-                   then as_fn_error $? "Could not find or build LaunchMON includes" "$LINENO" 5
-                   else HAVE_LMON=false
-                 fi
-fi
-
-
-CPPFLAGS=$CPPFLAGS_HOLD
-
-if test "xHAVE_LMON" != "xfalse"; then
-  LDFLAGS_HOLD=$LDFLAGS
-  LIBS_HOLD=$LIBS
-  if test "x$LAUNCHMON_LIB_DIR" != "x"; then
-    LAUNCHMON_LIB=-L$LAUNCHMON_LIB_DIR
-    LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
-  fi
-  LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
-
-  if test "x$LAUNCHMON_RMCOMM_DIR" != "x"; then
-    LAUNCHMON_RMCOMM="-Wl,-rpath=$LAUNCHMON_RMCOMM_DIR"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LMON_fe_init in -lmonfeapi" >&5
-$as_echo_n "checking for LMON_fe_init in -lmonfeapi... " >&6; }
-if ${ac_cv_lib_monfeapi_LMON_fe_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmonfeapi  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char LMON_fe_init ();
-int
-main ()
-{
-return LMON_fe_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_monfeapi_LMON_fe_init=yes
-else
-  ac_cv_lib_monfeapi_LMON_fe_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_monfeapi_LMON_fe_init" >&5
-$as_echo "$ac_cv_lib_monfeapi_LMON_fe_init" >&6; }
-if test "x$ac_cv_lib_monfeapi_LMON_fe_init" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Found launchmon libraries" >&5
-$as_echo "$as_me: Found launchmon libraries" >&6;};HAVE_LMON=true
-else
-  if test "x$EXPLICIT_LMON" == "xtrue";
-                   then as_fn_error $? "Could not find or build LaunchMON libraries" "$LINENO" 5
-                   else { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not find or build LaunchMON libraries" >&5
-$as_echo "$as_me: WARNING: Could not find or build LaunchMON libraries" >&2;}; HAVE_LMON=false
-                fi
-fi
-
-fi
-
-if test "xHAVE_LMON" != "xfalse"; then
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can statically link launchmon" >&5
-$as_echo_n "checking whether we can statically link launchmon... " >&6; }
-  LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"
-  LIBS="$LIBS $LAUNCHMON_STATIC_LIBS_TEST"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-extern "C" { extern int LMON_be_init(); }
-int
-main ()
-{
-return LMON_be_init();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST
-                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-    if test "x$HAVE_MUNGE" == "xtrue"; then
-      LIBS="$LIBS_HOLD $LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-extern "C" { extern int LMON_be_init(); }
-int
-main ()
-{
-return LMON_be_init();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  LAUNCHMON_STATIC_LIBS="$LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
-                      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  fi
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  LDFLAGS=$LDFLAGS_HOLD
-  LIBS=$LIBS_HOLD
-fi
-
-
-
-
-
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define LAUNCHMON_BIN_DIR "$LAUNCHMON_BIN"
-_ACEOF
-
-
- if test "x$HAVE_LMON" == "xtrue"; then
-  LMON_TRUE=
-  LMON_FALSE='#'
-else
-  LMON_TRUE='#'
-  LMON_FALSE=
-fi
-
- if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-  LMON_DYNAMIC_TRUE=
-  LMON_DYNAMIC_FALSE='#'
-else
-  LMON_DYNAMIC_TRUE='#'
-  LMON_DYNAMIC_FALSE=
-fi
-
-
-if test "x$HAVE_LMON" == "xtrue"; then
-
-$as_echo "#define HAVE_LMON 1" >>confdefs.h
-
-fi
-
-
 #Check if we can static link libstdc++ and libgcc, which is desirable
-# for bootstrapping purposes on spindle_be.  We only do this if we
-# can link everything statically: launchmon, libstdc++, libgcc.
-# Otherwise we stick with dynamic linking.
-if test "x$LAUNCHMON_STATIC_LIBS" != "x"; then
-  #Test whether we have a static libgcc option
-  ac_ext=cpp
+# for bootstrapping purposes on spindle_be.
+ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  LDFLAGS_HOLD=$LDFLAGS
-  LDFLAGS+=-static-libgcc
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can statically link libgcc" >&5
+LDFLAGS_HOLD=$LDFLAGS
+LDFLAGS+=-static-libgcc
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can statically link libgcc" >&5
 $as_echo_n "checking whether we can statically link libgcc... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -17872,7 +17607,7 @@ main ()
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
   STATIC_LIBGCC_OPT=-static-libgcc
-                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -17881,23 +17616,23 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-  if test "x$STATIC_LIBGCC_OPT" != "x"; then
-    #Test whether we have a static libstdc++
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have a static libstdc++" >&5
+if test "x$STATIC_LIBGCC_OPT" != "x"; then
+  #Test whether we have a static libstdc++
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have a static libstdc++" >&5
 $as_echo_n "checking whether we have a static libstdc++... " >&6; }
-    STATIC_LIBSTDCXX_TEST=`$CXX -print-file-name=libstdc++.a`
-    if test -f $STATIC_LIBSTDCXX_TEST; then
-      STATIC_LIBSTDCXX=$STATIC_LIBSTDCXX_TEST
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  STATIC_LIBSTDCXX_TEST=`$CXX -print-file-name=libstdc++.a`
+  if test -f $STATIC_LIBSTDCXX_TEST; then
+    STATIC_LIBSTDCXX=$STATIC_LIBSTDCXX_TEST
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
+  fi
 
-    if test "x$STATIC_LIBSTDCXX" != "x"; then
+  if test "x$STATIC_LIBSTDCXX" != "x"; then
 
-      # Extract the first word of "ldd", so it can be a program name with args.
+    # Extract the first word of "ldd", so it can be a program name with args.
 set dummy ldd; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17934,12 +17669,12 @@ $as_echo "no" >&6; }
 fi
 
 
-      if test "x$LDD" != "x"; then
-        #Test whether we can link with a static libstdc++
-        rm -f libstdc++.a
-        $LN_S $STATIC_LIBSTDCXX
-        LDFLAGS="$LDFLAGS -L."
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    if test "x$LDD" != "x"; then
+      #Test whether we can link with a static libstdc++
+      rm -f libstdc++.a
+      $LN_S $STATIC_LIBSTDCXX
+      LDFLAGS="$LDFLAGS -L."
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -17955,32 +17690,31 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can force static linking of libstdc++" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can force static linking of libstdc++" >&5
 $as_echo_n "checking whether we can force static linking of libstdc++... " >&6; }
-        if [ "$STATIC_TEST_LIBS" != *libstdc++* ]; then
-          if [ "$STATIC_TEST_LIBS" != *libgcc* ]; then
-            LINK_LIBSTDCXX_STATIC=yes
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      if [ "$STATIC_TEST_LIBS" != *libstdc++* ]; then
+        if [ "$STATIC_TEST_LIBS" != *libgcc* ]; then
+          LINK_LIBSTDCXX_STATIC=yes
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-          else
-            LINK_LIBSTDCXX_STATIC=no
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-          fi
         else
-           LINK_LIBSTDCXX_STATIC=no
-           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+          LINK_LIBSTDCXX_STATIC=no
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
         fi
-        rm -f libstdc++.a
-        LDFLAGS=$LDFLAGS_HOLD
-        ac_ext=c
+      else
+         LINK_LIBSTDCXX_STATIC=no
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      fi
+      rm -f libstdc++.a
+      LDFLAGS=$LDFLAGS_HOLD
+      ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-      fi
     fi
   fi
 fi
@@ -18182,14 +17916,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AARCH64_BLD_TRUE}" && test -z "${AARCH64_BLD_FALSE}"; then
   as_fn_error $? "conditional \"AARCH64_BLD\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${LMON_TRUE}" && test -z "${LMON_FALSE}"; then
-  as_fn_error $? "conditional \"LMON\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
-  as_fn_error $? "conditional \"LMON_DYNAMIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${LINK_LIBSTDCXX_STATIC_TRUE}" && test -z "${LINK_LIBSTDCXX_STATIC_FALSE}"; then
@@ -19175,7 +18901,6 @@ do
     "auditserver/Makefile") CONFIG_FILES="$CONFIG_FILES auditserver/Makefile" ;;
     "cobo/Makefile") CONFIG_FILES="$CONFIG_FILES cobo/Makefile" ;;
     "comlib/Makefile") CONFIG_FILES="$CONFIG_FILES comlib/Makefile" ;;
-    "launchmon/Makefile") CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
     "startup/Makefile") CONFIG_FILES="$CONFIG_FILES startup/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;

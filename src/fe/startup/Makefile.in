@@ -95,7 +95,6 @@ bin_PROGRAMS = spindle$(EXEEXT)
 @BLD_FLUXPLUGIN_TRUE@am__append_1 = $(FLUX_CORE_LIBS) $(FLUX_HOSTLIST_LIBS) $(top_builddir)/flux/libfluxsessionfe.la
 @BLD_FLUXPLUGIN_TRUE@am__append_2 = -I$(top_srcdir)/../flux
 @BLD_FLUXPLUGIN_TRUE@am__append_3 = launch_flux.cc
-@LMON_TRUE@am__append_4 = $(top_builddir)/launchmon/libfelmon.la
 subdir = startup
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -105,7 +104,6 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
 	$(top_srcdir)/../../configure.common.ac \
-	$(top_srcdir)/../../m4/lmon.m4 \
 	$(top_srcdir)/../../m4/launcher.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -213,8 +211,7 @@ spindle_OBJECTS = $(am_spindle_OBJECTS)
 @BLD_FLUXPLUGIN_TRUE@	$(top_builddir)/flux/libfluxsessionfe.la
 spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_4) \
-	$(am__append_4)
+	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_4)
 spindle_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(spindle_LDFLAGS) $(LDFLAGS) -o $@
@@ -375,16 +372,11 @@ FLUX_HOSTLIST_LIBS = @FLUX_HOSTLIST_LIBS@
 GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
 GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
-HAVE_LMON = @HAVE_LMON@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAUNCHMON_INC = @LAUNCHMON_INC@
-LAUNCHMON_LIB = @LAUNCHMON_LIB@
-LAUNCHMON_RMCOMM = @LAUNCHMON_RMCOMM@
-LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -508,8 +500,7 @@ spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc \
 	$(CORE_SOURCES) $(am__append_3)
 spindle_LDADD = $(CORE_LDADD) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__append_1) \
-	$(am__append_4)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_1)
 @BLD_FLUXPLUGIN_TRUE@spindle_LDFLAGS = $(fluxplugin-ldflags) -Wl,--allow-multiple-definition
 all: all-am
 

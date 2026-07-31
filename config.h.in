@@ -46,9 +46,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Build with LaunchMON support */
-#undef HAVE_LMON
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -84,9 +81,6 @@
 
 /* Number of bytes in keys for gcrypt */
 #undef KEY_SIZE_BYTES
-
-/* The bin directory for launchmon */
-#undef LAUNCHMON_BIN_DIR
 
 /* Use libnuma for numa optimizations */
 #undef LIBNUMA

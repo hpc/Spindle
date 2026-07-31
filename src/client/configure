@@ -820,7 +820,6 @@ with_usage_logging
 enable_cleanup_process
 enable_sec_munge
 enable_sec_keydir
-enable_sec_launchmon
 enable_sec_none
 enable_crash_dedup
 with_gcrypt_dir
@@ -1488,8 +1487,6 @@ Optional Features:
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
                           authentication key for connections
-  --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
-                          for connections
   --enable-sec-none       Disable security authentication of connections
   --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
@@ -13476,11 +13473,6 @@ fi
 # Check whether --enable-sec-keydir was given.
 if test "${enable_sec_keydir+set}" = set; then :
   enableval=$enable_sec_keydir; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
-fi
-
-# Check whether --enable-sec-launchmon was given.
-if test "${enable_sec_launchmon+set}" = set; then :
-  enableval=$enable_sec_launchmon; WANT_SECLMON="true";EXPLICIT_SEC="true"
 fi
 
 # Check whether --enable-sec-none was given.
