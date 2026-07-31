@@ -186,8 +186,5 @@
 /* Define if we're compiling for an x86_64 target */
 #undef arch_x86_64
 
-/* Define if we're compiling for a BlueGene target */
-#undef os_bluegene
-
 /* Define if we're compiling for a linux target */
 #undef os_linux

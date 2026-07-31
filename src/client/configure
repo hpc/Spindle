@@ -821,7 +821,6 @@ enable_slurm
 enable_slurm_plugin
 enable_flux_plugin
 with_slurm_dir
-enable_bluegene
 with_hostbin
 with_rsh_launch
 with_rsh_cmd
@@ -1501,7 +1500,6 @@ Optional Features:
                           launching
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
-  --enable-bluegene       Build Spindle for BlueGene/Q
   --enable-pipes          Use pipes for server/client communication
   --enable-socket         Use sockets for server/client communication
   --enable-shmem          Use shared memory for server/client communication
@@ -12503,50 +12501,6 @@ SPINDLE_BUILD_ROOT=`pwd`/../..
 SPINDLE_SOURCE_ROOT=`realpath ${srcdir}/../..`
 
 #Include common ops
-#################################################################################################
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC.
-# Produced at the Lawrence Livermore National Laboratory
-# Written by Todd Gamblin, tgamblin@llnl.gov.
-# LLNL-CODE-417602
-# All rights reserved.
-#
-# This file is part of Libra. For details, see http://github.com/tgamblin/libra.
-# Please also read the LICENSE file for further information.
-#
-# Redistribution and use in source and binary forms, with or without modification, are
-# permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this list of
-# conditions and the disclaimer below.
-# * Redistributions in binary form must reproduce the above copyright notice, this list of
-# conditions and the disclaimer (as noted below) in the documentation and/or other materials
-# provided with the distribution.
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may be used to endorse
-# or promote products derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-# LAWRENCE LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#################################################################################################
-
-#
-# LX_DETECT_BLUEGENE
-#
-# Defines some compile-time tests to detect BlueGene architectures.
-# This will AC_DEFINE the following macros if detected:
-#
-# BLUEGENE_L If BlueGene/L architecture is detected
-# BLUEGENE_P If BlueGene/P architecture is detected
-# BLUEGENE_Q If BlueGene/Q architecture is detected
-#
-
-
 #Configure operations that are common between the Spindle and Spindle-client configurations
 #Network port and local storage location
 DEFAULT_PORT=21940
@@ -12789,14 +12743,7 @@ _ACEOF
 
 
 #OS Detection
-# Check whether --enable-bluegene was given.
-if test "${enable_bluegene+set}" = set; then :
-  enableval=$enable_bluegene; OS_BUILD=bluegene
-fi
-
-if test "x$OS_BUILD" == "x"; then
-  OS_BUILD=linux
-fi
+OS_BUILD=linux
 
 #Startup type
 
@@ -12956,12 +12903,7 @@ _ACEOF
 
 
 #Runmode detection (pipe/socket or cobo/msocket communications)
-if test "x$OS_BUILD" == "xlinux"; then
-  CLIENT_SERVER_COM=pipes
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLIENT_SERVER_COM=biter
-fi
+CLIENT_SERVER_COM=pipes
 
 SERVER_SERVER_COM=cobo
 # Check whether --enable-pipes was given.
@@ -13126,7 +13068,7 @@ $as_echo "#define arch_aarch64 1" >>confdefs.h
 fi
 
 #OS defines
- if test "x$OS_BUILD" == "xbluegene"; then
+ if false; then
   BGQ_BLD_TRUE=
   BGQ_BLD_FALSE='#'
 else
@@ -13175,16 +13117,9 @@ else
 fi
 
 
-if test "x$OS_BUILD" == "xlinux"; then
 
 $as_echo "#define os_linux 1" >>confdefs.h
 
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-
-$as_echo "#define os_bluegene 1" >>confdefs.h
-
-fi
 
 #Python prefix
 
@@ -13307,9 +13242,6 @@ if test "${enable_cleanup_process+set}" = set; then :
   enableval=$enable_cleanup_process; CLEANUP_PROC="true"
 fi
 
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLEANUP_PROC="true"
-fi
 
 #Audit options
 # Check whether --enable-subaudit-as-default was given.

@@ -362,10 +362,8 @@ BUILT_SOURCES = libtest10.so libtest11.so libtest12.so libtest13.so \
 	crash_test crash_test_fixedaddr crash_test_pie \
 	libcrashfuncs.so libcrashctor.so libcrashfixed.so \
 	run_crash_tests.sh
-@BGQ_BLD_FALSE@DYNAMIC_FLAG = 
-@BGQ_BLD_TRUE@DYNAMIC_FLAG = -dynamic
-@BGQ_BLD_FALSE@IS_BLUEGENE = false
-@BGQ_BLD_TRUE@IS_BLUEGENE = true
+DYNAMIC_FLAG = 
+IS_BLUEGENE = false
 libgenerator_SOURCES = libgenerator.c
 test_driverSOURCES = $(top_srcdir)/testsuite/test_driver.c
 test_driverCFLAGS = -DLPATH=$(top_builddir)/testsuite -I$(top_srcdir)/src/client/spindle_api -I$(top_srcdir)/src/utils $(MPI_CFLAGS) -Wall -I$(top_builddir)

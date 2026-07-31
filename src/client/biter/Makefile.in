@@ -89,9 +89,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BGQ_BLD_TRUE@am__append_1 = -I/bgsys/drivers/ppcfloor/comm/lib/gnu -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/comm/sys/include -I/bgsys/drivers/ppcfloor/spi/include -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
-@BGQ_BLD_TRUE@am__append_2 = $(top_srcdir)/../biter/bgq_ids.c
-@LINUX_BLD_TRUE@am__append_3 = $(top_srcdir)/../biter/linux_ids.c
 subdir = biter
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -100,7 +97,6 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/ltversion.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
-	$(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -112,19 +108,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libbiterc_la_DEPENDENCIES = libsheep.la
-am__libbiterc_la_SOURCES_DIST = $(top_srcdir)/../biter/biterc.c \
-	$(top_srcdir)/../biter/client_queue.c \
-	$(top_srcdir)/../biter/demultiplex.c \
-	$(top_srcdir)/../biter/bgq_ids.c \
-	$(top_srcdir)/../biter/linux_ids.c
 am__dirstamp = $(am__leading_dot)dirstamp
-@BGQ_BLD_TRUE@am__objects_1 = $(top_builddir)/../biter/libbiterc_la-bgq_ids.lo
-@LINUX_BLD_TRUE@am__objects_2 = $(top_builddir)/../biter/libbiterc_la-linux_ids.lo
 am_libbiterc_la_OBJECTS =  \
 	$(top_builddir)/../biter/libbiterc_la-biterc.lo \
 	$(top_builddir)/../biter/libbiterc_la-client_queue.lo \
 	$(top_builddir)/../biter/libbiterc_la-demultiplex.lo \
-	$(am__objects_1) $(am__objects_2)
+	$(top_builddir)/../biter/libbiterc_la-linux_ids.lo
 libbiterc_la_OBJECTS = $(am_libbiterc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -154,7 +143,6 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade =  \
-	$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Plo \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-client_queue.Plo \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-demultiplex.Plo \
@@ -182,7 +170,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libbiterc_la_SOURCES) $(libsheep_la_SOURCES)
-DIST_SOURCES = $(am__libbiterc_la_SOURCES_DIST) $(libsheep_la_SOURCES)
+DIST_SOURCES = $(libbiterc_la_SOURCES) $(libsheep_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -347,14 +335,12 @@ top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libbiterc.la libsheep.la
 libbiterc_la_SOURCES = $(top_srcdir)/../biter/biterc.c \
 	$(top_srcdir)/../biter/client_queue.c \
-	$(top_srcdir)/../biter/demultiplex.c $(am__append_2) \
-	$(am__append_3)
+	$(top_srcdir)/../biter/demultiplex.c \
+	$(top_srcdir)/../biter/linux_ids.c
 libbiterc_la_CFLAGS = -DCLIENT
 libbiterc_la_LIBADD = libsheep.la
 libsheep_la_SOURCES = $(top_srcdir)/../biter/sheep.c $(top_srcdir)/../biter/shmutil.c $(top_srcdir)/../biter/shm_wrappers.c
-AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging \
-	-I$(top_srcdir)/../include -I$(top_srcdir)/../utils \
-	$(am__append_1)
+AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils
 AM_CFLAGS = -fvisibility=hidden
 all: all-am
 
@@ -415,9 +401,6 @@ $(top_builddir)/../biter/libbiterc_la-client_queue.lo:  \
 $(top_builddir)/../biter/libbiterc_la-demultiplex.lo:  \
 	$(top_builddir)/../biter/$(am__dirstamp) \
 	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../biter/libbiterc_la-bgq_ids.lo:  \
-	$(top_builddir)/../biter/$(am__dirstamp) \
-	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
 $(top_builddir)/../biter/libbiterc_la-linux_ids.lo:  \
 	$(top_builddir)/../biter/$(am__dirstamp) \
 	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
@@ -445,7 +428,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-client_queue.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-demultiplex.Plo@am__quote@ # am--include-marker
@@ -504,13 +486,6 @@ $(top_builddir)/../biter/libbiterc_la-demultiplex.lo: $(top_builddir)/../biter/d
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../biter/demultiplex.c' object='$(top_builddir)/../biter/libbiterc_la-demultiplex.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../biter/libbiterc_la-demultiplex.lo `test -f '$(top_builddir)/../biter/demultiplex.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/demultiplex.c
-
-$(top_builddir)/../biter/libbiterc_la-bgq_ids.lo: $(top_builddir)/../biter/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../biter/libbiterc_la-bgq_ids.lo -MD -MP -MF $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Tpo -c -o $(top_builddir)/../biter/libbiterc_la-bgq_ids.lo `test -f '$(top_builddir)/../biter/bgq_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/bgq_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Tpo $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../biter/bgq_ids.c' object='$(top_builddir)/../biter/libbiterc_la-bgq_ids.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../biter/libbiterc_la-bgq_ids.lo `test -f '$(top_builddir)/../biter/bgq_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/bgq_ids.c
 
 $(top_builddir)/../biter/libbiterc_la-linux_ids.lo: $(top_builddir)/../biter/linux_ids.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterc_la_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../biter/libbiterc_la-linux_ids.lo -MD -MP -MF $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-linux_ids.Tpo -c -o $(top_builddir)/../biter/libbiterc_la-linux_ids.lo `test -f '$(top_builddir)/../biter/linux_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/linux_ids.c
@@ -653,8 +628,7 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Plo
-	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo
+		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-client_queue.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-demultiplex.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-linux_ids.Plo
@@ -706,8 +680,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-bgq_ids.Plo
-	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo
+		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-biterc.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-client_queue.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-demultiplex.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterc_la-linux_ids.Plo
