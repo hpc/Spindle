@@ -98,11 +98,7 @@ using namespace std;
 #define NUMA_EXCLUDES_STR ""
 #endif
 
-#if defined(USE_SUBAUDIT_BY_DEFAULT)
-#define AUDITTYPE_STR "subaudit"
-#else
 #define AUDITTYPE_STR "audit"
-#endif
 
 #define SHMCACHE_SIZE_STR "0"
 

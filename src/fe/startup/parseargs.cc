@@ -57,12 +57,6 @@ using namespace std;
 #define DEFAULT_CLEAN_PROC_INT 0
 #endif
 
-#if !defined(USE_SUBAUDIT_BY_DEFAULT)  /* May be defined via configure */
-#define DEFAULT_USE_SUBAUDIT 0
-#else
-#define DEFAULT_USE_SUBAUDIT 1
-#endif
-
 #define DEFAULT_PERSIST 0
 
 #define SHM_DEFAULT_SIZE 0
@@ -71,12 +65,6 @@ using namespace std;
 #define DEFAULT_MSGCACHE_BUFFER_KB 1024
 #define DEFAULT_MSGCACHE_TIMEOUT_MS 100
 #define DEFAULT_MSGCACHE_ON 0
-
-#if DEFAULT_USE_SUBAUDIT == 1
-#define DEFAULT_USE_SUBAUDIT_STR "subaudit"
-#else
-#define DEFAULT_USE_SUBAUDIT_STR "audit"
-#endif
 
 #if DEFAULT_PERSIST == 1
 #define DEFAULT_PERSIST_STR "Yes"

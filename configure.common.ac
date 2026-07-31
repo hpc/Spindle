@@ -343,11 +343,6 @@ AC_ARG_ENABLE(cleanup-process,
              [AS_HELP_STRING([--enable-cleanup-process],[Default to using a dedicated process to clean relocated files])],
              [CLEANUP_PROC="true"],)
 
-#Audit options
-AC_ARG_ENABLE(subaudit-as-default,
-              [AS_HELP_STRING([--enable-subaudit-as-default],[Enable subaudit option as defaulted to on])],
-              [USE_SUBAUDIT_BY_DEFAULT="true"])
-
 if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
   # Check for whether to build Flux shell plugin
   PKG_CHECK_MODULES([FLUX_CORE], [flux-core > 0.40.0], [], [ENABLE_FLUX_PLUGIN=false])
@@ -437,13 +432,6 @@ AC_ARG_ENABLE(remap-pageone,
 
 AC_DEFUN([CHOOSE_DEF_AUDIT],[
    AC_LANG_PUSH(C)
-   AC_MSG_CHECKING([set subaudit as defaulted to on...])
-   if test "x$USE_SUBAUDIT_BY_DEFAULT" != "x"; then
-     AC_MSG_NOTICE([yes])        
-     AC_DEFINE([USE_SUBAUDIT_BY_DEFAULT], [1], [Use subaudit by default])
-   else
-     AC_MSG_NOTICE([no])        
-   fi
 ])
 
 AC_DEFUN([CHECK_MMAP],[
