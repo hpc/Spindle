@@ -24,9 +24,6 @@
 /* Define if were using pipes for client/server communication */
 #undef COMM_PIPES
 
-/* Define if were using sockets for client/server communication */
-#undef COMM_SOCKET
-
 /* Enable --crash-dedup by default */
 #undef CRASH_DEDUP_ENABLED_BY_DEFAULT
 

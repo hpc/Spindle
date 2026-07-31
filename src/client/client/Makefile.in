@@ -90,9 +90,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 #noinst_LTLIBRARIES += libspindle_instr.la
-@SOCKETS_TRUE@am__append_1 = libspindlec_socket.la
-@PIPES_TRUE@am__append_2 = libspindlec_pipe.la
-@BITER_TRUE@am__append_3 = libspindlec_biter.la
+@PIPES_TRUE@am__append_1 = libspindlec_pipe.la
+@BITER_TRUE@am__append_2 = libspindlec_biter.la
 subdir = client
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -152,13 +151,6 @@ libspindlec_pipe_la_DEPENDENCIES =  \
 am_libspindlec_pipe_la_OBJECTS = $(am__objects_2)
 libspindlec_pipe_la_OBJECTS = $(am_libspindlec_pipe_la_OBJECTS)
 @PIPES_TRUE@am_libspindlec_pipe_la_rpath =
-libspindlec_socket_la_DEPENDENCIES =  \
-	$(top_builddir)/client_comlib/libclient_socket.la \
-	$(top_builddir)/logging/libspindleclogc.la \
-	$(top_builddir)/shm_cache/libshmcache.la
-am_libspindlec_socket_la_OBJECTS = $(am__objects_2)
-libspindlec_socket_la_OBJECTS = $(am_libspindlec_socket_la_OBJECTS)
-@SOCKETS_TRUE@am_libspindlec_socket_la_rpath =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -215,11 +207,9 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libspindle_audit_la_SOURCES) \
-	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES) \
-	$(libspindlec_socket_la_SOURCES)
+	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES)
 DIST_SOURCES = $(libspindle_audit_la_SOURCES) \
-	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES) \
-	$(libspindlec_socket_la_SOURCES)
+	$(libspindlec_biter_la_SOURCES) $(libspindlec_pipe_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -382,7 +372,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libspindle_audit.la $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+	$(am__append_2)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/../include -I$(top_srcdir)/shm_cache -I$(top_srcdir)/subaudit -I$(top_srcdir)/../utils  -I$(top_srcdir)/auditclient -I$(top_srcdir)/client -I$(top_srcdir)/crash_handler
 INTERCEPT_SRCS = intercept_open.c intercept_exec.c intercept_stat.c intercept_readlink.c intercept_spindleapi.c intercept.c spindle_regex.c patch_interception.c realpath.c $(top_srcdir)/../utils/fileutil.c
@@ -395,8 +385,6 @@ BASE_SRCS = client.c lookup.c should_intercept.c exec_util.c \
 	$(top_srcdir)/crash_handler/crash_handler.c \
 	$(top_srcdir)/crash_handler/crash_lib_offset.c \
 	$(top_srcdir)/crash_handler/crash_sigchain.c
-libspindlec_socket_la_SOURCES = $(BASE_SRCS)
-libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 libspindlec_pipe_la_SOURCES = $(BASE_SRCS)
 libspindlec_pipe_la_LIBADD = $(top_builddir)/client_comlib/libclient_pipe.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 libspindlec_biter_la_SOURCES = $(BASE_SRCS)
@@ -492,9 +480,6 @@ libspindlec_biter.la: $(libspindlec_biter_la_OBJECTS) $(libspindlec_biter_la_DEP
 
 libspindlec_pipe.la: $(libspindlec_pipe_la_OBJECTS) $(libspindlec_pipe_la_DEPENDENCIES) $(EXTRA_libspindlec_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libspindlec_pipe_la_rpath) $(libspindlec_pipe_la_OBJECTS) $(libspindlec_pipe_la_LIBADD) $(LIBS)
-
-libspindlec_socket.la: $(libspindlec_socket_la_OBJECTS) $(libspindlec_socket_la_DEPENDENCIES) $(EXTRA_libspindlec_socket_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) $(am_libspindlec_socket_la_rpath) $(libspindlec_socket_la_OBJECTS) $(libspindlec_socket_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

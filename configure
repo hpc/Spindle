@@ -692,8 +692,6 @@ MSOCKET_FALSE
 MSOCKET_TRUE
 BITER_FALSE
 BITER_TRUE
-SOCKETS_FALSE
-SOCKETS_TRUE
 PIPES_FALSE
 PIPES_TRUE
 SRUN_PATH
@@ -861,7 +859,6 @@ with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
 enable_pipes
-enable_socket
 enable_biter
 enable_msocket
 enable_cobo
@@ -1553,7 +1550,6 @@ Optional Features:
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
   --enable-pipes          Use pipes for server/client communication
-  --enable-socket         Use sockets for server/client communication
   --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
@@ -17023,11 +17019,6 @@ if test "${enable_pipes+set}" = set; then :
   enableval=$enable_pipes; CLIENT_SERVER_COM=pipes;
 fi
 
-# Check whether --enable-socket was given.
-if test "${enable_socket+set}" = set; then :
-  enableval=$enable_socket; CLIENT_SERVER_COM=sockets;
-fi
-
 # Check whether --enable-biter was given.
 if test "${enable_biter+set}" = set; then :
   enableval=$enable_biter; CLIENT_SERVER_COM=biter;
@@ -17052,14 +17043,6 @@ fi
 else
   PIPES_TRUE='#'
   PIPES_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xsocket; then
-  SOCKETS_TRUE=
-  SOCKETS_FALSE='#'
-else
-  SOCKETS_TRUE='#'
-  SOCKETS_FALSE=
 fi
 
  if test x$CLIENT_SERVER_COM == xbiter; then
@@ -17090,11 +17073,6 @@ fi
 if test "x$CLIENT_SERVER_COM" == "xpipes"; then
 
 $as_echo "#define COMM_PIPES 1" >>confdefs.h
-
-fi
-if test "x$CLIENT_SERVER_COM" == "xsocket"; then
-
-$as_echo "#define COMM_SOCKET 1" >>confdefs.h
 
 fi
 if test "x$CLIENT_SERVER_COM" == "xbiter"; then
@@ -19019,10 +18997,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
   as_fn_error $? "conditional \"PIPES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SOCKETS_TRUE}" && test -z "${SOCKETS_FALSE}"; then
-  as_fn_error $? "conditional \"SOCKETS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
