@@ -1,8 +1,4 @@
-pkglibexec_LTLIBRARIES =
-
-if PIPES
-pkglibexec_LTLIBRARIES += libspindle_instr_pipe.la
-endif
+pkglibexec_LTLIBRARIES = libspindle_instr_pipe.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib
 

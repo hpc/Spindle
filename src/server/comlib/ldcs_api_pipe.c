@@ -44,7 +44,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define FDLIST_INITIAL_SIZE 32
-static struct fdlist_entry_t *fdlist_pipe = NULL;
+static struct fdlist_entry_t *fdlist = NULL;
 static int fdlist_pipe_cnt = 0;
 static int fdlist_pipe_size = 0;
 
@@ -53,18 +53,18 @@ int get_new_fd_pipe()
    int i;
    if (fdlist_pipe_cnt == fdlist_pipe_size) {
       fdlist_pipe_size = fdlist_pipe_size ? fdlist_pipe_size * 2 : FDLIST_INITIAL_SIZE;
-      fdlist_pipe = realloc(fdlist_pipe, fdlist_pipe_size * sizeof(struct fdlist_entry_t));
-      if (!fdlist_pipe) {
-         err_printf("Failed to allocate fdlist_pipe of size %d\n", fdlist_pipe_size);
+      fdlist = realloc(fdlist, fdlist_pipe_size * sizeof(struct fdlist_entry_t));
+      if (!fdlist) {
+         err_printf("Failed to allocate fdlist of size %d\n", fdlist_pipe_size);
          assert(0);
       }
       for (i = fdlist_pipe_cnt; i < fdlist_pipe_size; i++) {
-         fdlist_pipe[i].inuse = 0;
+         fdlist[i].inuse = 0;
       }
    }
    for (i = 0; i < fdlist_pipe_size; i++) {
-      if (!fdlist_pipe[i].inuse) {
-         fdlist_pipe[i].inuse = 1;
+      if (!fdlist[i].inuse) {
+         fdlist[i].inuse = 1;
          fdlist_pipe_cnt++;
          return i;
       }
@@ -75,23 +75,23 @@ int get_new_fd_pipe()
 }
 
 void free_fd_pipe (int fd) {
-    fdlist_pipe[fd].inuse = 0;
+    fdlist[fd].inuse = 0;
     fdlist_pipe_cnt--;
-    if (fdlist_pipe[fd].in_fn)
-       free(fdlist_pipe[fd].in_fn);
-    if (fdlist_pipe[fd].out_fn)
-       free(fdlist_pipe[fd].out_fn);
+    if (fdlist[fd].in_fn)
+       free(fdlist[fd].in_fn);
+    if (fdlist[fd].out_fn)
+       free(fdlist[fd].out_fn);
 }
 
-int ldcs_get_fd_pipe (int fd) {
+int ldcs_get_fd (int fd) {
   int realfd=-1;
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
-  if(fdlist_pipe[fd].inuse) {
-    if(fdlist_pipe[fd].type==LDCS_PIPE_FD_TYPE_SERVER) {
-      realfd=ldcs_notify_get_fd(fdlist_pipe[fd].notify_fd);
+  if(fdlist[fd].inuse) {
+    if(fdlist[fd].type==LDCS_PIPE_FD_TYPE_SERVER) {
+      realfd=ldcs_notify_get_fd(fdlist[fd].notify_fd);
     }
-    if(fdlist_pipe[fd].type==LDCS_PIPE_FD_TYPE_CONN) {
-      realfd=fdlist_pipe[fd].in_fd;
+    if(fdlist[fd].type==LDCS_PIPE_FD_TYPE_CONN) {
+      realfd=fdlist[fd].in_fd;
     }
   }
   return(realfd);
@@ -100,7 +100,7 @@ int ldcs_get_fd_pipe (int fd) {
 
 extern int spindle_mkdir(char *orig_path);
 
-int ldcs_create_server_pipe(char* location, number_t number) {
+int ldcs_create_server(char* location, number_t number) {
   (void)number;
   int fd;
 
@@ -123,27 +123,27 @@ int ldcs_create_server_pipe(char* location, number_t number) {
 
   /* FiFos will be created by client */
   /* -> setup notify to get new connections */
-  fdlist_pipe[fd].type=LDCS_PIPE_FD_TYPE_SERVER;
-  fdlist_pipe[fd].notify_fd=ldcs_notify_init(staging_dir);
-  fdlist_pipe[fd].conn_list=NULL;
-  fdlist_pipe[fd].conn_list_size=0;
-  fdlist_pipe[fd].conn_list_used=0;
-  fdlist_pipe[fd].path=staging_dir;
-  fdlist_pipe[fd].in_fn=NULL;
-  fdlist_pipe[fd].out_fn=NULL;
+  fdlist[fd].type=LDCS_PIPE_FD_TYPE_SERVER;
+  fdlist[fd].notify_fd=ldcs_notify_init(staging_dir);
+  fdlist[fd].conn_list=NULL;
+  fdlist[fd].conn_list_size=0;
+  fdlist[fd].conn_list_used=0;
+  fdlist[fd].path=staging_dir;
+  fdlist[fd].in_fn=NULL;
+  fdlist[fd].out_fn=NULL;
 
   chmod(readypath, S_IRUSR | S_IWUSR);
 
   return(fd);
 }
 
-int ldcs_open_server_connection_pipe(int fd) {
+int ldcs_open_server_connection(int fd) {
   /*  */
   (void)fd;
   return(-1);
 }
 
-int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
+int ldcs_open_server_connections(int fd, int nc, int *more_avail) {
   (void)nc;
   int  fifoid, inout, connfd;
   char fifo[MAX_PATH_LEN];
@@ -155,7 +155,7 @@ int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
 
   /* wait until a <pid>-1 fifo is created */
   for (;;) {
-    fifo_file=ldcs_notify_get_next_file(fdlist_pipe[fd].notify_fd);
+    fifo_file=ldcs_notify_get_next_file(fdlist[fd].notify_fd);
     if(fifo_file) {
        inout = 0; pid = 0;
        sscanf(fifo_file, "fifo-%d-%d", &pid, &inout);
@@ -168,81 +168,81 @@ int ldcs_open_server_connections_pipe(int fd, int nc, int *more_avail) {
 
   connfd=get_new_fd_pipe();
   if(connfd<0) return(-1);
-  fdlist_pipe[connfd].serverfd=fd;
-  fdlist_pipe[connfd].type=LDCS_PIPE_FD_TYPE_CONN;
+  fdlist[connfd].serverfd=fd;
+  fdlist[connfd].type=LDCS_PIPE_FD_TYPE_CONN;
 
-  sprintf(fifo, "%s/fifo-%d-0", fdlist_pipe[fd].path , pid );
-  fdlist_pipe[connfd].out_fn = strdup(fifo);
+  sprintf(fifo, "%s/fifo-%d-0", fdlist[fd].path , pid );
+  fdlist[connfd].out_fn = strdup(fifo);
 
-  sprintf(fifo, "%s/fifo-%d-1", fdlist_pipe[fd].path , pid );
-  fdlist_pipe[connfd].in_fn = strdup(fifo);
+  sprintf(fifo, "%s/fifo-%d-1", fdlist[fd].path , pid );
+  fdlist[connfd].in_fn = strdup(fifo);
 
-  debug_printf3("before open fifo '%s'\n",fdlist_pipe[connfd].out_fn);
-  if (-1 == (fifoid = open(fdlist_pipe[connfd].out_fn, O_WRONLY))) _error("open fifo failed");
+  debug_printf3("before open fifo '%s'\n",fdlist[connfd].out_fn);
+  if (-1 == (fifoid = open(fdlist[connfd].out_fn, O_WRONLY))) _error("open fifo failed");
   debug_printf3("after open fifo (out): -> fifoid=%d\n",fifoid);
-  fdlist_pipe[connfd].out_fd=fifoid;
+  fdlist[connfd].out_fd=fifoid;
 
-  debug_printf3("before open fifo '%s'\n",fdlist_pipe[connfd].in_fn);
-  if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY|O_NONBLOCK)))  _error("open fifo failed");
-  /* if (-1 == (fifoid = open(fdlist_pipe[connfd].in_fn, O_RDONLY)))  _error("open fifo failed"); */
+  debug_printf3("before open fifo '%s'\n",fdlist[connfd].in_fn);
+  if (-1 == (fifoid = open(fdlist[connfd].in_fn, O_RDONLY|O_NONBLOCK)))  _error("open fifo failed");
+  /* if (-1 == (fifoid = open(fdlist[connfd].in_fn, O_RDONLY)))  _error("open fifo failed"); */
   debug_printf3("after open fifo (in) : -> fifoid=%d\n",fifoid);
-  fdlist_pipe[connfd].in_fd=fifoid;
+  fdlist[connfd].in_fd=fifoid;
 
   /* add info to server fd data structure */
-  fdlist_pipe[fd].conn_list_used++;
-  if (fdlist_pipe[fd].conn_list_used > fdlist_pipe[fd].conn_list_size) {
-    fdlist_pipe[fd].conn_list = realloc(fdlist_pipe[fd].conn_list, 
-					     (fdlist_pipe[fd].conn_list_used + 15) * sizeof(int)
+  fdlist[fd].conn_list_used++;
+  if (fdlist[fd].conn_list_used > fdlist[fd].conn_list_size) {
+    fdlist[fd].conn_list = realloc(fdlist[fd].conn_list, 
+					     (fdlist[fd].conn_list_used + 15) * sizeof(int)
 					     );
-    fdlist_pipe[fd].conn_list_size = fdlist_pipe[fd].conn_list_used + 15;
+    fdlist[fd].conn_list_size = fdlist[fd].conn_list_used + 15;
   }
-  fdlist_pipe[fd].conn_list[fdlist_pipe[fd].conn_list_used-1]=connfd;
+  fdlist[fd].conn_list[fdlist[fd].conn_list_used-1]=connfd;
 
-  *more_avail=ldcs_notify_more_avail(fdlist_pipe[fd].notify_fd);
+  *more_avail=ldcs_notify_more_avail(fdlist[fd].notify_fd);
 
   return(connfd);
 };
 
-int ldcs_close_server_connection_pipe(int fd) {
+int ldcs_close_server_connection(int fd) {
   int rc=0, serverfd, c;
   int result;
   struct stat st;
 
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
   
-  debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist_pipe[fd].in_fd,fd);
-  close(fdlist_pipe[fd].in_fd);
-  debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist_pipe[fd].out_fd,fd);
-  close(fdlist_pipe[fd].out_fd);
+  debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist[fd].in_fd,fd);
+  close(fdlist[fd].in_fd);
+  debug_printf3(" closing fd %d for conn %d, closing connection\n",fdlist[fd].out_fd,fd);
+  close(fdlist[fd].out_fd);
 
 
-  result = stat(fdlist_pipe[fd].in_fn, &st);
+  result = stat(fdlist[fd].in_fn, &st);
   if (result == -1) 
-     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].in_fn, strerror(errno));
+     err_printf("stat of %s failed: %s\n", fdlist[fd].in_fn, strerror(errno));
   if (S_ISFIFO(st.st_mode)) {
-     result = unlink(fdlist_pipe[fd].in_fn); 
+     result = unlink(fdlist[fd].in_fn); 
      if(result != 0) {
-        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].in_fn, 
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist[fd].in_fn, 
                       errno, strerror(errno));
      }
   }
   
-  result = stat(fdlist_pipe[fd].out_fn, &st);
+  result = stat(fdlist[fd].out_fn, &st);
   if (result == -1)
-     err_printf("stat of %s failed: %s\n", fdlist_pipe[fd].out_fn, strerror(errno));
+     err_printf("stat of %s failed: %s\n", fdlist[fd].out_fn, strerror(errno));
   if (S_ISFIFO(st.st_mode)) {
-     result = unlink(fdlist_pipe[fd].out_fn); 
+     result = unlink(fdlist[fd].out_fn); 
      if(result != 0) {
-        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist_pipe[fd].out_fn, 
+        debug_printf3("error while unlink fifo %s errno=%d (%s)\n", fdlist[fd].out_fn, 
                       errno, strerror(errno));
      }
   }
   
   /* remove connection from server list */
-  serverfd=fdlist_pipe[fd].serverfd;
-  for(c=0;c<fdlist_pipe[serverfd].conn_list_used;c++) {
-    if(fdlist_pipe[serverfd].conn_list[c]==fd) {
-      fdlist_pipe[serverfd].conn_list[c]=-1;
+  serverfd=fdlist[fd].serverfd;
+  for(c=0;c<fdlist[serverfd].conn_list_used;c++) {
+    if(fdlist[serverfd].conn_list[c]==fd) {
+      fdlist[serverfd].conn_list[c]=-1;
     }
   }
 
@@ -251,18 +251,18 @@ int ldcs_close_server_connection_pipe(int fd) {
   return(rc);
 };
 
-int ldcs_destroy_server_pipe(int fd) {
+int ldcs_destroy_server(int fd) {
 
   int rc=0;
   char path[MAX_PATH_LEN];
 
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
   
-  ldcs_notify_destroy(fdlist_pipe[fd].notify_fd);
+  ldcs_notify_destroy(fdlist[fd].notify_fd);
 
-  snprintf(path, MAX_PATH_LEN, "%s/ready", fdlist_pipe[fd].path);
+  snprintf(path, MAX_PATH_LEN, "%s/ready", fdlist[fd].path);
   unlink(path);
-  rmdir(fdlist_pipe[fd].path);
+  rmdir(fdlist[fd].path);
   free_fd_pipe(fd);
 
   return(rc);
@@ -271,7 +271,7 @@ int ldcs_destroy_server_pipe(int fd) {
 /* ************************************************************** */
 /* message transfer functions                                     */
 /* ************************************************************** */
-int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg) {
+int ldcs_send_msg(int fd, ldcs_message_t * msg) {
 
   size_t n;
 
@@ -281,10 +281,10 @@ int ldcs_send_msg_pipe(int fd, ldcs_message_t * msg) {
 	       _message_type_to_str(msg->header.type),
 	       msg->header.len,msg->data );  
 
-  n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd,&msg->header,sizeof(msg->header));
+  n = _ldcs_write_pipe(fdlist[fd].out_fd,&msg->header,sizeof(msg->header));
 
   if(msg->header.len>0) {
-    n = _ldcs_write_pipe(fdlist_pipe[fd].out_fd,(void *) msg->data,msg->header.len);
+    n = _ldcs_write_pipe(fdlist[fd].out_fd,(void *) msg->data,msg->header.len);
     if (n != msg->header.len) _error("sent different number of bytes for message data");
   }
     
@@ -300,7 +300,7 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
   msg = (ldcs_message_t *) malloc(sizeof(ldcs_message_t));
   if (!msg)  _error("could not allocate memory for message");
 
-  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_pipe(fdlist[fd].in_fd,&msg->header,sizeof(msg->header), block);
   if (n == 0) {
     free(msg);
     return(NULL);
@@ -311,7 +311,7 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
     msg->data = (char *) malloc(msg->header.len);
     if (!msg)  _error("could not allocate memory for message data");
 
-    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
+    n = _ldcs_read_pipe(fdlist[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
     if (n != msg->header.len) _error("received different number of bytes for message data");
 
   } else {
@@ -325,14 +325,14 @@ ldcs_message_t * ldcs_recv_msg_pipe(int fd, ldcs_read_block_t block ) {
   return(msg);
 }
 
-int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
+int ldcs_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block) {
   size_t n;
   int rc=0;
   msg->header.type=LDCS_MSG_UNKNOWN;
   msg->header.len=0;
   if ((fd<0) || (fd>fdlist_pipe_size) )  _error("wrong fd");
 
-  n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,&msg->header,sizeof(msg->header), block);
+  n = _ldcs_read_pipe(fdlist[fd].in_fd,&msg->header,sizeof(msg->header), block);
   if (n == 0) {
      /* Disconnect.  Return an artificial client end message */
      debug_printf2("Client disconnected.  Returning END message\n");
@@ -343,7 +343,7 @@ int ldcs_recv_msg_static_pipe(int fd, ldcs_message_t *msg, ldcs_read_block_t blo
   }
 
   if(msg->header.len>0) {
-    n = _ldcs_read_pipe(fdlist_pipe[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
+    n = _ldcs_read_pipe(fdlist[fd].in_fd,msg->data,msg->header.len, LDCS_READ_BLOCK);
     if (n == 0) 
        return(rc);
     if (n != msg->header.len) {
@@ -427,12 +427,12 @@ size_t _ldcs_write_pipe(int fd, const void *data, int bytes ) {
   return (bsumwrote);
 }
 
-int ldcs_get_aux_fd_pipe()
+int ldcs_get_aux_fd()
 {
    return -1;
 }
 
-int ldcs_socket_id_to_nc_pipe(int id, int fd, ldcs_process_data_t *process_data)
+int ldcs_socket_id_to_nc(int id, int fd, ldcs_process_data_t *process_data)
 {
    (void)fd;
    (void)process_data;

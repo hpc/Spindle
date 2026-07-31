@@ -1,9 +1,5 @@
-noinst_LTLIBRARIES =
+noinst_LTLIBRARIES = libserver_pipe.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/auditserver -I$(top_srcdir)/cache
 
-BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
-
-noinst_LTLIBRARIES += libserver_pipe.la
-libserver_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=pipe
-libserver_pipe_la_SOURCES = ldcs_api_pipe.c ldcs_api_pipe_notify.c $(BASE_SRCS)
+libserver_pipe_la_SOURCES = ldcs_api_pipe.c ldcs_api_pipe_notify.c ldcs_api_util.c ldcs_api_listen.c

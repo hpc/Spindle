@@ -1,8 +1,4 @@
-pkglib_LTLIBRARIES =
-
-if PIPES
-pkglib_LTLIBRARIES += libspindle_audit_pipe.la
-endif
+pkglib_LTLIBRARIES = libspindle_audit_pipe.la
 
 AM_CFLAGS = -fvisibility=hidden
 

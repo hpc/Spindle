@@ -13,9 +13,7 @@ endif
 if MSOCKET
 CORE_LDADD += $(top_builddir)/auditserver/libaudit_server_msocket.la
 endif
-if PIPES
 CORE_LDADD += $(top_builddir)/comlib/libserver_pipe.la
-endif
 if USE_NUMA
 CORE_LDADD += -lnuma
 endif

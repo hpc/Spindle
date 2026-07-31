@@ -1,9 +1,5 @@
-noinst_LTLIBRARIES = libspindle_audit.la
+noinst_LTLIBRARIES = libspindle_audit.la libspindlec_pipe.la
 #noinst_LTLIBRARIES += libspindle_instr.la
-
-if PIPES
-noinst_LTLIBRARIES += libspindlec_pipe.la
-endif
 
 AM_CFLAGS = -fvisibility=hidden
 
