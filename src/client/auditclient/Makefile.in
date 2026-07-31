@@ -90,7 +90,6 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @PIPES_TRUE@am__append_1 = libspindle_audit_pipe.la
-@BITER_TRUE@am__append_2 = libspindle_audit_biter.la
 subdir = auditclient
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -137,9 +136,9 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
-libspindle_audit_biter_la_DEPENDENCIES =  \
-	$(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
-am__libspindle_audit_biter_la_SOURCES_DIST = auditclient.c \
+libspindle_audit_pipe_la_DEPENDENCIES =  \
+	$(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
+am__libspindle_audit_pipe_la_SOURCES_DIST = auditclient.c \
 	auditclient_common.c patch_linkmap.c redirect.c bindgot.c \
 	writablegot.c patch_bad_dtv.c malloc_wrapper.c fixlocale.c \
 	auditclient_aarch64.c auditclient_ppc64.c auditclient_x86_64.c
@@ -151,29 +150,14 @@ am__objects_1 = auditclient.lo auditclient_common.lo patch_linkmap.lo \
 @AARCH64_BLD_FALSE@@PPC64LE_BLD_TRUE@am__objects_2 =  \
 @AARCH64_BLD_FALSE@@PPC64LE_BLD_TRUE@	auditclient_ppc64.lo
 @AARCH64_BLD_TRUE@am__objects_2 = auditclient_aarch64.lo
-am_libspindle_audit_biter_la_OBJECTS = $(am__objects_1) \
-	$(am__objects_2)
-libspindle_audit_biter_la_OBJECTS =  \
-	$(am_libspindle_audit_biter_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
-libspindle_audit_biter_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(libspindle_audit_biter_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
-@BITER_TRUE@am_libspindle_audit_biter_la_rpath = -rpath $(pkglibdir)
-libspindle_audit_pipe_la_DEPENDENCIES =  \
-	$(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
-am__libspindle_audit_pipe_la_SOURCES_DIST = auditclient.c \
-	auditclient_common.c patch_linkmap.c redirect.c bindgot.c \
-	writablegot.c patch_bad_dtv.c malloc_wrapper.c fixlocale.c \
-	auditclient_aarch64.c auditclient_ppc64.c auditclient_x86_64.c
 am_libspindle_audit_pipe_la_OBJECTS = $(am__objects_1) \
 	$(am__objects_2)
 libspindle_audit_pipe_la_OBJECTS =  \
 	$(am_libspindle_audit_pipe_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 libspindle_audit_pipe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspindle_audit_pipe_la_LDFLAGS) \
@@ -221,10 +205,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libspindle_audit_biter_la_SOURCES) \
-	$(libspindle_audit_pipe_la_SOURCES)
-DIST_SOURCES = $(am__libspindle_audit_biter_la_SOURCES_DIST) \
-	$(am__libspindle_audit_pipe_la_SOURCES_DIST)
+SOURCES = $(libspindle_audit_pipe_la_SOURCES)
+DIST_SOURCES = $(am__libspindle_audit_pipe_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -386,7 +368,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = $(am__append_1) $(am__append_2)
+pkglib_LTLIBRARIES = $(am__append_1)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/crash_handler
 BASE_SRCS = auditclient.c auditclient_common.c patch_linkmap.c redirect.c bindgot.c writablegot.c patch_bad_dtv.c malloc_wrapper.c fixlocale.c
@@ -398,9 +380,6 @@ AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 libspindle_audit_pipe_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
 libspindle_audit_pipe_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
-libspindle_audit_biter_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
-libspindle_audit_biter_la_LIBADD = $(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
-libspindle_audit_biter_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
 all: all-am
 
 .SUFFIXES:
@@ -469,9 +448,6 @@ clean-pkglibLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
-
-libspindle_audit_biter.la: $(libspindle_audit_biter_la_OBJECTS) $(libspindle_audit_biter_la_DEPENDENCIES) $(EXTRA_libspindle_audit_biter_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspindle_audit_biter_la_LINK) $(am_libspindle_audit_biter_la_rpath) $(libspindle_audit_biter_la_OBJECTS) $(libspindle_audit_biter_la_LIBADD) $(LIBS)
 
 libspindle_audit_pipe.la: $(libspindle_audit_pipe_la_OBJECTS) $(libspindle_audit_pipe_la_DEPENDENCIES) $(EXTRA_libspindle_audit_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libspindle_audit_pipe_la_LINK) $(am_libspindle_audit_pipe_la_rpath) $(libspindle_audit_pipe_la_OBJECTS) $(libspindle_audit_pipe_la_LIBADD) $(LIBS)

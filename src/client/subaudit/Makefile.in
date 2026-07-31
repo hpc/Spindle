@@ -90,7 +90,6 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @PIPES_TRUE@am__append_1 = libspindle_subaudit_pipe.la
-@BITER_TRUE@am__append_2 = libspindle_subaudit_biter.la
 subdir = subaudit
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -137,30 +136,19 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
-libspindle_subaudit_biter_la_DEPENDENCIES =  \
-	$(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
+libspindle_subaudit_pipe_la_DEPENDENCIES =  \
+	$(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = subaudit.lo intercept_malloc.lo update_pltbind.lo \
 	../auditclient/auditclient_common.lo \
 	../auditclient/patch_linkmap.lo ../auditclient/fixlocale.lo
-am_libspindle_subaudit_biter_la_OBJECTS = $(am__objects_1)
-libspindle_subaudit_biter_la_OBJECTS =  \
-	$(am_libspindle_subaudit_biter_la_OBJECTS)
+am_libspindle_subaudit_pipe_la_OBJECTS = $(am__objects_1)
+libspindle_subaudit_pipe_la_OBJECTS =  \
+	$(am_libspindle_subaudit_pipe_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-libspindle_subaudit_biter_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(libspindle_subaudit_biter_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
-@BITER_TRUE@am_libspindle_subaudit_biter_la_rpath = -rpath \
-@BITER_TRUE@	$(pkglibdir)
-libspindle_subaudit_pipe_la_DEPENDENCIES =  \
-	$(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
-am_libspindle_subaudit_pipe_la_OBJECTS = $(am__objects_1)
-libspindle_subaudit_pipe_la_OBJECTS =  \
-	$(am_libspindle_subaudit_pipe_la_OBJECTS)
 libspindle_subaudit_pipe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspindle_subaudit_pipe_la_LDFLAGS) \
@@ -212,11 +200,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libspindle_subaudit_biter_la_SOURCES) \
-	$(libspindle_subaudit_pipe_la_SOURCES) \
+SOURCES = $(libspindle_subaudit_pipe_la_SOURCES) \
 	$(libspindleint_la_SOURCES)
-DIST_SOURCES = $(libspindle_subaudit_biter_la_SOURCES) \
-	$(libspindle_subaudit_pipe_la_SOURCES) \
+DIST_SOURCES = $(libspindle_subaudit_pipe_la_SOURCES) \
 	$(libspindleint_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -379,7 +365,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = libspindleint.la $(am__append_1) $(am__append_2)
+pkglib_LTLIBRARIES = libspindleint.la $(am__append_1)
 AM_CFLAGS = -fvisibility=hidden
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient -I$(top_srcdir)/../utils -I$(top_srcdir)/crash_handler
 BASE_SRCS = subaudit.c intercept_malloc.c update_pltbind.c ../auditclient/auditclient_common.c ../auditclient/patch_linkmap.c ../auditclient/fixlocale.c
@@ -389,9 +375,6 @@ libspindleint_la_LDFLAGS = -shared -avoid-version
 libspindle_subaudit_pipe_la_SOURCES = $(BASE_SRCS)
 libspindle_subaudit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
 libspindle_subaudit_pipe_la_LDFLAGS = -shared -avoid-version
-libspindle_subaudit_biter_la_SOURCES = $(BASE_SRCS)
-libspindle_subaudit_biter_la_LIBADD = $(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
-libspindle_subaudit_biter_la_LDFLAGS = -shared -avoid-version
 all: all-am
 
 .SUFFIXES:
@@ -472,9 +455,6 @@ clean-pkglibLTLIBRARIES:
 	../auditclient/$(DEPDIR)/$(am__dirstamp)
 ../auditclient/fixlocale.lo: ../auditclient/$(am__dirstamp) \
 	../auditclient/$(DEPDIR)/$(am__dirstamp)
-
-libspindle_subaudit_biter.la: $(libspindle_subaudit_biter_la_OBJECTS) $(libspindle_subaudit_biter_la_DEPENDENCIES) $(EXTRA_libspindle_subaudit_biter_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspindle_subaudit_biter_la_LINK) $(am_libspindle_subaudit_biter_la_rpath) $(libspindle_subaudit_biter_la_OBJECTS) $(libspindle_subaudit_biter_la_LIBADD) $(LIBS)
 
 libspindle_subaudit_pipe.la: $(libspindle_subaudit_pipe_la_OBJECTS) $(libspindle_subaudit_pipe_la_DEPENDENCIES) $(EXTRA_libspindle_subaudit_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libspindle_subaudit_pipe_la_LINK) $(am_libspindle_subaudit_pipe_la_rpath) $(libspindle_subaudit_pipe_la_OBJECTS) $(libspindle_subaudit_pipe_la_LIBADD) $(LIBS)

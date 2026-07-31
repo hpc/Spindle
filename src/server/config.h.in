@@ -12,9 +12,6 @@
 /* Back-end directory for communication and housekeeping */
 #undef COMMPATH
 
-/* Define if were using biter for client/server communication */
-#undef COMM_BITER
-
 /* Define if were using cobo for server/server communication */
 #undef COMM_COBO
 

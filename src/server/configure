@@ -683,8 +683,6 @@ COBO_FALSE
 COBO_TRUE
 MSOCKET_FALSE
 MSOCKET_TRUE
-BITER_FALSE
-BITER_TRUE
 PIPES_FALSE
 PIPES_TRUE
 SRUN_PATH
@@ -849,7 +847,6 @@ with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
 enable_pipes
-enable_biter
 enable_msocket
 enable_cobo
 with_python_prefix
@@ -1529,7 +1526,6 @@ Optional Features:
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
   --enable-pipes          Use pipes for server/client communication
-  --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
@@ -16747,11 +16743,6 @@ if test "${enable_pipes+set}" = set; then :
   enableval=$enable_pipes; CLIENT_SERVER_COM=pipes;
 fi
 
-# Check whether --enable-biter was given.
-if test "${enable_biter+set}" = set; then :
-  enableval=$enable_biter; CLIENT_SERVER_COM=biter;
-fi
-
 
 
 # Check whether --enable-msocket was given.
@@ -16771,14 +16762,6 @@ fi
 else
   PIPES_TRUE='#'
   PIPES_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xbiter; then
-  BITER_TRUE=
-  BITER_FALSE='#'
-else
-  BITER_TRUE='#'
-  BITER_FALSE=
 fi
 
  if test x$SERVER_SERVER_COM == xmsocket; then
@@ -16801,11 +16784,6 @@ fi
 if test "x$CLIENT_SERVER_COM" == "xpipes"; then
 
 $as_echo "#define COMM_PIPES 1" >>confdefs.h
-
-fi
-if test "x$CLIENT_SERVER_COM" == "xbiter"; then
-
-$as_echo "#define COMM_BITER 1" >>confdefs.h
 
 fi
 if test "x$SERVER_SERVER_COM" == "xmsocket"; then
@@ -18271,10 +18249,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
   as_fn_error $? "conditional \"PIPES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
-  as_fn_error $? "conditional \"BITER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MSOCKET_TRUE}" && test -z "${MSOCKET_FALSE}"; then
