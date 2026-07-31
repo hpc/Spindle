@@ -104,11 +104,7 @@ using namespace std;
 #define AUDITTYPE_STR "audit"
 #endif
 
-#if defined(os_bluegene)
-#define SHMCACHE_SIZE_STR "2048"
-#else
 #define SHMCACHE_SIZE_STR "0"
-#endif
 
 #if defined(HOSTBIN_PATH)
 #define HOSTBIN_ENABLE_STR "true"

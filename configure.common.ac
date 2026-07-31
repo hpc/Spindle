@@ -121,12 +121,7 @@ AC_DEFINE_UNQUOTED([NEWTHREAD_LOCALE_BUG],[$LOCALE_FAULT_BUG],[Defined if GLIBC 
 
 
 #OS Detection
-AC_ARG_ENABLE(bluegene,
-              [AS_HELP_STRING([--enable-bluegene],[Build Spindle for BlueGene/Q])],
-              [OS_BUILD=bluegene],)
-if test "x$OS_BUILD" == "x"; then
-  OS_BUILD=linux
-fi
+OS_BUILD=linux
 
 #Startup type
 AC_ARG_WITH(hostbin,
@@ -202,12 +197,7 @@ AC_DEFINE_UNQUOTED([BROKEN_SRUN],[$BROKEN_SRUN],[Whether we are using a broken s
 AC_DEFINE_UNQUOTED([HAVE_SRUN_EXTERNAL_LAUNCHER],[$HAVE_EXT_LAUNCHER],[Whether srun supports --external-launcher])
             
 #Runmode detection (pipe/socket or cobo/msocket communications)
-if test "x$OS_BUILD" == "xlinux"; then
-  CLIENT_SERVER_COM=pipes
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLIENT_SERVER_COM=biter
-fi
+CLIENT_SERVER_COM=pipes
 
 SERVER_SERVER_COM=cobo
 AC_ARG_ENABLE(pipes,
@@ -291,19 +281,14 @@ if test "x$target_cpu" == "xaarch64"; then
 fi
 
 #OS defines
-AM_CONDITIONAL([BGQ_BLD], [test "x$OS_BUILD" == "xbluegene"])
+AM_CONDITIONAL([BGQ_BLD], [false])
 AM_CONDITIONAL([LINUX_BLD], [test "x$OS_BUILD" == "xlinux"])
 AM_CONDITIONAL([X86_64_BLD], [test "x$ARCH_BUILD" == "xx86_64"])
 AM_CONDITIONAL([PPC64_BLD], [test "x$ARCH_BUILD" == "xppc64"])
 AM_CONDITIONAL([PPC64LE_BLD], [test "x$ARCH_BUILD" == "xppc64le"])
 AM_CONDITIONAL([AARCH64_BLD], [test "x$ARCH_BUILD" == "xaarch64"])
 
-if test "x$OS_BUILD" == "xlinux"; then
 AC_DEFINE([os_linux],[1],[Define if we're compiling for a linux target])
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-AC_DEFINE([os_bluegene],[1],[Define if we're compiling for a BlueGene target])
-fi
 
 #Python prefix
 AC_ARG_WITH(python-prefix,
@@ -357,9 +342,6 @@ fi
 AC_ARG_ENABLE(cleanup-process,
              [AS_HELP_STRING([--enable-cleanup-process],[Default to using a dedicated process to clean relocated files])],
              [CLEANUP_PROC="true"],)
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLEANUP_PROC="true"
-fi
 
 #Audit options
 AC_ARG_ENABLE(subaudit-as-default,

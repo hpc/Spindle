@@ -109,8 +109,6 @@ int releaseApplication(spindle_args_t *) {
   free (proctab);
 
   return(rc);
-#elif defined(os_bluegene)
-  return 0;
 #else
 #error Unknown OS
 #endif
@@ -205,8 +203,7 @@ int startLaunchmonBE(int argc, char *argv[], int security_type)
    }
    push_env = (conn_info.send_env != 0);
 
-   /* Broadcast environment to all nodes if necessary (currently done
-      on BGQ). */
+   /* Broadcast environment to all nodes if necessary. */
    if (push_env) {
       rc = LMON_be_recvUsrData(&environ_str);
       if (rc != LMON_OK) {

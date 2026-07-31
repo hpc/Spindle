@@ -9,10 +9,4 @@ libsheep_la_SOURCES = $(top_srcdir)/../biter/sheep.c $(top_srcdir)/../biter/shmu
 AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/../utils
 AM_CFLAGS = -fvisibility=hidden
 
-if BGQ_BLD
-AM_CPPFLAGS += -I/bgsys/drivers/ppcfloor/comm/lib/gnu -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/comm/sys/include -I/bgsys/drivers/ppcfloor/spi/include -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
-libbiterc_la_SOURCES += $(top_srcdir)/../biter/bgq_ids.c
-endif
-if LINUX_BLD
 libbiterc_la_SOURCES += $(top_srcdir)/../biter/linux_ids.c
-endif

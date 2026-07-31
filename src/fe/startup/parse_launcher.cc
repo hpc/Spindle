@@ -317,17 +317,12 @@ void ModifyArgv::modifyCmdLine()
 
    for (; p < argc; p++) {
       if (p == parser->appExecutableAt()) {
-#if defined(os_bluegene)
-         string bg_env_str = parser->getParser()->getBGString();
-         parser->getParser()->addBGEnvStr(n, new_argv, bg_env_str, default_libstr, intercept_libstr, commpath, number, options, shmcache_size);
-#else
          char **a_argv;
          int a_argc;
          getApplicationArgsFE(params, &a_argc, &a_argv);
-         for (int i = 0; i < a_argc; i++) 
+         for (int i = 0; i < a_argc; i++)
             new_argv[n++] = a_argv[i];
          (void) default_libstr; (void) intercept_libstr; //Not needed on linux
-#endif
       }
       if (!parser->getParser()->includeArg(argc, argv, p))
          continue;

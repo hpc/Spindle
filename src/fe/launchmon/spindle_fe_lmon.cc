@@ -40,11 +40,7 @@ using namespace std;
 #error Expected LAUNCHMON_BIN_DIR to be defined
 #endif
 
-#if defined(os_bluegene)
-#define PUSH_ENV_DEFAULT_VAL true
-#else
 #define PUSH_ENV_DEFAULT_VAL false
-#endif
 
 
 static bool push_env = PUSH_ENV_DEFAULT_VAL;
@@ -101,9 +97,6 @@ void LMonLauncher::initEnvironment()
    setenv("LMON_PREFIX", LAUNCHMON_BIN_DIR "/..", 0);
    setenv("LMON_LAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/launchmon", 0);
    setenv("LMON_NEWLAUNCHMON_ENGINE_PATH", LAUNCHMON_BIN_DIR "/newlaunchmon", 0);
-#if defined(os_bluegene)
-   setenv("LMON_DONT_STOP_APP", "1", 1);
-#endif
 }
 
 static const char *pt_to_string(const MPIR_PROCDESC_EXT &pt) { 

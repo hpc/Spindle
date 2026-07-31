@@ -742,7 +742,6 @@ static int ldso_metadata_sym(char *pathname, ldso_info_t *ldsoinfo)
    return ret;
 }
 
-#if !defined(os_bgq)
 static int ldso_metadata_run(char *pathname, ldso_info_t *ldsoinfo)
 {
    FILE *f;
@@ -780,7 +779,6 @@ static int ldso_metadata_run(char *pathname, ldso_info_t *ldsoinfo)
    ldsoinfo->errno_offset = 0;
    return 0;
 }
-#endif
 
 int filemngt_get_ldso_metadata(char *pathname, ldso_info_t *ldsoinfo)
 {
@@ -791,12 +789,10 @@ int filemngt_get_ldso_metadata(char *pathname, ldso_info_t *ldsoinfo)
    if (result == 0)
       return 0;
 
-#if !defined(os_bgq)
    debug_printf("Getting symbol offsets of %s from invoking print_ldso_entry\n", pathname);
    result = ldso_metadata_run(pathname, ldsoinfo);
    if (result == 0)
       return 0;
-#endif
 
    err_printf("Could not find any mechanism for fetching ldso metadata of %s\n", pathname);
    return -1;

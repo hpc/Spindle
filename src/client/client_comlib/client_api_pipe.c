@@ -106,8 +106,7 @@ static int read_pipe(int fd, void *data, int bytes)
 /* If we've just exec'd, we may have lost the fds for our pipe connection
    with the server.  Parse /proc/self/fd for the open fds and find the ones
    that point to the pipes.  This only works on Linux based systems with /proc
-   mounted.  But, on the BlueGene alternative we won't be dealing with execs
-   anyways.
+   mounted.
 */
 static int find_existing_fds(char *in_path, char *out_path, int *in_fd, int *out_fd)
 {
