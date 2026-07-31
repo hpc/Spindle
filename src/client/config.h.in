@@ -12,11 +12,8 @@
 /* Back-end directory for communication and housekeeping */
 #undef COMMPATH
 
-/* Define if were using cobo for server/server communication */
+/* Server/server communication uses cobo */
 #undef COMM_COBO
-
-/* Define if were using msocket for server/server communication */
-#undef COMM_MSOCKET
 
 /* Client/server communication uses pipes */
 #undef COMM_PIPES
