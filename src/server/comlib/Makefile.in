@@ -89,7 +89,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@SHMEM_TRUE@am__append_1 = libserver_shmem.la 
 subdir = comlib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -126,23 +125,12 @@ am__objects_2 = libserver_pipe_la-ldcs_api_util.lo \
 am_libserver_pipe_la_OBJECTS = libserver_pipe_la-ldcs_api_pipe.lo \
 	libserver_pipe_la-ldcs_api_pipe_notify.lo $(am__objects_2)
 libserver_pipe_la_OBJECTS = $(am_libserver_pipe_la_OBJECTS)
-libserver_shmem_la_LIBADD =
-am__libserver_shmem_la_SOURCES_DIST = ldcs_api_shmem.c ldcs_api_util.c \
-	ldcs_api_listen.c ldcs_api_wrapper.c
-am__objects_3 = libserver_shmem_la-ldcs_api_util.lo \
-	libserver_shmem_la-ldcs_api_listen.lo \
-	libserver_shmem_la-ldcs_api_wrapper.lo
-@SHMEM_TRUE@am_libserver_shmem_la_OBJECTS =  \
-@SHMEM_TRUE@	libserver_shmem_la-ldcs_api_shmem.lo \
-@SHMEM_TRUE@	$(am__objects_3)
-libserver_shmem_la_OBJECTS = $(am_libserver_shmem_la_OBJECTS)
-@SHMEM_TRUE@am_libserver_shmem_la_rpath =
 libserver_socket_la_LIBADD =
-am__objects_4 = libserver_socket_la-ldcs_api_util.lo \
+am__objects_3 = libserver_socket_la-ldcs_api_util.lo \
 	libserver_socket_la-ldcs_api_listen.lo \
 	libserver_socket_la-ldcs_api_wrapper.lo
 am_libserver_socket_la_OBJECTS =  \
-	libserver_socket_la-ldcs_api_socket.lo $(am__objects_4)
+	libserver_socket_la-ldcs_api_socket.lo $(am__objects_3)
 libserver_socket_la_OBJECTS = $(am_libserver_socket_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -169,10 +157,6 @@ am__depfiles_remade =  \
 	./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe_notify.Plo \
 	./$(DEPDIR)/libserver_pipe_la-ldcs_api_util.Plo \
 	./$(DEPDIR)/libserver_pipe_la-ldcs_api_wrapper.Plo \
-	./$(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Plo \
-	./$(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Plo \
-	./$(DEPDIR)/libserver_shmem_la-ldcs_api_util.Plo \
-	./$(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Plo \
 	./$(DEPDIR)/libserver_socket_la-ldcs_api_listen.Plo \
 	./$(DEPDIR)/libserver_socket_la-ldcs_api_socket.Plo \
 	./$(DEPDIR)/libserver_socket_la-ldcs_api_util.Plo \
@@ -197,11 +181,9 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libserver_biter_la_SOURCES) $(libserver_pipe_la_SOURCES) \
-	$(libserver_shmem_la_SOURCES) $(libserver_socket_la_SOURCES)
-DIST_SOURCES = $(libserver_biter_la_SOURCES) \
-	$(libserver_pipe_la_SOURCES) \
-	$(am__libserver_shmem_la_SOURCES_DIST) \
 	$(libserver_socket_la_SOURCES)
+DIST_SOURCES = $(libserver_biter_la_SOURCES) \
+	$(libserver_pipe_la_SOURCES) $(libserver_socket_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -381,7 +363,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libserver_pipe.la libserver_socket.la \
-	libserver_biter.la $(am__append_1)
+	libserver_biter.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/auditserver -I$(top_srcdir)/cache
 BASE_SRCS = ldcs_api_util.c ldcs_api_listen.c ldcs_api_wrapper.c
 libserver_pipe_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=pipe
@@ -390,8 +372,6 @@ libserver_socket_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=socket
 libserver_socket_la_SOURCES = ldcs_api_socket.c $(BASE_SRCS)
 libserver_biter_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=biter -I$(top_srcdir)/../biter
 libserver_biter_la_SOURCES = ldcs_api_biter.c $(BASE_SRCS)
-@SHMEM_TRUE@libserver_shmem_la_CPPFLAGS = $(AM_CPPFLAGS) -Dcomm=shmem
-@SHMEM_TRUE@libserver_shmem_la_SOURCES = ldcs_api_shmem.c $(BASE_SRCS)
 all: all-am
 
 .SUFFIXES:
@@ -443,9 +423,6 @@ libserver_biter.la: $(libserver_biter_la_OBJECTS) $(libserver_biter_la_DEPENDENC
 libserver_pipe.la: $(libserver_pipe_la_OBJECTS) $(libserver_pipe_la_DEPENDENCIES) $(EXTRA_libserver_pipe_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libserver_pipe_la_OBJECTS) $(libserver_pipe_la_LIBADD) $(LIBS)
 
-libserver_shmem.la: $(libserver_shmem_la_OBJECTS) $(libserver_shmem_la_DEPENDENCIES) $(EXTRA_libserver_shmem_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) $(am_libserver_shmem_la_rpath) $(libserver_shmem_la_OBJECTS) $(libserver_shmem_la_LIBADD) $(LIBS)
-
 libserver_socket.la: $(libserver_socket_la_OBJECTS) $(libserver_socket_la_DEPENDENCIES) $(EXTRA_libserver_socket_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libserver_socket_la_OBJECTS) $(libserver_socket_la_LIBADD) $(LIBS)
 
@@ -464,10 +441,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe_notify.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_pipe_la-ldcs_api_wrapper.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_shmem_la-ldcs_api_util.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_socket_la-ldcs_api_listen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_socket_la-ldcs_api_socket.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libserver_socket_la-ldcs_api_util.Plo@am__quote@ # am--include-marker
@@ -565,34 +538,6 @@ libserver_pipe_la-ldcs_api_wrapper.lo: ldcs_api_wrapper.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ldcs_api_wrapper.c' object='libserver_pipe_la-ldcs_api_wrapper.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_pipe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_pipe_la-ldcs_api_wrapper.lo `test -f 'ldcs_api_wrapper.c' || echo '$(srcdir)/'`ldcs_api_wrapper.c
-
-libserver_shmem_la-ldcs_api_shmem.lo: ldcs_api_shmem.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_shmem_la-ldcs_api_shmem.lo -MD -MP -MF $(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Tpo -c -o libserver_shmem_la-ldcs_api_shmem.lo `test -f 'ldcs_api_shmem.c' || echo '$(srcdir)/'`ldcs_api_shmem.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Tpo $(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ldcs_api_shmem.c' object='libserver_shmem_la-ldcs_api_shmem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_shmem_la-ldcs_api_shmem.lo `test -f 'ldcs_api_shmem.c' || echo '$(srcdir)/'`ldcs_api_shmem.c
-
-libserver_shmem_la-ldcs_api_util.lo: ldcs_api_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_shmem_la-ldcs_api_util.lo -MD -MP -MF $(DEPDIR)/libserver_shmem_la-ldcs_api_util.Tpo -c -o libserver_shmem_la-ldcs_api_util.lo `test -f 'ldcs_api_util.c' || echo '$(srcdir)/'`ldcs_api_util.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_shmem_la-ldcs_api_util.Tpo $(DEPDIR)/libserver_shmem_la-ldcs_api_util.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ldcs_api_util.c' object='libserver_shmem_la-ldcs_api_util.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_shmem_la-ldcs_api_util.lo `test -f 'ldcs_api_util.c' || echo '$(srcdir)/'`ldcs_api_util.c
-
-libserver_shmem_la-ldcs_api_listen.lo: ldcs_api_listen.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_shmem_la-ldcs_api_listen.lo -MD -MP -MF $(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Tpo -c -o libserver_shmem_la-ldcs_api_listen.lo `test -f 'ldcs_api_listen.c' || echo '$(srcdir)/'`ldcs_api_listen.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Tpo $(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ldcs_api_listen.c' object='libserver_shmem_la-ldcs_api_listen.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_shmem_la-ldcs_api_listen.lo `test -f 'ldcs_api_listen.c' || echo '$(srcdir)/'`ldcs_api_listen.c
-
-libserver_shmem_la-ldcs_api_wrapper.lo: ldcs_api_wrapper.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_shmem_la-ldcs_api_wrapper.lo -MD -MP -MF $(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Tpo -c -o libserver_shmem_la-ldcs_api_wrapper.lo `test -f 'ldcs_api_wrapper.c' || echo '$(srcdir)/'`ldcs_api_wrapper.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Tpo $(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ldcs_api_wrapper.c' object='libserver_shmem_la-ldcs_api_wrapper.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_shmem_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libserver_shmem_la-ldcs_api_wrapper.lo `test -f 'ldcs_api_wrapper.c' || echo '$(srcdir)/'`ldcs_api_wrapper.c
 
 libserver_socket_la-ldcs_api_socket.lo: ldcs_api_socket.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libserver_socket_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libserver_socket_la-ldcs_api_socket.lo -MD -MP -MF $(DEPDIR)/libserver_socket_la-ldcs_api_socket.Tpo -c -o libserver_socket_la-ldcs_api_socket.lo `test -f 'ldcs_api_socket.c' || echo '$(srcdir)/'`ldcs_api_socket.c
@@ -762,10 +707,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe_notify.Plo
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_util.Plo
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_wrapper.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_util.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_listen.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_socket.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_util.Plo
@@ -824,10 +765,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_pipe_notify.Plo
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_util.Plo
 	-rm -f ./$(DEPDIR)/libserver_pipe_la-ldcs_api_wrapper.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_listen.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_shmem.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_util.Plo
-	-rm -f ./$(DEPDIR)/libserver_shmem_la-ldcs_api_wrapper.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_listen.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_socket.Plo
 	-rm -f ./$(DEPDIR)/libserver_socket_la-ldcs_api_util.Plo

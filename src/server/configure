@@ -685,8 +685,6 @@ MSOCKET_FALSE
 MSOCKET_TRUE
 BITER_FALSE
 BITER_TRUE
-SHMEM_FALSE
-SHMEM_TRUE
 SOCKETS_FALSE
 SOCKETS_TRUE
 PIPES_FALSE
@@ -854,7 +852,6 @@ with_rsh_cmd
 with_slurm_launch
 enable_pipes
 enable_socket
-enable_shmem
 enable_biter
 enable_msocket
 enable_cobo
@@ -1536,7 +1533,6 @@ Optional Features:
   --enable-flux-plugin    Builds in support for running flux via a plugin
   --enable-pipes          Use pipes for server/client communication
   --enable-socket         Use sockets for server/client communication
-  --enable-shmem          Use shared memory for server/client communication
   --enable-biter          Use biter for server/client communication
   --enable-msocket        Use msocket for inter-server communication
   --enable-cobo           Use msocket for inter-server communication
@@ -16760,11 +16756,6 @@ if test "${enable_socket+set}" = set; then :
   enableval=$enable_socket; CLIENT_SERVER_COM=sockets;
 fi
 
-# Check whether --enable-shmem was given.
-if test "${enable_shmem+set}" = set; then :
-  enableval=$enable_shmem; CLIENT_SERVER_COM=shmem;
-fi
-
 # Check whether --enable-biter was given.
 if test "${enable_biter+set}" = set; then :
   enableval=$enable_biter; CLIENT_SERVER_COM=biter;
@@ -16797,14 +16788,6 @@ fi
 else
   SOCKETS_TRUE='#'
   SOCKETS_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xshmem; then
-  SHMEM_TRUE=
-  SHMEM_FALSE='#'
-else
-  SHMEM_TRUE='#'
-  SHMEM_FALSE=
 fi
 
  if test x$CLIENT_SERVER_COM == xbiter; then
@@ -18314,10 +18297,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${SOCKETS_TRUE}" && test -z "${SOCKETS_FALSE}"; then
   as_fn_error $? "conditional \"SOCKETS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SHMEM_TRUE}" && test -z "${SHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"SHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
