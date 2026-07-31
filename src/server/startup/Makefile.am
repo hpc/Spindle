@@ -16,9 +16,6 @@ endif
 if PIPES
 CORE_LDADD += $(top_builddir)/comlib/libserver_pipe.la
 endif
-if BITER
-CORE_LDADD += $(top_builddir)/comlib/libserver_biter.la $(top_builddir)/biter/libbiterd.la
-endif
 if USE_NUMA
 CORE_LDADD += -lnuma
 endif

@@ -8,6 +8,3 @@ spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.
 if PIPES
 spindle_bootstrap_LDADD += $(top_builddir)/client_comlib/libclient_pipe.la
 endif
-if BITER
-spindle_bootstrap_LDADD += $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/biter/libbiterc.la
-endif

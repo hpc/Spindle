@@ -22,8 +22,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(COMM)
 #if defined(COMM_PIPES)
 #define COMM pipe
-#elif defined(COMM_BITER)
-#define COMM biter
 #else
 #error Unknown communication type
 #endif
