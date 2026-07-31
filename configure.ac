@@ -22,7 +22,6 @@ SPINDLE_SOURCE_ROOT=`realpath ${srcdir}`
 #Include common ops
 m4_include([configure.common.ac])
 m4_include([m4/ax_tls.m4])
-m4_include([m4/lmon.m4])
 AX_TLS
 
 #MPI detection

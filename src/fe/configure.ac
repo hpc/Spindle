@@ -9,7 +9,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile flux/Makefile startup/Makefile hostbin/Makefile Makefile])
+AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile flux/Makefile startup/Makefile hostbin/Makefile Makefile])
 AC_PROG_LN_S
 LT_INIT
 
@@ -21,8 +21,6 @@ m4_include([../../configure.common.ac])
 CHOOSE_SEC
 CHOOSE_DEF_AUDIT
 
-#Include LaunchMON
-m4_include([../../m4/lmon.m4])
 #Include RM Selection
 m4_include([../../m4/launcher.m4])
 

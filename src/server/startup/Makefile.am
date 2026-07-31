@@ -33,11 +33,3 @@ CLEANFILES = ./libstdc++.a
 	$(AM_V_GEN)$(LN_S) $(STATIC_LIBSTDCXX) $@
 BUILT_SOURCES=./libstdc++.a
 endif
-
-if LMON
-if LMON_DYNAMIC
-spindle_be_LDADD += $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_LIB) $(LAUNCHMON_RMCOMM) -lmonbeapi -lgcrypt -lpthread
-else
-spindle_be_LDADD += $(top_builddir)/launchmon/libbelmon.la $(LAUNCHMON_STATIC_LIBS)
-endif
-endif

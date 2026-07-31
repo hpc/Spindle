@@ -27,9 +27,6 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 static void setupLogging(int argc, char **argv);
 static int parseCommandLine(int argc, char *argv[]);
 
-#if defined(HAVE_LMON)
-extern int startLaunchmonBE(int argc, char *argv[], int security_type);
-#endif
 extern int startHostbinBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type);
 extern int startSerialBE(int argc, char *argv[], int security_type);
 extern int startMPILaunchBE(unsigned int port, unsigned int num_ports, unique_id_t unique_id, int security_type);
@@ -72,11 +69,9 @@ int main(int argc, char *argv[])
 
    switch (startup_type) {
       case lmon:
-#if defined(HAVE_LMON)
-         result = startLaunchmonBE(argc, argv, security_type);
-#else
-         assert(0);
-#endif
+         fprintf(stderr, "Spindle Error: LaunchMON support has been removed\n");
+         err_printf("LaunchMON startup no longer supported\n");
+         exit(-1);
          break;
       case serial:
          result = startSerialBE(argc, argv, security_type);

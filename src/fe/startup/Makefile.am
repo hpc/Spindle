@@ -32,7 +32,3 @@ spindle_CPPFLAGS += -I$(top_srcdir)/../flux
 spindle_SOURCES += launch_flux.cc
 endif
 
-if LMON
-spindle_LDADD += $(top_builddir)/launchmon/libfelmon.la
-endif
-
