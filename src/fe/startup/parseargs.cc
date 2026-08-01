@@ -49,13 +49,8 @@ using namespace std;
 #error No security model available
 #endif
 
-#if defined(DEFAULT_CLEANUP_PROC)
-#define DEFAULT_CLEAN_PROC_STR "yes"
-#define DEFAULT_CLEAN_PROC_INT 1
-#else
 #define DEFAULT_CLEAN_PROC_STR "no"
 #define DEFAULT_CLEAN_PROC_INT 0
-#endif
 
 #define DEFAULT_PERSIST 0
 

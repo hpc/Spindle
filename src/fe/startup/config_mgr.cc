@@ -116,11 +116,7 @@ using namespace std;
 #define DISABLE_LOGGING_STR "true"
 #endif
 
-#if defined(DEFAULT_CLEANUP_PROC)
-#define CLEANUP_PROC_STR "true"
-#else
 #define CLEANUP_PROC_STR "false"
-#endif
 
 #if defined(RSHLAUNCH_ENABLED)
 #define RSHLAUNCH_STR "true"
@@ -134,11 +130,7 @@ using namespace std;
 #define RSHCMD_STR ""
 #endif
 
-#if defined(CRASH_DEDUP_ENABLED_BY_DEFAULT)
-#define DEFAULT_CRASH_DEDUP_STR "true"
-#else
 #define DEFAULT_CRASH_DEDUP_STR "false"
-#endif
 
 #if defined(PYTHON_INST_PREFIX)
 #define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
