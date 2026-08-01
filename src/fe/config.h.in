@@ -18,12 +18,6 @@
 /* Client/server communication uses pipes */
 #undef COMM_PIPES
 
-/* Enable --crash-dedup by default */
-#undef CRASH_DEDUP_ENABLED_BY_DEFAULT
-
-/* Default to using a dedicated process to clean data files */
-#undef DEFAULT_CLEANUP_PROC
-
 /* Defined if GLIBC has an allocation bug */
 #undef DTV_ALLOCATION_BUG
 
@@ -118,9 +112,6 @@
 /* Defined if GLIBC has locale TLS bug */
 #undef NEWTHREAD_LOCALE_BUG
 
-/* Exclusions for numa optimization */
-#undef NUMA_EXCLUDES
-
 /* Number of ports for COBO to search for an open port */
 #undef NUM_COBO_PORTS
 
@@ -144,9 +135,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Python installation prefixes */
-#undef PYTHON_INST_PREFIX
 
 /* RSH command */
 #undef RSHLAUNCH_CMD
@@ -175,9 +163,6 @@
 
 /* Default recource manager */
 #undef TESTRM
-
-/* The file for storing usage logs */
-#undef USAGE_LOGGING_FILE
 
 /* Version number of package */
 #undef VERSION

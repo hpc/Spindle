@@ -825,15 +825,10 @@ with_hostbin
 with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
-with_python_prefix
 enable_numa
-with_numa_excludes
-with_usage_logging
-enable_cleanup_process
 enable_sec_munge
 enable_sec_keydir
 enable_sec_none
-enable_crash_dedup
 with_gcrypt_dir
 with_munge_dir
 enable_remap_pageone
@@ -1500,15 +1495,11 @@ Optional Features:
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
   --enable-numa           Use libnuma to enable numa optimizations
-  --enable-cleanup-process
-                          Default to using a dedicated process to clean
-                          relocated files
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
                           authentication key for connections
   --enable-sec-none       Disable security authentication of connections
-  --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
                           Should be false on older linux systems
   --enable-slurm          Enable support for the SLURM job launcher
@@ -1550,12 +1541,6 @@ Optional Packages:
   --with-rsh-cmd=EXE      Executable to use for rsh/ssh when running in rsh
                           launch mode
   --with-slurm-launch     Enable using slurm to launch spindle daemons
-  --with-python-prefix=STR
-                          List of directories containing python installs
-  --with-numa-excludes    Do not numa optimize files matching the given
-                          substrings
-  --with-usage-logging=FILE
-                          File for writing usage logs
   --with-gcrypt-dir=DIR   Look in DIR for gcrypt installation
   --with-munge-dir=DIR    Look in DIR for munge installation
 
@@ -16812,35 +16797,11 @@ fi
 $as_echo "#define os_linux 1" >>confdefs.h
 
 
-#Python prefix
-
-# Check whether --with-python-prefix was given.
-if test "${with_python_prefix+set}" = set; then :
-  withval=$with_python_prefix; PYTHON_INST_PREFIX=${withval}
-else
-  PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python
-fi
-
-
-cat >>confdefs.h <<_ACEOF
-#define PYTHON_INST_PREFIX "$PYTHON_INST_PREFIX"
-_ACEOF
-
-
 #NUMA configuration
 # Check whether --enable-numa was given.
 if test "${enable_numa+set}" = set; then :
   enableval=$enable_numa; REQUIRE_NUMA="true"
 fi
-
-
-# Check whether --with-numa-excludes was given.
-if test "${with_numa_excludes+set}" = set; then :
-  withval=$with_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
-else
-  NUMA_EXCLUDES_VAL=""
-fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have libnuma" >&5
 $as_echo_n "checking whether we have libnuma... " >&6; }
@@ -16877,11 +16838,6 @@ if test "x$HAVE_NUMA" == "xtrue"; then
 
 $as_echo "#define LIBNUMA 1" >>confdefs.h
 
-
-cat >>confdefs.h <<_ACEOF
-#define NUMA_EXCLUDES "$NUMA_EXCLUDES_VAL"
-_ACEOF
-
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking wheter ld.so has the _dl_argv variable" >&5
@@ -16911,28 +16867,6 @@ if test "x$HAVE_DL_ARGV" == "xtrue"; then
 $as_echo "#define HAVE_DL_ARGV 1" >>confdefs.h
 
 fi
-
-#Usage logging
-
-# Check whether --with-usage-logging was given.
-if test "${with_usage_logging+set}" = set; then :
-  withval=$with_usage_logging; USAGE_LOGS=${withval}
-fi
-
-if test "x$USAGE_LOGS" != "x"; then
-
-cat >>confdefs.h <<_ACEOF
-#define USAGE_LOGGING_FILE "$USAGE_LOGS"
-_ACEOF
-
-fi
-
-#Dedicated cleanup process
-# Check whether --enable-cleanup-process was given.
-if test "${enable_cleanup_process+set}" = set; then :
-  enableval=$enable_cleanup_process; CLEANUP_PROC="true"
-fi
-
 
 if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
   # Check for whether to build Flux shell plugin
@@ -17310,20 +17244,6 @@ if test "${enable_sec_none+set}" = set; then :
 fi
 
 
-# Check whether --enable-crash-dedup was given.
-if test "${enable_crash_dedup+set}" = set; then :
-  enableval=$enable_crash_dedup; enable_crash_dedup=$enableval
-else
-  enable_crash_dedup=no
-fi
-
-
-if test "x$enable_crash_dedup" = xyes; then :
-
-$as_echo "#define CRASH_DEDUP_ENABLED_BY_DEFAULT 1" >>confdefs.h
-
-fi
-
 
 # Check whether --with-gcrypt-dir was given.
 if test "${with_gcrypt_dir+set}" = set; then :
@@ -17688,12 +17608,6 @@ CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 
 SPINDLEFE_LIB_VERSION=`$srcdir/../../LIB_VERSION spindlefe`
 
-
-if test "x$CLEANUP_PROC" == "xtrue"; then
-
-$as_echo "#define DEFAULT_CLEANUP_PROC 1" >>confdefs.h
-
-fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
