@@ -92,11 +92,7 @@ using namespace std;
 #define SECURITY_DEFAULT_STR "none"
 #endif
 
-#if defined(LIBNUMA) && defined(NUMA_EXCLUDES)
-#define NUMA_EXCLUDES_STR NUMA_EXCLUDES
-#else
 #define NUMA_EXCLUDES_STR ""
-#endif
 
 #define AUDITTYPE_STR "audit"
 
@@ -110,11 +106,7 @@ using namespace std;
 #define HOSTBIN_PATH_STR ""
 #endif
 
-#if defined(USAGE_LOGGING_FILE)
-#define DISABLE_LOGGING_STR "false"
-#else
 #define DISABLE_LOGGING_STR "true"
-#endif
 
 #define CLEANUP_PROC_STR "false"
 
@@ -132,11 +124,7 @@ using namespace std;
 
 #define DEFAULT_CRASH_DEDUP_STR "false"
 
-#if defined(PYTHON_INST_PREFIX)
-#define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
-#else
 #define PYTHON_PREFIX_DEFAULT ""
-#endif
 
 #if BINARY_PATCH_LDSO == 1
 #define DEFAULT_PATCH_LDSO "true"

@@ -75,13 +75,8 @@ using namespace std;
 #define DEFAULT_RSHMODE_STR "No"
 #endif
 
-#if defined(USAGE_LOGGING_FILE)
-#define DEFAULT_LOGGING_ENABLED true
-static const int DISABLE_LOGGING_FLAGS = 0;
-#else
 #define DEFAULT_LOGGING_ENABLED false
 static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
-#endif
 
 static ConfigMap argmap("[Command Line]");
 static bool done = false;

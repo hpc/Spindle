@@ -34,11 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <time.h>
 
 #include <sstream>
-#if defined(USAGE_LOGGING_FILE)
-static const char *logging_file = USAGE_LOGGING_FILE;
-#else
 static const char *logging_file = NULL;
-#endif
 static const char spindle_bootstrap[] = LIBEXECDIR "/spindle_bootstrap";
 static bool sendAndWaitForAlive();
 
