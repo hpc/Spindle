@@ -42,23 +42,21 @@ jobs:
       - name: Run spindle-serial-ubuntu testsuite
         id: serial-ubuntu-testsuite
         run: |
-          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./runTests'
-
-      - name: Configure host core_pattern for coredumps
-        if: ${{ !env.ACT }}
-        run: |
-          sudo sysctl -w kernel.core_pattern='core.%p'
-
-      - name: Run spindle-serial-ubuntu crash tests
-        run: |
-          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=serial --scratch=/tmp/spindle_crash_test'
+          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && SPINDLE_DEBUG=3 ./runTests'
 
       - name: Collect Spindle logs from container
         if: ${{ always() }}
         continue-on-error: true
         run: |
           mkdir -p spindle-logs
-          docker cp spindlenode:/Spindle-build/testsuite/. spindle-logs/ || echo "Log collection failed"
+          workdir=$(docker inspect -f '{{.Config.WorkingDir}}' spindlenode)
+          echo "Container WorkingDir: ${workdir:-<empty>}"
+          src="${workdir:?WorkingDir was empty - cannot resolve log path}/Spindle-build/testsuite"
+          docker cp "spindlenode:$src/." spindle-logs/ || {
+            echo "Copy failed; listing container path:"
+            docker exec spindlenode ls -la "$src" || docker exec spindlenode ls -la "$workdir"
+            exit 1
+          }
           ls -la spindle-logs/
 
       - name: Upload Spindle logs

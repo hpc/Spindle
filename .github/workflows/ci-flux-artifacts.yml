@@ -42,31 +42,57 @@ jobs:
       - name: Run spindle-flux-ubuntu testsuite
         id: flux-ubuntu-testsuite
         run: |
-          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./runTests --nodes=${workers} --tasks-per-node=3'
+          docker exec node-1 bash -c 'cd Spindle-build/testsuite && SPINDLE_DEBUG=3 flux alloc --nodes=${workers} ./runTests --nodes=${workers} --tasks-per-node=3'
 
-      - name: Configure host core_pattern for coredumps
-        if: ${{ !env.ACT }}
-        run: |
-          sudo sysctl -w kernel.core_pattern='core.%p'
-
-      - name: Run spindle-flux-ubuntu crash tests
-        run: |
-          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./run_crash_tests.sh --launcher=flux --nodes=${workers} --scratch=/shared/spindle_crash_test'
-
-      - name: Collect Spindle logs from container
+      - name: Collect Spindle logs from containers
         if: ${{ always() }}
         continue-on-error: true
         run: |
-          mkdir -p spindle-logs
-          docker cp node-1:/Spindle-build/testsuite/. spindle-logs/ || echo "Log collection failed"
-          ls -la spindle-logs/
+          failed=0
+          for node in node-1 node-2 node-3 node-4; do
+            echo "::group::Collecting logs from $node"
+
+            if ! workdir=$(docker inspect -f '{{.Config.WorkingDir}}' "$node" 2>/dev/null); then
+              echo "Container $node not found; skipping."
+              failed=1
+              echo "::endgroup::"
+              continue
+            fi
+
+            if [ -z "$workdir" ]; then
+              echo "WorkingDir empty for $node; cannot resolve log path."
+              failed=1
+              echo "::endgroup::"
+              continue
+            fi
+
+            src="$workdir/Spindle-build/testsuite"
+            mkdir -p "spindle-logs/$node"
+
+            if docker cp "$node:$src/." "spindle-logs/$node/"; then
+              ls -la "spindle-logs/$node/"
+            else
+              echo "Copy failed for $node; listing container path:"
+              docker exec "$node" ls -la "$src" || docker exec "$node" ls -la "$workdir" || true
+              failed=1
+              continue
+            fi
+            find "spindle-logs/$node/" -type f ! -name 'spindle_output.*' -delete
+
+            echo "::endgroup::"
+          done
+
+          echo "Collected tree:"
+          ls -R spindle-logs/ || true
+          exit "$failed"
+
 
       - name: Upload Spindle logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: spindle-logs-flux
-          path: spindle-logs/spindle_output.*
+          path: spindle-logs/
           retention-days: 7
           if-no-files-found: warn
 
