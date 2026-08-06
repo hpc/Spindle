@@ -32,7 +32,7 @@ Scripts for running Spindle containers locally with podman on LC systems.
   - Provides `podman_build()` and `podman_run()` wrappers
 
 - **run-hello-01-basic.sh** - Hello world test (validates environment)
-- **run-hello-02-user.sh** - User switching test (TODO)
+- **run-hello-02-user.sh** - User switching test (validates non-root patterns)
 - **run-hello-03-filesystem.sh** - Volume mount test (TODO)
 - **run-hello-04-networking.sh** - Multi-container networking test (TODO)
 

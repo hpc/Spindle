@@ -24,11 +24,18 @@ cd /path/to/workspace-Spindle/Spindle/podman-port
 ./scripts/podman/run-hello-01-basic.sh
 ```
 
-### 02-user-switch (Coming next)
-**What it will test:**
-- Creating a non-root user
-- Switching to that user
-- File permissions
+### 02-user-switch (✓ Available)
+**What it tests:**
+- Creating a non-root user (uid=1001, gid=1001)
+- Switching to that user with USER directive
+- File permission handling (read root files, write user files)
+- Sudo access (passwordless for container convenience)
+
+**Run from outside the sandbox:**
+```bash
+cd /path/to/workspace-Spindle/Spindle/podman-port
+./scripts/podman/run-hello-02-user.sh
+```
 
 ### 03-filesystem (Coming next)
 **What it will test:**
