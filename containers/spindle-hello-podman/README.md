@@ -37,11 +37,23 @@ cd /path/to/workspace-Spindle/Spindle/podman-port
 ./scripts/podman/run-hello-02-user.sh
 ```
 
-### 03-filesystem (Coming next)
-**What it will test:**
-- Mounting host directories
-- Writing files from container
-- File ownership and permissions
+### 03-filesystem (✓ Available)
+**What it tests:**
+- Volume mounts with -v flag
+- Reading files from host directories
+- Writing files to mounted volumes
+- File persistence after container exit
+- SELinux context handling (:Z flag)
+
+**Run from outside the sandbox:**
+```bash
+cd /path/to/workspace-Spindle/Spindle/podman-port
+./scripts/podman/run-hello-03-filesystem.sh
+```
+
+This creates temporary test directories, mounts them into the container,
+and verifies files can be read/written. Artifacts persist after the
+container exits, demonstrating how Spindle build/test output is preserved.
 
 ### 04-networking (Coming next)
 **What it will test:**
