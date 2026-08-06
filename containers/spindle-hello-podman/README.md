@@ -55,11 +55,23 @@ This creates temporary test directories, mounts them into the container,
 and verifies files can be read/written. Artifacts persist after the
 container exits, demonstrating how Spindle build/test output is preserved.
 
-### 04-networking (Coming next)
-**What it will test:**
-- Creating podman networks
-- Multiple containers communicating
-- Service discovery
+### 04-networking (✓ Available)
+**What it tests:**
+- Custom network creation
+- Multiple containers on same network
+- DNS resolution (hostname lookups)
+- Container-to-container HTTP communication
+- Service discovery patterns
+
+**Run from outside the sandbox:**
+```bash
+cd /path/to/workspace-Spindle/Spindle/podman-port
+./scripts/podman/run-hello-04-networking.sh
+```
+
+This creates a server container and two client containers, all on a custom
+network. Clients can resolve the server by hostname and communicate via HTTP.
+This demonstrates the pattern used for Slurm/Flux multi-node clusters.
 
 ## LC-Specific Issues Addressed
 

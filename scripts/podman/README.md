@@ -34,7 +34,7 @@ Scripts for running Spindle containers locally with podman on LC systems.
 - **run-hello-01-basic.sh** - Hello world test (validates environment)
 - **run-hello-02-user.sh** - User switching test (validates non-root patterns)
 - **run-hello-03-filesystem.sh** - Volume mount test (validates host/container filesystem)
-- **run-hello-04-networking.sh** - Multi-container networking test (TODO)
+- **run-hello-04-networking.sh** - Multi-container networking test (validates cluster patterns)
 
 - **run-serial.sh** - Serial Spindle tests (TODO)
 - **run-flux.sh** - Flux Spindle tests (TODO)
