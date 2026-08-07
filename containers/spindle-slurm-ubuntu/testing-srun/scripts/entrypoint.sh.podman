@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# Podman-compatible entrypoint for Slurm srun containers
+
+set -x  # Debug output
+
+echo "SLURM_ROLE: ${SLURM_ROLE}"
+
+echo "Starting munged..."
+sudo -u munge /usr/sbin/munged
+sleep 2
+
+if [ "${SLURM_ROLE}" = "db" ]; then
+    echo "Starting slurmdbd..."
+    exec sudo -u slurm /usr/sbin/slurmdbd -Dvvv
+elif [ "${SLURM_ROLE}" = "ctl" ] ; then
+    echo "Starting slurmctld..."
+    exec sudo -u slurm /usr/sbin/slurmctld -i -Dvvv
+elif [ "${SLURM_ROLE}" = "worker" ] ; then
+    echo "Starting slurmd..."
+    exec sudo /usr/sbin/slurmd -Dvvv
+else
+    echo "Unknown SLURM_ROLE: ${SLURM_ROLE}"
+    echo "Valid roles: db, ctl, worker"
+    exit 1
+fi
