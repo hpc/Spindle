@@ -20,6 +20,7 @@ podman_build() {
     local image_name=$1
     local dockerfile=$2
     local context=${3:-.}
+    local extra_args="$4"  # Optional extra build args
 
     echo "========================================"
     echo "Building: $image_name"
@@ -30,6 +31,7 @@ podman_build() {
     podman build \
         --build-arg PODMAN_BUILD=true \
         $LC_CERT_BUILD_MOUNT \
+        $extra_args \
         -t "$image_name" \
         -f "$dockerfile" \
         "$context"
