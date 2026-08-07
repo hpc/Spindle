@@ -29,7 +29,21 @@ echo "Source: $TARBALL"
 echo "This may take a minute..."
 echo ""
 
-podman load -i "$TARBALL"
+# Extract and load each image separately
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+echo "Extracting tarball..."
+tar -xf "$TARBALL" -C "$TEMP_DIR"
+
+echo "Loading base image..."
+podman load -i "$TEMP_DIR/base.tar"
+
+echo "Loading srun image..."
+podman load -i "$TEMP_DIR/srun.tar"
+
+echo "Loading serial image..."
+podman load -i "$TEMP_DIR/serial.tar"
 
 echo ""
 echo "=========================================="

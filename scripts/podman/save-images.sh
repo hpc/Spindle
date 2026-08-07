@@ -32,12 +32,22 @@ echo "Saving images to tarball..."
 echo "This may take several minutes..."
 echo ""
 
-# Save all spindle images
-podman save \
-    localhost/spindle-slurm-base:latest \
-    localhost/spindle-slurm-srun:latest \
-    localhost/spindle-serial-ubuntu:latest \
-    -o "$OUTPUT_FILE"
+# Save images separately to avoid parent-child ID collisions
+# When multiple images share a base, podman save can collapse them incorrectly
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+echo "Saving spindle-slurm-base..."
+podman save localhost/spindle-slurm-base:latest -o "$TEMP_DIR/base.tar"
+
+echo "Saving spindle-slurm-srun..."
+podman save localhost/spindle-slurm-srun:latest -o "$TEMP_DIR/srun.tar"
+
+echo "Saving spindle-serial-ubuntu..."
+podman save localhost/spindle-serial-ubuntu:latest -o "$TEMP_DIR/serial.tar"
+
+echo "Combining into single tarball..."
+tar -cf "$OUTPUT_FILE" -C "$TEMP_DIR" base.tar srun.tar serial.tar
 
 SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
 echo ""
