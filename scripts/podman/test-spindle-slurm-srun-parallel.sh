@@ -44,10 +44,16 @@ echo ""
 cleanup() {
     echo ""
     echo "Cleaning up run $RUN_ID..."
+    # Stop all containers in parallel for faster cleanup
     for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
-        podman stop "$container" 2>/dev/null || true
-        podman rm -f "$container" 2>/dev/null || true
+        (podman stop "$container" 2>/dev/null || true) &
     done
+    wait
+    # Remove all containers in parallel
+    for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+        (podman rm -f "$container" 2>/dev/null || true) &
+    done
+    wait
     podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
     echo "✓ Cleanup complete for run $RUN_ID"
 }
