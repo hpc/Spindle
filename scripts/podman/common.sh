@@ -5,62 +5,8 @@
 # LC systems require special handling for:
 # 1. SSL certificates (volume mounts)
 # 2. apt setgroups errors (handled via Dockerfile ARG)
-# 3. Storage configuration (enable-podman must be run)
 
 set -e
-
-# Ensure podman storage is configured for LC systems
-# This checks for the storage.conf file that enable-podman creates
-# If missing, creates it non-destructively (without killing processes)
-ensure_podman_storage() {
-    local STORAGE_CONF="$HOME/.config/containers/storage.conf"
-
-    if [ -f "$STORAGE_CONF" ]; then
-        return 0
-    fi
-
-    echo "=========================================="
-    echo "Configuring podman storage for LC systems"
-    echo "=========================================="
-    echo ""
-    echo "This is a one-time setup (creates ~/.config/containers/storage.conf)"
-    echo ""
-
-    mkdir -p ~/.config/containers/
-
-    # Determine which tmpdir to use based on UID/USER length
-    # (same logic as enable-podman)
-    local VAR_TMPDIR="/var/tmp/$USER"
-    local ALT_TMPDIR="/tmp/$USER"
-    local TMP_PATH="$VAR_TMPDIR"
-
-    if [[ $((${#UID}+${#USER})) -eq 9 ]]; then
-        TMP_PATH="$ALT_TMPDIR"
-    fi
-
-    # Use overlay driver with fuse-overlayfs (same as enable-podman default)
-    local DRIVER="overlay"
-    local MOUNT_OPT='mount_program = "/usr/bin/fuse-overlayfs"'
-
-    cat > "$STORAGE_CONF" << EOF
-[storage]
-  driver = "$DRIVER"
-  runroot = "$TMP_PATH/run-$UID/containers"
-  graphroot = "$TMP_PATH/config/containers/storage"
-[storage.options.$DRIVER]
-  ignore_chown_errors = "true"
-  $MOUNT_OPT
-EOF
-
-    echo "✓ Podman storage configured"
-    echo ""
-    echo "Note: If you need to reset podman storage, run: enable-podman"
-    echo "      (This will kill running containers and delete storage)"
-    echo ""
-}
-
-# Run check on sourcing this file
-ensure_podman_storage
 
 # LC-specific SSL certificate mounts
 # Build: Mount LLNL cert into ca-certificates directory
