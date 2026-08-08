@@ -150,8 +150,8 @@ done
 
 echo ""
 echo "Waiting for Slurm cluster to initialize..."
-echo "(This takes ~30 seconds for all daemons and nodes)"
-sleep 30
+echo "(This takes ~60 seconds for all daemons and nodes)"
+sleep 60
 
 echo ""
 echo "=========================================="
@@ -199,7 +199,24 @@ echo "=========================================="
 echo ""
 
 echo "Checking node status with sinfo:"
-podman exec "${NAME_PREFIX}-head" sinfo || echo "  (Nodes may still be registering)"
+if podman exec "${NAME_PREFIX}-head" sinfo; then
+    echo "  ✓ Slurm cluster ready"
+else
+    echo ""
+    echo "✗ Slurm cluster verification FAILED"
+    echo ""
+    echo "Containers are still running for debugging."
+    echo "Press ENTER to cleanup and exit, or Ctrl-C to keep them running."
+    echo ""
+    echo "Useful debug commands:"
+    echo "  podman logs ${NAME_PREFIX}-head"
+    echo "  podman logs ${NAME_PREFIX}-db"
+    echo "  podman exec ${NAME_PREFIX}-head sinfo"
+    echo "  podman exec ${NAME_PREFIX}-head scontrol show nodes"
+    echo ""
+    read -r
+    exit 1
+fi
 
 echo ""
 echo "=========================================="
