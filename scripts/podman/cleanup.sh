@@ -46,17 +46,17 @@ else
     CONTAINERS=$(podman ps -a --format "{{.Names}}" | grep "^slurm-srun-" || true)
 
     if [ -n "$CONTAINERS" ]; then
-        echo "Stopping and removing containers:"
-        echo "$CONTAINERS" | while read container; do
-            echo "  $container"
-        done
+        COUNT=$(echo "$CONTAINERS" | wc -l)
+        echo "Found $COUNT containers to remove"
         echo ""
 
-        # Stop all in parallel
-        echo "$CONTAINERS" | xargs -P 10 -I {} podman stop {} 2>/dev/null || true
-
-        # Remove all in parallel
-        echo "$CONTAINERS" | xargs -P 10 -I {} podman rm -f {} 2>/dev/null || true
+        # Skip stop, just force-remove (stops and removes in one step)
+        # Use timeout and lower parallelism to avoid hangs
+        echo "$CONTAINERS" | while read container; do
+            echo "Removing $container..."
+            timeout 10 podman rm -f "$container" 2>/dev/null || echo "  (timed out, skipping)" &
+        done
+        wait
     else
         echo "No slurm-srun containers found"
     fi
@@ -67,14 +67,15 @@ else
     NETWORKS=$(podman network ls --format "{{.Name}}" | grep "^slurm-srun-" || true)
 
     if [ -n "$NETWORKS" ]; then
-        echo "Removing networks:"
-        echo "$NETWORKS" | while read network; do
-            echo "  $network"
-        done
+        COUNT=$(echo "$NETWORKS" | wc -l)
+        echo "Found $COUNT networks to remove"
         echo ""
 
-        # Remove all networks in parallel
-        echo "$NETWORKS" | xargs -P 10 -I {} podman network rm -f {} 2>/dev/null || true
+        # Remove networks sequentially with timeout to avoid hangs
+        echo "$NETWORKS" | while read network; do
+            echo "Removing $network..."
+            timeout 5 podman network rm -f "$network" 2>/dev/null || echo "  (timed out or in use, skipping)"
+        done
     else
         echo "No slurm-srun networks found"
     fi
