@@ -80,12 +80,27 @@ fi
 
 echo ""
 echo "Starting MariaDB..."
-# Read password from generated mariadb.env
-MARIADB_PASSWORD=$(grep MARIADB_PASSWORD "$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env" | cut -d'"' -f2)
-if [ -z "$MARIADB_PASSWORD" ]; then
-    echo "Error: Could not read password from mariadb.env"
+# Read password from mariadb.env
+# First check repo root (portable deployment), then fall back to source location
+MARIADB_ENV=""
+if [ -f "$REPO_ROOT/mariadb.env" ]; then
+    MARIADB_ENV="$REPO_ROOT/mariadb.env"
+elif [ -f "$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env" ]; then
+    MARIADB_ENV="$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
+else
+    echo "Error: Could not find mariadb.env"
+    echo "  Looked in:"
+    echo "    $REPO_ROOT/mariadb.env"
+    echo "    $REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
     exit 1
 fi
+
+MARIADB_PASSWORD=$(grep MARIADB_PASSWORD "$MARIADB_ENV" | cut -d'"' -f2)
+if [ -z "$MARIADB_PASSWORD" ]; then
+    echo "Error: Could not read password from $MARIADB_ENV"
+    exit 1
+fi
+echo "  Using password from: $MARIADB_ENV"
 podman run \
     --name "${NAME_PREFIX}-mariadb" \
     --hostname slurm-mariadb \

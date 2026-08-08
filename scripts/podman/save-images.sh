@@ -49,6 +49,15 @@ podman save localhost/spindle-serial-ubuntu:latest -o "$TEMP_DIR/serial.tar"
 echo "Combining into single tarball..."
 tar -cf "$OUTPUT_FILE" -C "$TEMP_DIR" base.tar srun.tar serial.tar
 
+# Copy mariadb.env for portable deployment
+MARIADB_ENV_SOURCE="$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
+MARIADB_ENV_DEST="$REPO_ROOT/mariadb.env"
+if [ -f "$MARIADB_ENV_SOURCE" ]; then
+    echo "Copying mariadb.env for portable deployment..."
+    cp "$MARIADB_ENV_SOURCE" "$MARIADB_ENV_DEST"
+    echo "  ✓ mariadb.env copied to repo root"
+fi
+
 SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
 echo ""
 echo "=========================================="
