@@ -46,8 +46,11 @@ podman save localhost/spindle-slurm-srun:latest -o "$TEMP_DIR/srun.tar"
 echo "Saving spindle-serial-ubuntu..."
 podman save localhost/spindle-serial-ubuntu:latest -o "$TEMP_DIR/serial.tar"
 
+echo "Saving MariaDB..."
+podman save docker.io/library/mariadb:12 -o "$TEMP_DIR/mariadb.tar"
+
 echo "Combining into single tarball..."
-tar -cf "$OUTPUT_FILE" -C "$TEMP_DIR" base.tar srun.tar serial.tar
+tar -cf "$OUTPUT_FILE" -C "$TEMP_DIR" base.tar srun.tar serial.tar mariadb.tar
 
 # Copy mariadb.env for portable deployment
 MARIADB_ENV_SOURCE="$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
