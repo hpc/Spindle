@@ -1,17 +1,30 @@
 #!/bin/bash
 #
-# Run Spindle Slurm srun tests in podman
+# Run N parallel Spindle Slurm srun tests in podman
 #
-# This runs the Spindle testsuite in a Slurm cluster with srun launcher.
-# Based on the CI workflow and docker-compose configuration.
+# Usage: test-spindle-slurm-srun.sh <num-instances>
 #
-# Cluster: 1 MariaDB + 1 slurmdbd + 1 slurmctld + 4 slurmd workers
-#
-# CPU Pinning: Cores 24-30 (avoiding system cores 0-23)
+# Creates N independent Slurm clusters and runs tests in parallel.
+# Each instance outputs to both stdout and out.<N> with timestamps.
 #
 # Run this from outside the sandbox where podman is available.
 
 set -e
+
+NUM_INSTANCES="${1}"
+
+if [ -z "$NUM_INSTANCES" ]; then
+    echo "Usage: $0 <num-instances>"
+    echo ""
+    echo "Example: $0 10"
+    echo "  Creates 10 independent Slurm clusters and runs tests in parallel"
+    exit 1
+fi
+
+if ! [[ "$NUM_INSTANCES" =~ ^[0-9]+$ ]] || [ "$NUM_INSTANCES" -lt 1 ]; then
+    echo "Error: num-instances must be a positive integer"
+    exit 1
+fi
 
 # Get the directory containing this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,226 +35,250 @@ source "$SCRIPT_DIR/common.sh"
 
 # Configuration
 IMAGE_NAME="spindle-slurm-srun"
-NETWORK_NAME="slurm-srun-test-net"
 WORKERS=4
 
-# CPU pinning disabled - not supported in rootless podman on this system
-# See PODMAN.md for details
-# CPU_MARIADB=24
-# CPU_DB=25
-# CPU_HEAD=26
-# CPU_NODE_BASE=27  # nodes 1-4 get 27-30
-
 echo "=========================================="
-echo "Spindle Slurm Srun Tests"
+echo "Spindle Slurm Srun Parallel Tests"
 echo "=========================================="
 echo ""
-echo "This runs the Spindle testsuite in a Slurm cluster."
-echo "Cluster: MariaDB + slurmdbd + slurmctld + 4 workers"
-echo "Note: CPU pinning disabled (not supported in rootless podman)"
+echo "Instances: $NUM_INSTANCES"
+echo "Each cluster: MariaDB + slurmdbd + slurmctld + 4 workers"
+echo "Output: stdout + out.<N> files (timestamped)"
 echo ""
 
-# Cleanup function
-cleanup() {
-    echo ""
-    echo "Cleaning up containers and network..."
-    # Stop and remove all containers (force removal even if running)
-    for container in slurm-srun-mariadb slurm-srun-db slurm-srun-head slurm-srun-node-{1..4}; do
-        podman stop "$container" 2>/dev/null || true
-        podman rm -f "$container" 2>/dev/null || true
-    done
-    podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
-    echo "✓ Cleanup complete"
+# Function to run a single test instance
+run_instance() {
+    local INSTANCE_ID=$1
+    local NAME_PREFIX="slurm-srun-${INSTANCE_ID}"
+    local NETWORK_NAME="${NAME_PREFIX}-net"
+
+    # All output from this function goes through ts and tee
+    {
+        echo "[Instance $INSTANCE_ID] Starting test"
+        echo ""
+
+        # Cleanup for this instance
+        echo "[Instance $INSTANCE_ID] Initial cleanup..."
+        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+            podman stop "$container" 2>/dev/null || true
+            podman rm -f "$container" 2>/dev/null || true
+        done
+        podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
+        echo "[Instance $INSTANCE_ID] Cleanup complete"
+        echo ""
+
+        echo "[Instance $INSTANCE_ID] Setting up Slurm cluster..."
+        echo ""
+
+        # Create network
+        echo "[Instance $INSTANCE_ID] Creating network: $NETWORK_NAME"
+        podman network create "$NETWORK_NAME" >/dev/null
+        echo "[Instance $INSTANCE_ID] Network created"
+        echo ""
+
+        # Read MariaDB password
+        MARIADB_ENV=""
+        if [ -f "$REPO_ROOT/mariadb.env" ]; then
+            MARIADB_ENV="$REPO_ROOT/mariadb.env"
+        elif [ -f "$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env" ]; then
+            MARIADB_ENV="$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
+        else
+            echo "[Instance $INSTANCE_ID] ERROR: Could not find mariadb.env"
+            exit 1
+        fi
+
+        MARIADB_PASSWORD=$(grep MARIADB_PASSWORD "$MARIADB_ENV" | cut -d'"' -f2)
+        if [ -z "$MARIADB_PASSWORD" ]; then
+            echo "[Instance $INSTANCE_ID] ERROR: Could not read password from $MARIADB_ENV"
+            exit 1
+        fi
+
+        # Start MariaDB
+        echo "[Instance $INSTANCE_ID] Starting MariaDB..."
+        podman run \
+            --name "${NAME_PREFIX}-mariadb" \
+            --hostname slurm-mariadb \
+            --network "$NETWORK_NAME" \
+            -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
+            -e MYSQL_DATABASE=slurm_acct_db \
+            -e MYSQL_USER=slurm \
+            -e MYSQL_PASSWORD="$MARIADB_PASSWORD" \
+            -d \
+            mariadb:12 >/dev/null
+        echo "[Instance $INSTANCE_ID] MariaDB started"
+        echo "[Instance $INSTANCE_ID] Waiting for MariaDB to initialize (15s)..."
+        sleep 15
+        echo ""
+
+        # Start slurmdbd
+        echo "[Instance $INSTANCE_ID] Starting slurmdbd..."
+        podman run \
+            --name "${NAME_PREFIX}-db" \
+            --hostname slurm-db \
+            --network "$NETWORK_NAME" \
+            -e SLURM_ROLE=db \
+            -e SLURM_HEAD_NODE=slurm-head \
+            -e workers="$WORKERS" \
+            -d \
+            "$IMAGE_NAME" >/dev/null
+        echo "[Instance $INSTANCE_ID] slurmdbd started"
+        sleep 10
+        echo ""
+
+        # Start slurmctld
+        echo "[Instance $INSTANCE_ID] Starting slurmctld..."
+        podman run \
+            --name "${NAME_PREFIX}-head" \
+            --hostname slurm-head \
+            --network "$NETWORK_NAME" \
+            -e SLURM_ROLE=ctl \
+            -e SLURM_HEAD_NODE=slurm-head \
+            -e workers="$WORKERS" \
+            -t \
+            -d \
+            "$IMAGE_NAME" >/dev/null
+        echo "[Instance $INSTANCE_ID] slurmctld started"
+        sleep 10
+        echo ""
+
+        # Start worker nodes
+        echo "[Instance $INSTANCE_ID] Starting worker nodes..."
+        for i in $(seq 1 $WORKERS); do
+            echo "[Instance $INSTANCE_ID] Starting slurm-node-$i..."
+            podman run \
+                --name "${NAME_PREFIX}-node-$i" \
+                --hostname "slurm-node-$i" \
+                --network "$NETWORK_NAME" \
+                -e SLURM_ROLE=worker \
+                -e SLURM_HEAD_NODE=slurm-head \
+                -e workers="$WORKERS" \
+                -d \
+                "$IMAGE_NAME" >/dev/null
+            echo "[Instance $INSTANCE_ID] slurm-node-$i started"
+        done
+        echo ""
+
+        echo "[Instance $INSTANCE_ID] Waiting for Slurm cluster to initialize (60s)..."
+        sleep 60
+        echo ""
+
+        # Verify cluster
+        echo "[Instance $INSTANCE_ID] Verifying cluster..."
+        if podman exec "${NAME_PREFIX}-head" sinfo >/dev/null 2>&1; then
+            echo "[Instance $INSTANCE_ID] Cluster ready"
+        else
+            echo "[Instance $INSTANCE_ID] WARNING: sinfo failed, but continuing"
+        fi
+        echo ""
+
+        # Run tests
+        echo "[Instance $INSTANCE_ID] Running Spindle testsuite..."
+        if podman exec "${NAME_PREFIX}-head" bash -c "cd Spindle-build/testsuite && salloc -n${WORKERS} -N${WORKERS} ./runTests ${WORKERS}"; then
+            echo ""
+            echo "[Instance $INSTANCE_ID] =========================================="
+            echo "[Instance $INSTANCE_ID] ALL TESTS PASSED"
+            echo "[Instance $INSTANCE_ID] =========================================="
+            RESULT=0
+        else
+            echo ""
+            echo "[Instance $INSTANCE_ID] =========================================="
+            echo "[Instance $INSTANCE_ID] SOME TESTS FAILED"
+            echo "[Instance $INSTANCE_ID] =========================================="
+            RESULT=1
+        fi
+        echo ""
+
+        # Cleanup
+        echo "[Instance $INSTANCE_ID] Cleaning up..."
+        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+            podman stop "$container" 2>/dev/null || true &
+        done
+        wait
+        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+            podman rm -f "$container" 2>/dev/null || true &
+        done
+        wait
+        podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
+        echo "[Instance $INSTANCE_ID] Cleanup complete"
+        echo ""
+
+        exit $RESULT
+    } 2>&1 | ts | tee "out.${INSTANCE_ID}"
 }
 
-# Set trap to cleanup on exit
-# DISABLED for debugging - cleanup manually with: podman rm -f slurm-srun-{mariadb,db,head,node-{1..4}}; podman network rm -f slurm-srun-test-net
-# trap cleanup EXIT
-
-# Initial cleanup
-cleanup
-
+# Serial phase: Verify prerequisites
 echo "=========================================="
-echo "Setting up Slurm cluster..."
+echo "Serial Phase: Verifying prerequisites"
 echo "=========================================="
 echo ""
 
-# Create network
-if podman network exists "$NETWORK_NAME" 2>/dev/null; then
-    echo "Network $NETWORK_NAME already exists, reusing"
-else
-    echo "Creating network: $NETWORK_NAME"
-    podman network create "$NETWORK_NAME"
-    echo "✓ Network created"
-fi
-
-echo ""
-echo "Starting MariaDB..."
-# Read password from generated mariadb.env
-MARIADB_PASSWORD=$(grep MARIADB_PASSWORD "$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env" | cut -d'"' -f2)
-if [ -z "$MARIADB_PASSWORD" ]; then
-    echo "Error: Could not read password from mariadb.env"
+echo "Checking for required images..."
+if ! podman images | grep -q "spindle-slurm-srun"; then
+    echo "ERROR: spindle-slurm-srun image not found"
+    echo "Build it first with: ./build-spindle-slurm-srun.sh"
     exit 1
 fi
-podman run \
-    --name slurm-srun-mariadb \
-    --hostname slurm-mariadb \
-    --network "$NETWORK_NAME" \
-    -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
-    -e MYSQL_DATABASE=slurm_acct_db \
-    -e MYSQL_USER=slurm \
-    -e MYSQL_PASSWORD="$MARIADB_PASSWORD" \
-    -d \
-    mariadb:12
 
-echo "  ✓ MariaDB started"
-echo "Waiting for MariaDB to initialize..."
-sleep 15
-
+if ! podman images | grep -q "mariadb.*12"; then
+    echo "ERROR: mariadb:12 image not found"
+    echo "Pull it first with: podman pull mariadb:12"
+    echo "Or load from tarball with: ./load-images.sh <tarball>"
+    exit 1
+fi
+echo "✓ All required images present"
 echo ""
-echo "Starting slurmdbd (accounting daemon)..."
-podman run \
-    --name slurm-srun-db \
-    --hostname slurm-db \
-    --network "$NETWORK_NAME" \
-    -e SLURM_ROLE=db \
-    -e SLURM_HEAD_NODE=slurm-head \
-    -e workers="$WORKERS" \
-    -d \
-    "$IMAGE_NAME"
 
-echo "  ✓ slurmdbd started"
-sleep 10
-
+# Parallel phase: Launch all instances
+echo "=========================================="
+echo "Parallel Phase: Launching $NUM_INSTANCES instances"
+echo "=========================================="
 echo ""
-echo "Starting slurmctld (controller)..."
-podman run \
-    --name slurm-srun-head \
-    --hostname slurm-head \
-    --network "$NETWORK_NAME" \
-    -e SLURM_ROLE=ctl \
-    -e SLURM_HEAD_NODE=slurm-head \
-    -e workers="$WORKERS" \
-    -t \
-    -d \
-    "$IMAGE_NAME"
 
-echo "  ✓ slurmctld started"
-sleep 10
-
-echo ""
-echo "Starting worker nodes..."
-for i in $(seq 1 $WORKERS); do
-    echo "Starting slurm-node-$i..."
-    podman run \
-        --name "slurm-srun-node-$i" \
-        --hostname "slurm-node-$i" \
-        --network "$NETWORK_NAME" \
-        -e SLURM_ROLE=worker \
-        -e SLURM_HEAD_NODE=slurm-head \
-        -e workers="$WORKERS" \
-        -d \
-        "$IMAGE_NAME"
-    echo "  ✓ slurm-node-$i started"
+PIDS=()
+for i in $(seq 1 $NUM_INSTANCES); do
+    echo "Launching instance $i..."
+    run_instance $i &
+    PIDS+=($!)
 done
 
 echo ""
-echo "Waiting for Slurm cluster to initialize..."
-echo "(This takes ~30 seconds for all daemons and nodes)"
-sleep 30
-
-echo ""
-echo "=========================================="
-echo "Checking container status..."
-echo "=========================================="
+echo "All instances launched. Waiting for completion..."
+echo "(Output to stdout and out.<N> files)"
 echo ""
 
-# Check if containers are still running
-ALL_RUNNING=true
-for container in slurm-srun-mariadb slurm-srun-db slurm-srun-head slurm-srun-node-{1..4}; do
-    if podman ps --filter "name=$container" --format "{{.Names}}" | grep -q "$container"; then
-        echo "  ✓ $container is running"
-    else
-        echo "  ✗ $container has exited!"
-        ALL_RUNNING=false
-        echo ""
-        echo "Last 30 lines of $container logs:"
-        echo "----------------------------------------"
-        podman logs "$container" 2>&1 | tail -30
-        echo "----------------------------------------"
+# Wait for all instances and collect results
+FAILED=0
+for i in $(seq 1 $NUM_INSTANCES); do
+    if ! wait ${PIDS[$((i-1))]}; then
+        FAILED=$((FAILED + 1))
     fi
 done
 
-if [ "$ALL_RUNNING" = false ]; then
-    echo ""
-    echo "Some containers exited. Check logs above."
-    exit 1
-fi
-
-echo ""
+# Serial phase: Summary
 echo "=========================================="
-echo "Verifying munge authentication..."
+echo "Serial Phase: Summary"
 echo "=========================================="
 echo ""
-
-podman exec slurm-srun-head bash -c 'munge -n | unmunge'
-
-echo ""
-echo "✓ Munge working"
-
-echo ""
-echo "=========================================="
-echo "Verifying Slurm cluster..."
-echo "=========================================="
+echo "Total instances: $NUM_INSTANCES"
+echo "Passed: $((NUM_INSTANCES - FAILED))"
+echo "Failed: $FAILED"
 echo ""
 
-echo "Checking node status with sinfo:"
-podman exec slurm-srun-head sinfo || echo "  (Nodes may still be registering)"
-
-echo ""
-echo "Checking cluster status with scontrol:"
-podman exec slurm-srun-head scontrol show nodes || echo "  (Still initializing)"
-
-echo ""
-echo "=========================================="
-echo "Running Spindle testsuite..."
-echo "=========================================="
-echo ""
-echo "This will take several minutes."
-echo ""
-
-# Run the testsuite
-# Based on CI: docker exec slurm-srun-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
-if podman exec slurm-srun-head bash -c "cd Spindle-build/testsuite && salloc -n${WORKERS} -N${WORKERS} ./runTests ${WORKERS}"; then
-    echo ""
-    echo "=========================================="
-    echo "✓ All tests passed!"
-    echo "=========================================="
-    echo ""
+if [ $FAILED -eq 0 ]; then
+    echo "✓ All instances passed!"
     exit 0
 else
+    echo "✗ Some instances failed"
     echo ""
-    echo "=========================================="
-    echo "✗ Some tests failed"
-    echo "=========================================="
-    echo ""
-    echo "To inspect the cluster:"
-    echo "  podman exec -it slurm-srun-head bash"
-    echo "  sinfo"
-    echo "  scontrol show nodes"
-    echo "  cd Spindle-build/testsuite"
-    echo ""
-    echo "Manual cleanup when done:"
-    echo "  podman rm -f slurm-srun-mariadb slurm-srun-db slurm-srun-head slurm-srun-node-{1..4}"
-    echo "  podman network rm -f slurm-srun-test-net"
-    echo ""
+    echo "Check individual logs:"
+    for i in $(seq 1 $NUM_INSTANCES); do
+        if grep -q "SOME TESTS FAILED" "out.$i" 2>/dev/null; then
+            echo "  out.$i - FAILED"
+        elif grep -q "ALL TESTS PASSED" "out.$i" 2>/dev/null; then
+            echo "  out.$i - PASSED"
+        else
+            echo "  out.$i - UNKNOWN"
+        fi
+    done
     exit 1
 fi
-
-echo ""
-echo "Manual cleanup when done:"
-echo "  podman rm -f slurm-srun-mariadb slurm-srun-db slurm-srun-head slurm-srun-node-{1..4}"
-echo "  podman network rm -f slurm-srun-test-net"
-echo ""
-
-# Cleanup disabled for debugging - do manually
