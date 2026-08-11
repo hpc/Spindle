@@ -57,16 +57,6 @@ run_instance() {
         echo "[Instance $INSTANCE_ID] Starting test"
         echo ""
 
-        # Cleanup for this instance
-        echo "[Instance $INSTANCE_ID] Initial cleanup..."
-        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
-            podman stop "$container" 2>/dev/null || true
-            podman rm -f "$container" 2>/dev/null || true
-        done
-        podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
-        echo "[Instance $INSTANCE_ID] Cleanup complete"
-        echo ""
-
         echo "[Instance $INSTANCE_ID] Setting up Slurm cluster..."
         echo ""
 
@@ -167,7 +157,53 @@ run_instance() {
         if podman exec "${NAME_PREFIX}-head" sinfo >/dev/null 2>&1; then
             echo "[Instance $INSTANCE_ID] Cluster ready"
         else
-            echo "[Instance $INSTANCE_ID] WARNING: sinfo failed, but continuing"
+            echo "[Instance $INSTANCE_ID] WARNING: sinfo failed"
+            echo ""
+            echo "[Instance $INSTANCE_ID] ========== DIAGNOSTICS =========="
+
+            # Check container status
+            echo "[Instance $INSTANCE_ID] Container status:"
+            for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head; do
+                if podman ps --filter "name=$container" --format "{{.Names}}" | grep -q "$container"; then
+                    echo "[Instance $INSTANCE_ID]   ✓ $container is running"
+                else
+                    echo "[Instance $INSTANCE_ID]   ✗ $container has exited!"
+                fi
+            done
+            echo ""
+
+            # Show MariaDB logs
+            echo "[Instance $INSTANCE_ID] MariaDB logs (last 20 lines):"
+            podman logs "${NAME_PREFIX}-mariadb" 2>&1 | tail -20 | sed "s/^/[Instance $INSTANCE_ID]   /"
+            echo ""
+
+            # Show slurmdbd logs
+            echo "[Instance $INSTANCE_ID] slurmdbd logs (last 30 lines):"
+            podman logs "${NAME_PREFIX}-db" 2>&1 | tail -30 | sed "s/^/[Instance $INSTANCE_ID]   /"
+            echo ""
+
+            # Show slurmctld logs
+            echo "[Instance $INSTANCE_ID] slurmctld logs (last 30 lines):"
+            podman logs "${NAME_PREFIX}-head" 2>&1 | tail -30 | sed "s/^/[Instance $INSTANCE_ID]   /"
+            echo ""
+
+            # Test MariaDB connectivity
+            echo "[Instance $INSTANCE_ID] Testing MariaDB connectivity:"
+            if podman exec "${NAME_PREFIX}-mariadb" mysqladmin ping 2>&1 | grep -q "mysqld is alive"; then
+                echo "[Instance $INSTANCE_ID]   ✓ MariaDB is responding"
+            else
+                echo "[Instance $INSTANCE_ID]   ✗ MariaDB not responding"
+            fi
+            echo ""
+
+            # Check if slurmdbd can resolve MariaDB hostname
+            echo "[Instance $INSTANCE_ID] DNS check from slurmdbd:"
+            podman exec "${NAME_PREFIX}-db" getent hosts slurm-mariadb 2>&1 | sed "s/^/[Instance $INSTANCE_ID]   /" || echo "[Instance $INSTANCE_ID]   ✗ Cannot resolve slurm-mariadb"
+            echo ""
+
+            echo "[Instance $INSTANCE_ID] ========== END DIAGNOSTICS =========="
+            echo ""
+            echo "[Instance $INSTANCE_ID] Continuing with tests anyway..."
         fi
         echo ""
 
@@ -187,28 +223,16 @@ run_instance() {
             RESULT=1
         fi
         echo ""
-
-        # Cleanup
-        echo "[Instance $INSTANCE_ID] Cleaning up..."
-        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
-            podman stop "$container" 2>/dev/null || true &
-        done
-        wait
-        for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
-            podman rm -f "$container" 2>/dev/null || true &
-        done
-        wait
-        podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
-        echo "[Instance $INSTANCE_ID] Cleanup complete"
+        echo "[Instance $INSTANCE_ID] Test complete (cleanup will happen in serial phase)"
         echo ""
 
         exit $RESULT
     } 2>&1 | ts | tee "out.${INSTANCE_ID}"
 }
 
-# Serial phase: Verify prerequisites
+# Serial phase: Verify prerequisites and cleanup
 echo "=========================================="
-echo "Serial Phase: Verifying prerequisites"
+echo "Serial Phase: Prerequisites & Cleanup"
 echo "=========================================="
 echo ""
 
@@ -226,6 +250,22 @@ if ! podman images | grep -q "mariadb.*12"; then
     exit 1
 fi
 echo "✓ All required images present"
+echo ""
+
+echo "Cleaning up any existing test containers..."
+for i in $(seq 1 $NUM_INSTANCES); do
+    NAME_PREFIX="slurm-srun-${i}"
+    NETWORK_NAME="${NAME_PREFIX}-net"
+
+    # Remove containers for this instance
+    for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+        podman rm -f "$container" 2>/dev/null || true
+    done
+
+    # Remove network for this instance
+    podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
+done
+echo "✓ Cleanup complete"
 echo ""
 
 # Parallel phase: Launch all instances
@@ -253,6 +293,35 @@ for i in $(seq 1 $NUM_INSTANCES); do
         FAILED=$((FAILED + 1))
     fi
 done
+
+echo ""
+echo "=========================================="
+echo "Serial Phase: Cleanup"
+echo "=========================================="
+echo ""
+
+echo "Cleaning up $NUM_INSTANCES test clusters..."
+for i in $(seq 1 $NUM_INSTANCES); do
+    NAME_PREFIX="slurm-srun-${i}"
+    NETWORK_NAME="${NAME_PREFIX}-net"
+
+    echo "Cleaning up instance $i..."
+
+    # Stop containers
+    for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+        podman stop "$container" 2>/dev/null || true
+    done
+
+    # Remove containers
+    for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
+        podman rm -f "$container" 2>/dev/null || true
+    done
+
+    # Remove network
+    podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
+done
+echo "✓ Cleanup complete"
+echo ""
 
 # Serial phase: Summary
 echo "=========================================="
