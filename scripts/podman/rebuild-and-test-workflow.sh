@@ -35,7 +35,6 @@ cd "$REPO_ROOT"
 
 echo "Step 1: Rebuild slurm-srun image"
 echo "Command: ./scripts/podman/build-spindle-slurm-srun.sh"
-read -p "Press ENTER to continue (Ctrl-C to abort)"
 ./scripts/podman/build-spindle-slurm-srun.sh
 
 echo ""
@@ -44,7 +43,6 @@ echo ""
 
 echo "Step 2: Save images to tarball"
 echo "Command: ./scripts/podman/save-images.sh"
-read -p "Press ENTER to continue"
 ./scripts/podman/save-images.sh
 
 TARBALL_PATH="$REPO_ROOT/spindle-podman-images.tar"
