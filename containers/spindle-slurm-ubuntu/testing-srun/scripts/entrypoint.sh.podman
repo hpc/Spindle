@@ -11,16 +11,26 @@ sudo -u munge /usr/sbin/munged
 sleep 2
 
 if [ "${SLURM_ROLE}" = "db" ]; then
+    echo "=== ENTRYPOINT DEBUG (v2) ==="
+    echo "MARIADB_PASSWORD is set: $([ -n "$MARIADB_PASSWORD" ] && echo YES || echo NO)"
+    echo "MARIADB_PASSWORD length: ${#MARIADB_PASSWORD}"
+    echo "Template exists: $([ -f /etc/slurm/slurmdbd.conf.template ] && echo YES || echo NO)"
+
     # Generate slurmdbd.conf from template with runtime password
     if [ -n "$MARIADB_PASSWORD" ]; then
-        echo "Generating slurmdbd.conf with runtime password..."
+        echo "Generating slurmdbd.conf from template..."
         cp /etc/slurm/slurmdbd.conf.template /etc/slurm/slurmdbd.conf
         echo "StoragePass=${MARIADB_PASSWORD}" >> /etc/slurm/slurmdbd.conf
         chmod 600 /etc/slurm/slurmdbd.conf
         chown slurm:slurm /etc/slurm/slurmdbd.conf
+        echo "Generated config last line:"
+        tail -1 /etc/slurm/slurmdbd.conf
     else
-        echo "WARNING: MARIADB_PASSWORD not set, using pre-generated config"
+        echo "ERROR: MARIADB_PASSWORD not set!"
+        echo "Old config exists: $([ -f /etc/slurm/slurmdbd.conf ] && echo YES || echo NO)"
     fi
+    echo "=== END DEBUG ==="
+    echo ""
 
     echo "Starting slurmdbd..."
     exec sudo -u slurm /usr/sbin/slurmdbd -Dvvv
