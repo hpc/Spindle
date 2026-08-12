@@ -17,7 +17,7 @@ ARG UID=1001
 # Set up the Slurm install already present in the base image
 USER root
 COPY ${BUILD_ROOT}/scripts/setup_slurm.sh.podman /setup_slurm.sh
-COPY ${BUILD_ROOT}/conf/slurm.conf.podman /home/${SLURM_USER}/slurm.conf
+COPY ${BUILD_ROOT}/conf/slurm.conf.template /home/${SLURM_USER}/slurm.conf.template
 COPY ${BUILD_ROOT}/conf/slurmdbd.conf.template /home/${SLURM_USER}/slurmdbd.conf.template
 COPY ${BUILD_ROOT}/conf/cgroup.conf /home/${SLURM_USER}/cgroup.conf
 RUN chmod +x /setup_slurm.sh && /setup_slurm.sh

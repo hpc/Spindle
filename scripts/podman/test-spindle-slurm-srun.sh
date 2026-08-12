@@ -50,7 +50,12 @@ echo ""
 run_instance() {
     local INSTANCE_ID=$1
     local NAME_PREFIX="slurm-srun-${INSTANCE_ID}"
-    local NETWORK_NAME="${NAME_PREFIX}-net"
+
+    # Instance-specific hostnames for shared network
+    local MARIADB_HOST="${NAME_PREFIX}-mariadb"
+    local DB_HOST="${NAME_PREFIX}-db"
+    local HEAD_NODE="${NAME_PREFIX}-head"
+    local NODE_PREFIX="${NAME_PREFIX}-node"
 
     # All output from this function goes through ts and tee
     {
@@ -65,18 +70,12 @@ run_instance() {
         echo "[Instance $INSTANCE_ID] Generated MariaDB password"
         echo ""
 
-        # Create network
-        echo "[Instance $INSTANCE_ID] Creating network: $NETWORK_NAME"
-        podman network create "$NETWORK_NAME" >/dev/null
-        echo "[Instance $INSTANCE_ID] Network created"
-        echo ""
-
         # Start MariaDB
         echo "[Instance $INSTANCE_ID] Starting MariaDB..."
         podman run \
             --name "${NAME_PREFIX}-mariadb" \
-            --hostname slurm-mariadb \
-            --network "$NETWORK_NAME" \
+            --hostname "$MARIADB_HOST" \
+            --network "$SHARED_NETWORK" \
             -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
             -e MYSQL_DATABASE=slurm_acct_db \
             -e MYSQL_USER=slurm \
@@ -92,10 +91,13 @@ run_instance() {
         echo "[Instance $INSTANCE_ID] Starting slurmdbd..."
         podman run \
             --name "${NAME_PREFIX}-db" \
-            --hostname slurm-db \
-            --network "$NETWORK_NAME" \
+            --hostname "$DB_HOST" \
+            --network "$SHARED_NETWORK" \
             -e SLURM_ROLE=db \
-            -e SLURM_HEAD_NODE=slurm-head \
+            -e SLURM_HEAD_NODE="$HEAD_NODE" \
+            -e SLURM_DB_HOST="$DB_HOST" \
+            -e SLURM_MARIADB_HOST="$MARIADB_HOST" \
+            -e SLURM_NODE_PREFIX="$NODE_PREFIX" \
             -e workers="$WORKERS" \
             -e MARIADB_PASSWORD="$MARIADB_PASSWORD" \
             -d \
@@ -108,10 +110,12 @@ run_instance() {
         echo "[Instance $INSTANCE_ID] Starting slurmctld..."
         podman run \
             --name "${NAME_PREFIX}-head" \
-            --hostname slurm-head \
-            --network "$NETWORK_NAME" \
+            --hostname "$HEAD_NODE" \
+            --network "$SHARED_NETWORK" \
             -e SLURM_ROLE=ctl \
-            -e SLURM_HEAD_NODE=slurm-head \
+            -e SLURM_HEAD_NODE="$HEAD_NODE" \
+            -e SLURM_DB_HOST="$DB_HOST" \
+            -e SLURM_NODE_PREFIX="$NODE_PREFIX" \
             -e workers="$WORKERS" \
             -t \
             -d \
@@ -123,17 +127,19 @@ run_instance() {
         # Start worker nodes
         echo "[Instance $INSTANCE_ID] Starting worker nodes..."
         for i in $(seq 1 $WORKERS); do
-            echo "[Instance $INSTANCE_ID] Starting slurm-node-$i..."
+            echo "[Instance $INSTANCE_ID] Starting ${NODE_PREFIX}-$i..."
             podman run \
                 --name "${NAME_PREFIX}-node-$i" \
-                --hostname "slurm-node-$i" \
-                --network "$NETWORK_NAME" \
+                --hostname "${NODE_PREFIX}-$i" \
+                --network "$SHARED_NETWORK" \
                 -e SLURM_ROLE=worker \
-                -e SLURM_HEAD_NODE=slurm-head \
+                -e SLURM_HEAD_NODE="$HEAD_NODE" \
+                -e SLURM_DB_HOST="$DB_HOST" \
+                -e SLURM_NODE_PREFIX="$NODE_PREFIX" \
                 -e workers="$WORKERS" \
                 -d \
                 "$IMAGE_NAME" >/dev/null
-            echo "[Instance $INSTANCE_ID] slurm-node-$i started"
+            echo "[Instance $INSTANCE_ID] ${NODE_PREFIX}-$i started"
         done
         echo ""
 
@@ -219,6 +225,9 @@ run_instance() {
     } 2>&1 | ts | tee "out.${INSTANCE_ID}"
 }
 
+# Shared network for all instances (avoids 30s timeout per instance)
+SHARED_NETWORK="slurm-srun-shared"
+
 # Serial phase: Verify prerequisites and cleanup
 echo "=========================================="
 echo "Serial Phase: Prerequisites & Cleanup"
@@ -241,20 +250,24 @@ fi
 echo "✓ All required images present"
 echo ""
 
-echo "Cleaning up any existing test containers..."
+echo "Cleaning up any existing test containers and network..."
 for i in $(seq 1 $NUM_INSTANCES); do
     NAME_PREFIX="slurm-srun-${i}"
-    NETWORK_NAME="${NAME_PREFIX}-net"
 
     # Remove containers for this instance
     for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
         podman rm -f "$container" 2>/dev/null || true
     done
-
-    # Remove network for this instance
-    podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
 done
+
+# Remove shared network
+podman network rm -f "$SHARED_NETWORK" 2>/dev/null || true
 echo "✓ Cleanup complete"
+echo ""
+
+echo "Creating shared network: $SHARED_NETWORK"
+podman network create "$SHARED_NETWORK" >/dev/null
+echo "✓ Shared network created (this may take ~30s due to systemd session bus timeout)"
 echo ""
 
 # Parallel phase: Launch all instances
@@ -292,7 +305,6 @@ echo ""
 echo "Cleaning up $NUM_INSTANCES test clusters..."
 for i in $(seq 1 $NUM_INSTANCES); do
     NAME_PREFIX="slurm-srun-${i}"
-    NETWORK_NAME="${NAME_PREFIX}-net"
 
     echo "Cleaning up instance $i..."
 
@@ -305,11 +317,14 @@ for i in $(seq 1 $NUM_INSTANCES); do
     for container in ${NAME_PREFIX}-mariadb ${NAME_PREFIX}-db ${NAME_PREFIX}-head ${NAME_PREFIX}-node-{1..4}; do
         podman rm -f "$container" 2>/dev/null || true
     done
-
-    # Remove network
-    podman network rm -f "$NETWORK_NAME" 2>/dev/null || true
 done
 echo "✓ Cleanup complete"
+echo ""
+
+# Remove shared network
+echo "Removing shared network..."
+podman network rm -f "$SHARED_NETWORK" 2>/dev/null || true
+echo "✓ Network removed"
 echo ""
 
 # Serial phase: Summary
