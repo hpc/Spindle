@@ -8,6 +8,12 @@
 
 set -e
 
+# Re-exec through ts for timestamps if not already done
+if [ -z "$TS_ENABLED" ]; then
+    export TS_ENABLED=1
+    exec "$0" "$@" 2>&1 | ts
+fi
+
 # Get the directory containing this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

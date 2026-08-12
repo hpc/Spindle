@@ -19,12 +19,12 @@ if [ "${SLURM_ROLE}" = "db" ]; then
     # Generate slurmdbd.conf from template with runtime password
     if [ -n "$MARIADB_PASSWORD" ]; then
         echo "Generating slurmdbd.conf from template..."
-        cp /etc/slurm/slurmdbd.conf.template /etc/slurm/slurmdbd.conf
-        echo "StoragePass=${MARIADB_PASSWORD}" >> /etc/slurm/slurmdbd.conf
-        chmod 600 /etc/slurm/slurmdbd.conf
-        chown slurm:slurm /etc/slurm/slurmdbd.conf
+        sudo cp /etc/slurm/slurmdbd.conf.template /etc/slurm/slurmdbd.conf
+        echo "StoragePass=${MARIADB_PASSWORD}" | sudo tee -a /etc/slurm/slurmdbd.conf > /dev/null
+        sudo chmod 600 /etc/slurm/slurmdbd.conf
+        sudo chown slurm:slurm /etc/slurm/slurmdbd.conf
         echo "Generated config last line:"
-        tail -1 /etc/slurm/slurmdbd.conf
+        sudo tail -1 /etc/slurm/slurmdbd.conf
     else
         echo "ERROR: MARIADB_PASSWORD not set!"
         echo "Old config exists: $([ -f /etc/slurm/slurmdbd.conf ] && echo YES || echo NO)"
