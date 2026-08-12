@@ -8,12 +8,6 @@
 
 set -e
 
-# Re-exec through ts for timestamps if not already done
-if [ -z "$TS_ENABLED" ]; then
-    export TS_ENABLED=1
-    exec "$0" "$@" 2>&1 | ts
-fi
-
 # Get the directory containing this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -33,9 +27,57 @@ echo ""
 
 cd "$REPO_ROOT"
 
+TARBALL="$REPO_ROOT/spindle-podman-images.tar"
+
+# Check if base image exists
+if ! podman images | grep -q "spindle-slurm-base"; then
+    echo "Base image not found in podman."
+    echo ""
+
+    # Check if tarball exists
+    if [ -f "$TARBALL" ]; then
+        echo "Found tarball: $TARBALL"
+        echo "Loading images from tarball..."
+        echo "Command: ./scripts/podman/load-images.sh $TARBALL"
+        echo ""
+        ./scripts/podman/load-images.sh "$TARBALL" 2>&1 | ts
+        echo ""
+
+        # Check again if image is now available
+        if podman images | grep -q "spindle-slurm-base"; then
+            echo "✓ Base image loaded from tarball"
+            echo ""
+        else
+            echo "ERROR: Base image not in tarball. Need to rebuild."
+            echo ""
+            echo "Building spindle-slurm-base from source..."
+            echo "Command: ./scripts/podman/build-spindle-slurm-base.sh"
+            echo "(This takes ~6 minutes - compiles Slurm + MPICH from source)"
+            echo ""
+            ./scripts/podman/build-spindle-slurm-base.sh 2>&1 | ts
+            echo ""
+            echo "✓ Base image built"
+            echo ""
+        fi
+    else
+        echo "Tarball not found at: $TARBALL"
+        echo "Building spindle-slurm-base from source..."
+        echo "Command: ./scripts/podman/build-spindle-slurm-base.sh"
+        echo "(This takes ~6 minutes - compiles Slurm + MPICH from source)"
+        echo ""
+        ./scripts/podman/build-spindle-slurm-base.sh 2>&1 | ts
+        echo ""
+        echo "✓ Base image built"
+        echo ""
+    fi
+else
+    echo "✓ Base image already loaded"
+    echo ""
+fi
+
 echo "Step 1: Rebuild slurm-srun image"
 echo "Command: ./scripts/podman/build-spindle-slurm-srun.sh"
-./scripts/podman/build-spindle-slurm-srun.sh
+./scripts/podman/build-spindle-slurm-srun.sh 2>&1 | ts
 
 echo ""
 echo "✓ Build complete"
@@ -43,7 +85,7 @@ echo ""
 
 echo "Step 2: Save images to tarball"
 echo "Command: ./scripts/podman/save-images.sh"
-./scripts/podman/save-images.sh
+./scripts/podman/save-images.sh 2>&1 | ts
 
 TARBALL_PATH="$REPO_ROOT/spindle-podman-images.tar"
 echo ""
