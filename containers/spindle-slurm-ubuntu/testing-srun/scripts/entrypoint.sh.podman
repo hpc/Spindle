@@ -11,6 +11,17 @@ sudo -u munge /usr/sbin/munged
 sleep 2
 
 if [ "${SLURM_ROLE}" = "db" ]; then
+    # Generate slurmdbd.conf from template with runtime password
+    if [ -n "$MARIADB_PASSWORD" ]; then
+        echo "Generating slurmdbd.conf with runtime password..."
+        cp /etc/slurm/slurmdbd.conf.template /etc/slurm/slurmdbd.conf
+        echo "StoragePass=${MARIADB_PASSWORD}" >> /etc/slurm/slurmdbd.conf
+        chmod 600 /etc/slurm/slurmdbd.conf
+        chown slurm:slurm /etc/slurm/slurmdbd.conf
+    else
+        echo "WARNING: MARIADB_PASSWORD not set, using pre-generated config"
+    fi
+
     echo "Starting slurmdbd..."
     exec sudo -u slurm /usr/sbin/slurmdbd -Dvvv
 elif [ "${SLURM_ROLE}" = "ctl" ] ; then

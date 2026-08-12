@@ -60,28 +60,16 @@ run_instance() {
         echo "[Instance $INSTANCE_ID] Setting up Slurm cluster..."
         echo ""
 
+        # Generate random password for this cluster
+        MARIADB_PASSWORD=$(openssl rand -base64 16)
+        echo "[Instance $INSTANCE_ID] Generated MariaDB password"
+        echo ""
+
         # Create network
         echo "[Instance $INSTANCE_ID] Creating network: $NETWORK_NAME"
         podman network create "$NETWORK_NAME" >/dev/null
         echo "[Instance $INSTANCE_ID] Network created"
         echo ""
-
-        # Read MariaDB password
-        MARIADB_ENV=""
-        if [ -f "$REPO_ROOT/mariadb.env" ]; then
-            MARIADB_ENV="$REPO_ROOT/mariadb.env"
-        elif [ -f "$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env" ]; then
-            MARIADB_ENV="$REPO_ROOT/containers/spindle-slurm-ubuntu/testing-srun/mariadb.env"
-        else
-            echo "[Instance $INSTANCE_ID] ERROR: Could not find mariadb.env"
-            exit 1
-        fi
-
-        MARIADB_PASSWORD=$(grep MARIADB_PASSWORD "$MARIADB_ENV" | cut -d'"' -f2)
-        if [ -z "$MARIADB_PASSWORD" ]; then
-            echo "[Instance $INSTANCE_ID] ERROR: Could not read password from $MARIADB_ENV"
-            exit 1
-        fi
 
         # Start MariaDB
         echo "[Instance $INSTANCE_ID] Starting MariaDB..."
@@ -109,6 +97,7 @@ run_instance() {
             -e SLURM_ROLE=db \
             -e SLURM_HEAD_NODE=slurm-head \
             -e workers="$WORKERS" \
+            -e MARIADB_PASSWORD="$MARIADB_PASSWORD" \
             -d \
             "$IMAGE_NAME" >/dev/null
         echo "[Instance $INSTANCE_ID] slurmdbd started"
