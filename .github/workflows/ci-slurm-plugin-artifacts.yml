@@ -68,7 +68,7 @@ jobs:
         continue-on-error: true
         run: |
           failed=0
-          for node in slurm-head slurm-node-1 slurm-node-2 slurm-node-3 slurm-node-4; do
+          for node in slurm-plugin-head slurm-plugin-node-1 slurm-plugin-node-2 slurm-plugin-node-3 slurm-plugin-node-4; do
             echo "::group::Collecting logs from $node"
 
             if ! workdir=$(docker inspect -f '{{.Config.WorkingDir}}' "$node" 2>/dev/null); then
