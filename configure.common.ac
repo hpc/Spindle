@@ -30,7 +30,7 @@ AC_ARG_WITH(cachepath,
             [AC_MSG_ERROR(use --with-cachepaths=DIRS (plural) instead of --with-cachepath=DIR to specify one or more cache paths)],
             [])
 AC_ARG_WITH(commpaths,
-            [AS_HELP_STRING([--with-compaths=DIR],[Colon-separated list of candidate paths for back-end communication and housekeeping])],
+            [AS_HELP_STRING([--with-commpaths=DIR],[Colon-separated list of candidate paths for back-end communication and housekeeping])],
             [COMMPATHS=${withval}],
             [COMMPATHS=$DEFAULT_LOC])
 AC_ARG_WITH(default-local-prefix,
