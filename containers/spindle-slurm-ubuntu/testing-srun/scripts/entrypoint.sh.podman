@@ -15,7 +15,7 @@ echo "Generating slurm.conf from template..."
 export SLURM_HEAD_NODE=${SLURM_HEAD_NODE:-slurm-head}
 export SLURM_DB_HOST=${SLURM_DB_HOST:-slurm-db}
 export SLURM_NODE_PREFIX=${SLURM_NODE_PREFIX:-slurm-node}
-sudo -E bash -c 'envsubst < /etc/slurm/slurm.conf.template > /etc/slurm/slurm.conf'
+sudo -E bash -c 'envsubst "\$SLURM_HEAD_NODE \$SLURM_DB_HOST \$SLURM_NODE_PREFIX" < /etc/slurm/slurm.conf.template > /etc/slurm/slurm.conf'
 
 # Add NodeName entries dynamically based on $workers
 workers=${workers:-4}
@@ -40,7 +40,7 @@ if [ "${SLURM_ROLE}" = "db" ]; then
     if [ -n "$MARIADB_PASSWORD" ]; then
         echo "Generating slurmdbd.conf from template..."
         export SLURM_MARIADB_HOST=${SLURM_MARIADB_HOST:-slurm-mariadb}
-        sudo -E bash -c 'envsubst < /etc/slurm/slurmdbd.conf.template > /etc/slurm/slurmdbd.conf'
+        sudo -E bash -c 'envsubst "\$SLURM_DB_HOST \$SLURM_MARIADB_HOST" < /etc/slurm/slurmdbd.conf.template > /etc/slurm/slurmdbd.conf'
         echo "StoragePass=${MARIADB_PASSWORD}" | sudo tee -a /etc/slurm/slurmdbd.conf > /dev/null
         sudo chmod 600 /etc/slurm/slurmdbd.conf
         sudo chown slurm:slurm /etc/slurm/slurmdbd.conf
