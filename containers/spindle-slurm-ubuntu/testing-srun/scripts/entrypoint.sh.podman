@@ -15,7 +15,12 @@ echo "Generating slurm.conf from template..."
 export SLURM_HEAD_NODE=${SLURM_HEAD_NODE:-slurm-head}
 export SLURM_DB_HOST=${SLURM_DB_HOST:-slurm-db}
 export SLURM_NODE_PREFIX=${SLURM_NODE_PREFIX:-slurm-node}
-sudo -E bash -c 'envsubst "\$SLURM_HEAD_NODE \$SLURM_DB_HOST \$SLURM_NODE_PREFIX" < /etc/slurm/slurm.conf.template > /etc/slurm/slurm.conf'
+echo "DEBUG: SLURM_HEAD_NODE=$SLURM_HEAD_NODE"
+echo "DEBUG: SLURM_DB_HOST=$SLURM_DB_HOST"
+echo "DEBUG: SLURM_NODE_PREFIX=$SLURM_NODE_PREFIX"
+echo "DEBUG: Template first 3 lines:"
+sudo head -3 /etc/slurm/slurm.conf.template
+sudo -E bash -c 'envsubst '"'"'$SLURM_HEAD_NODE $SLURM_DB_HOST $SLURM_NODE_PREFIX'"'"' < /etc/slurm/slurm.conf.template > /etc/slurm/slurm.conf'
 
 # Add NodeName entries dynamically based on $workers
 workers=${workers:-4}
@@ -24,9 +29,10 @@ for i in $(seq 1 $workers); do
 done
 sudo chmod 644 /etc/slurm/slurm.conf
 
-echo "Generated slurm.conf (first 5 and last 5 lines):"
-sudo head -5 /etc/slurm/slurm.conf
+echo "Generated slurm.conf (first 10 lines):"
+sudo head -10 /etc/slurm/slurm.conf
 echo "..."
+echo "Last 5 lines:"
 sudo tail -5 /etc/slurm/slurm.conf
 echo ""
 
@@ -40,12 +46,16 @@ if [ "${SLURM_ROLE}" = "db" ]; then
     if [ -n "$MARIADB_PASSWORD" ]; then
         echo "Generating slurmdbd.conf from template..."
         export SLURM_MARIADB_HOST=${SLURM_MARIADB_HOST:-slurm-mariadb}
-        sudo -E bash -c 'envsubst "\$SLURM_DB_HOST \$SLURM_MARIADB_HOST" < /etc/slurm/slurmdbd.conf.template > /etc/slurm/slurmdbd.conf'
+        echo "DEBUG: SLURM_DB_HOST=$SLURM_DB_HOST"
+        echo "DEBUG: SLURM_MARIADB_HOST=$SLURM_MARIADB_HOST"
+        echo "DEBUG: Template first 3 lines:"
+        sudo head -3 /etc/slurm/slurmdbd.conf.template
+        sudo -E bash -c 'envsubst '"'"'$SLURM_DB_HOST $SLURM_MARIADB_HOST'"'"' < /etc/slurm/slurmdbd.conf.template > /etc/slurm/slurmdbd.conf'
         echo "StoragePass=${MARIADB_PASSWORD}" | sudo tee -a /etc/slurm/slurmdbd.conf > /dev/null
         sudo chmod 600 /etc/slurm/slurmdbd.conf
         sudo chown slurm:slurm /etc/slurm/slurmdbd.conf
-        echo "Generated slurmdbd.conf (first 5 lines):"
-        sudo head -5 /etc/slurm/slurmdbd.conf
+        echo "Generated slurmdbd.conf (complete file):"
+        sudo cat /etc/slurm/slurmdbd.conf
     else
         echo "ERROR: MARIADB_PASSWORD not set!"
         echo "Old config exists: $([ -f /etc/slurm/slurmdbd.conf ] && echo YES || echo NO)"
