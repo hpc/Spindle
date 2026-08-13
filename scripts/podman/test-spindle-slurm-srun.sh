@@ -87,6 +87,28 @@ run_instance() {
         sleep 15
         echo ""
 
+        # Start worker nodes FIRST so they're available for DNS resolution
+        # when slurmctld starts and tries to resolve node addresses
+        echo "[Instance $INSTANCE_ID] Starting worker nodes..."
+        for i in $(seq 1 $WORKERS); do
+            echo "[Instance $INSTANCE_ID] Starting ${NODE_PREFIX}-$i..."
+            podman run \
+                --name "${NAME_PREFIX}-node-$i" \
+                --hostname "${NODE_PREFIX}-$i" \
+                --network "$SHARED_NETWORK" \
+                -e SLURM_ROLE=worker \
+                -e SLURM_HEAD_NODE="$HEAD_NODE" \
+                -e SLURM_DB_HOST="$DB_HOST" \
+                -e SLURM_NODE_PREFIX="$NODE_PREFIX" \
+                -e workers="$WORKERS" \
+                -d \
+                "$IMAGE_NAME" >/dev/null
+            echo "[Instance $INSTANCE_ID] ${NODE_PREFIX}-$i started"
+        done
+        echo "[Instance $INSTANCE_ID] Waiting for workers to initialize (5s)..."
+        sleep 5
+        echo ""
+
         # Start slurmdbd
         echo "[Instance $INSTANCE_ID] Starting slurmdbd..."
         podman run \
@@ -106,7 +128,7 @@ run_instance() {
         sleep 10
         echo ""
 
-        # Start slurmctld
+        # Start slurmctld LAST so all other containers are reachable via DNS
         echo "[Instance $INSTANCE_ID] Starting slurmctld..."
         podman run \
             --name "${NAME_PREFIX}-head" \
@@ -122,25 +144,6 @@ run_instance() {
             "$IMAGE_NAME" >/dev/null
         echo "[Instance $INSTANCE_ID] slurmctld started"
         sleep 10
-        echo ""
-
-        # Start worker nodes
-        echo "[Instance $INSTANCE_ID] Starting worker nodes..."
-        for i in $(seq 1 $WORKERS); do
-            echo "[Instance $INSTANCE_ID] Starting ${NODE_PREFIX}-$i..."
-            podman run \
-                --name "${NAME_PREFIX}-node-$i" \
-                --hostname "${NODE_PREFIX}-$i" \
-                --network "$SHARED_NETWORK" \
-                -e SLURM_ROLE=worker \
-                -e SLURM_HEAD_NODE="$HEAD_NODE" \
-                -e SLURM_DB_HOST="$DB_HOST" \
-                -e SLURM_NODE_PREFIX="$NODE_PREFIX" \
-                -e workers="$WORKERS" \
-                -d \
-                "$IMAGE_NAME" >/dev/null
-            echo "[Instance $INSTANCE_ID] ${NODE_PREFIX}-$i started"
-        done
         echo ""
 
         echo "[Instance $INSTANCE_ID] Waiting for Slurm cluster to initialize (60s)..."
