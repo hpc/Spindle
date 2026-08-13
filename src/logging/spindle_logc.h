@@ -34,8 +34,10 @@ extern void spindle_dump_on_error();
 #define debug_printf(format, ...)                                       \
    do {                                                                 \
       if (spindle_debug_prints && spindle_debug_output_f) {             \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
-                 spindle_debug_name, getpid(),                          \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] [%s.%d@%s:%u] %s - " format,  \
+                 timestamp_buf, spindle_debug_name, getpid(),           \
                  BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -44,8 +46,10 @@ extern void spindle_dump_on_error();
 #define debug_printf2(format, ...)                                      \
    do {                                                                 \
       if (spindle_debug_prints > 1 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
-                 spindle_debug_name, getpid(),                          \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] [%s.%d@%s:%u] %s - " format,  \
+                 timestamp_buf, spindle_debug_name, getpid(),           \
                  BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -54,8 +58,10 @@ extern void spindle_dump_on_error();
 #define debug_printf3(format, ...)                                      \
    do {                                                                 \
       if (spindle_debug_prints > 2 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] %s - " format,  \
-                 spindle_debug_name, getpid(),                          \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] [%s.%d@%s:%u] %s - " format,  \
+                 timestamp_buf, spindle_debug_name, getpid(),           \
                  BASE_FILE, __LINE__, __func__, ## __VA_ARGS__);        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
@@ -64,7 +70,10 @@ extern void spindle_dump_on_error();
 #define bare_printf(format, ...)                                        \
    do {                                                                 \
       if (spindle_debug_prints && spindle_debug_output_f) {             \
-         fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] " format,                \
+                 timestamp_buf, ## __VA_ARGS__);                        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)
@@ -72,7 +81,10 @@ extern void spindle_dump_on_error();
 #define bare_printf2(format, ...)                                       \
    do {                                                                 \
       if (spindle_debug_prints > 1 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] " format,                \
+                 timestamp_buf, ## __VA_ARGS__);                        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)
@@ -80,7 +92,10 @@ extern void spindle_dump_on_error();
 #define bare_printf3(format, ...)                                       \
    do {                                                                 \
       if (spindle_debug_prints > 2 && spindle_debug_output_f) {         \
-         fprintf(spindle_debug_output_f, format, ## __VA_ARGS__);       \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] " format,                \
+                 timestamp_buf, ## __VA_ARGS__);                        \
          fflush(spindle_debug_output_f);                                \
       }                                                                 \
    } while (0)
@@ -88,8 +103,10 @@ extern void spindle_dump_on_error();
 #define err_printf(format, ...)                                         \
    do {                                                                 \
       if (spindle_debug_prints && spindle_debug_output_f) {             \
-         fprintf(spindle_debug_output_f, "[%s.%d@%s:%u] - ERROR: "      \
-                 format, spindle_debug_name, getpid(),                  \
+         char timestamp_buf[64];                                        \
+         format_timestamp_dual(timestamp_buf, sizeof(timestamp_buf));   \
+         fprintf(spindle_debug_output_f, "[%s] [%s.%d@%s:%u] - ERROR: " \
+                 format, timestamp_buf, spindle_debug_name, getpid(),   \
                  BASE_FILE, __LINE__, ## __VA_ARGS__);                  \
          spindle_dump_on_error();                                       \
          fflush(spindle_debug_output_f);                                \
@@ -109,5 +126,7 @@ void init_spindle_debugging(char *name, int survive_exec);
 void fini_spindle_debugging();
 void reset_spindle_debugging();
 int is_debug_fd(int fd);
+void format_timestamp_dual(char *buf, size_t bufsize);
+void init_timestamp();
 
 #endif

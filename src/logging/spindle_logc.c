@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <errno.h>
 #include <execinfo.h>
 #include <stdarg.h>
+#include <time.h>
 
 #if !defined(LIBEXEC)
 #error Expected to have LIBEXEC defined
@@ -58,6 +59,40 @@ int run_tests;
 //Timeout in tenths of a second
 #define SPAWN_TIMEOUT 300
 #define CONNECT_TIMEOUT 100
+
+// Timestamp support
+static double start_time_monotonic = 0.0;
+
+static double get_monotonic_time() {
+   struct timespec ts;
+   clock_gettime(CLOCK_MONOTONIC, &ts);
+   return ts.tv_sec + ts.tv_nsec / 1e9;
+}
+
+void format_timestamp_dual(char *buf, size_t bufsize) {
+   struct timespec ts;
+   struct tm tm_info;
+   double now_monotonic;
+   double elapsed;
+
+   // Get absolute wall-clock time
+   clock_gettime(CLOCK_REALTIME, &ts);
+   localtime_r(&ts.tv_sec, &tm_info);
+
+   // Get relative time
+   now_monotonic = get_monotonic_time();
+   elapsed = now_monotonic - start_time_monotonic;
+
+   // Format: [HH:MM:SS.usec +elapsed]
+   snprintf(buf, bufsize, "%02d:%02d:%02d.%06ld +%8.6f",
+            tm_info.tm_hour, tm_info.tm_min, tm_info.tm_sec,
+            ts.tv_nsec / 1000, elapsed);
+}
+
+void init_timestamp() {
+   if (start_time_monotonic == 0.0)
+      start_time_monotonic = get_monotonic_time();
+}
 
 extern int spindle_mkdir(char *orig_path);
 
@@ -328,7 +363,10 @@ void init_spindle_debugging(char *name, int survive_exec)
    if (debug_fd != -1)
       spindle_debug_output_f = fdopen(debug_fd, "w");
    if (test_fd != -1)
-      spindle_test_output_f = fdopen(test_fd, "w");      
+      spindle_test_output_f = fdopen(test_fd, "w");
+
+   /* Initialize timestamp */
+   init_timestamp();
 }
 
 void spindle_dump_on_error()
