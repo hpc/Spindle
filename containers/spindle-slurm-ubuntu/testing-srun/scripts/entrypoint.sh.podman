@@ -20,7 +20,11 @@ echo "DEBUG: SLURM_DB_HOST=$SLURM_DB_HOST"
 echo "DEBUG: SLURM_NODE_PREFIX=$SLURM_NODE_PREFIX"
 echo "DEBUG: Template first 3 lines:"
 sudo head -3 /etc/slurm/slurm.conf.template
-sudo -E bash -c 'envsubst '"'"'$SLURM_HEAD_NODE $SLURM_DB_HOST $SLURM_NODE_PREFIX'"'"' < /etc/slurm/slurm.conf.template > /etc/slurm/slurm.conf'
+echo "DEBUG: Running sed to substitute variables..."
+sudo sed -e "s/\${SLURM_HEAD_NODE}/$SLURM_HEAD_NODE/g" \
+         -e "s/\${SLURM_DB_HOST}/$SLURM_DB_HOST/g" \
+         -e "s/\${SLURM_NODE_PREFIX}/$SLURM_NODE_PREFIX/g" \
+         /etc/slurm/slurm.conf.template | sudo tee /etc/slurm/slurm.conf > /dev/null
 
 # Add NodeName entries dynamically based on $workers
 workers=${workers:-4}
@@ -50,7 +54,10 @@ if [ "${SLURM_ROLE}" = "db" ]; then
         echo "DEBUG: SLURM_MARIADB_HOST=$SLURM_MARIADB_HOST"
         echo "DEBUG: Template first 3 lines:"
         sudo head -3 /etc/slurm/slurmdbd.conf.template
-        sudo -E bash -c 'envsubst '"'"'$SLURM_DB_HOST $SLURM_MARIADB_HOST'"'"' < /etc/slurm/slurmdbd.conf.template > /etc/slurm/slurmdbd.conf'
+        echo "DEBUG: Running sed to substitute variables..."
+        sudo sed -e "s/\${SLURM_DB_HOST}/$SLURM_DB_HOST/g" \
+                 -e "s/\${SLURM_MARIADB_HOST}/$SLURM_MARIADB_HOST/g" \
+                 /etc/slurm/slurmdbd.conf.template | sudo tee /etc/slurm/slurmdbd.conf > /dev/null
         echo "StoragePass=${MARIADB_PASSWORD}" | sudo tee -a /etc/slurm/slurmdbd.conf > /dev/null
         sudo chmod 600 /etc/slurm/slurmdbd.conf
         sudo chown slurm:slurm /etc/slurm/slurmdbd.conf
