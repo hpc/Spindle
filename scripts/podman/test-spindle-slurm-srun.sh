@@ -207,7 +207,7 @@ run_instance() {
 
         # Run tests
         echo "[Instance $INSTANCE_ID] Running Spindle testsuite..."
-        if podman exec "${NAME_PREFIX}-head" bash -c "cd Spindle-build/testsuite && salloc -n${WORKERS} -N${WORKERS} ./runTests ${WORKERS}"; then
+        if podman exec "${NAME_PREFIX}-head" bash -c "cd Spindle-build/testsuite && export SPINDLE_DEBUG=3 && salloc -n${WORKERS} -N${WORKERS} ./runTests ${WORKERS}"; then
             echo ""
             echo "[Instance $INSTANCE_ID] =========================================="
             echo "[Instance $INSTANCE_ID] ALL TESTS PASSED"
