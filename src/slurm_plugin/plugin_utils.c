@@ -302,7 +302,7 @@ int isFEHost(char **hostlist, unsigned int num_hosts)
 
 static char* exitSocketPath(spindle_args_t *params)
 {
-   char *realized_dir, *socket_path = NULL;
+   char *realized_dir = NULL, *socket_path = NULL;
    char session_id_str[32];
    size_t socket_path_len;
 
