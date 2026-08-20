@@ -106,7 +106,7 @@ char **strip_start_from_argv(int argc, char **argv)
    return new_argv;
 }
 
-#define SESSIONPATH "/tmp/spindle/session"
+#define SESSIONPATH "$TMPDIR/spindle/session"
 const char *get_session_dir()
 {
    /* This function was originally designed to return a realized version of COMMPATH.
