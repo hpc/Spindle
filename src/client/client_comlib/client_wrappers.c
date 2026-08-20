@@ -43,6 +43,7 @@ extern char *RENAME(client_get_connection_string) (int fd);
 extern int RENAME(client_send_msg) (int connid, ldcs_message_t * msg);
 extern int RENAME(client_recv_msg_static) (int fd, ldcs_message_t *msg, ldcs_read_block_t block);
 extern int RENAME(client_recv_msg_dynamic) (int fd, ldcs_message_t *msg, ldcs_read_block_t block);
+extern int RENAME(client_get_raw_fds) (int fd, int *read_fd, int *write_fd);
 
 int client_open_connection(char* location, number_t number)
 {
@@ -77,5 +78,10 @@ int client_recv_msg_static(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
 int client_recv_msg_dynamic(int fd, ldcs_message_t *msg, ldcs_read_block_t block)
 {
    return RENAME(client_recv_msg_dynamic) (fd, msg, block);
+}
+
+int client_get_raw_fds(int fd, int *read_fd, int *write_fd)
+{
+   return RENAME(client_get_raw_fds) (fd, read_fd, write_fd);
 }
 

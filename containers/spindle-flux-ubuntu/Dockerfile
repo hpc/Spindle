@@ -7,6 +7,7 @@ ENV workers=${replicas}
 USER root
 ENV TMPDIR=/tmp
 RUN echo 'TMPDIR="/tmp"' >> /etc/environment
+ENV SPINDLE_TEST_CONTAINER=1
 
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update \
     && apt-get -qq install -y --no-install-recommends \
@@ -26,6 +27,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get update \
         libgcrypt20 \
         libgcrypt20-dev \
         gdb \
+        libc6-dbg \
         software-properties-common
 
 ARG USER=fluxuser

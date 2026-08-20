@@ -12,7 +12,7 @@ endif
 
 AM_CFLAGS = -fvisibility=hidden
 
-AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient -I$(top_srcdir)/../utils
+AM_CPPFLAGS = -I$(top_srcdir)/../logging -I$(top_srcdir)/../include -I$(top_srcdir)/client -I$(top_srcdir)/client_comlib -I$(top_srcdir)/auditclient -I$(top_srcdir)/../utils -I$(top_srcdir)/crash_handler
 
 BASE_SRCS = subaudit.c intercept_malloc.c update_pltbind.c ../auditclient/auditclient_common.c ../auditclient/patch_linkmap.c ../auditclient/fixlocale.c
 

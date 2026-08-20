@@ -44,7 +44,6 @@ int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chose
    ldcs_message_t message;
    char buffer[2*(MAX_PATH_LEN+1)];
 
-
    message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
    message.header.len = 0;
    message.data = buffer;

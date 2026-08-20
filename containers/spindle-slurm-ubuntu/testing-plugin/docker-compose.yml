@@ -35,13 +35,21 @@ networks:
   slurm:
     driver: bridge
 
+# Shared scratch volume so run_crash_tests.sh can count coredumps
+# written by ranks on any node from the head node.
+volumes:
+  crash_scratch:
+
 # Common parameters for all nodes.
 x-shared-node-parameters: &shared-node-parameters
   build: *shared-build-context
   networks:
     - slurm
+  volumes:
+    - crash_scratch:/shared
   cap_add:
     - SYS_NICE # Required for libnuma
+    - SYS_RESOURCE # Allow changing ulimit
 
 x-healthcheck-parameters: &healthcheck-parameters
   start_period: 3s

@@ -25,10 +25,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
@@ -53,6 +53,15 @@ jobs:
         id: serial-ubuntu-testsuite
         run: |
           docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./runTests'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-serial-ubuntu crash tests
+        run: |
+          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=serial --scratch=/tmp/spindle_crash_test'
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -61,7 +70,7 @@ jobs:
         run: |
           cd containers/spindle-serial-ubuntu
           docker compose down
-          
+
   spindle-serial-ubuntu_arm64:
     name: Testsuite (Serial, Ubuntu, arm64)
     environment: Spindle CI
@@ -69,10 +78,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
@@ -97,6 +106,15 @@ jobs:
         id: serial-ubuntu-testsuite
         run: |
           docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./runTests'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-serial-ubuntu crash tests
+        run: |
+          docker exec spindlenode bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=serial --scratch=/tmp/spindle_crash_test'
 
       - name: Bring spindle-serial-ubuntu down
         id: serial-ubuntu-down
@@ -113,10 +131,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
@@ -142,6 +160,15 @@ jobs:
         run: |
           docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./runTests --nodes=${workers} --tasks-per-node=3'
 
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-flux-ubuntu crash tests
+        run: |
+          docker exec node-1 bash -c 'cd Spindle-build/testsuite && flux alloc --nodes=${workers} ./run_crash_tests.sh --launcher=flux --nodes=${workers} --scratch=/shared/spindle_crash_test'
+
       - name: Bring spindle-flux-ubuntu down
         id: flux-ubuntu-down
         if: ${{ always() }}
@@ -157,16 +184,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
       - name: Login to GitHub Container Registry
         if: ${{ !env.ACT }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -200,6 +227,15 @@ jobs:
         run: |
           docker exec slurm-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} ./runTests ${workers}'
 
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-slurm-ubuntu crash tests
+        run: |
+          docker exec slurm-head bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=slurm --nodes=${workers} --scratch=/shared/spindle_crash_test'
+
       - name: Bring spindle-slurm-ubuntu down
         id: slurm-ubuntu-down
         if: ${{ always() }}
@@ -215,16 +251,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
       - name: Login to GitHub Container Registry
         if: ${{ !env.ACT }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -273,16 +309,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out Spindle
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2
         with:
           version: latest
 
       - name: Login to GitHub Container Registry
         if: ${{ !env.ACT }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -320,6 +356,15 @@ jobs:
         id: slurm-ubuntu-testsuite-sessions
         run: |
           docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && salloc -n${workers} -N${workers} --spindle-session ./runTests ${workers}'
+
+      - name: Configure host core_pattern for coredumps
+        if: ${{ !env.ACT }}
+        run: |
+          sudo sysctl -w kernel.core_pattern='core.%p'
+
+      - name: Run spindle-slurm-plugin-ubuntu crash tests
+        run: |
+          docker exec slurm-plugin-head bash -c 'cd Spindle-build/testsuite && ./run_crash_tests.sh --launcher=slurm-plugin --nodes=${workers} --scratch=/shared/spindle_crash_test'
 
       - name: Bring spindle-slurm-plugin-ubuntu down
         id: slurm-ubuntu-down

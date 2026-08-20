@@ -3,6 +3,7 @@ FROM ubuntu:${ubuntu_version}
 USER root
 ENV TMPDIR=/tmp
 RUN echo 'TMPDIR="/tmp"' >> /etc/environment
+ENV SPINDLE_TEST_CONTAINER=1
 
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update \
 # install latest pkg utils:
@@ -26,6 +27,8 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y --no-install-recomme
         gfortran-13 \
         gcc-13 \
         g++-13 \
+        gdb \
+        libc6-dbg \
         munge \
         libmunge-dev \
         libhwloc-dev \
