@@ -52,12 +52,16 @@ using namespace std;
 
 #if defined(COMMPATHS)
 #define SPINDLE_COMMPATHS_STR COMMPATHS
+#elif defined(COMMPATH)
+#define SPINDLE_COMMPATHS_STR COMMPATH
 #else
 #define SPINDLE_COMMPATHS_STR "$TMPDIR"
 #endif
 
 #if defined(CACHEPATHS)
 #define SPINDLE_CACHEPATHS_STR CACHEPATHS
+#elif defined(CACHEPATH)
+#define SPINDLE_CACHEPATHS_STR CACHEPATH
 #else
 #define SPINDLE_CACHEPATHS_STR "$TMPDIR"
 #endif
@@ -274,9 +278,13 @@ void initOptionsList()
    { confStrip, "strip", shortStrip, groupMisc, cvBool, {}, "true", 
      "Strip debug and symbol information from binaries before distributing them." },
    { confCommPaths, "commpaths", shortCommPaths, groupMisc, cvString, {}, SPINDLE_COMMPATHS_STR,
-     "Back-end directory communication and housekeeping.  Should be a non-shared location such as a ramdisk." },
+     "Colon-separated list of candidate paths for back-end communication and housekeeping.  Should be a non-shared location such as a ramdisk." },
+   { confCommPaths, "commpath", shortNone, groupMisc, cvString, {}, SPINDLE_COMMPATHS_STR,
+     "Synonym for --commpaths." },
    { confCachePaths, "cachepaths", shortCachePaths, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
      "Colon-separated list of candidate paths for cached libraries."},
+   { confCachePaths, "cachepath", shortNone, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
+     "Synonym for --cachepaths." },
    { confNoclean, "noclean", shortNoClean, groupMisc, cvBool, {}, "false",
      "Don't remove local file cache after execution." },
    { confDisableLogging, "disable-logging", shortDisableLogging, groupMisc, cvBool, {}, DISABLE_LOGGING_STR,

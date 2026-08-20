@@ -18,21 +18,25 @@ AC_ARG_WITH(default-num-ports,
             [NUM_COBO_PORTS=${withval}],
             [NUM_COBO_PORTS=$DEFAULT_NUM_COBO_PORTS])
 AC_ARG_WITH(localstorage,
-            [AS_HELP_STRING([--with-localstorage=DIR (obsolete)],[Use --with-cachepaths and --with-commpath instead.])],
-            [AC_MSG_ERROR(requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpath instead.)],
+            [AS_HELP_STRING([--with-localstorage=DIR (obsolete)],[Use --with-cachepaths and --with-commpaths instead.])],
+            [AC_MSG_ERROR(requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpaths instead.)],
             [])
 AC_ARG_WITH(cachepaths,
             [AS_HELP_STRING([--with-cachepaths=DIR],[Colon-separated list of potential back-end cache directories])],
             [CACHEPATHS=${withval}],
             [CACHEPATHS=$DEFAULT_LOC])
 AC_ARG_WITH(cachepath,
-            [[],[]],
-            [AC_MSG_ERROR(use --with-cachepaths=DIRS (plural) instead of --with-cachepath=DIR to specify one or more cache paths)],
+            [AS_HELP_STRING([--with-cachepath=DIR],[Synonym for --with-cachepaths ])],
+            [CACHEPATHS=${withval}],
             [])
 AC_ARG_WITH(commpaths,
             [AS_HELP_STRING([--with-commpaths=DIR],[Colon-separated list of candidate paths for back-end communication and housekeeping])],
             [COMMPATHS=${withval}],
             [COMMPATHS=$DEFAULT_LOC])
+AC_ARG_WITH(commpath,
+            [AS_HELP_STRING([--with-commpath=DIR],[Synonym for --with-commpaths])],
+            [COMMPATHS=${withval}],
+            [])
 AC_ARG_WITH(default-local-prefix,
             [AS_HELP_STRING([--with-default-local-prefix=DIRS],[Colon-seperated list of directories that Spindle will not cache files out of])],
             [SPINDLE_LOCAL_PREFIX=${withval}],
