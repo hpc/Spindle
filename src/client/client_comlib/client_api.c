@@ -43,7 +43,6 @@ int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chose
    int rc = 0;
    ldcs_message_t message;
    char buffer[2*(MAX_PATH_LEN+1)];
-   buffer[MAX_PATH_LEN] = '\0';
 
 
    message.header.type = LDCS_MSG_CHOSEN_CACHEPATH_REQUEST;
@@ -70,8 +69,10 @@ int send_cachepath_query( int fd, char **chosen_realized_cachepath, char **chose
       err_printf("Got unexpected message of type %d\n", (int) message.header.type);
       return -1;
    }
-   char *local_crc = spindle_strdup( buffer );
-   char *local_cpc = spindle_strdup( &buffer[ strlen(local_crc) + 1 ] );
+   // message.data contains two strings, each of which is no more than MAX_PATH_LEN bytes.
+   message.data[2*(MAX_PATH_LEN+1)-1] = '\0';
+   char *local_crc = spindle_strdup( message.data );
+   char *local_cpc = spindle_strdup( &message.data[ strlen(message.data) + 1 ] );
    if( chosen_realized_cachepath ){
        *chosen_realized_cachepath = local_crc;
    }

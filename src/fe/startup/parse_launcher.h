@@ -43,7 +43,7 @@ class ModifyArgv {
    void print_err(std::string str);
    bool autodetectParser();
    bool chooseParser();
-   void modifyCmdLine();
+   int modifyCmdLine();
    
   public:
    ModifyArgv(int argc, char **argv,
