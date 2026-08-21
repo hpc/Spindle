@@ -40,6 +40,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
  *                  crashes inside dlopen; others exit cleanly
  *   span-read      no app handler; a read spans two pages (PROT_READ then
  *                  PROT_NONE) and faults in the second page
+ *   kill-segv      app sends SIGSEGV to itself via kill()
  *
  * SIGABRT modes:
  *   sigabrt        every rank calls abort()
@@ -72,6 +73,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
  *                  app handler does not fix access past the end of an mmap'ed file
  *   mmap-sigbus-fixed
  *                  app handler fixes access past the end of an mmap'ed file by extending it
+ *   chained-kill-segv
+ *                  app handler handles a kill()-sent SIGSEGV and returns
  *
  *   no-crash       every rank exits cleanly
  */
@@ -111,7 +114,7 @@ static void usage(const char *prog) {
             "safepoint-bad|safepoint-bad-write|safepoint-fix-write|"
             "safepoint-span-read|safepoint-span-write|"
             "safepoint-span-bad-read|safepoint-span-bad-write|"
-            "mmap-sigbus-bad|mmap-sigbus-fixed|"
+            "mmap-sigbus-bad|mmap-sigbus-fixed|chained-kill-segv|"
             "safepoint-longjmp|safepoint-longjmp-mt|safepoint-concurrent-chain|no-crash}"
             " [--sleep <seconds>] [--cycles <n>]\n",
             prog);
@@ -680,6 +683,29 @@ static int do_mmap_sigbus_bad(int rank) {
     return SAFEPOINT_RC_NOT_TERMINATED;
 }
 
+static void chained_kill_handler(int sig, siginfo_t *info, void *uctx) {
+    (void) sig; (void) uctx;
+    if (info == NULL || info->si_code > 0)
+        handler_die("chained-kill-segv: handler unexpectedly got a kernel fault\n");
+    safepoint_handler_invocations++;
+}
+
+static int do_chained_kill_segv(int rank) {
+    if (install_sigsegv_handler(chained_kill_handler, "chained-kill-segv", rank) != 0)
+        return SAFEPOINT_RC_SETUP_FAILED;
+
+    kill(getpid(), SIGSEGV);
+
+    if (safepoint_handler_invocations != 1) {
+        fprintf(stderr, "chained-kill-segv rank=%d: handler invoked %d times\n",
+                rank, safepoint_handler_invocations);
+        return SAFEPOINT_RC_INCOMPLETE;
+    }
+    fprintf(stderr, "chained-kill-segv rank=%d: survived handled kill(SIGSEGV)\n",
+            rank);
+    return 0;
+}
+
 static int sleep_seconds    = 10;
 static int safepoint_cycles = SAFEPOINT_CYCLES_DEFAULT;
 
@@ -828,6 +854,10 @@ int main(int argc, char **argv) {
         return do_mmap_sigbus_bad(rank);
     } else if (strcmp(mode, "mmap-sigbus-fixed") == 0) {
         int rc = do_mmap_sigbus_fixed(rank);
+        MPI_Finalize();
+        return rc;
+    } else if (strcmp(mode, "chained-kill-segv") == 0) {
+        int rc = do_chained_kill_segv(rank);
         MPI_Finalize();
         return rc;
     } else if (strcmp(mode, "no-crash") == 0) {
