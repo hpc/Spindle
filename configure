@@ -851,6 +851,9 @@ with_localstorage
 with_cachepaths
 with_cachepath
 with_commpaths
+with_commpath
+with_sessionpaths
+with_sessionpath
 with_default_local_prefix
 with_testrm
 with_rm
@@ -1596,12 +1599,16 @@ Optional Packages:
                           Number of TCP/IP ports to scan for Spindle server
                           communication
   --with-localstorage=DIR (obsolete)
-                          Use --with-cachepaths and --with-commpath instead.
+                          Use --with-cachepaths and --with-commpaths instead.
   --with-cachepaths=DIR   Colon-separated list of potential back-end cache
                           directories
-,
-  --with-compaths=DIR     Colon-separated list of candidate paths for back-end
+  --with-cachepath=DIR    Synonym for --with-cachepaths
+  --with-commpaths=DIR    Colon-separated list of candidate paths for back-end
                           communication and housekeeping
+  --with-commpath=DIR     Synonym for --with-commpaths
+  --with-sessionpaths=DIR Colon-separated list of candidate paths for session
+                          management
+  --with-sessionpath=DIR  Synonym for --with-sessionpaths
   --with-default-local-prefix=DIRS
                           Colon-seperated list of directories that Spindle
                           will not cache files out of
@@ -16675,7 +16682,7 @@ fi
 
 # Check whether --with-localstorage was given.
 if test "${with_localstorage+set}" = set; then :
-  withval=$with_localstorage; as_fn_error $? "requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpath instead." "$LINENO" 5
+  withval=$with_localstorage; as_fn_error $? "requested obsolete option --with-localstorage.  Use --with-cachepaths and --with-commpaths instead." "$LINENO" 5
 fi
 
 
@@ -16689,7 +16696,7 @@ fi
 
 # Check whether --with-cachepath was given.
 if test "${with_cachepath+set}" = set; then :
-  withval=$with_cachepath; as_fn_error $? "use --with-cachepaths=DIRS (plural) instead of --with-cachepath=DIR to specify one or more cache paths" "$LINENO" 5
+  withval=$with_cachepath; CACHEPATHS=${withval}
 fi
 
 
@@ -16698,6 +16705,26 @@ if test "${with_commpaths+set}" = set; then :
   withval=$with_commpaths; COMMPATHS=${withval}
 else
   COMMPATHS=$DEFAULT_LOC
+fi
+
+
+# Check whether --with-commpath was given.
+if test "${with_commpath+set}" = set; then :
+  withval=$with_commpath; COMMPATHS=${withval}
+fi
+
+
+# Check whether --with-sessionpaths was given.
+if test "${with_sessionpaths+set}" = set; then :
+  withval=$with_sessionpaths; SESSIONPATHS=${withval}
+else
+  SESSIONPATHS=$COMMPATHS
+fi
+
+
+# Check whether --with-sessionpath was given.
+if test "${with_sessionpath+set}" = set; then :
+  withval=$with_sessionpath; SESSIONPATHS=${withval}
 fi
 
 
@@ -16731,6 +16758,11 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define CACHEPATHS "$CACHEPATHS"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define SESSIONPATHS "$SESSIONPATHS"
 _ACEOF
 
 

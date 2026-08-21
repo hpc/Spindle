@@ -66,6 +66,18 @@ using namespace std;
 #define SPINDLE_CACHEPATHS_STR "$TMPDIR"
 #endif
 
+#if defined(SESSIONPATHS)
+#define SPINDLE_SESSIONPATHS_STR SESSIONPATHS
+#elif defined(SESSIONPATH)
+#define SPINDLE_SESSIONPATHS_STR SESSIONPATH
+#elif defined(COMMPATHS)
+#define SPINDLE_SESSIONPATHS_STR COMMPATHS
+#elif defined(COMMPATH)
+#define SPINDLE_SESSIONPATHS_STR COMMPATH
+#else
+#define SPINDLE_SESSIONPATHS_STR "$TMPDIR"
+#endif
+
 #if defined(SPINDLE_LOCAL_PREFIX)
 #define SPINDLE_LOCAL_PREFIX_STR SPINDLE_LOCAL_PREFIX
 #else
@@ -291,6 +303,10 @@ void initOptionsList()
      "Colon-separated list of candidate paths for cached libraries."},
    { confCachePaths, "cachepath", shortNone, groupMisc, cvString, {}, SPINDLE_CACHEPATHS_STR,
      "Synonym for --cachepaths." },
+   { confSessionPaths, "sessionpaths", shortSessionPaths, groupMisc, cvString, {}, SPINDLE_SESSIONPATHS_STR,
+     "Colon-separated list of candidate paths for session management. Sessions span multiple jobs. Defaults to --commpaths if not specified." },
+   { confSessionPaths, "sessionpath", shortNone, groupMisc, cvString, {}, SPINDLE_SESSIONPATHS_STR,
+     "Synonym for --sessionpaths." },
    { confNoclean, "noclean", shortNoClean, groupMisc, cvBool, {}, "false",
      "Don't remove local file cache after execution." },
    { confDisableLogging, "disable-logging", shortDisableLogging, groupMisc, cvBool, {}, DISABLE_LOGGING_STR,
@@ -780,6 +796,10 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             }
             break;
          }
+         case confSessionPaths:
+            // Session paths don't use $NUMBER since sessions span multiple jobs
+            args.sessionpaths = getstr(strresult, alloc_strs);
+            break;
          case confCachePrefix:
             __attribute__((fallthrough));   // gcc-specific
          case confPythonPrefix:

@@ -25,6 +25,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 #include "spindle_debug.h"
 #include "ldcs_api.h"
@@ -86,7 +87,7 @@ static char *default_subaudit_libstr = libstr_biter_subaudit;
 #error Unknown connection type
 #endif
 
-extern int spindle_mkdir(char *path);
+extern int spindle_mkdir(char *path, bool delete_on_exit);
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
 

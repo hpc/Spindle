@@ -2995,7 +2995,7 @@ int handle_cachepath_consensus(ldcs_process_data_t *procdata)
         debug_printf2( "The commpath is:                      %s\n", procdata->commpath );
     }
 
-    ldcs_audit_server_filemngt_init(procdata->cachepath, procdata->commpath);
+    ldcs_audit_server_filemngt_init(procdata->cachepath, procdata->commpath, procdata->sessionpath);
 
     test_printf("<internal> cachepath=%s\n", procdata->cachepath);
     return 0;

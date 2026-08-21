@@ -15,7 +15,7 @@ if [ $1 == --start-session ] ; then
     if [ "x$TEST_RM" == "xslurm-plugin" ] ; then
         exit 0
     fi
-    export SPINDLEID=`$SPINDLE --start-session --level=high`
+    export SPINDLEID=`$SPINDLE --start-session --level=high --sessionpaths=/bad/session/path:$TMPDIR/spindlesessions`
     if [ x$SPINDLEID == x ]; then
         echo ANONYMOUS_SESSION
     else

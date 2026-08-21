@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <netdb.h> 
 #include <sys/syscall.h>
 #include <assert.h>
@@ -98,7 +99,7 @@ int ldcs_get_fd_pipe (int fd) {
 }
 /* end of fd list */
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, bool delete_on_exit);
 
 int ldcs_create_server_pipe(char* location, number_t number) {
   (void)number;
@@ -111,7 +112,7 @@ int ldcs_create_server_pipe(char* location, number_t number) {
   char *staging_dir = (char *) malloc(len);
   snprintf(staging_dir, len, "%s/spindle_comm", location);
 
-  if (-1 == spindle_mkdir(staging_dir)) {
+  if (-1 == spindle_mkdir(staging_dir, true)) {
      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
      _error("mkdir failed");
   }

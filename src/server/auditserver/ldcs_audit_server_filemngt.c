@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <stdbool.h>
 #include <elf.h>
 
 #include "ldcs_api.h"
@@ -48,19 +49,21 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 char *_ldcs_audit_server_cachepath;
 static char *normalized_tmpdir;
 static char *_ldcs_audit_server_commpath;
-extern int spindle_mkdir(char *path);
+static char *_ldcs_audit_server_sessionpath;
+extern int spindle_mkdir(char *path, bool delete_on_exit);
 
 static char *filemngt_normalize_dir(char *dir) {
    char *newpath = realpath(dir, NULL);
    return newpath ? newpath : dir;
 }
 
-int ldcs_audit_server_filemngt_init (char *cachepath, char *commpath) {
+int ldcs_audit_server_filemngt_init (char *cachepath, char *commpath, char *sessionpath) {
    int rc=0;
 
    _ldcs_audit_server_cachepath = cachepath;
    _ldcs_audit_server_commpath  = commpath;
-   if (-1 == spindle_mkdir(_ldcs_audit_server_cachepath)) {
+   _ldcs_audit_server_sessionpath = sessionpath;
+   if (-1 == spindle_mkdir(_ldcs_audit_server_cachepath, true)) {
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_cachepath);
       _error("mkdir failed");
    }
@@ -155,7 +158,7 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
    cut_dirpart_slash = (dirpart[0] == '/') ? 1 : 0;
    
    snprintf(target, sizeof(target), "%s%s%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash);
-   spindle_mkdir(target);
+   spindle_mkdir(target, true);
 
    snprintf(target, sizeof(target), "%s%s%s/%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash, filepart);
 
@@ -288,7 +291,7 @@ int filemngt_decode_packet(node_peer_t peer, ldcs_message_t *msg, char *filename
  **/
 int ldcs_audit_server_filemngt_clean()
 {
-   cleanup_created_dirs(_ldcs_audit_server_cachepath, _ldcs_audit_server_commpath);
+   cleanup_created_dirs(_ldcs_audit_server_cachepath, _ldcs_audit_server_commpath, _ldcs_audit_server_sessionpath);
    return 0;
 }
 

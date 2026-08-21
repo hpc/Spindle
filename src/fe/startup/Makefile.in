@@ -118,63 +118,16 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)" \
-	"$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)"
 PROGRAMS = $(bin_PROGRAMS)
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindleflogc.la \
 	$(am__append_1) $(am__append_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-libspindlefe_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
+libspindlefe_static_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__dirstamp = $(am__leading_dot)dirstamp
-am__objects_1 = libspindlefe_la-spindle_fe.lo \
-	libspindlefe_la-parseargs.lo libspindlefe_la-config_parser.lo \
-	libspindlefe_la-config_mgr.lo libspindlefe_la-parse_preload.lo \
-	$(top_builddir)/../utils/libspindlefe_la-pathfn.lo \
-	$(top_builddir)/../utils/libspindlefe_la-keyfile.lo \
-	$(top_builddir)/../utils/libspindlefe_la-parseloc.lo \
-	$(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo
-am_libspindlefe_la_OBJECTS = $(am__objects_1)
-libspindlefe_la_OBJECTS = $(am_libspindlefe_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
-libspindlefe_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(libspindlefe_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
-libspindlefe_static_la_DEPENDENCIES = $(am__DEPENDENCIES_3)
-am__objects_2 = libspindlefe_static_la-spindle_fe.lo \
+am__objects_1 = libspindlefe_static_la-spindle_fe.lo \
 	libspindlefe_static_la-parseargs.lo \
 	libspindlefe_static_la-config_parser.lo \
 	libspindlefe_static_la-config_mgr.lo \
@@ -182,10 +135,15 @@ am__objects_2 = libspindlefe_static_la-spindle_fe.lo \
 	$(top_builddir)/../utils/libspindlefe_static_la-pathfn.lo \
 	$(top_builddir)/../utils/libspindlefe_static_la-keyfile.lo \
 	$(top_builddir)/../utils/libspindlefe_static_la-parseloc.lo \
-	$(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo
-am__objects_3 = $(am__objects_2)
-am_libspindlefe_static_la_OBJECTS = $(am__objects_3)
+	$(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo \
+	$(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo \
+	$(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo
+am_libspindlefe_static_la_OBJECTS = $(am__objects_1)
 libspindlefe_static_la_OBJECTS = $(am_libspindlefe_static_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 am__spindle_SOURCES_DIST = spindle_fe_main.cc spindle_fe_serial.cc \
 	parse_launcher.cc parse_launcher_args.cc launcher.cc \
 	spindle_session.cc launch_slurm.cc launch_lsf.cc spindle_fe.cc \
@@ -193,29 +151,34 @@ am__spindle_SOURCES_DIST = spindle_fe_main.cc spindle_fe_serial.cc \
 	$(top_srcdir)/../utils/pathfn.c \
 	$(top_srcdir)/../utils/keyfile.c \
 	$(top_srcdir)/../utils/parseloc.c \
-	$(top_srcdir)/../utils/rshlaunch.c launch_flux.cc
-am__objects_4 = spindle-spindle_fe.$(OBJEXT) \
+	$(top_srcdir)/../utils/rshlaunch.c \
+	$(top_srcdir)/../utils/spindle_mkdir.c \
+	$(top_srcdir)/../server/auditserver/cleanup_proc.cc \
+	launch_flux.cc
+am__objects_2 = spindle-spindle_fe.$(OBJEXT) \
 	spindle-parseargs.$(OBJEXT) spindle-config_parser.$(OBJEXT) \
 	spindle-config_mgr.$(OBJEXT) spindle-parse_preload.$(OBJEXT) \
 	$(top_builddir)/../utils/spindle-pathfn.$(OBJEXT) \
 	$(top_builddir)/../utils/spindle-keyfile.$(OBJEXT) \
 	$(top_builddir)/../utils/spindle-parseloc.$(OBJEXT) \
-	$(top_builddir)/../utils/spindle-rshlaunch.$(OBJEXT)
-@BLD_FLUXPLUGIN_TRUE@am__objects_5 = spindle-launch_flux.$(OBJEXT)
+	$(top_builddir)/../utils/spindle-rshlaunch.$(OBJEXT) \
+	$(top_builddir)/../utils/spindle-spindle_mkdir.$(OBJEXT) \
+	$(top_builddir)/../server/auditserver/spindle-cleanup_proc.$(OBJEXT)
+@BLD_FLUXPLUGIN_TRUE@am__objects_3 = spindle-launch_flux.$(OBJEXT)
 am_spindle_OBJECTS = spindle-spindle_fe_main.$(OBJEXT) \
 	spindle-spindle_fe_serial.$(OBJEXT) \
 	spindle-parse_launcher.$(OBJEXT) \
 	spindle-parse_launcher_args.$(OBJEXT) \
 	spindle-launcher.$(OBJEXT) spindle-spindle_session.$(OBJEXT) \
 	spindle-launch_slurm.$(OBJEXT) spindle-launch_lsf.$(OBJEXT) \
-	$(am__objects_4) $(am__objects_5)
+	$(am__objects_2) $(am__objects_3)
 spindle_OBJECTS = $(am_spindle_OBJECTS)
-@BLD_FLUXPLUGIN_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1) \
+@BLD_FLUXPLUGIN_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1) \
 @BLD_FLUXPLUGIN_TRUE@	$(am__DEPENDENCIES_1) \
 @BLD_FLUXPLUGIN_TRUE@	$(top_builddir)/flux/libfluxsessionfe.la
 spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_4) \
+	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_3) \
 	$(am__append_6)
 spindle_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -235,23 +198,18 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Plo \
-	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Plo \
-	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Plo \
-	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Plo \
+am__depfiles_remade = $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Plo \
+	$(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po \
 	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-keyfile.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-parseloc.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-rshlaunch.Plo \
+	$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Plo \
 	$(top_builddir)/../utils/$(DEPDIR)/spindle-keyfile.Po \
 	$(top_builddir)/../utils/$(DEPDIR)/spindle-parseloc.Po \
 	$(top_builddir)/../utils/$(DEPDIR)/spindle-pathfn.Po \
 	$(top_builddir)/../utils/$(DEPDIR)/spindle-rshlaunch.Po \
-	./$(DEPDIR)/libspindlefe_la-config_mgr.Plo \
-	./$(DEPDIR)/libspindlefe_la-config_parser.Plo \
-	./$(DEPDIR)/libspindlefe_la-parse_preload.Plo \
-	./$(DEPDIR)/libspindlefe_la-parseargs.Plo \
-	./$(DEPDIR)/libspindlefe_la-spindle_fe.Plo \
+	$(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po \
 	./$(DEPDIR)/libspindlefe_static_la-config_mgr.Plo \
 	./$(DEPDIR)/libspindlefe_static_la-config_parser.Plo \
 	./$(DEPDIR)/libspindlefe_static_la-parse_preload.Plo \
@@ -308,15 +266,41 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libspindlefe_la_SOURCES) $(libspindlefe_static_la_SOURCES) \
-	$(spindle_SOURCES)
-DIST_SOURCES = $(libspindlefe_la_SOURCES) \
-	$(libspindlefe_static_la_SOURCES) $(am__spindle_SOURCES_DIST)
+SOURCES = $(libspindlefe_static_la_SOURCES) $(spindle_SOURCES)
+DIST_SOURCES = $(libspindlefe_static_la_SOURCES) \
+	$(am__spindle_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
 HEADERS = $(include_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -489,22 +473,17 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LTLIBRARIES = libspindlefe.la
 noinst_LTLIBRARIES = libspindlefe_static.la
 include_HEADERS = $(top_srcdir)/../include/spindle_launch.h
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
-CORE_SOURCES = spindle_fe.cc parseargs.cc config_parser.cc config_mgr.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/rshlaunch.c
-CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -DPKGSYSCONFDIR=\"$(PKGSYSCONF_DIR)\"
+CORE_SOURCES = spindle_fe.cc parseargs.cc config_parser.cc config_mgr.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/rshlaunch.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../server/auditserver/cleanup_proc.cc
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../server/auditserver -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -DPKGSYSCONFDIR=\"$(PKGSYSCONF_DIR)\"
 CORE_LDADD = $(top_builddir)/logging/libspindleflogc.la -lpthread \
 	$(am__append_1) $(am__append_2) $(MUNGE_DYN_LIB) \
 	$(GCRYPT_LIBS)
-libspindlefe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
-libspindlefe_la_SOURCES = $(CORE_SOURCES)
-libspindlefe_la_LIBADD = $(CORE_LDADD)
-libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
-libspindlefe_static_la_CPPFLAGS = $(libspindlefe_la_CPPFLAGS)
-libspindlefe_static_la_SOURCES = $(libspindlefe_la_SOURCES)
-libspindlefe_static_la_LIBADD = $(libspindlefe_la_LIBADD)
+libspindlefe_static_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
+libspindlefe_static_la_SOURCES = $(CORE_SOURCES)
+libspindlefe_static_la_LIBADD = $(CORE_LDADD)
 spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE $(am__append_4)
 spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc \
 	parse_launcher.cc parse_launcher_args.cc launcher.cc \
@@ -598,41 +577,6 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
-	}
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; \
-	locs=`for p in $$list; do echo $$p; done | \
-	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
-	      sort -u`; \
-	test -z "$$locs" || { \
-	  echo rm -f $${locs}; \
-	  rm -f $${locs}; \
-	}
-
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
 	@list='$(noinst_LTLIBRARIES)'; \
@@ -649,21 +593,6 @@ $(top_builddir)/../utils/$(am__dirstamp):
 $(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) $(top_builddir)/../utils/$(DEPDIR)
 	@: > $(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../utils/libspindlefe_la-pathfn.lo:  \
-	$(top_builddir)/../utils/$(am__dirstamp) \
-	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../utils/libspindlefe_la-keyfile.lo:  \
-	$(top_builddir)/../utils/$(am__dirstamp) \
-	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../utils/libspindlefe_la-parseloc.lo:  \
-	$(top_builddir)/../utils/$(am__dirstamp) \
-	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo:  \
-	$(top_builddir)/../utils/$(am__dirstamp) \
-	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
-
-libspindlefe.la: $(libspindlefe_la_OBJECTS) $(libspindlefe_la_DEPENDENCIES) $(EXTRA_libspindlefe_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(libspindlefe_la_LINK) -rpath $(libdir) $(libspindlefe_la_OBJECTS) $(libspindlefe_la_LIBADD) $(LIBS)
 $(top_builddir)/../utils/libspindlefe_static_la-pathfn.lo:  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
@@ -676,6 +605,18 @@ $(top_builddir)/../utils/libspindlefe_static_la-parseloc.lo:  \
 $(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo:  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo:  \
+	$(top_builddir)/../utils/$(am__dirstamp) \
+	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../server/auditserver/$(am__dirstamp):
+	@$(MKDIR_P) $(top_builddir)/../server/auditserver
+	@: > $(top_builddir)/../server/auditserver/$(am__dirstamp)
+$(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) $(top_builddir)/../server/auditserver/$(DEPDIR)
+	@: > $(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo:  \
+	$(top_builddir)/../server/auditserver/$(am__dirstamp) \
+	$(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp)
 
 libspindlefe_static.la: $(libspindlefe_static_la_OBJECTS) $(libspindlefe_static_la_DEPENDENCIES) $(EXTRA_libspindlefe_static_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libspindlefe_static_la_OBJECTS) $(libspindlefe_static_la_LIBADD) $(LIBS)
@@ -691,6 +632,12 @@ $(top_builddir)/../utils/spindle-parseloc.$(OBJEXT):  \
 $(top_builddir)/../utils/spindle-rshlaunch.$(OBJEXT):  \
 	$(top_builddir)/../utils/$(am__dirstamp) \
 	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../utils/spindle-spindle_mkdir.$(OBJEXT):  \
+	$(top_builddir)/../utils/$(am__dirstamp) \
+	$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
+$(top_builddir)/../server/auditserver/spindle-cleanup_proc.$(OBJEXT):  \
+	$(top_builddir)/../server/auditserver/$(am__dirstamp) \
+	$(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp)
 
 spindle$(EXEEXT): $(spindle_OBJECTS) $(spindle_DEPENDENCIES) $(EXTRA_spindle_DEPENDENCIES) 
 	@rm -f spindle$(EXEEXT)
@@ -698,29 +645,26 @@ spindle$(EXEEXT): $(spindle_OBJECTS) $(spindle_DEPENDENCIES) $(EXTRA_spindle_DEP
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f $(top_builddir)/../server/auditserver/*.$(OBJEXT)
+	-rm -f $(top_builddir)/../server/auditserver/*.lo
 	-rm -f $(top_builddir)/../utils/*.$(OBJEXT)
 	-rm -f $(top_builddir)/../utils/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-keyfile.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-parseloc.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-rshlaunch.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle-keyfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle-parseloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle-pathfn.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle-rshlaunch.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-config_mgr.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-config_parser.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-parse_preload.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-parseargs.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_la-spindle_fe.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_static_la-config_mgr.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_static_la-config_parser.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspindlefe_static_la-parse_preload.Plo@am__quote@ # am--include-marker
@@ -771,34 +715,6 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-$(top_builddir)/../utils/libspindlefe_la-pathfn.lo: $(top_builddir)/../utils/pathfn.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_la-pathfn.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Tpo -c -o $(top_builddir)/../utils/libspindlefe_la-pathfn.lo `test -f '$(top_builddir)/../utils/pathfn.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/pathfn.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/pathfn.c' object='$(top_builddir)/../utils/libspindlefe_la-pathfn.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_la-pathfn.lo `test -f '$(top_builddir)/../utils/pathfn.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/pathfn.c
-
-$(top_builddir)/../utils/libspindlefe_la-keyfile.lo: $(top_builddir)/../utils/keyfile.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_la-keyfile.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Tpo -c -o $(top_builddir)/../utils/libspindlefe_la-keyfile.lo `test -f '$(top_builddir)/../utils/keyfile.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/keyfile.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/keyfile.c' object='$(top_builddir)/../utils/libspindlefe_la-keyfile.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_la-keyfile.lo `test -f '$(top_builddir)/../utils/keyfile.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/keyfile.c
-
-$(top_builddir)/../utils/libspindlefe_la-parseloc.lo: $(top_builddir)/../utils/parseloc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_la-parseloc.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Tpo -c -o $(top_builddir)/../utils/libspindlefe_la-parseloc.lo `test -f '$(top_builddir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/parseloc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/parseloc.c' object='$(top_builddir)/../utils/libspindlefe_la-parseloc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_la-parseloc.lo `test -f '$(top_builddir)/../utils/parseloc.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/parseloc.c
-
-$(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo: $(top_builddir)/../utils/rshlaunch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Tpo -c -o $(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo `test -f '$(top_builddir)/../utils/rshlaunch.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/rshlaunch.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/rshlaunch.c' object='$(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_la-rshlaunch.lo `test -f '$(top_builddir)/../utils/rshlaunch.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/rshlaunch.c
-
 $(top_builddir)/../utils/libspindlefe_static_la-pathfn.lo: $(top_builddir)/../utils/pathfn.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_static_la-pathfn.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Tpo -c -o $(top_builddir)/../utils/libspindlefe_static_la-pathfn.lo `test -f '$(top_builddir)/../utils/pathfn.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/pathfn.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Plo
@@ -826,6 +742,13 @@ $(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo: $(top_builddir)/..
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/rshlaunch.c' object='$(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_static_la-rshlaunch.lo `test -f '$(top_builddir)/../utils/rshlaunch.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/rshlaunch.c
+
+$(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo: $(top_builddir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Tpo -c -o $(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo `test -f '$(top_builddir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Tpo $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/spindle_mkdir.c' object='$(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/libspindlefe_static_la-spindle_mkdir.lo `test -f '$(top_builddir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/spindle_mkdir.c
 
 $(top_builddir)/../utils/spindle-pathfn.o: $(top_builddir)/../utils/pathfn.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/spindle-pathfn.o -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/spindle-pathfn.Tpo -c -o $(top_builddir)/../utils/spindle-pathfn.o `test -f '$(top_builddir)/../utils/pathfn.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/pathfn.c
@@ -883,6 +806,20 @@ $(top_builddir)/../utils/spindle-rshlaunch.obj: $(top_builddir)/../utils/rshlaun
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle-rshlaunch.obj `if test -f '$(top_builddir)/../utils/rshlaunch.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/rshlaunch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/rshlaunch.c'; fi`
 
+$(top_builddir)/../utils/spindle-spindle_mkdir.o: $(top_builddir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/spindle-spindle_mkdir.o -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Tpo -c -o $(top_builddir)/../utils/spindle-spindle_mkdir.o `test -f '$(top_builddir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Tpo $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/spindle_mkdir.c' object='$(top_builddir)/../utils/spindle-spindle_mkdir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle-spindle_mkdir.o `test -f '$(top_builddir)/../utils/spindle_mkdir.c' || echo '$(srcdir)/'`$(top_builddir)/../utils/spindle_mkdir.c
+
+$(top_builddir)/../utils/spindle-spindle_mkdir.obj: $(top_builddir)/../utils/spindle_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../utils/spindle-spindle_mkdir.obj -MD -MP -MF $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Tpo -c -o $(top_builddir)/../utils/spindle-spindle_mkdir.obj `if test -f '$(top_builddir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/spindle_mkdir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Tpo $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../utils/spindle_mkdir.c' object='$(top_builddir)/../utils/spindle-spindle_mkdir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../utils/spindle-spindle_mkdir.obj `if test -f '$(top_builddir)/../utils/spindle_mkdir.c'; then $(CYGPATH_W) '$(top_builddir)/../utils/spindle_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../utils/spindle_mkdir.c'; fi`
+
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
@@ -906,41 +843,6 @@ $(top_builddir)/../utils/spindle-rshlaunch.obj: $(top_builddir)/../utils/rshlaun
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
-
-libspindlefe_la-spindle_fe.lo: spindle_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_la-spindle_fe.lo -MD -MP -MF $(DEPDIR)/libspindlefe_la-spindle_fe.Tpo -c -o libspindlefe_la-spindle_fe.lo `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlefe_la-spindle_fe.Tpo $(DEPDIR)/libspindlefe_la-spindle_fe.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='spindle_fe.cc' object='libspindlefe_la-spindle_fe.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_la-spindle_fe.lo `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
-
-libspindlefe_la-parseargs.lo: parseargs.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_la-parseargs.lo -MD -MP -MF $(DEPDIR)/libspindlefe_la-parseargs.Tpo -c -o libspindlefe_la-parseargs.lo `test -f 'parseargs.cc' || echo '$(srcdir)/'`parseargs.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlefe_la-parseargs.Tpo $(DEPDIR)/libspindlefe_la-parseargs.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parseargs.cc' object='libspindlefe_la-parseargs.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_la-parseargs.lo `test -f 'parseargs.cc' || echo '$(srcdir)/'`parseargs.cc
-
-libspindlefe_la-config_parser.lo: config_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_la-config_parser.lo -MD -MP -MF $(DEPDIR)/libspindlefe_la-config_parser.Tpo -c -o libspindlefe_la-config_parser.lo `test -f 'config_parser.cc' || echo '$(srcdir)/'`config_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlefe_la-config_parser.Tpo $(DEPDIR)/libspindlefe_la-config_parser.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='config_parser.cc' object='libspindlefe_la-config_parser.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_la-config_parser.lo `test -f 'config_parser.cc' || echo '$(srcdir)/'`config_parser.cc
-
-libspindlefe_la-config_mgr.lo: config_mgr.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_la-config_mgr.lo -MD -MP -MF $(DEPDIR)/libspindlefe_la-config_mgr.Tpo -c -o libspindlefe_la-config_mgr.lo `test -f 'config_mgr.cc' || echo '$(srcdir)/'`config_mgr.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlefe_la-config_mgr.Tpo $(DEPDIR)/libspindlefe_la-config_mgr.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='config_mgr.cc' object='libspindlefe_la-config_mgr.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_la-config_mgr.lo `test -f 'config_mgr.cc' || echo '$(srcdir)/'`config_mgr.cc
-
-libspindlefe_la-parse_preload.lo: parse_preload.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_la-parse_preload.lo -MD -MP -MF $(DEPDIR)/libspindlefe_la-parse_preload.Tpo -c -o libspindlefe_la-parse_preload.lo `test -f 'parse_preload.cc' || echo '$(srcdir)/'`parse_preload.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspindlefe_la-parse_preload.Tpo $(DEPDIR)/libspindlefe_la-parse_preload.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parse_preload.cc' object='libspindlefe_la-parse_preload.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_la-parse_preload.lo `test -f 'parse_preload.cc' || echo '$(srcdir)/'`parse_preload.cc
 
 libspindlefe_static_la-spindle_fe.lo: spindle_fe.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libspindlefe_static_la-spindle_fe.lo -MD -MP -MF $(DEPDIR)/libspindlefe_static_la-spindle_fe.Tpo -c -o libspindlefe_static_la-spindle_fe.lo `test -f 'spindle_fe.cc' || echo '$(srcdir)/'`spindle_fe.cc
@@ -976,6 +878,13 @@ libspindlefe_static_la-parse_preload.lo: parse_preload.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parse_preload.cc' object='libspindlefe_static_la-parse_preload.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libspindlefe_static_la-parse_preload.lo `test -f 'parse_preload.cc' || echo '$(srcdir)/'`parse_preload.cc
+
+$(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo: $(top_builddir)/../server/auditserver/cleanup_proc.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT $(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo -MD -MP -MF $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Tpo -c -o $(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo `test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc' || echo '$(srcdir)/'`$(top_builddir)/../server/auditserver/cleanup_proc.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Tpo $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_builddir)/../server/auditserver/cleanup_proc.cc' object='$(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libspindlefe_static_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o $(top_builddir)/../server/auditserver/libspindlefe_static_la-cleanup_proc.lo `test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc' || echo '$(srcdir)/'`$(top_builddir)/../server/auditserver/cleanup_proc.cc
 
 spindle-spindle_fe_main.o: spindle_fe_main.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-spindle_fe_main.o -MD -MP -MF $(DEPDIR)/spindle-spindle_fe_main.Tpo -c -o spindle-spindle_fe_main.o `test -f 'spindle_fe_main.cc' || echo '$(srcdir)/'`spindle_fe_main.cc
@@ -1159,6 +1068,20 @@ spindle-parse_preload.obj: parse_preload.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o spindle-parse_preload.obj `if test -f 'parse_preload.cc'; then $(CYGPATH_W) 'parse_preload.cc'; else $(CYGPATH_W) '$(srcdir)/parse_preload.cc'; fi`
 
+$(top_builddir)/../server/auditserver/spindle-cleanup_proc.o: $(top_builddir)/../server/auditserver/cleanup_proc.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT $(top_builddir)/../server/auditserver/spindle-cleanup_proc.o -MD -MP -MF $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Tpo -c -o $(top_builddir)/../server/auditserver/spindle-cleanup_proc.o `test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc' || echo '$(srcdir)/'`$(top_builddir)/../server/auditserver/cleanup_proc.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Tpo $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_builddir)/../server/auditserver/cleanup_proc.cc' object='$(top_builddir)/../server/auditserver/spindle-cleanup_proc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o $(top_builddir)/../server/auditserver/spindle-cleanup_proc.o `test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc' || echo '$(srcdir)/'`$(top_builddir)/../server/auditserver/cleanup_proc.cc
+
+$(top_builddir)/../server/auditserver/spindle-cleanup_proc.obj: $(top_builddir)/../server/auditserver/cleanup_proc.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT $(top_builddir)/../server/auditserver/spindle-cleanup_proc.obj -MD -MP -MF $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Tpo -c -o $(top_builddir)/../server/auditserver/spindle-cleanup_proc.obj `if test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc'; then $(CYGPATH_W) '$(top_builddir)/../server/auditserver/cleanup_proc.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../server/auditserver/cleanup_proc.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Tpo $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_builddir)/../server/auditserver/cleanup_proc.cc' object='$(top_builddir)/../server/auditserver/spindle-cleanup_proc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o $(top_builddir)/../server/auditserver/spindle-cleanup_proc.obj `if test -f '$(top_builddir)/../server/auditserver/cleanup_proc.cc'; then $(CYGPATH_W) '$(top_builddir)/../server/auditserver/cleanup_proc.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/../server/auditserver/cleanup_proc.cc'; fi`
+
 spindle-launch_flux.o: launch_flux.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spindle_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT spindle-launch_flux.o -MD -MP -MF $(DEPDIR)/spindle-launch_flux.Tpo -c -o spindle-launch_flux.o `test -f 'launch_flux.cc' || echo '$(srcdir)/'`launch_flux.cc
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spindle-launch_flux.Tpo $(DEPDIR)/spindle-launch_flux.Po
@@ -1177,6 +1100,7 @@ mostlyclean-libtool:
 	-rm -f *.lo
 
 clean-libtool:
+	-rm -rf $(top_builddir)/../server/auditserver/.libs $(top_builddir)/../server/auditserver/_libs
 	-rm -rf $(top_builddir)/../utils/.libs $(top_builddir)/../utils/_libs
 	-rm -rf .libs _libs
 install-includeHEADERS: $(include_HEADERS)
@@ -1289,10 +1213,8 @@ distdir-am: $(DISTFILES)
 check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(HEADERS)
-install-binPROGRAMS: install-libLTLIBRARIES
-
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1321,6 +1243,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp)" || rm -f $(top_builddir)/../server/auditserver/$(DEPDIR)/$(am__dirstamp)
+	-test -z "$(top_builddir)/../server/auditserver/$(am__dirstamp)" || rm -f $(top_builddir)/../server/auditserver/$(am__dirstamp)
 	-test -z "$(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)" || rm -f $(top_builddir)/../utils/$(DEPDIR)/$(am__dirstamp)
 	-test -z "$(top_builddir)/../utils/$(am__dirstamp)" || rm -f $(top_builddir)/../utils/$(am__dirstamp)
 
@@ -1329,27 +1253,22 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool clean-noinstLTLIBRARIES mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Plo
+		-rm -f $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Plo
+	-rm -f $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-keyfile.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-parseloc.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-rshlaunch.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-keyfile.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-parseloc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-pathfn.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-rshlaunch.Po
-	-rm -f ./$(DEPDIR)/libspindlefe_la-config_mgr.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-config_parser.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-parse_preload.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-parseargs.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-spindle_fe.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-config_mgr.Plo
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-config_parser.Plo
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-parse_preload.Plo
@@ -1391,7 +1310,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-binPROGRAMS install-libLTLIBRARIES
+install-exec-am: install-binPROGRAMS
 
 install-html: install-html-am
 
@@ -1414,23 +1333,18 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-keyfile.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-parseloc.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-pathfn.Plo
-	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_la-rshlaunch.Plo
+		-rm -f $(top_builddir)/../server/auditserver/$(DEPDIR)/libspindlefe_static_la-cleanup_proc.Plo
+	-rm -f $(top_builddir)/../server/auditserver/$(DEPDIR)/spindle-cleanup_proc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-keyfile.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-parseloc.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-pathfn.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-rshlaunch.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/libspindlefe_static_la-spindle_mkdir.Plo
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-keyfile.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-parseloc.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-pathfn.Po
 	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-rshlaunch.Po
-	-rm -f ./$(DEPDIR)/libspindlefe_la-config_mgr.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-config_parser.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-parse_preload.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-parseargs.Plo
-	-rm -f ./$(DEPDIR)/libspindlefe_la-spindle_fe.Plo
+	-rm -f $(top_builddir)/../utils/$(DEPDIR)/spindle-spindle_mkdir.Po
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-config_mgr.Plo
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-config_parser.Plo
 	-rm -f ./$(DEPDIR)/libspindlefe_static_la-parse_preload.Plo
@@ -1466,27 +1380,25 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
-	clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool clean-noinstLTLIBRARIES cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-binPROGRAMS \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
+	clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLTLIBRARIES cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-includeHEADERS uninstall-libLTLIBRARIES
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-includeHEADERS
 
 .PRECIOUS: Makefile
 

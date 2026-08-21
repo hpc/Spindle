@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -59,7 +60,7 @@ int run_tests;
 #define SPAWN_TIMEOUT 300
 #define CONNECT_TIMEOUT 100
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, bool delete_on_exit);
 
 int fileExists(char *name) 
 {
@@ -300,7 +301,7 @@ void init_spindle_debugging(char *name, int survive_exec)
    if (!tempdir || !*tempdir)
       tempdir = "/tmp";
    if (!fileExists(tempdir)) {
-      spindle_mkdir(tempdir);
+      spindle_mkdir(tempdir, false);
    }
 
    debug_location = log_level ? "./spindle_output" : NULL;

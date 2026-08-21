@@ -172,7 +172,8 @@ am_spindle_flux_session_OBJECTS = spindle_flux_session-main.$(OBJEXT) \
 	$(top_builddir)/src/utils/spindle_flux_session-spindle_mkdir.$(OBJEXT) \
 	$(top_builddir)/src/utils/spindle_flux_session-parseloc.$(OBJEXT)
 spindle_flux_session_OBJECTS = $(am_spindle_flux_session_OBJECTS)
-spindle_flux_session_DEPENDENCIES = libfluxsession.la
+spindle_flux_session_DEPENDENCIES = libfluxsession.la \
+	$(top_builddir)/src/fe/startup/libspindlefe_static.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -453,8 +454,8 @@ libspindleflux_la_LDFLAGS = \
 	-module
 
 spindle_flux_session_SOURCES = main.cc $(top_srcdir)/src/utils/spindle_mkdir.c $(top_srcdir)/src/utils/parseloc.c
-spindle_flux_session_CPPFLAGS = -I$(top_srcdir)/src/flux -I$(top_srcdir)/src/logging -I$(top_srcdir)/src/include
-spindle_flux_session_LDADD = libfluxsession.la
+spindle_flux_session_CPPFLAGS = -I$(top_srcdir)/src/flux -I$(top_srcdir)/src/logging -I$(top_srcdir)/src/include -I$(top_srcdir)/src/fe/startup -I$(top_srcdir)/src/utils
+spindle_flux_session_LDADD = libfluxsession.la $(top_builddir)/src/fe/startup/libspindlefe_static.la
 libfluxsession_la_SOURCES = sessionmgr.c fluxmgr.c procmgr.c spindlefemgr.c spindlebemgr.c
 libfluxsession_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(top_srcdir)/src/flux $(FLUX_CORE_CFLAGS) $(FLUX_HOSTLIST_CFLAGS)
 libfluxsession_la_LDFLAGS = $(fluxplugin_ldflags) -Wl,--allow-multiple-definition

@@ -37,6 +37,14 @@ AC_ARG_WITH(commpath,
             [AS_HELP_STRING([--with-commpath=DIR],[Synonym for --with-commpaths])],
             [COMMPATHS=${withval}],
             [])
+AC_ARG_WITH(sessionpaths,
+            [AS_HELP_STRING([--with-sessionpaths=DIR],[Colon-separated list of candidate paths for session management])],
+            [SESSIONPATHS=${withval}],
+            [SESSIONPATHS=$COMMPATHS])
+AC_ARG_WITH(sessionpath,
+            [AS_HELP_STRING([--with-sessionpath=DIR],[Synonym for --with-sessionpaths])],
+            [SESSIONPATHS=${withval}],
+            [])
 AC_ARG_WITH(default-local-prefix,
             [AS_HELP_STRING([--with-default-local-prefix=DIRS],[Colon-seperated list of directories that Spindle will not cache files out of])],
             [SPINDLE_LOCAL_PREFIX=${withval}],
@@ -46,6 +54,7 @@ AC_DEFINE_UNQUOTED([NUM_COBO_PORTS],[$NUM_COBO_PORTS],[Number of ports for COBO 
 AC_DEFINE_UNQUOTED([SPINDLE_MAX_PORT],[$(($SPINDLE_PORT + $NUM_COBO_PORTS - 1))],[The maximum port value])
 AC_DEFINE_UNQUOTED([COMMPATHS],"[$COMMPATHS]",[Colon-separated list of candidate paths for back-end communication and housekeeping])
 AC_DEFINE_UNQUOTED([CACHEPATHS],"[$CACHEPATHS]",[Colon-separated list of potential back-end cache directories])
+AC_DEFINE_UNQUOTED([SESSIONPATHS],"[$SESSIONPATHS]",[Colon-separated list of candidate paths for session management])
 AC_DEFINE_UNQUOTED([SPINDLE_LOCAL_PREFIX],"[$SPINDLE_LOCAL_PREFIX]",[The default colon-separated list of directories that Spindle will not cache files out of])
 
 TESTRM=unknown

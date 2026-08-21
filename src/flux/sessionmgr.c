@@ -106,14 +106,15 @@ char **strip_start_from_argv(int argc, char **argv)
    return new_argv;
 }
 
-#define SESSIONPATH "$TMPDIR/spindle/session"
+/* DEPRECATED: This function is deprecated. Session directory should now be
+ * computed from sessionpaths configuration in main.cc using ConfigMap.
+ * Kept for backward compatibility only. Returns a fallback path.
+ */
 const char *get_session_dir()
 {
-   /* This function was originally designed to return a realized version of COMMPATH.
-    *   Since then, COMMPATH has been replaced by COMMPATHS, which can be modified by
-    *   the user on a per-job basis and uses the number_t number as part of the path
-    *   name.  Sessions are designed to span multiple jobs, and thus shouldn't be
-    *   piggybacking on COMMPATHS.  For now, we'll put in a hardcoded directory.
-    */
-   return strdup(SESSIONPATH);
+   const char *tmpdir = getenv("TMPDIR");
+   if (tmpdir) {
+      return strdup(tmpdir);
+   }
+   return strdup("/tmp");
 }

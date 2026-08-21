@@ -23,6 +23,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/stat.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #if !defined(USE_PLUGIN_DEBUG)
 #include "spindle_debug.h"
@@ -35,7 +36,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "spindle_launch.h"
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, bool delete_on_exit);
 
 #if defined(CUSTOM_GETENV)
 extern char *custom_getenv(char*);
@@ -315,7 +316,7 @@ static int validateCandidatePath( char *candidatePath, char **realizedPath, char
     if( parsedCandidatePath ){
        realizedCandidatePath = realize( parsedCandidatePath );
        if( realizedCandidatePath ){
-           rc = spindle_mkdir( parsedCandidatePath );
+           rc = spindle_mkdir( parsedCandidatePath, false );
            if( 0 == rc ){
                // candidatePath is going to be freed in the calling function.
                //   symbolicPath needs a strdup().  parsedPath() and realizedPath()

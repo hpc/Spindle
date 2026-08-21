@@ -19,6 +19,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #if !defined(USE_PLUGIN_DEBUG)
 #include "spindle_debug.h"
@@ -30,13 +31,20 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_api.h"
 #include "config.h"
 
+// Weak symbols allow linking without cleanup_proc.cc (e.g., in client code)
+void track_mkdir(const char *dir) __attribute__((weak));
+int lookup_prev_mkdir(const char *dir) __attribute__((weak));
 
-#if defined(TRACK_MKDIR)
-extern void track_mkdir(const char *dir);
-#endif
-#if defined(LOOKUP_PREV_MKDIR)
-extern int lookup_prev_mkdir(const char *dir);
-#endif
+void track_mkdir(const char *dir) {
+   // Stub for when cleanup_proc is not linked
+   (void)dir;
+}
+
+int lookup_prev_mkdir(const char *dir) {
+   // Stub for when cleanup_proc is not linked
+   (void)dir;
+   return 0;
+}
 
 
 static int checkdir(char *path)
@@ -72,14 +80,14 @@ static int checkdir(char *path)
    return 0;
 }
 
-int spindle_mkdir(char *orig_path)
+int spindle_mkdir(char *orig_path, bool delete_on_exit)
 {
    char path[MAX_PATH_LEN+1];
    int i, path_len, result, do_mkdir = 0, error;
    struct stat buf;
    char orig_char;
 
-   debug_printf2("spindle_mkdir on %s\n", orig_path);
+   debug_printf2("spindle_mkdir on %s (delete_on_exit=%d)\n", orig_path, delete_on_exit);
    
 
    strncpy(path, orig_path, sizeof(path));
@@ -96,14 +104,12 @@ int spindle_mkdir(char *orig_path)
       orig_char = path[i];
       path[i] = '\0';
 
-#if defined(LOOKUP_PREV_MKDIR)
-      if (!do_mkdir) {
+      if (delete_on_exit && !do_mkdir) {
          result = lookup_prev_mkdir(path);
          if (result == 1) {
             do_mkdir = 1;
          }
       }
-#endif
       if (!do_mkdir) {
          //Run a stat on an existing path component.  As long as a directory
          //component already exists, we won't be too picky about its ownership.         
@@ -142,9 +148,9 @@ int spindle_mkdir(char *orig_path)
          }
          else {
             debug_printf3("Did a mkdir(%s)\n", path);
-#if defined(TRACK_MKDIR)
-            track_mkdir(path);
-#endif            
+            if (delete_on_exit) {
+               track_mkdir(path);
+            }
          }
       }
       path[i] = orig_char;
@@ -155,7 +161,7 @@ int spindle_mkdir(char *orig_path)
    }
 
    if (!do_mkdir) {
-      //We never did any mkdirs.  Ensure that the final directory in the existing path 
+      //We never did any mkdirs.  Ensure that the final directory in the existing path
       // is exclusively ours.
       if (checkdir(path) == -1) {
          return -1;

@@ -1,13 +1,12 @@
 bin_PROGRAMS = spindle
-lib_LTLIBRARIES = libspindlefe.la
 noinst_LTLIBRARIES = libspindlefe_static.la
 
 include_HEADERS = $(top_srcdir)/../include/spindle_launch.h
 
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
-CORE_SOURCES = spindle_fe.cc parseargs.cc config_parser.cc config_mgr.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/rshlaunch.c
-CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -DPKGSYSCONFDIR=\"$(PKGSYSCONF_DIR)\"
+CORE_SOURCES = spindle_fe.cc parseargs.cc config_parser.cc config_mgr.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/rshlaunch.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../server/auditserver/cleanup_proc.cc
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../server/auditserver -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -DPKGSYSCONFDIR=\"$(PKGSYSCONF_DIR)\"
 CORE_LDADD = $(top_builddir)/logging/libspindleflogc.la -lpthread
 if COBO
 CORE_LDADD += $(top_builddir)/comlib/libfe_cobo.la $(top_builddir)/cobo/libldcs_cobo.la
@@ -17,14 +16,9 @@ CORE_LDADD += $(top_builddir)/comlib/libfe_msocket.la
 endif
 CORE_LDADD += $(MUNGE_DYN_LIB) $(GCRYPT_LIBS)
 
-libspindlefe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
-libspindlefe_la_SOURCES = $(CORE_SOURCES)
-libspindlefe_la_LIBADD = $(CORE_LDADD)
-libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
-
-libspindlefe_static_la_CPPFLAGS = $(libspindlefe_la_CPPFLAGS)
-libspindlefe_static_la_SOURCES = $(libspindlefe_la_SOURCES)
-libspindlefe_static_la_LIBADD = $(libspindlefe_la_LIBADD)
+libspindlefe_static_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
+libspindlefe_static_la_SOURCES = $(CORE_SOURCES)
+libspindlefe_static_la_LIBADD = $(CORE_LDADD)
 
 
 spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE

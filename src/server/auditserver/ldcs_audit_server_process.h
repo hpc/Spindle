@@ -155,6 +155,8 @@ struct ldcs_process_data_struct
   char *parsed_cachepath;       /* The cachepath with environment variables replaced. */
                                 /*   (Symbolic links, if any, remain.) */
   uint64_t cachepath_bitidx;    /* Bit index of valid cachepaths on a given server. */
+  char *sessionpaths;           /* Colon-separated list of candidate sessionpaths. Sessions span jobs. */
+  char *sessionpath;            /* The session directory path used by this session. */
   char *hostname;
   char *pythonprefix;
   char *localprefix;

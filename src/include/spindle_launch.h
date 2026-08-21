@@ -133,6 +133,9 @@ typedef struct {
    /* Path[s] for cached libraries. */
    char *candidate_cachepaths;  /* Colon-separated list of candidate paths (max 64) */
 
+   /* Path[s] for session management. Sessions span multiple jobs. */
+   char *sessionpaths;  /* Colon-separated list of candidate paths */
+
    /* Colon-seperated list of directories where Python is installed */
    char *pythonprefix;
 

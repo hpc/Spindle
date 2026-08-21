@@ -39,6 +39,11 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_session.h"
 #include "spindle_debug.h"
+#include "ldcs_api.h"
+
+extern "C" {
+#include "parseloc.h"
+}
 
 using namespace std;
 
@@ -63,30 +68,53 @@ static void waitfor_init_done();
 
 extern bool getRandom(void *bytes, size_t bytes_size);
 
-static string getTmpdir()
+// Compute session directory from sessionpaths (with fallback to commpaths)
+// Returns the first valid path, or empty string on failure
+static string getSessionDir(spindle_args_t *args)
 {
-   string dirname;
-   if (getenv("TMPDIR")) {
-      return getenv("TMPDIR");
+   char *sessionpaths = args->sessionpaths;
+   char *commpaths = args->commpaths;
+   char *first_valid = NULL;
+
+   // Try sessionpaths first
+   if (sessionpaths && sessionpaths[0] != '\0') {
+      debug_printf2("Evaluating sessionpaths: %s\n", sessionpaths);
+      if (getFirstValidPath(sessionpaths, &first_valid, 0) == 0 && first_valid) {
+         string result(first_valid);
+         free(first_valid);
+         return result;
+      }
+      // sessionpaths specified but none valid
+      debug_printf2("No valid sessionpaths found, trying commpaths fallback\n");
    }
-#if defined(P_tmpdir)
-   else if (P_tmpdir) {
-      return P_tmpdir;
+
+   // Fallback to commpaths
+   if (commpaths && commpaths[0] != '\0') {
+      debug_printf2("Evaluating commpaths for session: %s\n", commpaths);
+      if (getFirstValidPath(commpaths, &first_valid, 0) == 0 && first_valid) {
+         string result(first_valid);
+         free(first_valid);
+         return result;
+      }
    }
-#endif
-   else {
-      return "/tmp";
-   }
+
+   err_printf("No valid sessionpaths or commpaths found\n");
+   return string();  // Empty string indicates failure
 }
 
 #define SESSION_ID_CHARS 8
-static void create_session_id()
+static void create_session_id(string session_dir)
 {
    unsigned char randombytes[SESSION_ID_CHARS];
    char session_id_str[SESSION_ID_CHARS+1];
-   string dirname = getTmpdir();
-   
-   for (int j = 0; j < 5; j++) { //Try to generate a random name five times. 
+
+   if (session_dir.empty()) {
+      err_printf("Cannot create session ID: no valid session directory\n");
+      fprintf(stderr, "Spindle error: no valid session directory found\n");
+      exit(-1);
+   }
+
+   for (int j = 0; j < 5; j++) { //Try to generate a random name five times.
       bool result = getRandom(randombytes, sizeof(randombytes));
       if (!result) {
          err_printf("Failed to read random bytes\n");
@@ -95,7 +123,7 @@ static void create_session_id()
       }
       for (unsigned long i = 0; i < sizeof(randombytes); i++) {
          unsigned int val = (unsigned int) (randombytes[i] & 63); //6 bits
-         if (val < 26) 
+         if (val < 26)
             session_id_str[i] = 'a' + val;
          else if (val < 52)
             session_id_str[i] = 'A' + (val - 26);
@@ -109,8 +137,8 @@ static void create_session_id()
             assert(0);
       }
       session_id_str[sizeof(session_id_str)-1] = '\0';
-      
-      string fullpath = dirname + "/" +  SOCKET_PREFIX + session_id_str;
+
+      string fullpath = session_dir + "/" +  SOCKET_PREFIX + session_id_str;
 
       struct stat buf;
       if (stat(fullpath.c_str(), &buf) != -1) {
@@ -127,11 +155,37 @@ static void create_session_id()
    exit(-1);
 }
 
-static void set_session_id(std::string id)
+// Parse session ID which may be in one of two formats:
+// - New format: "AbC123Xy:/path/to/session/dir" (ID:path)
+// - Old format: "AbC123Xy" (just ID, reconstruct path from $TMPDIR)
+static void set_session_id(std::string combined, spindle_args_t *args)
 {
-   string dirname = getTmpdir();
-   session_socket = dirname + "/" +  SOCKET_PREFIX + id;
-   session_id = id;
+   size_t colon = combined.find(':');
+   if (colon != string::npos) {
+      // New format: ID:path
+      session_id = combined.substr(0, colon);
+      string session_dir = combined.substr(colon + 1);
+      session_socket = session_dir + "/" + SOCKET_PREFIX + session_id;
+      debug_printf2("Parsed session ID (new format): id=%s, dir=%s\n",
+                    session_id.c_str(), session_dir.c_str());
+   } else {
+      // Old format: just ID, reconstruct path
+      session_id = combined;
+      string session_dir = getSessionDir(args);
+      if (session_dir.empty()) {
+         // Fallback to $TMPDIR for backward compatibility
+         if (getenv("TMPDIR")) {
+            session_dir = getenv("TMPDIR");
+         } else {
+            session_dir = "/tmp";
+         }
+         debug_printf2("Using fallback session dir for old-format ID: %s\n",
+                       session_dir.c_str());
+      }
+      session_socket = session_dir + "/" + SOCKET_PREFIX + session_id;
+      debug_printf2("Parsed session ID (old format): id=%s, dir=%s\n",
+                    session_id.c_str(), session_dir.c_str());
+   }
 }
 
 static int create_unixsocket()
@@ -447,13 +501,26 @@ int init_session(spindle_args_t *args, const ConfigMap &config, Launcher *launch
       debug_printf("Starting new spindle session\n");
       bool multi_start = (config.isSet(confStartMultiSession));
 
-      create_session_id();
+      // Get session directory from sessionpaths (with commpaths fallback)
+      string session_dir = getSessionDir(args);
+      if (session_dir.empty()) {
+         fprintf(stderr, "Error: No valid session directory found\n");
+         return -1;
+      }
+
+      create_session_id(session_dir);
       debug_printf("New session code is %s\n", session_id.c_str());
       debug_printf("New session socket is %s\n", session_socket.c_str());
-      args->session_key = strdup(session_id.c_str());
-      //Print new session id
+
+      // Encode path in session ID for subsequent jobs: "ID:path"
+      char combined_id[MAX_PATH_LEN];
+      snprintf(combined_id, sizeof(combined_id), "%s:%s",
+               session_id.c_str(), session_dir.c_str());
+      args->session_key = strdup(combined_id);
+
+      //Print new session id with encoded path
       if (multi_start || args->use_launcher == srun_launcher) {
-         (void)! write(1, session_id.c_str(), session_id.length());
+         (void)! write(1, combined_id, strlen(combined_id));
          (void)! write(1, "\n", 1);
       }
 
@@ -500,8 +567,8 @@ int init_session(spindle_args_t *args, const ConfigMap &config, Launcher *launch
          exit(-1);
       }
    }
-   
-   set_session_id(id);
+
+   set_session_id(id, args);
    debug_printf("Connecting to existing spindle session-id %s\n", session_id.c_str());
    result = connect_to_session();
    if (result == -1) {

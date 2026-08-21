@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <stdbool.h>
 #include "plugin_utils.h"
 #include "parseloc.h"
 
@@ -33,7 +34,7 @@
 
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, bool delete_on_exit);
 
 int srunAllNodes(unsigned int num_nodes, const char *command) 
 {
@@ -520,7 +521,7 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
    unique_file = (char *) malloc(sizeof(char*) * unique_file_len);
    snprintf(unique_file, unique_file_len, "%s/%s.%s.%s.%s", realized_dir, UNIQUE_FILE_NAME, phase_name, hostname, session_id_str);
 
-   spindle_mkdir(realized_dir);
+   spindle_mkdir(realized_dir, false);
 
    fd = open(unique_file, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
    error = errno;

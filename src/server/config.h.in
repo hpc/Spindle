@@ -158,6 +158,9 @@
 /* Directory to store key files in */
 #undef SEC_KEYDIR
 
+/* Colon-separated list of candidate paths for session management */
+#undef SESSIONPATHS
+
 /* Default mode for slurm launch */
 #undef SLURMLAUNCH_ENABLED
 

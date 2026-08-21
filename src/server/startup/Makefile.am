@@ -5,7 +5,7 @@ noinst_LTLIBRARIES = libspindlebe_static.la
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 
 CORE_SOURCES = spindle_be.cc hookexec.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/exitnote.c 
-CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DTRACK_MKDIR -DLOOKUP_PREV_MKDIR -DLIBEXECDIR=\"$(pkglibexecdir)\"
+CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/comlib -I$(top_srcdir)/cache -I$(top_srcdir)/auditserver -I$(top_srcdir)/../client/beboot -I$(top_srcdir)/../include -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DLIBEXECDIR=\"$(pkglibexecdir)\"
 CORE_LDADD = $(top_builddir)/logging/libspindledlogc.la -ldl
 if COBO
 CORE_LDADD += $(top_builddir)/auditserver/libaudit_server_cobo.la

@@ -29,8 +29,8 @@ libspindleflux_la_LDFLAGS = \
 	-module
 
 spindle_flux_session_SOURCES = main.cc $(top_srcdir)/src/utils/spindle_mkdir.c $(top_srcdir)/src/utils/parseloc.c
-spindle_flux_session_CPPFLAGS = -I$(top_srcdir)/src/flux -I$(top_srcdir)/src/logging -I$(top_srcdir)/src/include
-spindle_flux_session_LDADD = libfluxsession.la
+spindle_flux_session_CPPFLAGS = -I$(top_srcdir)/src/flux -I$(top_srcdir)/src/logging -I$(top_srcdir)/src/include -I$(top_srcdir)/src/fe/startup -I$(top_srcdir)/src/utils
+spindle_flux_session_LDADD = libfluxsession.la $(top_builddir)/src/fe/startup/libspindlefe_static.la
 
 libfluxsession_la_SOURCES = sessionmgr.c fluxmgr.c procmgr.c spindlefemgr.c spindlebemgr.c
 libfluxsession_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(top_srcdir)/src/flux $(FLUX_CORE_CFLAGS) $(FLUX_HOSTLIST_CFLAGS)

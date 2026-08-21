@@ -51,7 +51,7 @@ static bool longest_str_first(const string &a, const string &b)
    return a.size() > b.size();
 }
 
-static void rmDirSet(const set<string> &dirs, const char *cachepath, const char *commpath)
+static void rmDirSet(const set<string> &dirs, const char *cachepath, const char *commpath, const char *sessionpath)
 {
    string path_sep("/");
    if( !cachepath || !commpath ){
@@ -62,6 +62,7 @@ static void rmDirSet(const set<string> &dirs, const char *cachepath, const char 
    }
    size_t cachepath_len = strlen(cachepath);
    size_t commpath_len  = strlen(commpath);
+   size_t sessionpath_len = (sessionpath && sessionpath[0] != '\0') ? strlen(sessionpath) : 0;
 
    for (set<string>::const_iterator i = dirs.begin(); i != dirs.end(); i++) {
       DIR *dir = opendir(i->c_str());
@@ -79,9 +80,10 @@ static void rmDirSet(const set<string> &dirs, const char *cachepath, const char 
             continue;
 
          if ( (strncmp(cachepath, componentpath.c_str(), cachepath_len) != 0) &&
-              (strncmp(commpath,  componentpath.c_str(), commpath_len ) != 0) ){
-            err_printf( "File for deletion (%s) is outside of cachepath (%s) and commpath (%s).\n",
-                    componentpath.c_str(), cachepath, commpath );
+              (strncmp(commpath,  componentpath.c_str(), commpath_len ) != 0) &&
+              (sessionpath_len == 0 || strncmp(sessionpath, componentpath.c_str(), sessionpath_len) != 0) ){
+            err_printf( "File for deletion (%s) is outside of cachepath (%s), commpath (%s), and sessionpath (%s).\n",
+                    componentpath.c_str(), cachepath, commpath, sessionpath ? sessionpath : "(none)" );
             continue;
          }
          unlink(componentpath.c_str());
@@ -92,9 +94,10 @@ static void rmDirSet(const set<string> &dirs, const char *cachepath, const char 
    sort(ordered_dirs.begin(), ordered_dirs.end(), longest_str_first);
    for (vector<string>::iterator i = ordered_dirs.begin(); i != ordered_dirs.end(); i++) {
       if ( (strncmp(cachepath, i->c_str(), cachepath_len) != 0) &&
-           (strncmp(commpath,  i->c_str(), commpath_len)  != 0) ){
-          err_printf( "Directory for deletion (%s) is outside of cachepath (%s) and commpath (%s).\n",
-                  i->c_str(), cachepath, commpath );
+           (strncmp(commpath,  i->c_str(), commpath_len)  != 0) &&
+           (sessionpath_len == 0 || strncmp(sessionpath, i->c_str(), sessionpath_len) != 0) ){
+          err_printf( "Directory for deletion (%s) is outside of cachepath (%s), commpath (%s), and sessionpath (%s).\n",
+                  i->c_str(), cachepath, commpath, sessionpath ? sessionpath : "(none)" );
           continue;
       }
       rmdir(i->c_str());
@@ -103,16 +106,16 @@ static void rmDirSet(const set<string> &dirs, const char *cachepath, const char 
 
 class CleanupProc
 {
-   friend void init_cleanup_proc(const char *, const char *);
+   friend void init_cleanup_proc(const char *, const char *, const char *);
 private:
    set<string> dirs;
    int write_dir_fd;
    int read_dir_fd;
    bool has_error;
    pid_t child_pid;
-   const char *cachepath, *commpath;
+   const char *cachepath, *commpath, *sessionpath;
 
-   CleanupProc(const char *cachepath, const char *commpath);
+   CleanupProc(const char *cachepath, const char *commpath, const char *sessionpath);
    void rmDirs();
    void cleanupMain();
 public:
@@ -121,12 +124,13 @@ public:
    bool hadError();
 };
 
-CleanupProc::CleanupProc(const char *cachepath, const char *commpath) :
+CleanupProc::CleanupProc(const char *cachepath, const char *commpath, const char *sessionpath) :
    write_dir_fd(-1),
    read_dir_fd(-1),
    has_error(false),
    cachepath(cachepath),
-   commpath(commpath)
+   commpath(commpath),
+   sessionpath(sessionpath)
 {
    int fds[2];
    int result;
@@ -197,7 +201,7 @@ bool CleanupProc::hadError()
 
 void CleanupProc::rmDirs()
 {
-   rmDirSet(dirs, cachepath, commpath);
+   rmDirSet(dirs, cachepath, commpath, sessionpath);
 }
 
 void CleanupProc::cleanupMain()
@@ -252,10 +256,10 @@ void CleanupProc::addDir(const char *dir)
 static CleanupProc *proc = NULL;
 static set<string> local_dircache;
 
-void init_cleanup_proc(const char *cachepath, const char *commpath)
+void init_cleanup_proc(const char *cachepath, const char *commpath, const char *sessionpath)
 {
    assert(!proc);
-   proc = new CleanupProc(cachepath, commpath);
+   proc = new CleanupProc(cachepath, commpath, sessionpath);
    if (proc->hadError()) {
       delete proc;
       proc = NULL;
@@ -281,13 +285,13 @@ int lookup_prev_mkdir(const char *dir)
    return (i != local_dircache.end()) ? 1 : 0;
 }
 
-void cleanup_created_dirs(const char *cachepath, const char *commpath)
+void cleanup_created_dirs(const char *cachepath, const char *commpath, const char *sessionpath)
 {
    if (proc) {
       proc->triggerCleanup();
    }
    else {
       debug_printf("Cleaning files with local unlink/rmdirs.\n");
-      rmDirSet(local_dircache, cachepath, commpath);
+      rmDirSet(local_dircache, cachepath, commpath, sessionpath);
    }
 }

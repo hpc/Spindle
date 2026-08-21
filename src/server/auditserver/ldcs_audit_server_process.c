@@ -147,6 +147,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.cachepaths = args->candidate_cachepaths;
    ldcs_process_data.cachepath = NULL;
    ldcs_process_data.cachepath_bitidx = 0;
+   ldcs_process_data.sessionpaths = args->sessionpaths;
+   ldcs_process_data.sessionpath = NULL;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
    ldcs_process_data.localprefix = args->local_prefixes;
@@ -200,7 +202,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.server_stat.hostname=ldcs_process_data.hostname;
 
    if (ldcs_process_data.opts & OPT_PROCCLEAN)
-      init_cleanup_proc(ldcs_process_data.cachepath, ldcs_process_data.commpath);
+      init_cleanup_proc(ldcs_process_data.cachepath, ldcs_process_data.commpath, ldcs_process_data.sessionpath);
 
    /* Calculate location of cache */
    debug_printf2("Calculating cache path location\n");
@@ -212,6 +214,19 @@ int ldcs_audit_server_process(spindle_args_t *args)
    if (result == -1) {
       err_printf("Could not determine cachepath consensus\n");
       return -1;
+   }
+
+   /* Determine session path if sessionpaths provided */
+   if (ldcs_process_data.sessionpaths && ldcs_process_data.sessionpaths[0] != '\0') {
+      char *first_valid_session = NULL;
+      debug_printf2("Determining session path from sessionpaths: %s\n", ldcs_process_data.sessionpaths);
+      result = getFirstValidPath(ldcs_process_data.sessionpaths, &first_valid_session, 0);
+      if (result == 0 && first_valid_session) {
+         ldcs_process_data.sessionpath = first_valid_session;
+         debug_printf2("Session path determined: %s\n", ldcs_process_data.sessionpath);
+      } else {
+         debug_printf2("No valid sessionpath found, will fallback to commpath for cleanup\n");
+      }
    }   
 
    /* Setup connections for clients to start connecting */
