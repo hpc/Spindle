@@ -283,8 +283,14 @@ static void crash_handler_entry(int sig, siginfo_t *info, void *uctx)
 
 reraise:
    /* Finally, we restore the default signal handler and return,
-      terminating the process and producing a coredump if the limit allows.. */
+      terminating the process and producing a coredump if the limit allows. */
    signal(sig, SIG_DFL);
+   /* User-sent signals, such as from kill(), don't get triggered again
+    * automatically after return from a signal handler. si_code is 
+    * negative or zero for user-caused signals and positive for kernel-caused
+    * signals. If this signal was user-caused, explicitly reraise. */
+   if (info->si_code <= 0)
+      raise(sig);
 }
 
 /* Resolves a display rank for use in crash logging from launcher/MPI env vars. */

@@ -58,6 +58,7 @@ CRASH_TESTS=(
  'sigabrt                        ; 1     ; N        ;                   ; (__GI_)?raise|abort|pthread_kill'
  'assert                         ; 1     ; N        ;                   ; (__GI_)?raise|abort|pthread_kill             ; ^abort:.*Assertion    '
  'mixed-abort-segv               ; 2     ; N        ; multi-rank        ; (__GI_)?raise|abort|pthread_kill|do_mixed_abort_segv'
+ 'kill-segv                      ; 1     ; N        ;                   ; kill|do_kill_segv                            ; libc\.so.*\+0x    '
  'span-read                      ; 1     ; N        ;                   ; do_span_read'
  'safepoint                      ; 0     ; 0        ; clean             ; -'
  'safepoint-then-crash           ; 1     ; N        ;                   ; crash_function_A'

@@ -106,7 +106,7 @@ static void usage(const char *prog) {
             "late-straggler|two-groups|one-crashes|in-library|"
             "in-dlmopen-library|in-fixed-library|in-fixed-dlmopen-library|"
             "in-library-ctor|sigabrt|assert|"
-            "long-assert|mixed-abort-segv|span-read|"
+            "long-assert|mixed-abort-segv|kill-segv|span-read|"
             "safepoint|safepoint-then-crash|"
             "safepoint-bad|safepoint-bad-write|safepoint-fix-write|"
             "safepoint-span-read|safepoint-span-write|"
@@ -224,6 +224,12 @@ static void do_mixed_abort_segv(int rank) {
     } else {
         *(volatile int *) 0 = 0;
     }
+}
+
+static void do_kill_segv(int rank) {
+    kill(getpid(), SIGSEGV);
+    fprintf(stderr, "kill-segv rank=%d: unexpectedly continued after kill(SIGSEGV)\n", rank);
+    _exit(SAFEPOINT_RC_NOT_TERMINATED);
 }
 
 static void do_span_read(int rank) {
@@ -784,6 +790,8 @@ int main(int argc, char **argv) {
         do_assert(rank);
     } else if (strcmp(mode, "mixed-abort-segv") == 0) {
         do_mixed_abort_segv(rank);
+    } else if (strcmp(mode, "kill-segv") == 0) {
+        do_kill_segv(rank);
     } else if (strcmp(mode, "span-read") == 0) {
         do_span_read(rank);
     } else if (strcmp(mode, "safepoint") == 0) {
