@@ -233,9 +233,19 @@ static int rank_cmp(const void *a, const void *b)
    return 0;
 }
 
-static void write_escaped(FILE *f, const char *s, size_t len)
+#define CRASH_LOG_HEADER "rank,exemplar,exe,site"
+
+static void write_csv_field(FILE *f, const char *s, size_t len)
 {
    size_t i;
+   int quote = 0;
+
+   /* We have to quote the field if it contains , or " */
+   for (i = 0; i < len && !quote; i++)
+      quote = (s[i] == ',' || s[i] == '"');
+   if (quote)
+      fputc('"', f);
+   /* Handle CSV escapes */
    for (i = 0; i < len; i++) {
       switch (s[i]) {
          case '\\':
@@ -244,35 +254,15 @@ static void write_escaped(FILE *f, const char *s, size_t len)
          case '\n':
             fputs("\\n", f);
             break;
+         case '"':
+            fputs("\"\"", f);
+            break;
          default:
             fputc(s[i], f);
       }
    }
-}
-
-/* Write rank list as comma-separated values, with runs of three or more
-   contiguous ranks as ranges, e.g., "1,3-8,16,17,20" */
-static void write_compressed_ranks(FILE *f, const int32_t *ranks, int count)
-{
-   int i = 0;
-   int first = 1;
-   while (i < count) {
-      int j = i;
-      while (j + 1 < count &&
-             (ranks[j+1] == ranks[j] + 1 || ranks[j+1] == ranks[j]))
-         j++;
-      if (!first)
-         fputc(',', f);
-      if (ranks[j] >= ranks[i] + 2)
-         fprintf(f, "%d-%d", (int) ranks[i], (int) ranks[j]);
-      else if (ranks[j] == ranks[i] + 1)
-         fprintf(f, "%d,%d", (int) ranks[i], (int) ranks[j]);
-      else
-         fprintf(f, "%d", (int) ranks[i]);
-      first = 0;
-      i = j + 1;
-   }
-   fputc('\n', f);
+   if (quote)
+      fputc('"', f);
 }
 
 /* Write the crash log from the crash log accumulated at the root */
@@ -307,26 +297,26 @@ void crash_log_root_write(ldcs_process_data_t *procdata)
       return;
    }
 
-   int first_site = 1;
+   fputs(CRASH_LOG_HEADER "\n", f);
+
    for (i = 0; i < procdata->crash_sites_count; ++i) {
       crash_site_entry_t *e = &procdata->crash_sites[i];
+      int j;
       if (e->log_ranks_count == 0)
          continue;
       qsort(e->log_ranks, e->log_ranks_count, sizeof(*e->log_ranks), rank_cmp);
-      if (!first_site)
-         fputc('\n', f);
-      first_site = 0;
       const char *sep = strchr(e->site, '|');
+      const char *exe = sep ? e->site : "";
+      size_t exe_len = sep ? (size_t) (sep - e->site) : 0;
       const char *site = sep ? sep + 1 : e->site;
-      fprintf(f, "exe: ");
-      if (sep)
-         write_escaped(f, e->site, (size_t) (sep - e->site));
-      fprintf(f, "\nsite: ");
-      write_escaped(f, site, strlen(site));
-      fprintf(f, "\nexemplar: %d\n", e->exemplar_rank);
-      fprintf(f, "count: %d\n", e->log_ranks_count);
-      fprintf(f, "ranks: ");
-      write_compressed_ranks(f, e->log_ranks, e->log_ranks_count);
+      size_t site_len = strlen(site);
+      for (j = 0; j < e->log_ranks_count; ++j) {
+         fprintf(f, "%d,%d,", (int) e->log_ranks[j], e->exemplar_rank);
+         write_csv_field(f, exe, exe_len);
+         fputc(',', f);
+         write_csv_field(f, site, site_len);
+         fputc('\n', f);
+      }
    }
 
    if (fclose(f) != 0) {

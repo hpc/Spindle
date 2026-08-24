@@ -28,7 +28,7 @@ die() { echo "FAIL: $*" >&2; exit 1; }
 # Fields:
 #  mode: --mode to pass to crash test runner
 #  cores: expected number of cores produced; if N, then equal to total number of ranks
-#  crashers: expected number of crashing ranks (== total ranks in the crash log);
+#  crashers: expected number of crashing ranks
 #    N = all ranks, E = even ranks (ceil(N/2)), or a literal count
 #  flags (comma-separated): "multi-rank" skips the mode on a single rank;
 #    "clean" expects the test to NOT crash; "altstack" runs the mode with
@@ -36,8 +36,8 @@ die() { echo "FAIL: $*" >&2; exit 1; }
 #  top_frame_regex: regex that should match the top frame in produced coredumps.
 #    Note that all threads will be checked, so in multithreaded examples the regex should
 #    also match anything that could be on threads other than the one that faulted.
-#  site_regex: optional regex for the crash-site dedup key; if present, the crash site key must
-#    match the regex for the test to pass
+#  site_regex: optional regex for the site column of the crash log; 
+#    if present, every logged site must match the regex for the test to pass
 #  binary: optional alternate executable to run in place of the default crash_test.
 #  crash_mode: optional alternate crash mode argument to executable
 CRASH_TESTS=(
@@ -344,37 +344,46 @@ read_crash_site() {
       | sed -n 's/^CRASH_SITE=//p' | head -1
 }
 
+# ---------------- crash log parsing ----------------
+
+# The crash log is CSV with the fields:
+#  - rank
+#  - exemplar
+#  - exe
+#  - site
+
+# Check that a crash log exists and starts with the expected header.
+log_check_header() {
+   local log="$1" header
+   if [ ! -f "$log" ]; then
+      echo "   missing crash log $log" >&2
+      return 1
+   fi
+   IFS= read -r header <"$log"
+   if [[ "$header" != rank,exemplar,exe,site* ]]; then
+      echo "   incorrect crash log header '$header'" >&2
+      return 1
+   fi
+   return 0
+}
+
+log_rows() { tail -n +2 "$1"; }
+
+# Split a log entry into ROW_RANK, ROW_EXEMPLAR, ROW_EXE, ROW_SITE.
+parse_log_row() {
+   local rest
+   IFS=, read -r ROW_RANK ROW_EXEMPLAR rest <<<"$1"
+   ROW_EXE="${rest%%,*}"
+   rest="${rest#*,}"
+   # Remove quoting if present
+   if [[ "$rest" =~ ^\"(([^\"]|\"\")*)\" ]]; then
+      ROW_SITE="${BASH_REMATCH[1]//\"\"/\"}"
+   else
+      ROW_SITE="${rest%%,*}"
+   fi
+}
+
 # ---------------- crash log verification ----------------
-
-# Print the values of one "key: value" field from a crash log, in order.
-log_values() {
-   local log="$1" key="$2" line
-   while IFS= read -r line; do
-      [[ "$line" == "$key: "* ]] && printf '%s\n' "${line#"$key": }"
-   done <"$log"
-}
-
-# Expand a range-compressed rank list ("0-3,5,7-8") into individual ranks.
-expand_rank_list() {
-   local list="$1"
-   local parts part lo hi r rc=0
-   IFS=',' read -ra parts <<<"$list"
-   for part in "${parts[@]}"; do
-      case "$part" in
-         *-*) lo="${part%-*}"; hi="${part#*-}" ;;
-         *)   lo="$part";      hi="$part"     ;;
-      esac
-      if ! [[ "$lo" =~ ^[0-9]+$ && "$hi" =~ ^[0-9]+$ ]] || [ "$lo" -gt "$hi" ]; then
-         echo "   bad rank entry '$part'" >&2
-         rc=1
-         continue
-      fi
-      for ((r = lo; r <= hi; r++)); do
-         printf '%s\n' "$r"
-      done
-   done
-   return $rc
-}
 
 # Verify the crash log file contains the expected crash sites.
 verify_crash_log() {
@@ -385,80 +394,58 @@ verify_crash_log() {
    local expected_total
    expected_total=$(resolve_crashers "$mode")
 
-   if [ ! -f "$log" ]; then
-      echo "   crash log $log missing" >&2
-      return 1
-   fi
-
    local expected_site="${TEST_SITE[$mode]:-}"
    [ "$expected_site" = "-" ] && expected_site=""
 
    local binary_name="${TEST_BINARY[$mode]:-crash_test}"
    local expected_exe="${binary_name}\$"
 
-   local rc=0 sites=0 total=0
-   local line exe site exemplar="" count=""
-   local -A seen=()
-   local ranks r ranks_count exemplar_listed
+   log_check_header "$log" || return 1
 
-   # Parse the crash log
+   local rc=0 total=0 line key
+   local -A seen=() site_exemplar=() exemplar_rows=()
    while IFS= read -r line; do
-      case "$line" in
-         "exe: "*)
-            exe="${line#exe: }"
-            sites=$((sites + 1))
-            exemplar=""
-            count=""
-            if ! [[ "$exe" =~ $expected_exe ]]; then
-               echo "   exe '$exe' does not match executable '$binary_name'" >&2
-               rc=1
-            fi
-            ;;
-         "site: "*)
-            site="${line#site: }"
-            if [ -n "$expected_site" ] && ! [[ "$site" =~ $expected_site ]]; then
-               echo "   site '$site' does not match '$expected_site'" >&2
-               rc=1
-            fi
-            ;;
-         "exemplar: "*)
-            exemplar="${line#exemplar: }"
-            ;;
-         "count: "*)
-            count="${line#count: }"
-            ;;
-         "ranks: "*)
-            ranks_count=0
-            exemplar_listed=0
-            ranks=$(expand_rank_list "${line#ranks: }") || rc=1
-            for r in $ranks; do
-               ranks_count=$((ranks_count + 1))
-               if [ "$r" -ge "$NODES" ]; then
-                  echo "   rank $r outside [0,$NODES)" >&2
-                  rc=1
-               fi
-               if [ -n "${seen[$r]:-}" ]; then
-                  echo "   rank $r repeated" >&2
-                  rc=1
-               fi
-               seen[$r]=1
-               [ "$r" = "$exemplar" ] && exemplar_listed=1
-            done
-            if [ "$count" != "$ranks_count" ]; then
-               echo "   count $count != $ranks_count listed ranks" >&2
-               rc=1
-            fi
-            if [ "$exemplar_listed" != "1" ]; then
-               echo "   exemplar '$exemplar' not in ranks list" >&2
-               rc=1
-            fi
-            total=$((total + ranks_count))
-            ;;
-      esac
-   done <"$log"
+      parse_log_row "$line"
+      key="$ROW_EXE|$ROW_SITE"
+      total=$((total + 1))
+      if ! [[ "$ROW_RANK" =~ ^[0-9]+$ ]] || [ "$ROW_RANK" -ge "$NODES" ]; then
+         echo "   rank '$ROW_RANK' outside expected range [0,$NODES)" >&2
+         rc=1
+         continue
+      fi
+      if [ -n "${seen[$ROW_RANK]:-}" ]; then
+         echo "   rank $ROW_RANK repeated" >&2
+         rc=1
+      fi
+      seen[$ROW_RANK]=1
+      if [ -z "${site_exemplar[$key]:-}" ]; then
+         site_exemplar[$key]="$ROW_EXEMPLAR"
+         if ! [[ "$ROW_EXE" =~ $expected_exe ]]; then
+            echo "   exe '$ROW_EXE' does not match executable '$binary_name'" >&2
+            rc=1
+         fi
+         if [ -n "$expected_site" ] && ! [[ "$ROW_SITE" =~ $expected_site ]]; then
+            echo "   site '$ROW_SITE' does not match '$expected_site'" >&2
+            rc=1
+         fi
+      elif [ "${site_exemplar[$key]}" != "$ROW_EXEMPLAR" ]; then
+         echo "   site '$key' exemplar ${site_exemplar[$key]} does not match expected $ROW_EXEMPLAR" >&2
+         rc=1
+      fi
+      if [ "$ROW_RANK" = "$ROW_EXEMPLAR" ]; then
+         exemplar_rows[$key]=$(( ${exemplar_rows[$key]:-0} + 1 ))
+      fi
+   done < <(log_rows "$log")
 
-   if [ "$sites" != "$expected_sites" ]; then
-      echo "   $sites crashsites, expected $expected_sites" >&2
+   for key in "${!site_exemplar[@]}"; do
+      if [ "${exemplar_rows[$key]:-0}" != "1" ]; then
+         echo "   exemplar ${site_exemplar[$key]} of site '$key' appears in ${exemplar_rows[$key]:-0} rows, expected 1" >&2
+         rc=1
+      fi
+   done
+
+   if [ "${#site_exemplar[@]}" != "$expected_sites" ]; then
+      echo "   ${#site_exemplar[@]} crashsites, expected $expected_sites" >&2
       rc=1
    fi
    if [ "$total" != "$expected_total" ]; then
@@ -491,9 +478,12 @@ verify_exemplar_cores() {
    cores=$(core_files "$dir")
 
    local ex found
+   local -A checked=()
    while IFS= read -r line; do
-      case "$line" in "exemplar: "*) ;; *) continue ;; esac
-      ex="${line#exemplar: }"
+      parse_log_row "$line"
+      ex="$ROW_EXEMPLAR"
+      [ -z "${checked[$ex]:-}" ] || continue
+      checked[$ex]=1
       p="${rank_pid[$ex]:-}"
       if [ -z "$p" ]; then
          echo "   no pid banner for exemplar rank $ex; skipping core check" >&2
@@ -514,7 +504,7 @@ verify_exemplar_cores() {
          echo "   no coredump found for exemplar rank $ex (pid $p)" >&2
          return 1
       fi
-   done <"$log"
+   done < <(log_rows "$log")
    return 0
 }
 
@@ -525,18 +515,17 @@ verify_log_matches_core() {
    local log="$dir/crash.log"
    local binary="$TESTDIR/${TEST_BINARY[$mode]:-crash_test}"
 
-   local core log_exe log_site core_site
+   local core core_site
    core=$(core_files "$dir" | head -1)
    [ -n "$core" ] || { echo "   no core for gdb cross-check" >&2; return 1; }
-   log_exe=$(log_values "$log" exe | head -1)
-   log_site=$(log_values "$log" site | head -1)
+   parse_log_row "$(log_rows "$log" | head -1)"
    core_site=$(read_crash_site "$core" "$binary")
    if [ -z "$core_site" ]; then
       echo "   could not read crash site from $core" >&2
       return 1
    fi
-   if [ "$core_site" != "$log_exe|$log_site" ]; then
-      echo "   core site '$core_site' != logged site '$log_exe|$log_site'" >&2
+   if [ "$core_site" != "$ROW_EXE|$ROW_SITE" ]; then
+      echo "   core site '$core_site' != logged site '$ROW_EXE|$ROW_SITE'" >&2
       return 1
    fi
    return 0
@@ -617,14 +606,17 @@ if [ -e "$log" ]; then echo present; else echo absent; fi > "$dir/log_after_run2
 EOF
    session_test_launch
 
-   local after1 after2 sites=0 total=0 c
+   local after1 after2 sites=0 total=0 line
+   local -A keys=()
    after1=$(cat "$dir/log_after_run1" 2>/dev/null || echo missing)
    after2=$(cat "$dir/log_after_run2" 2>/dev/null || echo missing)
-   if [ -f "$log" ]; then
-      sites=$(log_values "$log" site | wc -l)
-      for c in $(log_values "$log" count); do
-         total=$((total + c))
-      done
+   if log_check_header "$log" 2>/dev/null; then
+      while IFS= read -r line; do
+         parse_log_row "$line"
+         keys["$ROW_EXE|$ROW_SITE"]=1
+         total=$((total + 1))
+      done < <(log_rows "$log")
+      sites=${#keys[@]}
    fi
 
    local ok=1
@@ -664,13 +656,25 @@ verify_cross_exe() {
    local dir="$1"
    local log="$dir/crash.log"
 
-   local ncores sites ok=1
+   local ncores sites ok=1 line key i
    local -a exes=() tails=() counts=()
+   local -A index=()
    ncores=$(count_cores "$dir")
-   if [ -f "$log" ]; then
-      mapfile -t exes   < <(log_values "$log" exe)
-      mapfile -t tails  < <(log_values "$log" site)
-      mapfile -t counts < <(log_values "$log" count)
+   # Collect the crash sites
+   if log_check_header "$log" 2>/dev/null; then
+      while IFS= read -r line; do
+         parse_log_row "$line"
+         key="$ROW_EXE|$ROW_SITE"
+         i="${index[$key]:-}"
+         if [ -z "$i" ]; then
+            i=${#exes[@]}
+            index[$key]=$i
+            exes+=("$ROW_EXE")
+            tails+=("$ROW_SITE")
+            counts+=(0)
+         fi
+         counts[i]=$((counts[i] + 1))
+      done < <(log_rows "$log")
    fi
    sites=${#exes[@]}
 
@@ -701,7 +705,7 @@ verify_cross_exe() {
       # Verify each program crashed on every node, and the two runs did not merge.
       local c
       for c in "${counts[@]}"; do
-         [ "$c" = "$NODES" ] || { echo "FAIL cross-exe: crashsite count $c (expected $NODES)"; ok=0; }
+         [ "$c" = "$NODES" ] || { echo "FAIL cross-exe: crashsite has $c rows (expected $NODES)"; ok=0; }
       done
    fi
 

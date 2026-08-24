@@ -57,19 +57,21 @@ With the Flux plugin, use the corresponding shell options:
 Crash sites
 -----------
 
-A crash site identifies where the application crashed.  For most
-signals it is the executable plus the library and offset of the
-faulting instruction, such as:
+A crash site identifies where the application crashed.  It has two
+parts: the executable, and the location of the fault.  For most signals
+the location is the library and offset of the faulting instruction:
 
-    exe: /home/me/my_app
-    site: libfoo.so.1+0x2f10
+    /home/me/my_app        libfoo.so.1+0x2f10
 
 For SIGABRT crashes that carry a glibc abort message, such as a failed
-`assert()` or a heap corruption report, the abort message is used as
-the crash site:
+`assert()` or a heap corruption report, the abort message is the
+location:
 
-    exe: /home/me/my_app
-    site: abort:my_app: solver.c:88: solve: Assertion `n > 0' failed.
+    /home/me/my_app        abort:my_app: solver.c:88: solve: Assertion `n > 0' failed.
+
+Two processes are at the same crash site only when both parts match, so
+the same library fault under two different executbales counts as two crash sites
+and produces two coredumps.
 
 The crash log
 -------------
@@ -82,22 +84,27 @@ existing directory to place the default filename in.  Environment
 variables can be used in `PATH` by prefixing them with a `$`
 character.
 
-The log contains one entry per crash site, separated by blank lines:
+The log is a CSV file with a header line and one line per crashing
+rank:
 
-    exe: /home/me/my_app
-    site: libsolver.so.1+0x2f10
-    exemplar: 4
-    count: 12
-    ranks: 4-15
+    rank,exemplar,exe,site
+    4,4,/home/me/my_app,libsolver.so.1+0x2f10
+    5,4,/home/me/my_app,libsolver.so.1+0x2f10
+    6,4,/home/me/my_app,libsolver.so.1+0x2f10
+    0,0,/home/me/my_app,abort:my_app: solver.c:88: solve: Assertion `n > 0' failed.\n
+    1,0,/home/me/my_app,abort:my_app: solver.c:88: solve: Assertion `n > 0' failed.\n
 
-    exe: /home/me/my_app
-    site: abort:my_app: solver.c:88: solve: Assertion `n > 0' failed.
-    exemplar: 0
-    count: 4
-    ranks: 0-3
+The columns are:
 
-The `exemplar` is the rank that was selected to write the coredump for 
-that crash site.  The `ranks` field lists every rank that crashed there.
+- `rank`: the rank that crashed, as numbered by the launcher (for
+  example, `PMIX_RANK`, `SLURM_PROCID`, or `FLUX_TASK_RANK`).
+- `exemplar`: the rank selected to write the coredump for this row's
+  crash site.  It is repeated on every row of the site, so a row
+  describes the process that wrote the coredump exactly when
+  `rank` equals `exemplar`.
+- `exe`: the path to the executable that crashed
+- `site`: the library+offset or abort message of the crash
+
 The log is written when the job exits, or at session end when running
 in session mode.  If no process crashed, no log file is created.
 
