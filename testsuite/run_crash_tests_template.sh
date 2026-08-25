@@ -351,6 +351,7 @@ read_crash_site() {
 #  - exemplar
 #  - exe
 #  - site
+#  - corepath
 
 # Check that a crash log exists and starts with the expected header.
 log_check_header() {
@@ -360,7 +361,7 @@ log_check_header() {
       return 1
    fi
    IFS= read -r header <"$log"
-   if [[ "$header" != rank,exemplar,exe,site* ]]; then
+   if [[ "$header" != rank,exemplar,exe,site,corepath* ]]; then
       echo "   incorrect crash log header '$header'" >&2
       return 1
    fi
@@ -369,18 +370,22 @@ log_check_header() {
 
 log_rows() { tail -n +2 "$1"; }
 
-# Split a log entry into ROW_RANK, ROW_EXEMPLAR, ROW_EXE, ROW_SITE.
+# Split a log entry into ROW_RANK, ROW_EXEMPLAR, ROW_EXE, ROW_SITE, ROW_COREPATH.
 parse_log_row() {
    local rest
    IFS=, read -r ROW_RANK ROW_EXEMPLAR rest <<<"$1"
    ROW_EXE="${rest%%,*}"
    rest="${rest#*,}"
    # Remove quoting if present
-   if [[ "$rest" =~ ^\"(([^\"]|\"\")*)\" ]]; then
+   if [[ "$rest" =~ ^\"(([^\"]|\"\")*)\"(,(.*))?$ ]]; then
       ROW_SITE="${BASH_REMATCH[1]//\"\"/\"}"
+      rest="${BASH_REMATCH[4]}"
    else
       ROW_SITE="${rest%%,*}"
+      rest="${rest#"$ROW_SITE"}"
+      rest="${rest#,}"
    fi
+   ROW_COREPATH="${rest%%,*}"
 }
 
 # ---------------- crash log verification ----------------
@@ -477,11 +482,12 @@ verify_exemplar_cores() {
    local core cores
    cores=$(core_files "$dir")
 
-   local ex found
+   local ex found predicted
    local -A checked=()
    while IFS= read -r line; do
       parse_log_row "$line"
       ex="$ROW_EXEMPLAR"
+      predicted="$ROW_COREPATH"
       [ -z "${checked[$ex]:-}" ] || continue
       checked[$ex]=1
       p="${rank_pid[$ex]:-}"
@@ -504,11 +510,17 @@ verify_exemplar_cores() {
          echo "   no coredump found for exemplar rank $ex (pid $p)" >&2
          return 1
       fi
+      # The log's corepath is the exemplar's predicted core file; it must be
+      # the file that was actually written
+      if [ "$predicted" != "$core" ]; then
+         echo "   logged corepath '$predicted' != coredump '$core' for exemplar rank $ex" >&2
+         return 1
+      fi
    done < <(log_rows "$log")
    return 0
 }
 
-# Verify that logged crash site matches what is recorded in the coredump
+# Verify that logged crash site matches what is recorded in the coredump.
 verify_log_matches_core() {
    local mode="$1"
    local dir="$2"
@@ -524,8 +536,8 @@ verify_log_matches_core() {
       echo "   could not read crash site from $core" >&2
       return 1
    fi
-   if [ "$core_site" != "$ROW_EXE|$ROW_SITE" ]; then
-      echo "   core site '$core_site' != logged site '$ROW_EXE|$ROW_SITE'" >&2
+   if [ "$core_site" != "$ROW_SITE" ]; then
+      echo "   core site '$core_site' != logged site '$ROW_SITE'" >&2
       return 1
    fi
    return 0

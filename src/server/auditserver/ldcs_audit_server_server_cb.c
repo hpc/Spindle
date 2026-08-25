@@ -65,6 +65,8 @@ int _ldcs_server_CB ( int infd, int serverid, void *data ) {
       ldcs_process_data->client_table[nc].lrank        = ldcs_process_data->client_counter;
       ldcs_process_data->client_table[nc].query_localpath = NULL;
       ldcs_process_data->client_table[nc].query_is_numa_replicated = 0;
+      ldcs_process_data->client_table[nc].crash_exe = NULL;
+      ldcs_process_data->client_table[nc].crash_corepath = NULL;
       ldcs_process_data->client_table_used++;
       ldcs_process_data->client_counter++;
       ldcs_process_data->clients_live++;

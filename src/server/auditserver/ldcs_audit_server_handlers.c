@@ -1900,6 +1900,9 @@ int handle_client_message(ldcs_process_data_t *procdata, int nc, ldcs_message_t 
          return handle_client_procmaps_msg(procdata, nc, msg);
       case LDCS_MSG_PICKONE_REQ:
          return handle_client_pickone_msg(procdata, nc, msg);
+      case LDCS_MSG_CRASH_EXE:
+      case LDCS_MSG_CRASH_COREPATH:
+         return handle_client_crash_string(procdata, nc, msg);
       case LDCS_MSG_CRASH_REPORT:
          return handle_client_crash_report(procdata, nc, msg);
       case LDCS_MSG_END:
@@ -2043,6 +2046,7 @@ int handle_client_end(ldcs_process_data_t *procdata, int nc)
    
    ldcs_listen_unregister_fd(ldcs_get_fd(connid)); 
    ldcs_close_server_connection(connid);
+   crash_free_client_stash(client);
    client->state = LDCS_CLIENT_STATUS_FREE;
    debug_printf("Closed client %d\n", nc);
 

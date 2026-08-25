@@ -26,6 +26,7 @@ BASE_SRCS += $(top_srcdir)/crash_handler/crash_io.c \
              $(top_srcdir)/crash_handler/crash_fmt.c \
              $(top_srcdir)/crash_handler/crash_handler.c \
              $(top_srcdir)/crash_handler/crash_lib_offset.c \
+             $(top_srcdir)/crash_handler/crash_corename.c \
              $(top_srcdir)/crash_handler/crash_sigchain.c
 
 libspindlec_socket_la_SOURCES = $(BASE_SRCS)

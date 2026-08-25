@@ -233,7 +233,7 @@ static int rank_cmp(const void *a, const void *b)
    return 0;
 }
 
-#define CRASH_LOG_HEADER "rank,exemplar,exe,site"
+#define CRASH_LOG_HEADER "rank,exemplar,exe,site,corepath"
 
 static void write_csv_field(FILE *f, const char *s, size_t len)
 {
@@ -310,11 +310,15 @@ void crash_log_root_write(ldcs_process_data_t *procdata)
       size_t exe_len = sep ? (size_t) (sep - e->site) : 0;
       const char *site = sep ? sep + 1 : e->site;
       size_t site_len = strlen(site);
+      const char *corepath = e->exemplar_corepath ? e->exemplar_corepath : "";
+      size_t corepath_len = strlen(corepath);
       for (j = 0; j < e->log_ranks_count; ++j) {
          fprintf(f, "%d,%d,", (int) e->log_ranks[j], e->exemplar_rank);
          write_csv_field(f, exe, exe_len);
          fputc(',', f);
          write_csv_field(f, site, site_len);
+         fputc(',', f);
+         write_csv_field(f, corepath, corepath_len);
          fputc('\n', f);
       }
    }

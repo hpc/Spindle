@@ -21,9 +21,16 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ldcs_audit_server_process.h"
 #include "ldcs_audit_server_md.h"
 
+/* CRASH_EXE / CRASH_COREPATH from a local client */
+int handle_client_crash_string(ldcs_process_data_t *procdata,
+                               int nc, ldcs_message_t *msg);
+
 /* CRASH_REPORT from a local client */
 int handle_client_crash_report(ldcs_process_data_t *procdata,
                                int nc, ldcs_message_t *msg);
+
+/* Drop a client's stashed CRASH_EXE / CRASH_COREPATH strings */
+void crash_free_client_stash(ldcs_client_t *client);
 
 /* CRASH_REPORT from a child */
 int handle_crash_report_recv(ldcs_process_data_t *procdata,

@@ -61,7 +61,7 @@ static char *get_executable_path(void)
 
    r = syscall(SYS_readlinkat, AT_FDCWD, "/proc/self/exe",
                exe_path_cache, (size_t) MAX_PATH_LEN);
-   if (r < 0 || r > MAX_PATH_LEN)
+   if (r < 0 || r >= MAX_PATH_LEN)
       return exe_path_cached = (char *) "[EXECUTABLE]";
    exe_path_cache[r] = '\0';
    return exe_path_cached = exe_path_cache;

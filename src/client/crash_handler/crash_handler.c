@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_api.h"
 #include "crash_handler.h"
 #include "crash_arch.h"
+#include "crash_corename.h"
 #include "crash_fmt.h"
 #include "crash_io.h"
 #include "crash_lib_offset.h"
@@ -53,6 +54,7 @@ static int  crash_installed    = 0;
 
 static char *crash_altstack_buf = NULL;
 static char crash_site_buf[CRASH_SITE_BUF_SIZE];
+static char crash_corepath_buf[MAX_PATH_LEN];
 
 static volatile sig_atomic_t handler_active = 0;
 
@@ -126,67 +128,62 @@ static size_t read_abort_msg(char *buf, size_t buflen)
    return n;
 }
 
-/* Prefix crash site with executable to distinguish crashes at the same site
-   but from different executables within different jobs of the same session. */
-static size_t crash_write_exe_prefix(char *buf, size_t buflen)
-{
-   static const char trunc_mark[] = "...";
-   const size_t mark_len = sizeof(trunc_mark) - 1;
-   const char *exe = crash_lib_offset_exe_path();
-   size_t exe_len = strlen(exe);
-   size_t max_exe = buflen / 2;
-   size_t pos = 0;
-
-   if (max_exe <= mark_len + 1)
-      return 0;
-   max_exe -= 1;   /* room for '|' */
-
-   if (exe_len > max_exe) {
-      memcpy(buf, trunc_mark, mark_len);
-      pos = mark_len;
-      exe += exe_len - (max_exe - mark_len);
-      exe_len = max_exe - mark_len;
-   }
-   memcpy(buf + pos, exe, exe_len);
-   pos += exe_len;
-   buf[pos++] = '|';
-   return pos;
-}
-
-/* Builds the crash site string <executable>|<site>, where <site> is the
-   abort_msg for SIGABRT and <library>+<offset> otherwise. */
+/* Builds the crash site string <library>+<offset> */
 static void crash_build_site(int sig, unsigned long pc,
                              char *buf, size_t buflen)
 {
    if (buflen == 0) return;
    buf[0] = '\0';
 
-   size_t prefix_len = crash_write_exe_prefix(buf, buflen);
-   char *site = buf + prefix_len;
-   size_t site_buflen = buflen - prefix_len;
-
    if (sig == SIGABRT) {
       static const char abort_prefix[] = "abort:";
       const size_t abort_len = sizeof(abort_prefix) - 1;
       size_t n = 0;
 
-      if (site_buflen > abort_len) {
-         memcpy(site, abort_prefix, abort_len);
-         n = read_abort_msg(site + abort_len, site_buflen - abort_len);
+      if (buflen > abort_len) {
+         memcpy(buf, abort_prefix, abort_len);
+         n = read_abort_msg(buf + abort_len, buflen - abort_len);
       }
       // if we failed to get the abort string, fall back to <library>+<offset>
       if (n == 0)
-         resolve_pc_to_crash_site(pc, site, site_buflen);
+         resolve_pc_to_crash_site(pc, buf, buflen);
    } else {
-      resolve_pc_to_crash_site(pc, site, site_buflen);
+      resolve_pc_to_crash_site(pc, buf, buflen);
    }
 }
 
-/* Send the CRASH_REQUEST to the server and read back the CRASH_RESPONSE.
+/* Send a message with string payload with raw write */
+static int crash_send_string(ldcs_message_ids_t type, const char *str)
+{
+   ldcs_message_header_t hdr;
+   hdr.type = type;
+   hdr.len  = strlen(str) + 1;
+   if (crash_raw_write(crash_write_fd, &hdr, sizeof hdr) != 0)
+      return -1;
+   return crash_raw_write(crash_write_fd, str, hdr.len);
+}
+
+/* Send the executable, the predicted core file name (if any), and the
+   CRASH_REPORT to the server and read back the CRASH_RESPONSE.
    We can't use the normal send/recv here because we're in a signal handler,
    so instead do raw read/write to pipe. */
-static int crash_query_server(const char *site, int rank, int32_t *winner)
+static int crash_query_server(const char *site, const char *corepath,
+                              int rank, int32_t *winner)
 {
+   /* There are three parts to the crash query.
+    * These are split into three messages because the server reads the
+    * client message into a static buffer of size MAX_PATH_LEN=4096,
+    * so no one message can be bigger than that. */
+
+   /* First, the crash executable */
+   if (crash_send_string(LDCS_MSG_CRASH_EXE, crash_lib_offset_exe_path()) != 0)
+      return -1;
+
+   /* Second, the predicted core path */
+   if (corepath && crash_send_string(LDCS_MSG_CRASH_COREPATH, corepath) != 0)
+      return -1;
+
+   /* Finally, the crash site */
    char req_buf[CRASH_REQ_BUF_SIZE];
    size_t req_len = build_crash_report(req_buf, sizeof req_buf, rank,
                                        crash_display_rank, site);
@@ -196,6 +193,8 @@ static int crash_query_server(const char *site, int rank, int32_t *winner)
    if (crash_raw_write(crash_write_fd, req_buf, req_len) != 0)
       return -1;
 
+   /* The server responds with a message indicating which rank was
+    * selected as the representative */
    ldcs_message_header_t resp_hdr;
    if (crash_raw_read_exact(crash_read_fd, &resp_hdr, sizeof resp_hdr) != 0)
       return -1;
@@ -268,8 +267,17 @@ static void crash_handler_entry(int sig, siginfo_t *info, void *uctx)
    unsigned long pc = extract_pc(uctx);
    crash_build_site(sig, pc, crash_site_buf, sizeof crash_site_buf);
 
+   /* Now we predict the path to the coredump that we will produce, if we
+      we are selected to produce one. */
+   const char *corepath = NULL;
+   if (opts & OPT_CRASH_LOG) {
+      crash_corename_predict(sig, crash_corepath_buf, sizeof crash_corepath_buf);
+      if (crash_corepath_buf[0] != '\0')
+         corepath = crash_corepath_buf;
+   }
+
    int32_t winning_rank = -1;
-   if (crash_query_server(crash_site_buf, crash_global_rank,
+   if (crash_query_server(crash_site_buf, corepath, crash_global_rank,
                           &winning_rank) != 0)
       goto reraise;
 
