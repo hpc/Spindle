@@ -241,7 +241,7 @@ char **getHostAddrSinfo(unsigned int num_hosts, char **hostlist)
       free(sinfo_cmdline);
    if (!ret && hostaddrlist) {
       for (i = 0; i < num_hosts; i++) free(hostaddrlist[i]);
-      free(hostlist);
+      free(hostaddrlist);
    }
    return ret;
 }
@@ -255,11 +255,11 @@ int isFEHost(char **hostlist, unsigned int num_hosts)
    int feresult = -1;
    
    for (i = 0; i < num_hosts; i++) {
-      if (!last_host || strcmp(hostlist[i], last_host) == 1) {
+      if (!last_host || strcmp(hostlist[i], last_host) > 0) {
          last_host = hostlist[i];
       }
    }
-   sdprintf(2, "last_host = %s\n", last_host ? last_host : NULL);
+   sdprintf(2, "last_host = %s\n", last_host ? last_host : "(null)");
    if (!last_host) {
       error = errno;
       sdprintf(1, "ERROR: Could not get current system's hostname: %s\n", strerror(error));      
@@ -334,6 +334,12 @@ static int createFEExitSocket(char *socket_path)
    int result, sock = -1, retval = -1;
 
    debug_printf("Creating unix socket for session at %s\n", socket_path);
+
+   if (strlen(socket_path) > sizeof(local.sun_path)-1) {
+      err_printf("Session exit socket path too long: %s\n", socket_path);
+      goto done;
+   }
+
    sock = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sock == -1) {
       int error = errno;
@@ -341,8 +347,14 @@ static int createFEExitSocket(char *socket_path)
       goto done;
    }
 
+   memset(&local, 0, sizeof(local));
    local.sun_family = AF_UNIX;
    strncpy(local.sun_path, socket_path, sizeof(local.sun_path)-1);
+
+   /* If there's an exit socket left over from a previous run that
+    * failed before removing it, remove it here */
+   unlink(socket_path);
+
    result = bind(sock, (struct sockaddr *) &local, sizeof(local));
    if (result == -1) {
       int error = errno;
@@ -393,32 +405,39 @@ int waitForSpankSessionEnd(spindle_args_t *params)
       goto done;
 
    sockfd = createFEExitSocket(socket_path);
-   if (sockfd == -1) 
+   if (sockfd == -1)
       goto done;
-   
-   fd = accept(sockfd, NULL, NULL);
-   if (fd == -1) {
-      error = errno;
-      err_printf("Could not accept session exit socket connection: %s\n", strerror(error));
-      goto done;
-   }
 
-   do {
-      result = read(fd, &msg, 1);
-   } while (result == -1 && errno == EINTR);
-   if (result == -1) {
-      error = errno;
-      err_printf("Failed to read from session exit socket: %s\n", strerror(error));
-      goto done;
+   for (;;) {
+      fd = accept(sockfd, NULL, NULL);
+      if (fd == -1) {
+         error = errno;
+         err_printf("Could not accept session exit socket connection: %s\n", strerror(error));
+         goto done;
+      }
+
+      msg = 0;
+      do {
+         result = read(fd, &msg, 1);
+      } while (result == -1 && errno == EINTR);
+
+      if (result == 1 && msg == 'q') {
+         close(fd);
+         fd = -1;
+         sdprintf(2, "Received session exit message\n");
+         retval = 0;
+         break;
+      }
+
+      if (result == -1) {
+         error = errno;
+         err_printf("Failed read from session exit socket: %s\n", strerror(error));
+      } else {
+         sdprintf(2, "Received message other than exit on exit socket");
+      }
+      close(fd);
+      fd = -1;
    }
-   if (msg != 'q') {
-      error = errno;
-      err_printf("Recieved incorrect msg character: %c\n", msg);
-      goto done;
-   }
-   
-   sdprintf(2, "Received session exit message\n");   
-   retval = 0;
 
   done:
    if (fd != -1)
@@ -452,6 +471,12 @@ int signalSpankSessionEnd(spindle_args_t *params)
       goto done;
    }
 
+   if (strlen(socket_path) > sizeof(saddr.sun_path)-1) {
+      err_printf("Session exit socket path too long: %s\n", socket_path);
+      goto done;
+   }
+
+   memset(&saddr, 0, sizeof(saddr));
    saddr.sun_family = AF_UNIX;
    strncpy(saddr.sun_path, socket_path, sizeof(saddr.sun_path)-1);
 
@@ -459,7 +484,7 @@ int signalSpankSessionEnd(spindle_args_t *params)
    if (result == -1) {
       int error = errno;
       err_printf("Failed to connect to session exit socket: %s\n", strerror(error));
-      return -1;
+      goto done;
    }
 
    msg = 'q';
@@ -489,6 +514,15 @@ int signalSpankSessionEnd(spindle_args_t *params)
 
 char *unique_file = NULL;
 
+void cleanup_unique_file()
+{
+   if (unique_file) {
+      unlink(unique_file);
+      free(unique_file);
+      unique_file = NULL;
+   }
+}
+
 #define UNIQUE_FILE_NAME "spindle_unique"
 
 int isBEProc(spindle_args_t *params, unsigned int exit_phase)
@@ -517,7 +551,7 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
       strlen(hostname) + 1 +
       strlen(session_id_str) + 1;
 
-   unique_file = (char *) malloc(sizeof(char*) * unique_file_len);
+   unique_file = (char *) malloc(sizeof(char) * unique_file_len);
    snprintf(unique_file, unique_file_len, "%s/%s.%s.%s.%s", realized_dir, UNIQUE_FILE_NAME, phase_name, hostname, session_id_str);
 
    spindle_mkdir(realized_dir);
@@ -664,8 +698,10 @@ void push_env(spank_t spank, saved_env_t **env)
    e->new_spindledebug = readSpankEnv(spank, "SPINDLE_DEBUG");
    e->old_spindledebug = getenv("SPINDLE_DEBUG");
 
-   if (e->new_pwd)
-      chdir(e->new_pwd);
+   if (e->new_pwd) {
+      if (chdir(e->new_pwd) == -1)
+         sdprintf(1, "WARNING: Could not chdir to %s: %s\n", e->new_pwd, strerror(errno));
+   }
 
    if (e->new_home)
       setenv("HOME", e->new_home, 1);
@@ -704,8 +740,10 @@ void pop_env(saved_env_t *env)
    else
       unsetenv("SPINDLE_DEBUG");
 
-   if (env->old_pwd)
-      chdir(env->old_pwd);
+   if (env->old_pwd) {
+      if (chdir(env->old_pwd) == -1)
+         sdprintf(1, "WARNING: Could not chdir to %s: %s\n", env->old_pwd, strerror(errno));
+   }
 
    if (env->new_home)
       free(env->new_home);
@@ -792,7 +830,7 @@ int dropPrivilegeAndRun(dpr_function_t func, uid_t uid, void *input, char **outp
          exit(-1);
       }
       if (output_len) {
-         result = safe_write(pipe_fds[1], output_str, output_len+1);
+         result = safe_write(pipe_fds[1], child_output_str, output_len+1);
          if (result != output_len+1) {
             error = errno;
             fprintf(stderr, "Spindle error.  Could not write result string to pipe: %s\n", strerror(error));
@@ -966,7 +1004,11 @@ pid_t grandchild_fork()
    int result, fork_result = -1;
 
    pipe_fds[0] = pipe_fds[1] = -1;
-   pipe(pipe_fds);
+   result = pipe(pipe_fds);
+   if (result == -1) {
+      sdprintf(1, "ERROR: pipe() failed in grandchild_fork.  Aborting spindle\n");
+      return -1;
+   }
 
    child_pid = fork();
    if (child_pid == -1) {
@@ -985,7 +1027,7 @@ pid_t grandchild_fork()
          sdprintf(1, "ERROR collecting pid after fork.  Aborting spindle\n");
          goto done;
       }
-      if (!WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+      if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
          sdprintf(1, "ERROR with invalid child exit during grandchild fork.  Aborting spindle\n");
          goto done;
       }
@@ -1257,7 +1299,7 @@ char *readSpankEnv(spank_t spank, const char *envname)
       free(buffer);
       buffer = (char *) malloc(buffer_size);
    }
-   if (err == ESPANK_ENV_NOEXIST) {
+   if (err == ESPANK_ENV_NOEXIST || err == ESPANK_NOT_REMOTE || err == ESPANK_BAD_ARG) {
       free(buffer);
       buffer = getenv(envname);
       return buffer ? strdup(buffer) : NULL;
