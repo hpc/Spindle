@@ -40,6 +40,10 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "spindle_session.h"
 #include "spindle_debug.h"
 
+extern "C" {
+#include "parseloc.h"
+}
+
 using namespace std;
 
 static int pipefd[2];
@@ -79,12 +83,39 @@ static string getTmpdir()
    }
 }
 
+static string getSessionTmpdir(const char *sessionpaths, number_t number)
+{
+   char *firstValidPath = NULL;
+   int result;
+
+   if (!sessionpaths || !*sessionpaths) {
+      return getTmpdir();
+   }
+
+   // Use getFirstValidPath which does robust validation:
+   // - Parses environment variables
+   // - Validates with realize() and spindle_mkdir()
+   // Pass should_track=0 because session directories are cleaned up manually via --end-session
+   result = getFirstValidPath(const_cast<char*>(sessionpaths), &firstValidPath, number, 0);
+
+   if (result == 0 && firstValidPath) {
+      string path(firstValidPath);
+      free(firstValidPath);
+      debug_printf2("Selected sessionpath: %s\n", path.c_str());
+      return path;
+   }
+
+   // If no path is valid, fall back to getTmpdir()
+   debug_printf("No sessionpath from %s is valid, using default tmpdir\n", sessionpaths);
+   return getTmpdir();
+}
+
 #define SESSION_ID_CHARS 8
-static void create_session_id()
+static void create_session_id(const char *sessionpaths, number_t number)
 {
    unsigned char randombytes[SESSION_ID_CHARS];
    char session_id_str[SESSION_ID_CHARS+1];
-   string dirname = getTmpdir();
+   string dirname = getSessionTmpdir(sessionpaths, number);
    
    for (int j = 0; j < 5; j++) { //Try to generate a random name five times. 
       bool result = getRandom(randombytes, sizeof(randombytes));
@@ -127,9 +158,9 @@ static void create_session_id()
    exit(-1);
 }
 
-static void set_session_id(std::string id)
+static void set_session_id(std::string id, const char *sessionpaths, number_t number)
 {
-   string dirname = getTmpdir();
+   string dirname = getSessionTmpdir(sessionpaths, number);
    session_socket = dirname + "/" +  SOCKET_PREFIX + id;
    session_id = id;
 }
@@ -440,6 +471,11 @@ int init_session(spindle_args_t *args, const ConfigMap &config, Launcher *launch
    session_status_t sstatus = config.getSessionStatus();
    if (sstatus == sstatus_unused) {
       debug_printf("Spindle session not set\n");
+      // Check if user specified sessionpaths but isn't using sessions
+      if (args->sessionpaths && args->commpaths &&
+          strcmp(args->sessionpaths, args->commpaths) != 0) {
+         debug_printf("Note: --sessionpaths specified but not used (no session active)\n");
+      }
       return 0;
    }
 
@@ -447,7 +483,7 @@ int init_session(spindle_args_t *args, const ConfigMap &config, Launcher *launch
       debug_printf("Starting new spindle session\n");
       bool multi_start = (config.isSet(confStartMultiSession));
 
-      create_session_id();
+      create_session_id(args->sessionpaths, args->number);
       debug_printf("New session code is %s\n", session_id.c_str());
       debug_printf("New session socket is %s\n", session_socket.c_str());
       args->session_key = strdup(session_id.c_str());
@@ -500,8 +536,8 @@ int init_session(spindle_args_t *args, const ConfigMap &config, Launcher *launch
          exit(-1);
       }
    }
-   
-   set_session_id(id);
+
+   set_session_id(id, args->sessionpaths, args->number);
    debug_printf("Connecting to existing spindle session-id %s\n", session_id.c_str());
    result = connect_to_session();
    if (result == -1) {

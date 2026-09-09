@@ -33,7 +33,7 @@
 
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, int should_track);
 
 int srunAllNodes(unsigned int num_nodes, const char *command) 
 {
@@ -306,7 +306,7 @@ static char* exitSocketPath(spindle_args_t *params)
    char session_id_str[32];
    size_t socket_path_len;
 
-   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number )){
+   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number, 0 )){  // No tracking
       err_printf("Could not get real path for FE exit socket\n");
       goto done;
    }
@@ -533,7 +533,7 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
    int beproc_result = -1;
    int fd = -1, error;
    
-   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number ) ){
+   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number, 0 ) ){  // No tracking
         return -1;
    }
    realized_dir = strdup( params->commpath );
@@ -554,7 +554,7 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
    unique_file = (char *) malloc(sizeof(char) * unique_file_len);
    snprintf(unique_file, unique_file_len, "%s/%s.%s.%s.%s", realized_dir, UNIQUE_FILE_NAME, phase_name, hostname, session_id_str);
 
-   spindle_mkdir(realized_dir);
+   spindle_mkdir(realized_dir, 0);  // No tracking - BE will handle directory cleanup
 
    fd = open(unique_file, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
    error = errno;

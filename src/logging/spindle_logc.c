@@ -59,7 +59,7 @@ int run_tests;
 #define SPAWN_TIMEOUT 300
 #define CONNECT_TIMEOUT 100
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, int should_track);
 
 int fileExists(char *name) 
 {
@@ -300,7 +300,7 @@ void init_spindle_debugging(char *name, int survive_exec)
    if (!tempdir || !*tempdir)
       tempdir = "/tmp";
    if (!fileExists(tempdir)) {
-      spindle_mkdir(tempdir);
+      spindle_mkdir(tempdir, 0);  // No tracking - log directories persist after exit
    }
 
    debug_location = log_level ? "./spindle_output" : NULL;

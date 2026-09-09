@@ -98,7 +98,7 @@ int ldcs_get_fd_pipe (int fd) {
 }
 /* end of fd list */
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, int should_track);
 
 int ldcs_create_server_pipe(char* location, number_t number) {
   (void)number;
@@ -111,7 +111,7 @@ int ldcs_create_server_pipe(char* location, number_t number) {
   char *staging_dir = (char *) malloc(len);
   snprintf(staging_dir, len, "%s/spindle_comm", location);
 
-  if (-1 == spindle_mkdir(staging_dir)) {
+  if (-1 == spindle_mkdir(staging_dir, 1)) {  // Track for cleanup
      printf("mkdir: ERROR during mkdir %s\n", staging_dir);
      _error("mkdir failed");
   }

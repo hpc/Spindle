@@ -28,10 +28,10 @@ char *parse_location_noerr(char *loc, number_t number);
 char *realize(char *path);
 char **parse_colonsep_prefixes(char *colonsep_list, number_t number);
 int is_local_prefix(const char *path, char **local_prefixes);
-int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number );
-void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number );
+int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number, int should_track );
+void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number, int should_track );
 void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath );
-int getFirstValidPath( char *origPathList, char **firstValidPath, number_t number );
+int getFirstValidPath( char *origPathList, char **firstValidPath, number_t number, int should_track );
 #if defined(__cplusplus)
 }
 #endif

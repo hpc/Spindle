@@ -72,14 +72,14 @@ static int checkdir(char *path)
    return 0;
 }
 
-int spindle_mkdir(char *orig_path)
+int spindle_mkdir(char *orig_path, int should_track)
 {
    char path[MAX_PATH_LEN+1];
    int i, path_len, result, do_mkdir = 0, error;
    struct stat buf;
    char orig_char;
 
-   debug_printf2("spindle_mkdir on %s\n", orig_path);
+   debug_printf2("spindle_mkdir on %s (track=%d)\n", orig_path, should_track);
    
 
    strncpy(path, orig_path, sizeof(path));
@@ -142,9 +142,11 @@ int spindle_mkdir(char *orig_path)
          }
          else {
             debug_printf3("Did a mkdir(%s)\n", path);
+            if (should_track) {
 #if defined(TRACK_MKDIR)
-            track_mkdir(path);
-#endif            
+               track_mkdir(path);
+#endif
+            }
          }
       }
       path[i] = orig_char;
