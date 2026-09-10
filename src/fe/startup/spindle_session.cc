@@ -42,6 +42,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 extern "C" {
 #include "parseloc.h"
+int spindle_mkdir(char *path, int should_track);
 }
 
 using namespace std;
@@ -140,8 +141,18 @@ static void create_session_id(const char *sessionpaths, number_t number)
             assert(0);
       }
       session_id_str[sizeof(session_id_str)-1] = '\0';
-      
-      string fullpath = dirname + "/" +  SOCKET_PREFIX + session_id_str;
+
+      // Create session subdirectory: spindle_session_<sessionid>
+      string session_dirname = dirname + "/spindle_session_" + string(session_id_str);
+      char *session_dir_cstr = strdup(session_dirname.c_str());
+      int mkdir_result = spindle_mkdir(session_dir_cstr, 0);  // should_track=0, FE doesn't track
+      free(session_dir_cstr);
+      if (mkdir_result == -1) {
+         debug_printf("Warning. Failed to create session directory %s. Trying next random ID.\n", session_dirname.c_str());
+         continue;
+      }
+
+      string fullpath = session_dirname + "/" + SOCKET_PREFIX + session_id_str;
 
       struct stat buf;
       if (stat(fullpath.c_str(), &buf) != -1) {
@@ -161,7 +172,8 @@ static void create_session_id(const char *sessionpaths, number_t number)
 static void set_session_id(std::string id, const char *sessionpaths, number_t number)
 {
    string dirname = getSessionTmpdir(sessionpaths, number);
-   session_socket = dirname + "/" +  SOCKET_PREFIX + id;
+   string session_dirname = dirname + "/spindle_session_" + id;
+   session_socket = session_dirname + "/" + SOCKET_PREFIX + id;
    session_id = id;
 }
 
