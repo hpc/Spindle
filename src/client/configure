@@ -815,6 +815,8 @@ with_cachepaths
 with_cachepath
 with_commpaths
 with_commpath
+with_sessionpaths
+with_sessionpath
 with_default_local_prefix
 with_testrm
 with_rm
@@ -1546,6 +1548,9 @@ Optional Packages:
   --with-commpaths=DIR    Colon-separated list of candidate paths for back-end
                           communication and housekeeping
   --with-commpath=DIR     Synonym for --with-commpaths
+  --with-sessionpaths=DIR Colon-separated list of candidate paths for session
+                          socket placement
+  --with-sessionpath=DIR  Synonym for --with-sessionpaths
   --with-default-local-prefix=DIRS
                           Colon-seperated list of directories that Spindle
                           will not cache files out of
@@ -12634,6 +12639,20 @@ if test "${with_commpath+set}" = set; then :
 fi
 
 
+# Check whether --with-sessionpaths was given.
+if test "${with_sessionpaths+set}" = set; then :
+  withval=$with_sessionpaths; SESSIONPATHS=${withval}
+else
+  SESSIONPATHS=$DEFAULT_LOC
+fi
+
+
+# Check whether --with-sessionpath was given.
+if test "${with_sessionpath+set}" = set; then :
+  withval=$with_sessionpath; SESSIONPATHS=${withval}
+fi
+
+
 # Check whether --with-default-local-prefix was given.
 if test "${with_default_local_prefix+set}" = set; then :
   withval=$with_default_local_prefix; SPINDLE_LOCAL_PREFIX=${withval}
@@ -12664,6 +12683,11 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define CACHEPATHS "$CACHEPATHS"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define SESSIONPATHS "$SESSIONPATHS"
 _ACEOF
 
 
