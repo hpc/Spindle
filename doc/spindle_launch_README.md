@@ -81,10 +81,8 @@ we have to break ABI compatibility.
     -   `OPT_REMAPEXEC` - Use a remapping hack to make /proc/PID/exe point
         to original exe
     -   `OPT_LOGUSAGE` - Log usage information to a file
-    -   `OPT_SHMCACHE` - Use a shared memory cache optimization (only needed
-        on BlueGene)
-    -   `OPT_SUBAUDIT` - Use the subaudit mechanism (needed on BlueGene and
-        very old GLIBCs)
+    -   `OPT_SHMCACHE` - Use a shared memory cache optimization
+    -   `OPT_SUBAUDIT` - Use the subaudit mechanism (needed on very old GLIBCs)
     -   `OPT_PERSIST` - Spindle servers should remain running after all
         clients exit.
     -   `OPT_SEC` - Security mode, set to one of the below `OPT_SEC_*`
@@ -172,8 +170,7 @@ we have to break ABI compatibility.
             start Spindle servers. *This is the value that should be used
             with this API*.
         -   `unsigned int shm_cache_size` - When using a shared memory cache
-        between clients, this is the size in bytes of the cache. This is
-        only used on BlueGene systems.
+        between clients, this is the size in bytes of the cache.
     -   `char *location` - The staging directory where Spindle should store
         relocated files. This should preferably be on local and scalable
         storage, such as a RAMDISK or SSD. You can use environment variables

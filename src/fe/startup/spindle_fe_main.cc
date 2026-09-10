@@ -43,9 +43,6 @@ using namespace std;
 static void setupLogging(int argc, char **argv);
 static bool getNextTask(Launcher *launcher, spindle_args_t *params, vector<JobTask*> &tasks, const ConfigMap &config);
 
-#if defined(HAVE_LMON)
-extern Launcher *createLaunchmonLauncher(spindle_args_t *params, ConfigMap &config_);
-#endif
 extern Launcher *createSerialLauncher(spindle_args_t *params, ConfigMap &config_);
 extern Launcher *createHostbinLauncher(spindle_args_t *params, ConfigMap &config_);
 extern Launcher *createMPILauncher(spindle_args_t *params, ConfigMap &config_);
@@ -63,14 +60,9 @@ Launcher *newLauncher(spindle_args_t *params, ConfigMap &config)
       return createSerialLauncher(params, config);
    }
    else if (params->startup_type == startup_lmon) {
-      debug_printf("Starting application with launchmon\n");
-#if defined(HAVE_LMON)
-      return createLaunchmonLauncher(params, config);
-#else
-      fprintf(stderr, "Spindle Error: Spindle was not built with LaunchMON support\n");
-      err_printf("HAVE_LMON not defined\n");
+      fprintf(stderr, "Spindle Error: LaunchMON support has been removed\n");
+      err_printf("LaunchMON startup no longer supported\n");
       return NULL;
-#endif
    }
    else if (params->startup_type == startup_hostbin) {
       debug_printf("Starting application with hostbin\n");

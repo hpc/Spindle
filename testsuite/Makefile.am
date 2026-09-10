@@ -5,13 +5,8 @@ BUILT_SOURCES = libtest10.so libtest11.so libtest12.so libtest13.so libtest14.so
 
 BUILT_SOURCES += crash_test crash_test_fixedaddr crash_test_pie libcrashfuncs.so libcrashctor.so libcrashfixed.so run_crash_tests.sh
 
-if BGQ_BLD
-DYNAMIC_FLAG=-dynamic
-IS_BLUEGENE=true
-else
 DYNAMIC_FLAG=
 IS_BLUEGENE=false
-endif
 
 libgenerator_SOURCES = libgenerator.c
 

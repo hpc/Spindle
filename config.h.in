@@ -12,23 +12,11 @@
 /* Back-end directory for communication and housekeeping */
 #undef COMMPATH
 
-/* Define if were using biter for client/server communication */
-#undef COMM_BITER
-
-/* Define if were using cobo for server/server communication */
+/* Server/server communication uses cobo */
 #undef COMM_COBO
 
-/* Define if were using msocket for server/server communication */
-#undef COMM_MSOCKET
-
-/* Define if were using pipes for client/server communication */
+/* Client/server communication uses pipes */
 #undef COMM_PIPES
-
-/* Define if were using sockets for client/server communication */
-#undef COMM_SOCKET
-
-/* Enable --crash-dedup by default */
-#undef CRASH_DEDUP_ENABLED_BY_DEFAULT
 
 /* Defined if GLIBC has an allocation bug */
 #undef DTV_ALLOCATION_BUG
@@ -54,9 +42,6 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Build with LaunchMON support */
-#undef HAVE_LMON
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -94,9 +79,6 @@
 /* Number of bytes in keys for gcrypt */
 #undef KEY_SIZE_BYTES
 
-/* The bin directory for launchmon */
-#undef LAUNCHMON_BIN_DIR
-
 /* Use libnuma for numa optimizations */
 #undef LIBNUMA
 
@@ -106,9 +88,6 @@
 
 /* Defined if GLIBC has locale TLS bug */
 #undef NEWTHREAD_LOCALE_BUG
-
-/* Exclusions for numa optimization */
-#undef NUMA_EXCLUDES
 
 /* Number of ports for COBO to search for an open port */
 #undef NUM_COBO_PORTS
@@ -133,9 +112,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Python installation prefixes */
-#undef PYTHON_INST_PREFIX
 
 /* RSH command */
 #undef RSHLAUNCH_CMD
@@ -165,9 +141,6 @@
 /* If the compiler supports a TLS storage class, define it to that here */
 #undef TLS
 
-/* The file for storing usage logs */
-#undef USAGE_LOGGING_FILE
-
 /* Version number of package */
 #undef VERSION
 
@@ -185,9 +158,6 @@
 
 /* Define if we're compiling for an x86_64 target */
 #undef arch_x86_64
-
-/* Define if we're compiling for a BlueGene target */
-#undef os_bluegene
 
 /* Define if we're compiling for a linux target */
 #undef os_linux

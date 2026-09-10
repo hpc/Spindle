@@ -99,7 +99,6 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/ltversion.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
-	$(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -155,10 +154,6 @@ am_print_ldso_entry_OBJECTS =  \
 	print_ldso_entry-print_ldso_entry.$(OBJEXT)
 print_ldso_entry_OBJECTS = $(am_print_ldso_entry_OBJECTS)
 print_ldso_entry_LDADD = $(LDADD)
-print_ldso_entry_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(print_ldso_entry_LDFLAGS) $(LDFLAGS) \
-	-o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -365,7 +360,6 @@ print_ldso_entry_SOURCES = print_ldso_entry.c
 libprint_ldso_audit_la_SOURCES = print_ldso_audit.c
 print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(pkglibexecdir)\"
 libprint_ldso_audit_la_LDFLAGS = -shared -avoid-version
-@BGQ_BLD_TRUE@print_ldso_entry_LDFLAGS = -dynamic
 all: all-am
 
 .SUFFIXES:
@@ -489,7 +483,7 @@ libprint_ldso_audit.la: $(libprint_ldso_audit_la_OBJECTS) $(libprint_ldso_audit_
 
 print_ldso_entry$(EXEEXT): $(print_ldso_entry_OBJECTS) $(print_ldso_entry_DEPENDENCIES) $(EXTRA_print_ldso_entry_DEPENDENCIES) 
 	@rm -f print_ldso_entry$(EXEEXT)
-	$(AM_V_CCLD)$(print_ldso_entry_LINK) $(print_ldso_entry_OBJECTS) $(print_ldso_entry_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(print_ldso_entry_OBJECTS) $(print_ldso_entry_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

@@ -46,8 +46,8 @@ extern "C" {
 #define OPT_NOHIDE     (1 << 13)            /* Hide Spindle's communication FDs from application */
 #define OPT_REMAPEXEC  (1 << 14)            /* Use remapping hack to make /proc/PID/exe point to original exe */
 #define OPT_LOGUSAGE   (1 << 15)            /* Log usage information to a file */
-#define OPT_SHMCACHE   (1 << 16)            /* Use a shared memory cache optimization (only needed on BlueGene) */
-#define OPT_SUBAUDIT   (1 << 17)            /* Use subaudit mechanism (needed on BlueGene and very old GLIBCs) */
+#define OPT_SHMCACHE   (1 << 16)            /* Use a shared memory cache optimization */
+#define OPT_SUBAUDIT   (1 << 17)            /* Use subaudit mechanism (needed on very old GLIBCs) */
 #define OPT_PERSIST    (1 << 18)            /* Spindle servers should not exit when all clients exit. */
 #define OPT_SEC        (7 << 19)            /* Security mode, one of the below OPT_SEC_* values */
 #define OPT_SESSION    (1 << 22)            /* Session mode, where Spindle lifetime spans jobs */

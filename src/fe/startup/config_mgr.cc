@@ -92,23 +92,11 @@ using namespace std;
 #define SECURITY_DEFAULT_STR "none"
 #endif
 
-#if defined(LIBNUMA) && defined(NUMA_EXCLUDES)
-#define NUMA_EXCLUDES_STR NUMA_EXCLUDES
-#else
 #define NUMA_EXCLUDES_STR ""
-#endif
 
-#if defined(USE_SUBAUDIT_BY_DEFAULT)
-#define AUDITTYPE_STR "subaudit"
-#else
 #define AUDITTYPE_STR "audit"
-#endif
 
-#if defined(os_bluegene)
-#define SHMCACHE_SIZE_STR "2048"
-#else
 #define SHMCACHE_SIZE_STR "0"
-#endif
 
 #if defined(HOSTBIN_PATH)
 #define HOSTBIN_ENABLE_STR "true"
@@ -118,17 +106,9 @@ using namespace std;
 #define HOSTBIN_PATH_STR ""
 #endif
 
-#if defined(USAGE_LOGGING_FILE)
-#define DISABLE_LOGGING_STR "false"
-#else
 #define DISABLE_LOGGING_STR "true"
-#endif
 
-#if defined(DEFAULT_CLEANUP_PROC)
-#define CLEANUP_PROC_STR "true"
-#else
 #define CLEANUP_PROC_STR "false"
-#endif
 
 #if defined(RSHLAUNCH_ENABLED)
 #define RSHLAUNCH_STR "true"
@@ -142,17 +122,9 @@ using namespace std;
 #define RSHCMD_STR ""
 #endif
 
-#if defined(CRASH_DEDUP_ENABLED_BY_DEFAULT)
-#define DEFAULT_CRASH_DEDUP_STR "true"
-#else
 #define DEFAULT_CRASH_DEDUP_STR "false"
-#endif
 
-#if defined(PYTHON_INST_PREFIX)
-#define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
-#else
 #define PYTHON_PREFIX_DEFAULT ""
-#endif
 
 #if BINARY_PATCH_LDSO == 1
 #define DEFAULT_PATCH_LDSO "true"

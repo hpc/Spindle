@@ -9,7 +9,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile launchmon/Makefile flux/Makefile startup/Makefile hostbin/Makefile Makefile])
+AC_CONFIG_FILES([logging/Makefile cobo/Makefile comlib/Makefile openmpi_intercept/Makefile flux/Makefile startup/Makefile hostbin/Makefile Makefile])
 AC_PROG_LN_S
 LT_INIT
 
@@ -17,13 +17,10 @@ SPINDLE_BUILD_ROOT=`pwd`/../..
 SPINDLE_SOURCE_ROOT=`realpath ${srcdir}/../..`
 
 #Include common ops
-m4_include([../../m4/lx_detect_bluegene.m4])
 m4_include([../../configure.common.ac])
 CHOOSE_SEC
 CHOOSE_DEF_AUDIT
 
-#Include LaunchMON
-m4_include([../../m4/lmon.m4])
 #Include RM Selection
 m4_include([../../m4/launcher.m4])
 
@@ -32,10 +29,6 @@ CFLAGS="$CFLAGS -fvisibility=hidden"
 CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
 
 AC_SUBST([SPINDLEFE_LIB_VERSION],[`$srcdir/../../LIB_VERSION spindlefe`])
-
-if test "x$CLEANUP_PROC" == "xtrue"; then
-  AC_DEFINE([DEFAULT_CLEANUP_PROC],[1],[Default to using a dedicated process to clean data files])
-fi
 
 AC_OUTPUT
 AC_SUBST(PKGSYSCONF_DIR)

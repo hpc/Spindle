@@ -89,8 +89,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BGQ_BLD_TRUE@am__append_1 = $(top_srcdir)/../biter/bgq_daemon_ids.c
-@LINUX_BLD_TRUE@am__append_2 = $(top_srcdir)/../biter/linux_daemon_ids.c
 subdir = biter
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -99,9 +97,8 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/ltversion.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
-	$(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
-	$(top_srcdir)/../../m4/lmon.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -111,19 +108,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libbiterd_la_LIBADD =
-am__libbiterd_la_SOURCES_DIST = $(top_srcdir)/../biter/biterd.c \
-	$(top_srcdir)/../biter/server_queue.c \
-	$(top_srcdir)/../biter/demultiplex.c \
-	$(top_srcdir)/../biter/bgq_daemon_ids.c \
-	$(top_srcdir)/../biter/linux_daemon_ids.c
 am__dirstamp = $(am__leading_dot)dirstamp
-@BGQ_BLD_TRUE@am__objects_1 = $(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo
-@LINUX_BLD_TRUE@am__objects_2 = $(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo
 am_libbiterd_la_OBJECTS =  \
 	$(top_builddir)/../biter/libbiterd_la-biterd.lo \
 	$(top_builddir)/../biter/libbiterd_la-server_queue.lo \
 	$(top_builddir)/../biter/libbiterd_la-demultiplex.lo \
-	$(am__objects_1) $(am__objects_2)
+	$(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo
 libbiterd_la_OBJECTS = $(am_libbiterd_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -147,7 +137,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../../scripts/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Plo \
+am__depfiles_remade =  \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-demultiplex.Plo \
 	$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-linux_daemon_ids.Plo \
@@ -172,7 +162,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libbiterd_la_SOURCES)
-DIST_SOURCES = $(am__libbiterd_la_SOURCES_DIST)
+DIST_SOURCES = $(libbiterd_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -237,16 +227,11 @@ FLUX_HOSTLIST_LIBS = @FLUX_HOSTLIST_LIBS@
 GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
 GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
-HAVE_LMON = @HAVE_LMON@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAUNCHMON_INC = @LAUNCHMON_INC@
-LAUNCHMON_LIB = @LAUNCHMON_LIB@
-LAUNCHMON_RMCOMM = @LAUNCHMON_RMCOMM@
-LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
 LDD = @LDD@
 LDFLAGS = @LDFLAGS@
@@ -355,8 +340,8 @@ noinst_LTLIBRARIES = libbiterd.la
 AM_CFLAGS = -fvisibility=hidden
 libbiterd_la_SOURCES = $(top_srcdir)/../biter/biterd.c \
 	$(top_srcdir)/../biter/server_queue.c \
-	$(top_srcdir)/../biter/demultiplex.c $(am__append_1) \
-	$(am__append_2)
+	$(top_srcdir)/../biter/demultiplex.c \
+	$(top_srcdir)/../biter/linux_daemon_ids.c
 libbiterd_la_CFLAGS = -DSERVER
 AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
 all: all-am
@@ -418,9 +403,6 @@ $(top_builddir)/../biter/libbiterd_la-server_queue.lo:  \
 $(top_builddir)/../biter/libbiterd_la-demultiplex.lo:  \
 	$(top_builddir)/../biter/$(am__dirstamp) \
 	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
-$(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo:  \
-	$(top_builddir)/../biter/$(am__dirstamp) \
-	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
 $(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo:  \
 	$(top_builddir)/../biter/$(am__dirstamp) \
 	$(top_builddir)/../biter/$(DEPDIR)/$(am__dirstamp)
@@ -436,7 +418,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-demultiplex.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-linux_daemon_ids.Plo@am__quote@ # am--include-marker
@@ -492,13 +473,6 @@ $(top_builddir)/../biter/libbiterd_la-demultiplex.lo: $(top_builddir)/../biter/d
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../biter/demultiplex.c' object='$(top_builddir)/../biter/libbiterd_la-demultiplex.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterd_la_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../biter/libbiterd_la-demultiplex.lo `test -f '$(top_builddir)/../biter/demultiplex.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/demultiplex.c
-
-$(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo: $(top_builddir)/../biter/bgq_daemon_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterd_la_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo -MD -MP -MF $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Tpo -c -o $(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo `test -f '$(top_builddir)/../biter/bgq_daemon_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/bgq_daemon_ids.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Tpo $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/../biter/bgq_daemon_ids.c' object='$(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterd_la_CFLAGS) $(CFLAGS) -c -o $(top_builddir)/../biter/libbiterd_la-bgq_daemon_ids.lo `test -f '$(top_builddir)/../biter/bgq_daemon_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/bgq_daemon_ids.c
 
 $(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo: $(top_builddir)/../biter/linux_daemon_ids.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libbiterd_la_CFLAGS) $(CFLAGS) -MT $(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo -MD -MP -MF $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-linux_daemon_ids.Tpo -c -o $(top_builddir)/../biter/libbiterd_la-linux_daemon_ids.lo `test -f '$(top_builddir)/../biter/linux_daemon_ids.c' || echo '$(srcdir)/'`$(top_builddir)/../biter/linux_daemon_ids.c
@@ -641,8 +615,7 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Plo
-	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo
+		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-demultiplex.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-linux_daemon_ids.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-server_queue.Plo
@@ -691,8 +664,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-bgq_daemon_ids.Plo
-	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo
+		-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-biterd.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-demultiplex.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-linux_daemon_ids.Plo
 	-rm -f $(top_builddir)/../biter/$(DEPDIR)/libbiterd_la-server_queue.Plo

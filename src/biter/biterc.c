@@ -219,12 +219,8 @@ static int biter_connect(const char *tmpdir, biterc_session_t *session)
    shminfo_t *shm = session->shm;
    biter_header_t *biter_header = & shm->shared_header->biter;
 
-#if defined(os_bluegene)
-   unique_number = biterc_get_unique_number(session, tmpdir, shm->shared_header+1);
-#else
    unique_number = 0;
    (void) biterc_get_unique_number;
-#endif
 
    rank = biterc_get_rank(sessions - session);
    debug_printf3("biter rank = %u\n", rank);

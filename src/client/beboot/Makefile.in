@@ -90,8 +90,6 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 pkglibexec_PROGRAMS = spindle_bootstrap$(EXEEXT)
-@PIPES_TRUE@am__append_1 = $(top_builddir)/client_comlib/libclient_pipe.la
-@BITER_TRUE@am__append_2 = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/biter/libbiterc.la
 subdir = beboot
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -100,7 +98,6 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/ltversion.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
-	$(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -124,8 +121,8 @@ am_spindle_bootstrap_OBJECTS =  \
 spindle_bootstrap_OBJECTS = $(am_spindle_bootstrap_OBJECTS)
 spindle_bootstrap_DEPENDENCIES =  \
 	$(top_builddir)/logging/libspindleclogc.la \
-	$(top_builddir)/shm_cache/libshmcache.la $(am__append_1) \
-	$(am__append_2)
+	$(top_builddir)/shm_cache/libshmcache.la \
+	$(top_builddir)/client_comlib/libclient_pipe.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -340,9 +337,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 spindle_bootstrap_LDFLAGS = $(AM_LDFLAGS) $(STATICFLAG)
 spindle_bootstrap_CPPFLAGS = $(AM_CPPFLAGS) -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -I$(top_srcdir)/../include -I$(top_srcdir)/../logging -I$(top_srcdir)/client_comlib -I$(top_srcdir)/client -I$(top_srcdir)/shm_cache -I$(top_srcdir)/../utils
-spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindleclogc.la \
-	$(top_builddir)/shm_cache/libshmcache.la $(am__append_1) \
-	$(am__append_2)
+spindle_bootstrap_LDADD = $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la $(top_builddir)/client_comlib/libclient_pipe.la
 spindle_bootstrap_SOURCES = spindle_bootstrap.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/spindle_mkdir.c $(top_srcdir)/../utils/getcpu.c $(top_srcdir)/client/exec_util.c  $(top_srcdir)/client/lookup.c $(top_srcdir)/../utils/fileutil.c
 all: all-am
 

@@ -8,8 +8,4 @@ print_ldso_entry_CPPFLAGS = -DLIBEXECDIR=\"$(pkglibexecdir)\"
 
 libprint_ldso_audit_la_LDFLAGS = -shared -avoid-version
 
-if BGQ_BLD
-print_ldso_entry_LDFLAGS = -dynamic
-endif
-
 

@@ -659,18 +659,6 @@ LINUX_BLD_FALSE
 LINUX_BLD_TRUE
 BGQ_BLD_FALSE
 BGQ_BLD_TRUE
-COBO_FALSE
-COBO_TRUE
-MSOCKET_FALSE
-MSOCKET_TRUE
-BITER_FALSE
-BITER_TRUE
-SHMEM_FALSE
-SHMEM_TRUE
-SOCKETS_FALSE
-SOCKETS_TRUE
-PIPES_FALSE
-PIPES_TRUE
 SRUN_PATH
 BLD_FLUXPLUGIN_FALSE
 BLD_FLUXPLUGIN_TRUE
@@ -821,31 +809,16 @@ enable_slurm
 enable_slurm_plugin
 enable_flux_plugin
 with_slurm_dir
-enable_bluegene
 with_hostbin
 with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
-enable_pipes
-enable_socket
-enable_shmem
-enable_biter
-enable_msocket
-enable_cobo
-with_python_prefix
 enable_numa
-with_numa_excludes
-with_usage_logging
-enable_cleanup_process
-enable_subaudit_as_default
 enable_sec_munge
 enable_sec_keydir
-enable_sec_launchmon
 enable_sec_none
-enable_crash_dedup
 with_gcrypt_dir
 with_munge_dir
-with_glibc_be_dir
 enable_remap_pageone
 '
       ac_precious_vars='build_alias
@@ -1501,27 +1474,12 @@ Optional Features:
                           launching
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
-  --enable-bluegene       Build Spindle for BlueGene/Q
-  --enable-pipes          Use pipes for server/client communication
-  --enable-socket         Use sockets for server/client communication
-  --enable-shmem          Use shared memory for server/client communication
-  --enable-biter          Use biter for server/client communication
-  --enable-msocket        Use msocket for inter-server communication
-  --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
-  --enable-cleanup-process
-                          Default to using a dedicated process to clean
-                          relocated files
-  --enable-subaudit-as-default
-                          Enable subaudit option as defaulted to on
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
                           authentication key for connections
-  --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
-                          for connections
   --enable-sec-none       Disable security authentication of connections
-  --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
                           Should be false on older linux systems
 
@@ -1558,17 +1516,8 @@ Optional Packages:
   --with-rsh-cmd=EXE      Executable to use for rsh/ssh when running in rsh
                           launch mode
   --with-slurm-launch     Enable using slurm to launch spindle daemons
-  --with-python-prefix=STR
-                          List of directories containing python installs
-  --with-numa-excludes    Do not numa optimize files matching the given
-                          substrings
-  --with-usage-logging=FILE
-                          File for writing usage logs
   --with-gcrypt-dir=DIR   Look in DIR for gcrypt installation
   --with-munge-dir=DIR    Look in DIR for munge installation
-  --with-glibc-be-dir=DIR If glibc on compute nodes is installed in a
-                          non-standard location, then DIR is the directory
-                          containing libc.so.6
 
 Some influential environment variables:
   CC          C compiler command
@@ -12503,50 +12452,6 @@ SPINDLE_BUILD_ROOT=`pwd`/../..
 SPINDLE_SOURCE_ROOT=`realpath ${srcdir}/../..`
 
 #Include common ops
-#################################################################################################
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC.
-# Produced at the Lawrence Livermore National Laboratory
-# Written by Todd Gamblin, tgamblin@llnl.gov.
-# LLNL-CODE-417602
-# All rights reserved.
-#
-# This file is part of Libra. For details, see http://github.com/tgamblin/libra.
-# Please also read the LICENSE file for further information.
-#
-# Redistribution and use in source and binary forms, with or without modification, are
-# permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this list of
-# conditions and the disclaimer below.
-# * Redistributions in binary form must reproduce the above copyright notice, this list of
-# conditions and the disclaimer (as noted below) in the documentation and/or other materials
-# provided with the distribution.
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may be used to endorse
-# or promote products derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-# LAWRENCE LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#################################################################################################
-
-#
-# LX_DETECT_BLUEGENE
-#
-# Defines some compile-time tests to detect BlueGene architectures.
-# This will AC_DEFINE the following macros if detected:
-#
-# BLUEGENE_L If BlueGene/L architecture is detected
-# BLUEGENE_P If BlueGene/P architecture is detected
-# BLUEGENE_Q If BlueGene/Q architecture is detected
-#
-
-
 #Configure operations that are common between the Spindle and Spindle-client configurations
 #Network port and local storage location
 DEFAULT_PORT=21940
@@ -12789,14 +12694,7 @@ _ACEOF
 
 
 #OS Detection
-# Check whether --enable-bluegene was given.
-if test "${enable_bluegene+set}" = set; then :
-  enableval=$enable_bluegene; OS_BUILD=bluegene
-fi
-
-if test "x$OS_BUILD" == "x"; then
-  OS_BUILD=linux
-fi
+OS_BUILD=linux
 
 #Startup type
 
@@ -12955,125 +12853,16 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-#Runmode detection (pipe/socket or cobo/msocket communications)
-if test "x$OS_BUILD" == "xlinux"; then
-  CLIENT_SERVER_COM=pipes
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLIENT_SERVER_COM=biter
-fi
-
-SERVER_SERVER_COM=cobo
-# Check whether --enable-pipes was given.
-if test "${enable_pipes+set}" = set; then :
-  enableval=$enable_pipes; CLIENT_SERVER_COM=pipes;
-fi
-
-# Check whether --enable-socket was given.
-if test "${enable_socket+set}" = set; then :
-  enableval=$enable_socket; CLIENT_SERVER_COM=sockets;
-fi
-
-# Check whether --enable-shmem was given.
-if test "${enable_shmem+set}" = set; then :
-  enableval=$enable_shmem; CLIENT_SERVER_COM=shmem;
-fi
-
-# Check whether --enable-biter was given.
-if test "${enable_biter+set}" = set; then :
-  enableval=$enable_biter; CLIENT_SERVER_COM=biter;
-fi
-
-
-
-# Check whether --enable-msocket was given.
-if test "${enable_msocket+set}" = set; then :
-  enableval=$enable_msocket; SERVER_SERVER_COM=msocket;
-fi
-
-# Check whether --enable-cobo was given.
-if test "${enable_cobo+set}" = set; then :
-  enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
-fi
-
-
- if test x$CLIENT_SERVER_COM == xpipes; then
-  PIPES_TRUE=
-  PIPES_FALSE='#'
-else
-  PIPES_TRUE='#'
-  PIPES_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xsocket; then
-  SOCKETS_TRUE=
-  SOCKETS_FALSE='#'
-else
-  SOCKETS_TRUE='#'
-  SOCKETS_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xshmem; then
-  SHMEM_TRUE=
-  SHMEM_FALSE='#'
-else
-  SHMEM_TRUE='#'
-  SHMEM_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xbiter; then
-  BITER_TRUE=
-  BITER_FALSE='#'
-else
-  BITER_TRUE='#'
-  BITER_FALSE=
-fi
-
- if test x$SERVER_SERVER_COM == xmsocket; then
-  MSOCKET_TRUE=
-  MSOCKET_FALSE='#'
-else
-  MSOCKET_TRUE='#'
-  MSOCKET_FALSE=
-fi
-
- if test x$SERVER_SERVER_COM == xcobo; then
-  COBO_TRUE=
-  COBO_FALSE='#'
-else
-  COBO_TRUE='#'
-  COBO_FALSE=
-fi
-
-
-if test "x$CLIENT_SERVER_COM" == "xpipes"; then
+#Communication modes
 
 $as_echo "#define COMM_PIPES 1" >>confdefs.h
 
-fi
-if test "x$CLIENT_SERVER_COM" == "xsocket"; then
-
-$as_echo "#define COMM_SOCKET 1" >>confdefs.h
-
-fi
-if test "x$CLIENT_SERVER_COM" == "xbiter"; then
-
-$as_echo "#define COMM_BITER 1" >>confdefs.h
-
-fi
-if test "x$SERVER_SERVER_COM" == "xmsocket"; then
-
-$as_echo "#define COMM_MSOCKET 1" >>confdefs.h
-
-fi
-if test "x$SERVER_SERVER_COM" == "xcobo"; then
 
 $as_echo "#define COMM_COBO 1" >>confdefs.h
 
-fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&5
-$as_echo "$as_me: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is pipes/cobo" >&5
+$as_echo "$as_me: Communication is pipes/cobo" >&6;}
 
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then
@@ -13126,7 +12915,7 @@ $as_echo "#define arch_aarch64 1" >>confdefs.h
 fi
 
 #OS defines
- if test "x$OS_BUILD" == "xbluegene"; then
+ if false; then
   BGQ_BLD_TRUE=
   BGQ_BLD_FALSE='#'
 else
@@ -13175,30 +12964,8 @@ else
 fi
 
 
-if test "x$OS_BUILD" == "xlinux"; then
 
 $as_echo "#define os_linux 1" >>confdefs.h
-
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-
-$as_echo "#define os_bluegene 1" >>confdefs.h
-
-fi
-
-#Python prefix
-
-# Check whether --with-python-prefix was given.
-if test "${with_python_prefix+set}" = set; then :
-  withval=$with_python_prefix; PYTHON_INST_PREFIX=${withval}
-else
-  PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python
-fi
-
-
-cat >>confdefs.h <<_ACEOF
-#define PYTHON_INST_PREFIX "$PYTHON_INST_PREFIX"
-_ACEOF
 
 
 #NUMA configuration
@@ -13206,15 +12973,6 @@ _ACEOF
 if test "${enable_numa+set}" = set; then :
   enableval=$enable_numa; REQUIRE_NUMA="true"
 fi
-
-
-# Check whether --with-numa-excludes was given.
-if test "${with_numa_excludes+set}" = set; then :
-  withval=$with_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
-else
-  NUMA_EXCLUDES_VAL=""
-fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have libnuma" >&5
 $as_echo_n "checking whether we have libnuma... " >&6; }
@@ -13251,11 +13009,6 @@ if test "x$HAVE_NUMA" == "xtrue"; then
 
 $as_echo "#define LIBNUMA 1" >>confdefs.h
 
-
-cat >>confdefs.h <<_ACEOF
-#define NUMA_EXCLUDES "$NUMA_EXCLUDES_VAL"
-_ACEOF
-
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking wheter ld.so has the _dl_argv variable" >&5
@@ -13285,38 +13038,6 @@ if test "x$HAVE_DL_ARGV" == "xtrue"; then
 $as_echo "#define HAVE_DL_ARGV 1" >>confdefs.h
 
 fi
-
-#Usage logging
-
-# Check whether --with-usage-logging was given.
-if test "${with_usage_logging+set}" = set; then :
-  withval=$with_usage_logging; USAGE_LOGS=${withval}
-fi
-
-if test "x$USAGE_LOGS" != "x"; then
-
-cat >>confdefs.h <<_ACEOF
-#define USAGE_LOGGING_FILE "$USAGE_LOGS"
-_ACEOF
-
-fi
-
-#Dedicated cleanup process
-# Check whether --enable-cleanup-process was given.
-if test "${enable_cleanup_process+set}" = set; then :
-  enableval=$enable_cleanup_process; CLEANUP_PROC="true"
-fi
-
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLEANUP_PROC="true"
-fi
-
-#Audit options
-# Check whether --enable-subaudit-as-default was given.
-if test "${enable_subaudit_as_default+set}" = set; then :
-  enableval=$enable_subaudit_as_default; USE_SUBAUDIT_BY_DEFAULT="true"
-fi
-
 
 if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
   # Check for whether to build Flux shell plugin
@@ -13640,15 +13361,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-if test "x$GLIBC_BE_DIR" = "x"; then
-  # Get glibc location on front-end
-  CAT=`which cat`
-  LIBC_FILE=`ldd $CAT | grep libc | awk -F ' ' '{print $3}'`
-  GLIBC_BE_DIR=`dirname $LIBC_FILE`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: glibc backend location set to $GLIBC_BE_DIR" >&5
-$as_echo "$as_me: glibc backend location set to $GLIBC_BE_DIR" >&6;}
-
 #Security options
 
 $as_echo "#define KEY_SIZE_BYTES 32" >>confdefs.h
@@ -13697,30 +13409,11 @@ if test "${enable_sec_keydir+set}" = set; then :
   enableval=$enable_sec_keydir; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
 fi
 
-# Check whether --enable-sec-launchmon was given.
-if test "${enable_sec_launchmon+set}" = set; then :
-  enableval=$enable_sec_launchmon; WANT_SECLMON="true";EXPLICIT_SEC="true"
-fi
-
 # Check whether --enable-sec-none was given.
 if test "${enable_sec_none+set}" = set; then :
   enableval=$enable_sec_none; WANT_NOSEC="true";EXPLICIT_SEC="true"
 fi
 
-
-# Check whether --enable-crash-dedup was given.
-if test "${enable_crash_dedup+set}" = set; then :
-  enableval=$enable_crash_dedup; enable_crash_dedup=$enableval
-else
-  enable_crash_dedup=no
-fi
-
-
-if test "x$enable_crash_dedup" = xyes; then :
-
-$as_echo "#define CRASH_DEDUP_ENABLED_BY_DEFAULT 1" >>confdefs.h
-
-fi
 
 
 # Check whether --with-gcrypt-dir was given.
@@ -13733,13 +13426,6 @@ fi
 # Check whether --with-munge-dir was given.
 if test "${with_munge_dir+set}" = set; then :
   withval=$with_munge_dir; MUNGE_DIR=${withval}
-fi
-
-
-
-# Check whether --with-glibc-be-dir was given.
-if test "${with_glibc_be_dir+set}" = set; then :
-  withval=$with_glibc_be_dir; GLIBC_BE_DIR=${withval}
 fi
 
 
@@ -13956,30 +13642,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BLD_FLUXPLUGIN_TRUE}" && test -z "${BLD_FLUXPLUGIN_FALSE}"; then
   as_fn_error $? "conditional \"BLD_FLUXPLUGIN\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
-  as_fn_error $? "conditional \"PIPES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SOCKETS_TRUE}" && test -z "${SOCKETS_FALSE}"; then
-  as_fn_error $? "conditional \"SOCKETS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SHMEM_TRUE}" && test -z "${SHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"SHMEM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
-  as_fn_error $? "conditional \"BITER\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MSOCKET_TRUE}" && test -z "${MSOCKET_FALSE}"; then
-  as_fn_error $? "conditional \"MSOCKET\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${COBO_TRUE}" && test -z "${COBO_FALSE}"; then
-  as_fn_error $? "conditional \"COBO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BGQ_BLD_TRUE}" && test -z "${BGQ_BLD_FALSE}"; then

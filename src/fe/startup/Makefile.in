@@ -92,12 +92,9 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = spindle$(EXEEXT)
-@COBO_TRUE@am__append_1 = $(top_builddir)/comlib/libfe_cobo.la $(top_builddir)/cobo/libldcs_cobo.la
-@MSOCKET_TRUE@am__append_2 = $(top_builddir)/comlib/libfe_msocket.la
-@BLD_FLUXPLUGIN_TRUE@am__append_3 = $(FLUX_CORE_LIBS) $(FLUX_HOSTLIST_LIBS) $(top_builddir)/flux/libfluxsessionfe.la
-@BLD_FLUXPLUGIN_TRUE@am__append_4 = -I$(top_srcdir)/../flux
-@BLD_FLUXPLUGIN_TRUE@am__append_5 = launch_flux.cc
-@LMON_TRUE@am__append_6 = $(top_builddir)/launchmon/libfelmon.la
+@BLD_FLUXPLUGIN_TRUE@am__append_1 = $(FLUX_CORE_LIBS) $(FLUX_HOSTLIST_LIBS) $(top_builddir)/flux/libfluxsessionfe.la
+@BLD_FLUXPLUGIN_TRUE@am__append_2 = -I$(top_srcdir)/../flux
+@BLD_FLUXPLUGIN_TRUE@am__append_3 = launch_flux.cc
 subdir = startup
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
@@ -106,9 +103,7 @@ am__aclocal_m4_deps = $(top_srcdir)/../../m4/libtool.m4 \
 	$(top_srcdir)/../../m4/ltversion.m4 \
 	$(top_srcdir)/../../m4/lt~obsolete.m4 \
 	$(top_srcdir)/../../m4/pkg.m4 \
-	$(top_srcdir)/../../m4/lx_detect_bluegene.m4 \
 	$(top_srcdir)/../../configure.common.ac \
-	$(top_srcdir)/../../m4/lmon.m4 \
 	$(top_srcdir)/../../m4/launcher.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -151,7 +146,8 @@ am__uninstall_files_from_dir = { \
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/logging/libspindleflogc.la \
-	$(am__append_1) $(am__append_2) $(am__DEPENDENCIES_1) \
+	$(top_builddir)/comlib/libfe_cobo.la \
+	$(top_builddir)/cobo/libldcs_cobo.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 libspindlefe_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__dirstamp = $(am__leading_dot)dirstamp
@@ -215,8 +211,7 @@ spindle_OBJECTS = $(am_spindle_OBJECTS)
 @BLD_FLUXPLUGIN_TRUE@	$(top_builddir)/flux/libfluxsessionfe.la
 spindle_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_4) \
-	$(am__append_6)
+	$(top_builddir)/hostbin/libhostbin.la $(am__DEPENDENCIES_4)
 spindle_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(spindle_LDFLAGS) $(LDFLAGS) -o $@
@@ -377,16 +372,11 @@ FLUX_HOSTLIST_LIBS = @FLUX_HOSTLIST_LIBS@
 GCRYPT_CFLAGS = @GCRYPT_CFLAGS@
 GCRYPT_LIBS = @GCRYPT_LIBS@
 GREP = @GREP@
-HAVE_LMON = @HAVE_LMON@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAUNCHMON_INC = @LAUNCHMON_INC@
-LAUNCHMON_LIB = @LAUNCHMON_LIB@
-LAUNCHMON_RMCOMM = @LAUNCHMON_RMCOMM@
-LAUNCHMON_STATIC_LIBS = @LAUNCHMON_STATIC_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -495,9 +485,7 @@ include_HEADERS = $(top_srcdir)/../include/spindle_launch.h
 AM_CPPFLAGS = -I$(top_srcdir)/../logging
 CORE_SOURCES = spindle_fe.cc parseargs.cc config_parser.cc config_mgr.cc parse_preload.cc $(top_srcdir)/../utils/pathfn.c $(top_srcdir)/../utils/keyfile.c $(top_srcdir)/../utils/parseloc.c $(top_srcdir)/../utils/rshlaunch.c
 CORE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../include -I$(top_srcdir)/comlib -I$(top_srcdir)/../server/cache -I$(top_srcdir)/../server/comlib -I$(top_srcdir)/../utils -I$(top_srcdir)/../cobo -DBINDIR=\"$(pkglibexecdir)\" -DLIBEXECDIR=\"$(pkglibexecdir)\" -DPROGLIBDIR=\"$(pkglibdir)\" -DPKGSYSCONFDIR=\"$(PKGSYSCONF_DIR)\"
-CORE_LDADD = $(top_builddir)/logging/libspindleflogc.la -lpthread \
-	$(am__append_1) $(am__append_2) $(MUNGE_DYN_LIB) \
-	$(GCRYPT_LIBS)
+CORE_LDADD = $(top_builddir)/logging/libspindleflogc.la -lpthread $(top_builddir)/comlib/libfe_cobo.la $(top_builddir)/cobo/libldcs_cobo.la $(MUNGE_DYN_LIB) $(GCRYPT_LIBS)
 libspindlefe_la_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEFELIB
 libspindlefe_la_SOURCES = $(CORE_SOURCES)
 libspindlefe_la_LIBADD = $(CORE_LDADD)
@@ -505,15 +493,14 @@ libspindlefe_la_LDFLAGS = -version-info $(SPINDLEFE_LIB_VERSION)
 libspindlefe_static_la_CPPFLAGS = $(libspindlefe_la_CPPFLAGS)
 libspindlefe_static_la_SOURCES = $(libspindlefe_la_SOURCES)
 libspindlefe_static_la_LIBADD = $(libspindlefe_la_LIBADD)
-spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE $(am__append_4)
+spindle_CPPFLAGS = $(CORE_CPPFLAGS) -DSPINDLEEXE $(am__append_2)
 spindle_SOURCES = spindle_fe_main.cc spindle_fe_serial.cc \
 	parse_launcher.cc parse_launcher_args.cc launcher.cc \
 	spindle_session.cc launch_slurm.cc launch_lsf.cc \
-	$(CORE_SOURCES) $(am__append_5)
+	$(CORE_SOURCES) $(am__append_3)
 spindle_LDADD = $(CORE_LDADD) \
 	$(top_builddir)/openmpi_intercept/libparseompi.la \
-	$(top_builddir)/hostbin/libhostbin.la $(am__append_3) \
-	$(am__append_6)
+	$(top_builddir)/hostbin/libhostbin.la $(am__append_1)
 @BLD_FLUXPLUGIN_TRUE@spindle_LDFLAGS = $(fluxplugin-ldflags) -Wl,--allow-multiple-definition
 all: all-am
 

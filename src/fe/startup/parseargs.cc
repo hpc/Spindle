@@ -49,43 +49,17 @@ using namespace std;
 #error No security model available
 #endif
 
-#if defined(DEFAULT_CLEANUP_PROC)
-#define DEFAULT_CLEAN_PROC_STR "yes"
-#define DEFAULT_CLEAN_PROC_INT 1
-#else
 #define DEFAULT_CLEAN_PROC_STR "no"
 #define DEFAULT_CLEAN_PROC_INT 0
-#endif
-
-#if !defined(USE_SUBAUDIT_BY_DEFAULT)  /* May be defined via configure */
-#if defined(os_bluegene)
-#define DEFAULT_USE_SUBAUDIT 1
-#else
-#define DEFAULT_USE_SUBAUDIT 0
-#endif
-#else
-#define DEFAULT_USE_SUBAUDIT 1
-#endif
 
 #define DEFAULT_PERSIST 0
 
-#if defined(os_bluegene)
-#define SHM_DEFAULT_SIZE 2048
-#define SHM_MIN_SIZE 4
-#else
 #define SHM_DEFAULT_SIZE 0
 #define SHM_MIN_SIZE 0
-#endif
 
 #define DEFAULT_MSGCACHE_BUFFER_KB 1024
 #define DEFAULT_MSGCACHE_TIMEOUT_MS 100
 #define DEFAULT_MSGCACHE_ON 0
-
-#if DEFAULT_USE_SUBAUDIT == 1
-#define DEFAULT_USE_SUBAUDIT_STR "subaudit"
-#else
-#define DEFAULT_USE_SUBAUDIT_STR "audit"
-#endif
 
 #if DEFAULT_PERSIST == 1
 #define DEFAULT_PERSIST_STR "Yes"
@@ -101,13 +75,8 @@ using namespace std;
 #define DEFAULT_RSHMODE_STR "No"
 #endif
 
-#if defined(USAGE_LOGGING_FILE)
-#define DEFAULT_LOGGING_ENABLED true
-static const int DISABLE_LOGGING_FLAGS = 0;
-#else
 #define DEFAULT_LOGGING_ENABLED false
 static const int DISABLE_LOGGING_FLAGS = OPTION_HIDDEN;
-#endif
 
 static ConfigMap argmap("[Command Line]");
 static bool done = false;

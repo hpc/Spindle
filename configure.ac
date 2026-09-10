@@ -22,7 +22,6 @@ SPINDLE_SOURCE_ROOT=`realpath ${srcdir}`
 #Include common ops
 m4_include([configure.common.ac])
 m4_include([m4/ax_tls.m4])
-m4_include([m4/lmon.m4])
 AX_TLS
 
 #MPI detection
@@ -105,48 +104,26 @@ AC_OUTPUT
 AC_DEFUN([SET_BE_COMPILER_VAR],[
   VARNAME=\$BE_$1
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_$1=$BE_VAR
-     elif test "x$2" != "x"; then
-       CLIENT_$1=$2
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_$1 to $$1
-       CLIENT_$1=
-     else
-       CLIENT_$1=$$1
-     fi
-     SERVER_$1=$$1
-     FE_$1=$$1
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$$1
-       fi
-     fi
-     CLIENT_$1=$BE_VAR
-     SERVER_$1=$BE_VAR
-     FE_$1=$$1
-  fi])
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$$1
+    fi
+  fi
+  CLIENT_$1=$BE_VAR
+  SERVER_$1=$BE_VAR
+  FE_$1=$$1
+])
 
 if test "$BE_CC x $BE_CXX x $BE_host" != " x  x "; then
    USER_SPECIFIED_COMPS="true"
 fi
 
-if test "x$OS_BUILD" == "xbluegene"; then
-  if test -d /bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin; then
-     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin/
-  elif test -d /bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin; then
-     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin/
-  fi
-fi
-
-SET_BE_COMPILER_VAR([CC], [${BG_COMP_PATH}powerpc64-bgq-linux-gcc])
+SET_BE_COMPILER_VAR([CC])
 SET_BE_COMPILER_VAR([CFLAGS])
 SET_BE_COMPILER_VAR([LDFLAGS])
 SET_BE_COMPILER_VAR([LIBS])
 SET_BE_COMPILER_VAR([CPPFLAGS])
-SET_BE_COMPILER_VAR([CXX], [${BG_COMP_PATH}powerpc64-bgq-linux-c++])
+SET_BE_COMPILER_VAR([CXX])
 SET_BE_COMPILER_VAR([CXXFLAGS])
 SET_BE_COMPILER_VAR([CPP], [${BG_COMP_PATH}powerpc64-bgq-linux-cpp])
 SET_BE_COMPILER_VAR([CXXCPP])

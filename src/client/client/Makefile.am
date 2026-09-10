@@ -1,15 +1,5 @@
-noinst_LTLIBRARIES = libspindle_audit.la
+noinst_LTLIBRARIES = libspindle_audit.la libspindlec_pipe.la
 #noinst_LTLIBRARIES += libspindle_instr.la
-
-if SOCKETS
-noinst_LTLIBRARIES += libspindlec_socket.la
-endif
-if PIPES
-noinst_LTLIBRARIES += libspindlec_pipe.la
-endif
-if BITER
-noinst_LTLIBRARIES += libspindlec_biter.la
-endif
 
 AM_CFLAGS = -fvisibility=hidden
 
@@ -28,14 +18,8 @@ BASE_SRCS += $(top_srcdir)/crash_handler/crash_io.c \
              $(top_srcdir)/crash_handler/crash_lib_offset.c \
              $(top_srcdir)/crash_handler/crash_sigchain.c
 
-libspindlec_socket_la_SOURCES = $(BASE_SRCS)
-libspindlec_socket_la_LIBADD = $(top_builddir)/client_comlib/libclient_socket.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
-
 libspindlec_pipe_la_SOURCES = $(BASE_SRCS)
 libspindlec_pipe_la_LIBADD = $(top_builddir)/client_comlib/libclient_pipe.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
-
-libspindlec_biter_la_SOURCES = $(BASE_SRCS)
-libspindlec_biter_la_LIBADD = $(top_builddir)/client_comlib/libclient_biter.la $(top_builddir)/logging/libspindleclogc.la $(top_builddir)/shm_cache/libshmcache.la
 
 libspindle_audit_la_SOURCES = $(INTERCEPT_SRCS)
 libspindle_audit_la_CPPFLAGS = -DAUDIT_LIB $(AM_CPPFLAGS)

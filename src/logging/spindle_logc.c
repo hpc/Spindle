@@ -69,7 +69,7 @@ int fileExists(char *name)
 
 void spawnLogDaemon(char *tempdir)
 {
-#if !defined(SPINDLECLIENT) || !defined(os_bluegene)
+#if !defined(SPINDLECLIENT)
    int result = fork();
    if (result == 0) {
       result = fork();

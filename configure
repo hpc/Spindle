@@ -658,15 +658,6 @@ MPICXX
 MPI_CLDFLAGS
 MPI_CFLAGS
 MPICC
-LMON_DYNAMIC_FALSE
-LMON_DYNAMIC_TRUE
-LMON_FALSE
-LMON_TRUE
-LAUNCHMON_RMCOMM
-LAUNCHMON_LIB
-LAUNCHMON_INC
-HAVE_LMON
-LAUNCHMON_STATIC_LIBS
 STATICFLAG
 fluxplugin_ldflags
 shell_plugindir
@@ -686,18 +677,6 @@ LINUX_BLD_FALSE
 LINUX_BLD_TRUE
 BGQ_BLD_FALSE
 BGQ_BLD_TRUE
-COBO_FALSE
-COBO_TRUE
-MSOCKET_FALSE
-MSOCKET_TRUE
-BITER_FALSE
-BITER_TRUE
-SHMEM_FALSE
-SHMEM_TRUE
-SOCKETS_FALSE
-SOCKETS_TRUE
-PIPES_FALSE
-PIPES_TRUE
 SRUN_PATH
 BLD_FLUXPLUGIN_FALSE
 BLD_FLUXPLUGIN_TRUE
@@ -858,36 +837,17 @@ enable_slurm
 enable_slurm_plugin
 enable_flux_plugin
 with_slurm_dir
-enable_bluegene
 with_hostbin
 with_rsh_launch
 with_rsh_cmd
 with_slurm_launch
-enable_pipes
-enable_socket
-enable_shmem
-enable_biter
-enable_msocket
-enable_cobo
-with_python_prefix
 enable_numa
-with_numa_excludes
-with_usage_logging
-enable_cleanup_process
-enable_subaudit_as_default
 enable_sec_munge
 enable_sec_keydir
-enable_sec_launchmon
 enable_sec_none
-enable_crash_dedup
 with_gcrypt_dir
 with_munge_dir
-with_glibc_be_dir
 enable_remap_pageone
-with_launchmon
-with_launchmon_incdir
-with_launchmon_libdir
-with_launchmon_rmcommdir
 enable_testsuite
 '
       ac_precious_vars='build_alias
@@ -1557,27 +1517,12 @@ Optional Features:
                           launching
   --enable-slurm-plugin   Builds in support for running with SLURM via plugin
   --enable-flux-plugin    Builds in support for running flux via a plugin
-  --enable-bluegene       Build Spindle for BlueGene/Q
-  --enable-pipes          Use pipes for server/client communication
-  --enable-socket         Use sockets for server/client communication
-  --enable-shmem          Use shared memory for server/client communication
-  --enable-biter          Use biter for server/client communication
-  --enable-msocket        Use msocket for inter-server communication
-  --enable-cobo           Use msocket for inter-server communication
   --enable-numa           Use libnuma to enable numa optimizations
-  --enable-cleanup-process
-                          Default to using a dedicated process to clean
-                          relocated files
-  --enable-subaudit-as-default
-                          Enable subaudit option as defaulted to on
   --enable-sec-munge      Enable munge for connection authentication
   --enable-sec-keydir=keydir
                           Enable filesystem directory 'keydir' to propagate
                           authentication key for connections
-  --enable-sec-launchmon  Enable LaunchmMON to propagate authentication key
-                          for connections
   --enable-sec-none       Disable security authentication of connections
-  --enable-crash-dedup    Enable --crash-dedup by default (default: disabled)
   --enable-remap-pageone  Controls mmap behavior when replacing executables.
                           Should be false on older linux systems
   --enable-testsuite      Chooses whether to build the Spindle testsuite.
@@ -1616,25 +1561,8 @@ Optional Packages:
   --with-rsh-cmd=EXE      Executable to use for rsh/ssh when running in rsh
                           launch mode
   --with-slurm-launch     Enable using slurm to launch spindle daemons
-  --with-python-prefix=STR
-                          List of directories containing python installs
-  --with-numa-excludes    Do not numa optimize files matching the given
-                          substrings
-  --with-usage-logging=FILE
-                          File for writing usage logs
   --with-gcrypt-dir=DIR   Look in DIR for gcrypt installation
   --with-munge-dir=DIR    Look in DIR for munge installation
-  --with-glibc-be-dir=DIR If glibc on compute nodes is installed in a
-                          non-standard location, then DIR is the directory
-                          containing libc.so.6
-  --with-launchmon=DIR    Launchmon directory (must contain ./lib and
-                          ./include)
-  --with-launchmon-incdir=DIR
-                          Launchmon include directory
-  --with-launchmon-libdir=DIR
-                          Launchmon library directory
-  --with-launchmon-rmcommdir=DIR
-                          RM communication library LaunchMON uses
 
 Some influential environment variables:
   CC          C compiler command
@@ -16864,14 +16792,7 @@ _ACEOF
 
 
 #OS Detection
-# Check whether --enable-bluegene was given.
-if test "${enable_bluegene+set}" = set; then :
-  enableval=$enable_bluegene; OS_BUILD=bluegene
-fi
-
-if test "x$OS_BUILD" == "x"; then
-  OS_BUILD=linux
-fi
+OS_BUILD=linux
 
 #Startup type
 
@@ -17030,125 +16951,16 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-#Runmode detection (pipe/socket or cobo/msocket communications)
-if test "x$OS_BUILD" == "xlinux"; then
-  CLIENT_SERVER_COM=pipes
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLIENT_SERVER_COM=biter
-fi
-
-SERVER_SERVER_COM=cobo
-# Check whether --enable-pipes was given.
-if test "${enable_pipes+set}" = set; then :
-  enableval=$enable_pipes; CLIENT_SERVER_COM=pipes;
-fi
-
-# Check whether --enable-socket was given.
-if test "${enable_socket+set}" = set; then :
-  enableval=$enable_socket; CLIENT_SERVER_COM=sockets;
-fi
-
-# Check whether --enable-shmem was given.
-if test "${enable_shmem+set}" = set; then :
-  enableval=$enable_shmem; CLIENT_SERVER_COM=shmem;
-fi
-
-# Check whether --enable-biter was given.
-if test "${enable_biter+set}" = set; then :
-  enableval=$enable_biter; CLIENT_SERVER_COM=biter;
-fi
-
-
-
-# Check whether --enable-msocket was given.
-if test "${enable_msocket+set}" = set; then :
-  enableval=$enable_msocket; SERVER_SERVER_COM=msocket;
-fi
-
-# Check whether --enable-cobo was given.
-if test "${enable_cobo+set}" = set; then :
-  enableval=$enable_cobo; SERVER_SERVER_COM=cobo;
-fi
-
-
- if test x$CLIENT_SERVER_COM == xpipes; then
-  PIPES_TRUE=
-  PIPES_FALSE='#'
-else
-  PIPES_TRUE='#'
-  PIPES_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xsocket; then
-  SOCKETS_TRUE=
-  SOCKETS_FALSE='#'
-else
-  SOCKETS_TRUE='#'
-  SOCKETS_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xshmem; then
-  SHMEM_TRUE=
-  SHMEM_FALSE='#'
-else
-  SHMEM_TRUE='#'
-  SHMEM_FALSE=
-fi
-
- if test x$CLIENT_SERVER_COM == xbiter; then
-  BITER_TRUE=
-  BITER_FALSE='#'
-else
-  BITER_TRUE='#'
-  BITER_FALSE=
-fi
-
- if test x$SERVER_SERVER_COM == xmsocket; then
-  MSOCKET_TRUE=
-  MSOCKET_FALSE='#'
-else
-  MSOCKET_TRUE='#'
-  MSOCKET_FALSE=
-fi
-
- if test x$SERVER_SERVER_COM == xcobo; then
-  COBO_TRUE=
-  COBO_FALSE='#'
-else
-  COBO_TRUE='#'
-  COBO_FALSE=
-fi
-
-
-if test "x$CLIENT_SERVER_COM" == "xpipes"; then
+#Communication modes
 
 $as_echo "#define COMM_PIPES 1" >>confdefs.h
 
-fi
-if test "x$CLIENT_SERVER_COM" == "xsocket"; then
-
-$as_echo "#define COMM_SOCKET 1" >>confdefs.h
-
-fi
-if test "x$CLIENT_SERVER_COM" == "xbiter"; then
-
-$as_echo "#define COMM_BITER 1" >>confdefs.h
-
-fi
-if test "x$SERVER_SERVER_COM" == "xmsocket"; then
-
-$as_echo "#define COMM_MSOCKET 1" >>confdefs.h
-
-fi
-if test "x$SERVER_SERVER_COM" == "xcobo"; then
 
 $as_echo "#define COMM_COBO 1" >>confdefs.h
 
-fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&5
-$as_echo "$as_me: Communication is $CLIENT_SERVER_COM/$SERVER_SERVER_COM" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Communication is pipes/cobo" >&5
+$as_echo "$as_me: Communication is pipes/cobo" >&6;}
 
 #Architecture detection
 if test "x$target_cpu" == "xx86_64"; then
@@ -17201,7 +17013,7 @@ $as_echo "#define arch_aarch64 1" >>confdefs.h
 fi
 
 #OS defines
- if test "x$OS_BUILD" == "xbluegene"; then
+ if false; then
   BGQ_BLD_TRUE=
   BGQ_BLD_FALSE='#'
 else
@@ -17250,30 +17062,8 @@ else
 fi
 
 
-if test "x$OS_BUILD" == "xlinux"; then
 
 $as_echo "#define os_linux 1" >>confdefs.h
-
-fi
-if test "x$OS_BUILD" == "xbluegene"; then
-
-$as_echo "#define os_bluegene 1" >>confdefs.h
-
-fi
-
-#Python prefix
-
-# Check whether --with-python-prefix was given.
-if test "${with_python_prefix+set}" = set; then :
-  withval=$with_python_prefix; PYTHON_INST_PREFIX=${withval}
-else
-  PYTHON_INST_PREFIX=/usr/lib/python:/usr/lib64/python
-fi
-
-
-cat >>confdefs.h <<_ACEOF
-#define PYTHON_INST_PREFIX "$PYTHON_INST_PREFIX"
-_ACEOF
 
 
 #NUMA configuration
@@ -17281,15 +17071,6 @@ _ACEOF
 if test "${enable_numa+set}" = set; then :
   enableval=$enable_numa; REQUIRE_NUMA="true"
 fi
-
-
-# Check whether --with-numa-excludes was given.
-if test "${with_numa_excludes+set}" = set; then :
-  withval=$with_numa_excludes; NUMA_EXCLUDES_VAL=${withval}
-else
-  NUMA_EXCLUDES_VAL=""
-fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we have libnuma" >&5
 $as_echo_n "checking whether we have libnuma... " >&6; }
@@ -17326,11 +17107,6 @@ if test "x$HAVE_NUMA" == "xtrue"; then
 
 $as_echo "#define LIBNUMA 1" >>confdefs.h
 
-
-cat >>confdefs.h <<_ACEOF
-#define NUMA_EXCLUDES "$NUMA_EXCLUDES_VAL"
-_ACEOF
-
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking wheter ld.so has the _dl_argv variable" >&5
@@ -17360,38 +17136,6 @@ if test "x$HAVE_DL_ARGV" == "xtrue"; then
 $as_echo "#define HAVE_DL_ARGV 1" >>confdefs.h
 
 fi
-
-#Usage logging
-
-# Check whether --with-usage-logging was given.
-if test "${with_usage_logging+set}" = set; then :
-  withval=$with_usage_logging; USAGE_LOGS=${withval}
-fi
-
-if test "x$USAGE_LOGS" != "x"; then
-
-cat >>confdefs.h <<_ACEOF
-#define USAGE_LOGGING_FILE "$USAGE_LOGS"
-_ACEOF
-
-fi
-
-#Dedicated cleanup process
-# Check whether --enable-cleanup-process was given.
-if test "${enable_cleanup_process+set}" = set; then :
-  enableval=$enable_cleanup_process; CLEANUP_PROC="true"
-fi
-
-if test "x$OS_BUILD" == "xbluegene"; then
-  CLEANUP_PROC="true"
-fi
-
-#Audit options
-# Check whether --enable-subaudit-as-default was given.
-if test "${enable_subaudit_as_default+set}" = set; then :
-  enableval=$enable_subaudit_as_default; USE_SUBAUDIT_BY_DEFAULT="true"
-fi
-
 
 if test "x$ENABLE_FLUX_PLUGIN" = "xtrue"; then
   # Check for whether to build Flux shell plugin
@@ -17592,15 +17336,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-if test "x$GLIBC_BE_DIR" = "x"; then
-  # Get glibc location on front-end
-  CAT=`which cat`
-  LIBC_FILE=`ldd $CAT | grep libc | awk -F ' ' '{print $3}'`
-  GLIBC_BE_DIR=`dirname $LIBC_FILE`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: glibc backend location set to $GLIBC_BE_DIR" >&5
-$as_echo "$as_me: glibc backend location set to $GLIBC_BE_DIR" >&6;}
-
 #Security options
 
 $as_echo "#define KEY_SIZE_BYTES 32" >>confdefs.h
@@ -17649,30 +17384,11 @@ if test "${enable_sec_keydir+set}" = set; then :
   enableval=$enable_sec_keydir; WANT_KEYFILE="true";SEC_KEYDIR=$enableval;EXPLICIT_SEC="true"
 fi
 
-# Check whether --enable-sec-launchmon was given.
-if test "${enable_sec_launchmon+set}" = set; then :
-  enableval=$enable_sec_launchmon; WANT_SECLMON="true";EXPLICIT_SEC="true"
-fi
-
 # Check whether --enable-sec-none was given.
 if test "${enable_sec_none+set}" = set; then :
   enableval=$enable_sec_none; WANT_NOSEC="true";EXPLICIT_SEC="true"
 fi
 
-
-# Check whether --enable-crash-dedup was given.
-if test "${enable_crash_dedup+set}" = set; then :
-  enableval=$enable_crash_dedup; enable_crash_dedup=$enableval
-else
-  enable_crash_dedup=no
-fi
-
-
-if test "x$enable_crash_dedup" = xyes; then :
-
-$as_echo "#define CRASH_DEDUP_ENABLED_BY_DEFAULT 1" >>confdefs.h
-
-fi
 
 
 # Check whether --with-gcrypt-dir was given.
@@ -17685,13 +17401,6 @@ fi
 # Check whether --with-munge-dir was given.
 if test "${with_munge_dir+set}" = set; then :
   withval=$with_munge_dir; MUNGE_DIR=${withval}
-fi
-
-
-
-# Check whether --with-glibc-be-dir was given.
-if test "${with_glibc_be_dir+set}" = set; then :
-  withval=$with_glibc_be_dir; GLIBC_BE_DIR=${withval}
 fi
 
 
@@ -17758,219 +17467,6 @@ fi
 #serial 15
 
 
-
-#Launchmon processing
-
-# Check whether --with-launchmon was given.
-if test "${with_launchmon+set}" = set; then :
-  withval=$with_launchmon; LAUNCHMON_INC_DIR="${withval}/include";
-        LAUNCHMON_LIB_DIR="${withval}/lib";
-        LAUNCHMON_RMCOMM_DIR="${withval}/lib"
-        EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-incdir was given.
-if test "${with_launchmon_incdir+set}" = set; then :
-  withval=$with_launchmon_incdir; LAUNCHMON_INC_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-libdir was given.
-if test "${with_launchmon_libdir+set}" = set; then :
-  withval=$with_launchmon_libdir; LAUNCHMON_LIB_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-# Check whether --with-launchmon-rmcommdir was given.
-if test "${with_launchmon_rmcommdir+set}" = set; then :
-  withval=$with_launchmon_rmcommdir; LAUNCHMON_RMCOMM_DIR="${withval}";EXPLICIT_LMON=true
-fi
-
-
-CPPFLAGS_HOLD=$CPPFLAGS
-if test "x$LAUNCHMON_INC_DIR" != "x"; then
-  LAUNCHMON_INC=-I$LAUNCHMON_INC_DIR
-fi
-CPPFLAGS="$CPPFLAGS $LAUNCHMON_INC"
-ac_fn_c_check_header_mongrel "$LINENO" "lmon_api/lmon_fe.h" "ac_cv_header_lmon_api_lmon_fe_h" "$ac_includes_default"
-if test "x$ac_cv_header_lmon_api_lmon_fe_h" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Found launchmon headers" >&5
-$as_echo "$as_me: Found launchmon headers" >&6;}
-else
-  if test "x$EXPLICIT_LMON" == "xtrue";
-                   then as_fn_error $? "Could not find or build LaunchMON includes" "$LINENO" 5
-                   else HAVE_LMON=false
-                 fi
-fi
-
-
-CPPFLAGS=$CPPFLAGS_HOLD
-
-if test "xHAVE_LMON" != "xfalse"; then
-  LDFLAGS_HOLD=$LDFLAGS
-  LIBS_HOLD=$LIBS
-  if test "x$LAUNCHMON_LIB_DIR" != "x"; then
-    LAUNCHMON_LIB=-L$LAUNCHMON_LIB_DIR
-    LAUNCHMON_BIN=$LAUNCHMON_LIB_DIR/../bin
-  fi
-  LDFLAGS="$LDFLAGS $LAUNCHMON_LIB"
-
-  if test "x$LAUNCHMON_RMCOMM_DIR" != "x"; then
-    LAUNCHMON_RMCOMM="-Wl,-rpath=$LAUNCHMON_RMCOMM_DIR"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LMON_fe_init in -lmonfeapi" >&5
-$as_echo_n "checking for LMON_fe_init in -lmonfeapi... " >&6; }
-if ${ac_cv_lib_monfeapi_LMON_fe_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmonfeapi  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char LMON_fe_init ();
-int
-main ()
-{
-return LMON_fe_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_monfeapi_LMON_fe_init=yes
-else
-  ac_cv_lib_monfeapi_LMON_fe_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_monfeapi_LMON_fe_init" >&5
-$as_echo "$ac_cv_lib_monfeapi_LMON_fe_init" >&6; }
-if test "x$ac_cv_lib_monfeapi_LMON_fe_init" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Found launchmon libraries" >&5
-$as_echo "$as_me: Found launchmon libraries" >&6;};HAVE_LMON=true
-else
-  if test "x$EXPLICIT_LMON" == "xtrue";
-                   then as_fn_error $? "Could not find or build LaunchMON libraries" "$LINENO" 5
-                   else { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not find or build LaunchMON libraries" >&5
-$as_echo "$as_me: WARNING: Could not find or build LaunchMON libraries" >&2;}; HAVE_LMON=false
-                fi
-fi
-
-fi
-
-if test "xHAVE_LMON" != "xfalse"; then
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can statically link launchmon" >&5
-$as_echo_n "checking whether we can statically link launchmon... " >&6; }
-  LAUNCHMON_STATIC_LIBS_TEST="$LAUNCHMON_LIB_DIR/libmonbeapi.a $LAUNCHMON_LIB_DIR/libcobo.a $LAUNCHMON_LIB_DIR/libgcrypt.a $LAUNCHMON_LIB_DIR/libgpg-error.a"
-  LIBS="$LIBS $LAUNCHMON_STATIC_LIBS_TEST"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-extern "C" { extern int LMON_be_init(); }
-int
-main ()
-{
-return LMON_be_init();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  LAUNCHMON_STATIC_LIBS=$LAUNCHMON_STATIC_LIBS_TEST
-                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-  if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-    if test "x$HAVE_MUNGE" == "xtrue"; then
-      LIBS="$LIBS_HOLD $LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-extern "C" { extern int LMON_be_init(); }
-int
-main ()
-{
-return LMON_be_init();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  LAUNCHMON_STATIC_LIBS="$LAUNCHMON_STATIC_LIBS_TEST $MUNGE_STATIC_LIB"
-                      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  fi
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  LDFLAGS=$LDFLAGS_HOLD
-  LIBS=$LIBS_HOLD
-fi
-
-
-
-
-
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define LAUNCHMON_BIN_DIR "$LAUNCHMON_BIN"
-_ACEOF
-
-
- if test "x$HAVE_LMON" == "xtrue"; then
-  LMON_TRUE=
-  LMON_FALSE='#'
-else
-  LMON_TRUE='#'
-  LMON_FALSE=
-fi
-
- if test "x$LAUNCHMON_STATIC_LIBS" == "x"; then
-  LMON_DYNAMIC_TRUE=
-  LMON_DYNAMIC_FALSE='#'
-else
-  LMON_DYNAMIC_TRUE='#'
-  LMON_DYNAMIC_FALSE=
-fi
-
-
-if test "x$HAVE_LMON" == "xtrue"; then
-
-$as_echo "#define HAVE_LMON 1" >>confdefs.h
-
-fi
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thread local storage (TLS) class" >&5
@@ -19068,30 +18564,6 @@ if test -z "${BLD_FLUXPLUGIN_TRUE}" && test -z "${BLD_FLUXPLUGIN_FALSE}"; then
   as_fn_error $? "conditional \"BLD_FLUXPLUGIN\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${PIPES_TRUE}" && test -z "${PIPES_FALSE}"; then
-  as_fn_error $? "conditional \"PIPES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SOCKETS_TRUE}" && test -z "${SOCKETS_FALSE}"; then
-  as_fn_error $? "conditional \"SOCKETS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SHMEM_TRUE}" && test -z "${SHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"SHMEM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BITER_TRUE}" && test -z "${BITER_FALSE}"; then
-  as_fn_error $? "conditional \"BITER\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MSOCKET_TRUE}" && test -z "${MSOCKET_FALSE}"; then
-  as_fn_error $? "conditional \"MSOCKET\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${COBO_TRUE}" && test -z "${COBO_FALSE}"; then
-  as_fn_error $? "conditional \"COBO\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${BGQ_BLD_TRUE}" && test -z "${BGQ_BLD_FALSE}"; then
   as_fn_error $? "conditional \"BGQ_BLD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -19114,14 +18586,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AARCH64_BLD_TRUE}" && test -z "${AARCH64_BLD_FALSE}"; then
   as_fn_error $? "conditional \"AARCH64_BLD\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${LMON_TRUE}" && test -z "${LMON_FALSE}"; then
-  as_fn_error $? "conditional \"LMON\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${LMON_DYNAMIC_TRUE}" && test -z "${LMON_DYNAMIC_FALSE}"; then
-  as_fn_error $? "conditional \"LMON_DYNAMIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BLD_TESTSUITE_TRUE}" && test -z "${BLD_TESTSUITE_FALSE}"; then
@@ -21643,326 +21107,150 @@ if test "$BE_CC x $BE_CXX x $BE_host" != " x  x "; then
    USER_SPECIFIED_COMPS="true"
 fi
 
-if test "x$OS_BUILD" == "xbluegene"; then
-  if test -d /bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin; then
-     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M1/gnu-linux/bin/
-  elif test -d /bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin; then
-     BG_COMP_PATH=/bgsys/drivers/toolchain/V1R2M0/gnu-linux/bin/
-  fi
-fi
-
 
   VARNAME=\$BE_CC
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CC=$BE_VAR
-     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-gcc" != "x"; then
-       CLIENT_CC=${BG_COMP_PATH}powerpc64-bgq-linux-gcc
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CC to $CC
-       CLIENT_CC=
-     else
-       CLIENT_CC=$CC
-     fi
-     SERVER_CC=$CC
-     FE_CC=$CC
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CC
-       fi
-     fi
-     CLIENT_CC=$BE_VAR
-     SERVER_CC=$BE_VAR
-     FE_CC=$CC
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CC
+    fi
   fi
+  CLIENT_CC=$BE_VAR
+  SERVER_CC=$BE_VAR
+  FE_CC=$CC
+
 
   VARNAME=\$BE_CFLAGS
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CFLAGS=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_CFLAGS=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CFLAGS to $CFLAGS
-       CLIENT_CFLAGS=
-     else
-       CLIENT_CFLAGS=$CFLAGS
-     fi
-     SERVER_CFLAGS=$CFLAGS
-     FE_CFLAGS=$CFLAGS
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CFLAGS
-       fi
-     fi
-     CLIENT_CFLAGS=$BE_VAR
-     SERVER_CFLAGS=$BE_VAR
-     FE_CFLAGS=$CFLAGS
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CFLAGS
+    fi
   fi
+  CLIENT_CFLAGS=$BE_VAR
+  SERVER_CFLAGS=$BE_VAR
+  FE_CFLAGS=$CFLAGS
+
 
   VARNAME=\$BE_LDFLAGS
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_LDFLAGS=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_LDFLAGS=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_LDFLAGS to $LDFLAGS
-       CLIENT_LDFLAGS=
-     else
-       CLIENT_LDFLAGS=$LDFLAGS
-     fi
-     SERVER_LDFLAGS=$LDFLAGS
-     FE_LDFLAGS=$LDFLAGS
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$LDFLAGS
-       fi
-     fi
-     CLIENT_LDFLAGS=$BE_VAR
-     SERVER_LDFLAGS=$BE_VAR
-     FE_LDFLAGS=$LDFLAGS
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$LDFLAGS
+    fi
   fi
+  CLIENT_LDFLAGS=$BE_VAR
+  SERVER_LDFLAGS=$BE_VAR
+  FE_LDFLAGS=$LDFLAGS
+
 
   VARNAME=\$BE_LIBS
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_LIBS=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_LIBS=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_LIBS to $LIBS
-       CLIENT_LIBS=
-     else
-       CLIENT_LIBS=$LIBS
-     fi
-     SERVER_LIBS=$LIBS
-     FE_LIBS=$LIBS
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$LIBS
-       fi
-     fi
-     CLIENT_LIBS=$BE_VAR
-     SERVER_LIBS=$BE_VAR
-     FE_LIBS=$LIBS
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$LIBS
+    fi
   fi
+  CLIENT_LIBS=$BE_VAR
+  SERVER_LIBS=$BE_VAR
+  FE_LIBS=$LIBS
+
 
   VARNAME=\$BE_CPPFLAGS
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CPPFLAGS=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_CPPFLAGS=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CPPFLAGS to $CPPFLAGS
-       CLIENT_CPPFLAGS=
-     else
-       CLIENT_CPPFLAGS=$CPPFLAGS
-     fi
-     SERVER_CPPFLAGS=$CPPFLAGS
-     FE_CPPFLAGS=$CPPFLAGS
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CPPFLAGS
-       fi
-     fi
-     CLIENT_CPPFLAGS=$BE_VAR
-     SERVER_CPPFLAGS=$BE_VAR
-     FE_CPPFLAGS=$CPPFLAGS
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CPPFLAGS
+    fi
   fi
+  CLIENT_CPPFLAGS=$BE_VAR
+  SERVER_CPPFLAGS=$BE_VAR
+  FE_CPPFLAGS=$CPPFLAGS
+
 
   VARNAME=\$BE_CXX
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CXX=$BE_VAR
-     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-c++" != "x"; then
-       CLIENT_CXX=${BG_COMP_PATH}powerpc64-bgq-linux-c++
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CXX to $CXX
-       CLIENT_CXX=
-     else
-       CLIENT_CXX=$CXX
-     fi
-     SERVER_CXX=$CXX
-     FE_CXX=$CXX
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CXX
-       fi
-     fi
-     CLIENT_CXX=$BE_VAR
-     SERVER_CXX=$BE_VAR
-     FE_CXX=$CXX
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CXX
+    fi
   fi
+  CLIENT_CXX=$BE_VAR
+  SERVER_CXX=$BE_VAR
+  FE_CXX=$CXX
+
 
   VARNAME=\$BE_CXXFLAGS
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CXXFLAGS=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_CXXFLAGS=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CXXFLAGS to $CXXFLAGS
-       CLIENT_CXXFLAGS=
-     else
-       CLIENT_CXXFLAGS=$CXXFLAGS
-     fi
-     SERVER_CXXFLAGS=$CXXFLAGS
-     FE_CXXFLAGS=$CXXFLAGS
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CXXFLAGS
-       fi
-     fi
-     CLIENT_CXXFLAGS=$BE_VAR
-     SERVER_CXXFLAGS=$BE_VAR
-     FE_CXXFLAGS=$CXXFLAGS
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CXXFLAGS
+    fi
   fi
+  CLIENT_CXXFLAGS=$BE_VAR
+  SERVER_CXXFLAGS=$BE_VAR
+  FE_CXXFLAGS=$CXXFLAGS
+
 
   VARNAME=\$BE_CPP
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CPP=$BE_VAR
-     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-cpp" != "x"; then
-       CLIENT_CPP=${BG_COMP_PATH}powerpc64-bgq-linux-cpp
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CPP to $CPP
-       CLIENT_CPP=
-     else
-       CLIENT_CPP=$CPP
-     fi
-     SERVER_CPP=$CPP
-     FE_CPP=$CPP
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CPP
-       fi
-     fi
-     CLIENT_CPP=$BE_VAR
-     SERVER_CPP=$BE_VAR
-     FE_CPP=$CPP
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CPP
+    fi
   fi
+  CLIENT_CPP=$BE_VAR
+  SERVER_CPP=$BE_VAR
+  FE_CPP=$CPP
+
 
   VARNAME=\$BE_CXXCPP
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_CXXCPP=$BE_VAR
-     elif test "x" != "x"; then
-       CLIENT_CXXCPP=
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_CXXCPP to $CXXCPP
-       CLIENT_CXXCPP=
-     else
-       CLIENT_CXXCPP=$CXXCPP
-     fi
-     SERVER_CXXCPP=$CXXCPP
-     FE_CXXCPP=$CXXCPP
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$CXXCPP
-       fi
-     fi
-     CLIENT_CXXCPP=$BE_VAR
-     SERVER_CXXCPP=$BE_VAR
-     FE_CXXCPP=$CXXCPP
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$CXXCPP
+    fi
   fi
+  CLIENT_CXXCPP=$BE_VAR
+  SERVER_CXXCPP=$BE_VAR
+  FE_CXXCPP=$CXXCPP
+
 
   VARNAME=\$BE_STRIP
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_STRIP=$BE_VAR
-     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-strip" != "x"; then
-       CLIENT_STRIP=${BG_COMP_PATH}powerpc64-bgq-linux-strip
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_STRIP to $STRIP
-       CLIENT_STRIP=
-     else
-       CLIENT_STRIP=$STRIP
-     fi
-     SERVER_STRIP=$STRIP
-     FE_STRIP=$STRIP
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$STRIP
-       fi
-     fi
-     CLIENT_STRIP=$BE_VAR
-     SERVER_STRIP=$BE_VAR
-     FE_STRIP=$STRIP
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$STRIP
+    fi
   fi
+  CLIENT_STRIP=$BE_VAR
+  SERVER_STRIP=$BE_VAR
+  FE_STRIP=$STRIP
+
 
   VARNAME=\$BE_AR
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_AR=$BE_VAR
-     elif test "x${BG_COMP_PATH}powerpc64-bgq-linux-ar" != "x"; then
-       CLIENT_AR=${BG_COMP_PATH}powerpc64-bgq-linux-ar
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_AR to $AR
-       CLIENT_AR=
-     else
-       CLIENT_AR=$AR
-     fi
-     SERVER_AR=$AR
-     FE_AR=$AR
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$AR
-       fi
-     fi
-     CLIENT_AR=$BE_VAR
-     SERVER_AR=$BE_VAR
-     FE_AR=$AR
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$AR
+    fi
   fi
+  CLIENT_AR=$BE_VAR
+  SERVER_AR=$BE_VAR
+  FE_AR=$AR
+
 
   VARNAME=\$BE_host
   BE_VAR=`eval echo $VARNAME`
-  if test "x$OS_BUILD" == "xbluegene"; then
-     if test "x$BE_VAR" != "x"; then
-       CLIENT_host=$BE_VAR
-     elif test "xpowerpc64-bgq-linux" != "x"; then
-       CLIENT_host=powerpc64-bgq-linux
-     elif test "x$USER_SPECIFIED_COMPS" == "xtrue"; then
-       echo Setting CLIENT_host to $host
-       CLIENT_host=
-     else
-       CLIENT_host=$host
-     fi
-     SERVER_host=$host
-     FE_host=$host
-  elif test "x$OS_BUILD" == "xlinux"; then
-     if test "x$BE_VAR" == "x"; then
-       if test "x$USER_SPECIFIED_COMPS" == "x"; then
-         BE_VAR=$host
-       fi
-     fi
-     CLIENT_host=$BE_VAR
-     SERVER_host=$BE_VAR
-     FE_host=$host
+  if test "x$BE_VAR" == "x"; then
+    if test "x$USER_SPECIFIED_COMPS" == "x"; then
+      BE_VAR=$host
+    fi
   fi
+  CLIENT_host=$BE_VAR
+  SERVER_host=$BE_VAR
+  FE_host=$host
+
 
 
 

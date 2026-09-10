@@ -1,14 +1,4 @@
-pkglib_LTLIBRARIES = 
-
-if SOCKETS
-pkglib_LTLIBRARIES += libspindle_audit_socket.la
-endif
-if PIPES
-pkglib_LTLIBRARIES += libspindle_audit_pipe.la
-endif
-if BITER
-pkglib_LTLIBRARIES += libspindle_audit_biter.la
-endif
+pkglib_LTLIBRARIES = libspindle_audit_pipe.la
 
 AM_CFLAGS = -fvisibility=hidden
 
@@ -30,14 +20,6 @@ endif
 
 AUDITLIB = $(top_builddir)/client/libspindle_audit.la
 
-libspindle_audit_socket_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
-libspindle_audit_socket_la_LIBADD = $(top_builddir)/client/libspindlec_socket.la $(AUDITLIB)
-libspindle_audit_socket_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
-
 libspindle_audit_pipe_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
 libspindle_audit_pipe_la_LIBADD = $(top_builddir)/client/libspindlec_pipe.la $(AUDITLIB)
-libspindle_audit_pipe_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
-
-libspindle_audit_biter_la_SOURCES = $(BASE_SRCS) $(ARCH_SRCS)
-libspindle_audit_biter_la_LIBADD = $(top_builddir)/client/libspindlec_biter.la $(AUDITLIB)
-libspindle_audit_biter_la_LDFLAGS = -shared -avoid-version -Wl,-rpath,$(GLIBC_BE_DIR)
+libspindle_audit_pipe_la_LDFLAGS = -shared -avoid-version

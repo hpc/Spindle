@@ -6,10 +6,5 @@ libbiterd_la_SOURCES = $(top_srcdir)/../biter/biterd.c $(top_srcdir)/../biter/se
 libbiterd_la_CFLAGS = -DSERVER
 AM_CPPFLAGS = -I$(top_srcdir)/../biter -I$(top_srcdir)/../logging -I$(top_srcdir)/../include
 
-if BGQ_BLD
-libbiterd_la_SOURCES += $(top_srcdir)/../biter/bgq_daemon_ids.c
-endif
-if LINUX_BLD
 libbiterd_la_SOURCES += $(top_srcdir)/../biter/linux_daemon_ids.c
-endif
 
