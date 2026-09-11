@@ -21,6 +21,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -32,24 +33,28 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_api.h"
 #include "crash_handler.h"
 #include "crash_arch.h"
+#include "crash_corename.h"
 #include "crash_fmt.h"
 #include "crash_io.h"
 #include "crash_lib_offset.h"
 #include "crash_sigchain.h"
 
 #define CRASH_ALTSTACK_SIZE 65536
-#define CRASH_SITE_BUF_SIZE (PATH_MAX + 32)
+/* Payload has to fit in server's receive buffer which is size MAX_PATH_LEN */
+#define CRASH_SITE_BUF_SIZE (MAX_PATH_LEN - 3 * sizeof(int32_t))
 #define CRASH_REQ_BUF_SIZE \
-    (sizeof(ldcs_message_header_t) + 2 * sizeof(int32_t) + CRASH_SITE_BUF_SIZE)
+    (sizeof(ldcs_message_header_t) + 3 * sizeof(int32_t) + CRASH_SITE_BUF_SIZE)
 #define CRASH_ABORT_MSG_MAX  (64u * 1024u)
 
-static int  crash_global_rank = -1;
-static int  crash_read_fd     = -1;
-static int  crash_write_fd    = -1;
-static int  crash_installed   = 0;
+static int  crash_global_rank  = -1;
+static int  crash_display_rank = -1;
+static int  crash_read_fd      = -1;
+static int  crash_write_fd     = -1;
+static int  crash_installed    = 0;
 
 static char *crash_altstack_buf = NULL;
 static char crash_site_buf[CRASH_SITE_BUF_SIZE];
+static char crash_corepath_buf[MAX_PATH_LEN];
 
 static volatile sig_atomic_t handler_active = 0;
 
@@ -72,12 +77,12 @@ static void resolve_pc_to_crash_site(unsigned long pc, char *buf, size_t buflen)
    (void) crash_fmt_lib_offset(buf, buflen, "", pc);
 }
 
-/* Builds the crash report message */
+/* Builds the crash report message. */
 static size_t build_crash_report(char *buf, size_t buflen, int rank,
-                                 const char *site)
+                                 int display_rank, const char *site)
 {
    size_t name_len = strlen(site) + 1;
-   size_t payload_len = 2 * sizeof(int32_t) + name_len;
+   size_t payload_len = 3 * sizeof(int32_t) + name_len;
    size_t total_len = sizeof(ldcs_message_header_t) + payload_len;
    if (total_len > buflen)
       return 0;
@@ -89,10 +94,12 @@ static size_t build_crash_report(char *buf, size_t buflen, int rank,
 
    char *payload = buf + sizeof(hdr);
    int32_t rank32 = (int32_t) rank;
+   int32_t drank32 = (int32_t) display_rank;
    int32_t nlen32 = (int32_t) name_len;
    memcpy(payload, &rank32, sizeof(rank32));
-   memcpy(payload + sizeof(int32_t), &nlen32, sizeof(nlen32));
-   memcpy(payload + 2 * sizeof(int32_t), site, name_len);
+   memcpy(payload + sizeof(int32_t), &drank32, sizeof(drank32));
+   memcpy(payload + 2 * sizeof(int32_t), &nlen32, sizeof(nlen32));
+   memcpy(payload + 3 * sizeof(int32_t), site, name_len);
    return total_len;
 }
 
@@ -121,16 +128,22 @@ static size_t read_abort_msg(char *buf, size_t buflen)
    return n;
 }
 
-/* Builds the crash site string according to the signal type.
-   For SIGABRT, use the abort_msg; otherwise, <library>+<offset>. */
+/* Builds the crash site string <library>+<offset> */
 static void crash_build_site(int sig, unsigned long pc,
                              char *buf, size_t buflen)
 {
+   if (buflen == 0) return;
+   buf[0] = '\0';
+
    if (sig == SIGABRT) {
-      static const char prefix[] = "abort:";
-      const size_t prefix_len = sizeof(prefix) - 1;
-      memcpy(buf, prefix, prefix_len);
-      size_t n = read_abort_msg(buf + prefix_len, buflen - prefix_len);
+      static const char abort_prefix[] = "abort:";
+      const size_t abort_len = sizeof(abort_prefix) - 1;
+      size_t n = 0;
+
+      if (buflen > abort_len) {
+         memcpy(buf, abort_prefix, abort_len);
+         n = read_abort_msg(buf + abort_len, buflen - abort_len);
+      }
       // if we failed to get the abort string, fall back to <library>+<offset>
       if (n == 0)
          resolve_pc_to_crash_site(pc, buf, buflen);
@@ -139,19 +152,49 @@ static void crash_build_site(int sig, unsigned long pc,
    }
 }
 
-/* Send the CRASH_REQUEST to the server and read back the CRASH_RESPONSE.
+/* Send a message with string payload with raw write */
+static int crash_send_string(ldcs_message_ids_t type, const char *str)
+{
+   ldcs_message_header_t hdr;
+   hdr.type = type;
+   hdr.len  = strlen(str) + 1;
+   if (crash_raw_write(crash_write_fd, &hdr, sizeof hdr) != 0)
+      return -1;
+   return crash_raw_write(crash_write_fd, str, hdr.len);
+}
+
+/* Send the executable, the predicted core file name (if any), and the
+   CRASH_REPORT to the server and read back the CRASH_RESPONSE.
    We can't use the normal send/recv here because we're in a signal handler,
    so instead do raw read/write to pipe. */
-static int crash_query_server(const char *site, int rank, int32_t *winner)
+static int crash_query_server(const char *site, const char *corepath,
+                              int rank, int32_t *winner)
 {
+   /* There are three parts to the crash query.
+    * These are split into three messages because the server reads the
+    * client message into a static buffer of size MAX_PATH_LEN=4096,
+    * so no one message can be bigger than that. */
+
+   /* First, the crash executable */
+   if (crash_send_string(LDCS_MSG_CRASH_EXE, crash_lib_offset_exe_path()) != 0)
+      return -1;
+
+   /* Second, the predicted core path */
+   if (corepath && crash_send_string(LDCS_MSG_CRASH_COREPATH, corepath) != 0)
+      return -1;
+
+   /* Finally, the crash site */
    char req_buf[CRASH_REQ_BUF_SIZE];
-   size_t req_len = build_crash_report(req_buf, sizeof req_buf, rank, site);
+   size_t req_len = build_crash_report(req_buf, sizeof req_buf, rank,
+                                       crash_display_rank, site);
    if (req_len == 0)
       return -1;
 
    if (crash_raw_write(crash_write_fd, req_buf, req_len) != 0)
       return -1;
 
+   /* The server responds with a message indicating which rank was
+    * selected as the representative */
    ldcs_message_header_t resp_hdr;
    if (crash_raw_read_exact(crash_read_fd, &resp_hdr, sizeof resp_hdr) != 0)
       return -1;
@@ -224,8 +267,17 @@ static void crash_handler_entry(int sig, siginfo_t *info, void *uctx)
    unsigned long pc = extract_pc(uctx);
    crash_build_site(sig, pc, crash_site_buf, sizeof crash_site_buf);
 
+   /* Now we predict the path to the coredump that we will produce, if we
+      we are selected to produce one. */
+   const char *corepath = NULL;
+   if (opts & OPT_CRASH_LOG) {
+      crash_corename_predict(sig, crash_corepath_buf, sizeof crash_corepath_buf);
+      if (crash_corepath_buf[0] != '\0')
+         corepath = crash_corepath_buf;
+   }
+
    int32_t winning_rank = -1;
-   if (crash_query_server(crash_site_buf, crash_global_rank,
+   if (crash_query_server(crash_site_buf, corepath, crash_global_rank,
                           &winning_rank) != 0)
       goto reraise;
 
@@ -239,8 +291,38 @@ static void crash_handler_entry(int sig, siginfo_t *info, void *uctx)
 
 reraise:
    /* Finally, we restore the default signal handler and return,
-      terminating the process and producing a coredump if the limit allows.. */
+      terminating the process and producing a coredump if the limit allows. */
    signal(sig, SIG_DFL);
+   /* User-sent signals, such as from kill(), don't get triggered again
+    * automatically after return from a signal handler. si_code is 
+    * negative or zero for user-caused signals and positive for kernel-caused
+    * signals. If this signal was user-caused, explicitly reraise. */
+   if (info->si_code <= 0)
+      raise(sig);
+}
+
+/* Resolves a display rank for use in crash logging from launcher/MPI env vars. */
+static int resolve_display_rank(int fallback)
+{
+   static const char *const rank_vars[] = {
+      "PMIX_RANK", "OMPI_COMM_WORLD_RANK", "PMI_RANK", "JSM_NAMESPACE_RANK",
+      "FLUX_TASK_RANK", "MV2_COMM_WORLD_RANK", "PALS_RANKID", "ALPS_APP_PE",
+      "SLURM_PROCID"
+   };
+   for (size_t i = 0; i < sizeof(rank_vars) / sizeof(rank_vars[0]); i++) {
+      const char *val = getenv(rank_vars[i]);
+      if (val == NULL || val[0] == '\0')
+         continue;
+      char *end = NULL;
+      long rank = strtol(val, &end, 10);
+      if (*end != '\0' || rank < 0 || rank > INT32_MAX)
+         continue;
+      debug_printf2("display rank %ld from %s\n",
+                    rank, rank_vars[i]);
+      return (int) rank;
+   }
+   debug_printf2("could not detect MPI rank from environment\n");
+   return fallback;
 }
 
 /* Performs setup and installs the signal handler. */
@@ -252,6 +334,7 @@ int crash_handler_install(int global_rank, int ldcsid_in)
    crash_sigchain_init();
 
    crash_global_rank = global_rank;
+   crash_display_rank = resolve_display_rank(global_rank);
 
    if (client_get_raw_fds(ldcsid_in, &crash_read_fd, &crash_write_fd) != 0 ||
        crash_read_fd < 0 || crash_write_fd < 0) {
@@ -270,26 +353,35 @@ int crash_handler_install(int global_rank, int ldcsid_in)
                            tmp, sizeof tmp);
    }
 
-   /* Set up the altstack.
+   /* Set up the altstack if enabled.
       If the reason for a segfault is a stack overflow, the signal handler itself
       will have no stack available. We handle this by registering an alternate stack
-      for the signal handler. However, note that this is per-thread, and currently
-      we do not register an alternate stack on any thread other than the main thread.
+      for the signal handler if requested with --crash-altstack.
+      However, note that this is per-thread, and currently we do not register an
+      alternate stack on any thread other than the main thread.
       TODO: handle alternate stack on other threads */
-   crash_altstack_buf = mmap(NULL, CRASH_ALTSTACK_SIZE, PROT_READ | PROT_WRITE,
-                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-   if (crash_altstack_buf == MAP_FAILED) {
-      crash_altstack_buf = NULL;
-   } else {
-      stack_t ss;
-      memset(&ss, 0, sizeof ss);
-      ss.ss_sp = crash_altstack_buf;
-      ss.ss_size = CRASH_ALTSTACK_SIZE;
-      ss.ss_flags = 0;
-      if (sigaltstack(&ss, NULL) != 0) {
-         munmap(crash_altstack_buf, CRASH_ALTSTACK_SIZE);
+   if (opts & OPT_CRASH_ALTSTACK) {
+      crash_altstack_buf = mmap(NULL, CRASH_ALTSTACK_SIZE, PROT_READ | PROT_WRITE,
+                                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+      if (crash_altstack_buf == MAP_FAILED) {
          crash_altstack_buf = NULL;
+         debug_printf2("crash handler: failed to mmap altstack\n");
+      } else {
+         stack_t ss;
+         memset(&ss, 0, sizeof ss);
+         ss.ss_sp = crash_altstack_buf;
+         ss.ss_size = CRASH_ALTSTACK_SIZE;
+         ss.ss_flags = 0;
+         if (sigaltstack(&ss, NULL) != 0) {
+            munmap(crash_altstack_buf, CRASH_ALTSTACK_SIZE);
+            crash_altstack_buf = NULL;
+            debug_printf2("crash handler: failed to register altstack\n");
+         } else {
+            debug_printf2("crash handler: registered altstack\n");
+         }
       }
+   } else {
+      crash_altstack_buf = NULL;
    }
 
    /* Install the signal handler. */

@@ -12,6 +12,7 @@ libspindleflux_la_SOURCES = \
 
 libspindleflux_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/include \
+	-I$(top_srcdir)/src/utils \
 	$(FLUX_CORE_CFLAGS) \
 	$(FLUX_HOSTLIST_CFLAGS)
 

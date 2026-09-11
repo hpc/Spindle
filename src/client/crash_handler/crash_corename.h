@@ -14,16 +14,13 @@ program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#if !defined(CRASH_LIB_OFFSET_H_)
-#define CRASH_LIB_OFFSET_H_
+#if !defined(CRASH_CORENAME_H_)
+#define CRASH_CORENAME_H_
 
 #include <stddef.h>
 
-void crash_lib_offset_prime(void);
-
-const char *crash_lib_offset_exe_path(void);
-
-int crash_lib_offset_get_signal_safe(unsigned long pc,
-                                     char *buf, size_t buflen);
+/* Predicts the core file the kernel would write for a crash of the calling
+   thread by signal sig into corename as an absolute path. */
+int crash_corename_predict(int sig, char *corename, size_t corename_size);
 
 #endif

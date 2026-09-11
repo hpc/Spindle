@@ -37,6 +37,8 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define SPINDLE_USE_SESSION "SPINDLE_USE_SESSION"
 #define SPANK_SPINDLE_USE_SESSION "SPANK_" SPINDLE_USE_SESSION
+#define SPINDLE_SESSION_OPTS "SPINDLE_SESSION_OPTS"
+#define SPANK_SPINDLE_SESSION_OPTS "SPANK_" SPINDLE_SESSION_OPTS
 
 SPINDLE_EXPORT extern const char plugin_name[];
 SPINDLE_EXPORT extern const char plugin_type[];
@@ -101,6 +103,7 @@ static pid_t pidBE = 0;
 static pid_t pidFE = 0;
 static __thread spank_t current_spank;
 static const char *user_options = NULL;
+static const char *session_options = NULL;
 static int enable_spindle = 0;
 static int start_session = 0;
 static int prolog_alloc_mode = 0;
@@ -121,8 +124,8 @@ struct spank_option spank_options[] =
 // CLI options for salloc and sbatch
 struct spank_option session_option =
 {
-   "spindle-session", NULL, 
-   "Start a Spindle session for this allocation", 0, 0,
+   "spindle-session", "[spindle options]",
+   "Start a Spindle session for this allocation", 2, 0,
    (spank_opt_cb_f) spindle_session_options
 };
 
@@ -154,10 +157,11 @@ static int should_use_session(spank_t spank) {
       spank_option_getopt (but this doesn't work in remote context
       which is why we need cases for both remote and job script). */
    if (context == S_CTX_JOB_SCRIPT) {
+      char *optval = NULL;
       session_env = getenv(SPANK_SPINDLE_USE_SESSION);
-      if (session_env) 
+      if (session_env)
          return 1;
-      err = spank_option_getopt(spank, &session_option, NULL);
+      err = spank_option_getopt(spank, &session_option, &optval);
       return (err == ESPANK_SUCCESS);
    }
 
@@ -169,6 +173,45 @@ static int should_use_session(spank_t spank) {
    }
 
    return 0;
+}
+
+/* Slurm stores an absent optional argument as the string "(null)" */
+static const char *filter_session_optval(const char *val)
+{
+   if (!val || val[0] == '\0' || strcmp(val, "(null)") == 0)
+      return NULL;
+   return val;
+}
+
+/* Retrieves the optional argument of --spindle-session */
+static const char *get_session_options(spank_t spank)
+{
+   spank_context_t context;
+   char *val = NULL;
+
+   context = spank_context();
+   if (context == S_CTX_LOCAL || context == S_CTX_ALLOCATOR)
+      return filter_session_optval(session_options ? session_options
+                                                   : getenv(SPANK_SPINDLE_SESSION_OPTS));
+   if (context == S_CTX_REMOTE)
+      return filter_session_optval(readSpankEnv(spank, SPANK_SPINDLE_SESSION_OPTS));
+   if (context == S_CTX_JOB_SCRIPT) {
+      val = getenv(SPANK_SPINDLE_SESSION_OPTS);
+      if (!val && spank_option_getopt(spank, &session_option, &val) != ESPANK_SUCCESS)
+         val = NULL;
+      return filter_session_optval(val);
+   }
+   return NULL;
+}
+
+/* In session mode, point process_spindle_args' merge at the session's options. */
+static void apply_session_options(spank_t spank)
+{
+   const char *opts = get_session_options(spank);
+   if (opts) {
+      sdprintf(2, "Using spindle session options '%s'\n", opts);
+      user_options = opts;
+   }
 }
 
 int slurm_spank_init(spank_t spank, int ac, char *argv[]) {
@@ -211,6 +254,8 @@ int slurm_spank_init_post_opt(spank_t spank, int ac, char *argv[]) {
       }
       if (start_session) {
          setenv(SPANK_SPINDLE_USE_SESSION, "1", 1);
+         if (session_options)
+            setenv(SPANK_SPINDLE_SESSION_OPTS, session_options, 1);
       }
 
       if (start_session) {
@@ -242,6 +287,14 @@ static int forward_environment_to_job_control(spank_t spank)
       /* Forward session status from srun to job prolog. */
       err = spank_job_control_setenv(spank, SPINDLE_USE_SESSION, "1", 1);
       if (err != ESPANK_SUCCESS) return -1;
+      /* Forward the session's spindle options (inherited from salloc's
+         environment) so the epilog can see them; SPANK env vars do not
+         otherwise propagate to the epilog. */
+      envVal = getenv(SPANK_SPINDLE_SESSION_OPTS);
+      if (envVal) {
+         err = spank_job_control_setenv(spank, SPINDLE_SESSION_OPTS, envVal, 1);
+         if (err != ESPANK_SUCCESS) return -1;
+      }
    }
 
    envVal = getenv("SPINDLE_DEBUG");
@@ -604,6 +657,8 @@ static int handleStart(void *params, char **output_str)
 
    sdprintf(1, "In handleStart\n");
    use_session = should_use_session(spank);
+   if (use_session)
+      apply_session_options(spank);
    result = process_spindle_args(spank, site_argc, site_argv, &args, NULL, NULL, use_session);
    if (result == -1) {
       sdprintf(1, "ERROR: Could not process spindle args in handlestart\n");
@@ -1150,10 +1205,42 @@ static int spindle_options(int val, const char *optarg, int remote)
    return 0;
 }
 
+/* Validate session options so that we can fail immediately at salloc/sbatch
+   if they are invalid, rather than failing only when we get to srun */
+static int validate_session_options(const char *opts)
+{
+   spindle_args_t args = {0};
+   char *copy, *err_string = NULL;
+   char **argv = NULL;
+   int argc = 0, result, i;
+
+   copy = strdup(opts);
+   decodeCmdArgs(copy, &argc, &argv);
+   result = fillInSpindleArgsCmdlineFE(&args, SPINDLE_FILLARGS_NOUNIQUEID | SPINDLE_FILLARGS_NONUMBER,
+                                       argc, argv, &err_string);
+   if (result == -1 && err_string && err_string[0]) {
+      slurm_error("Error processing Spindle session arguments: %s", err_string);
+   }
+   for (i = 0; i < argc; i++)
+      free(argv[i]);
+   free(argv);
+   free(copy);
+   return result;
+}
+
 /* Handles arguments to salloc and sbatch */
 static int spindle_session_options(int val, const char *optarg, int remote)
 {
+   spank_context_t context;
+
    start_session = 1;
+   if (optarg) {
+      context = spank_context();
+      if ((context == S_CTX_ALLOCATOR || context == S_CTX_LOCAL) &&
+          validate_session_options(optarg) == -1)
+         return -1;
+      session_options = optarg;
+   }
    return 0;
 }
 
@@ -1314,6 +1401,8 @@ static int handleExit(void *params, char **output_str)
 
    sdprintf(1, "In handleExit\n");
    use_session = should_use_session(spank);
+   if (use_session)
+      apply_session_options(spank);
    result = process_spindle_args(spank, site_argc, site_argv, &args, NULL, NULL, use_session);
    if (result == -1) {
       sdprintf(1, "ERROR: Could not process spindle args in handleExit\n");

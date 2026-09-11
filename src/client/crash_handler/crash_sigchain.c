@@ -404,13 +404,18 @@ void crash_sigchain_init(void)
 int crash_sigchain_fault_resolved(int sig, siginfo_t *info, void *uctx,
                                   unsigned long pc_before)
 {
-   /* PC advanced inside the application handled. */
+   /* PC advanced inside the application handler. */
    if (extract_pc(uctx) != pc_before)
       return 1;
 
    /* The remaining possible fixes only apply to faulting on an
       addresss (SIGSEGV, SIGBUS). */
    if (sig != SIGSEGV && sig != SIGBUS)
+      return 1;
+
+   /* A user-sent signal has no faulting instruction to retry.
+      Rather, the application handler returning consumes it. */
+   if (info->si_code <= 0)
       return 1;
 
    /* If we faulted on a write, check if the address is now mapped writable.

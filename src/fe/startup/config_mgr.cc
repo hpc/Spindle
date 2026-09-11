@@ -18,6 +18,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "config_parser.h"
 #include "spindle_debug.h"
 #include "config.h"
+#include "parseloc.h"
 
 #include <sstream>
 #include <functional>
@@ -151,6 +152,8 @@ using namespace std;
 #else
 #define DEFAULT_CRASH_DEDUP_STR "false"
 #endif
+
+#define DEFAULT_CRASH_ALTSTACK_STR "false"
 
 #if defined(PYTHON_INST_PREFIX)
 #define PYTHON_PREFIX_DEFAULT PYTHON_INST_PREFIX
@@ -310,7 +313,11 @@ void initOptionsList()
    { confRshCommand, "rsh-command", shortRSHCmd, groupMisc, cvString, {}, RSHCMD_STR,
      "The command to run rsh/ssh, when doing RSH startup mode." },
    { confCrashDedup, "crash-dedup", shortCrashDedup, groupMisc, cvBool, {}, DEFAULT_CRASH_DEDUP_STR,
-     "Deduplicate coredumps by crash site, emitting only one coredump per unique site." }
+     "Deduplicate coredumps by crash site, emitting only one coredump per unique site." },
+   { confCrashAltstack, "crash-altstack", shortCrashAltstack, groupMisc, cvBool, {}, DEFAULT_CRASH_ALTSTACK_STR,
+     "Registers an alternate stack for signal handlers used by crash deduplication." },
+   { confCrashLog, "crash-log", shortCrashLog, groupMisc, cvStringOptional, {}, "",
+     "Log deduplicated crash sites, showing which ranks crashed at which sites." }
   } );
 }
 
@@ -1018,6 +1025,17 @@ bool ConfigMap::toSpindleArgs(spindle_args_t &args, bool alloc_strs) const
             break;
          case confCrashDedup:
             setopt(args.opts, OPT_CRASH_HANDLER, boolresult);
+            break;
+         case confCrashAltstack:
+            setopt(args.opts, OPT_CRASH_ALTSTACK, boolresult);
+            break;
+         case confCrashLog:
+            args.crash_log = resolve_crash_log_path(strresult.empty() ? NULL : strresult.c_str(),
+                                                    getNumber());
+            if (!args.crash_log)
+               return false;
+            setopt(args.opts, OPT_CRASH_LOG, true);
+            setopt(args.opts, OPT_CRASH_HANDLER, true);
             break;
       }
    }

@@ -25,6 +25,7 @@ extern "C" {
    
 char *parse_location(char *loc, number_t number);
 char *parse_location_noerr(char *loc, number_t number);
+char *resolve_crash_log_path(const char *value, number_t number);
 char *realize(char *path);
 char **parse_colonsep_prefixes(char *colonsep_list, number_t number);
 int is_local_prefix(const char *path, char **local_prefixes);

@@ -149,6 +149,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.cachepath_bitidx = 0;
    ldcs_process_data.number = args->number;
    ldcs_process_data.pythonprefix = args->pythonprefix;
+   ldcs_process_data.crash_log = args->crash_log;
    ldcs_process_data.localprefix = args->local_prefixes;
    ldcs_process_data.exec_excludes = args->exec_excludes;
    ldcs_process_data.numa_substrs = args->numa_files;
@@ -176,6 +177,7 @@ int ldcs_audit_server_process(spindle_args_t *args)
    ldcs_process_data.crash_sites = NULL;
    ldcs_process_data.crash_sites_count = 0;
    ldcs_process_data.crash_sites_cap = 0;
+   ldcs_process_data.crash_log_teardown = 0;
 
    if (ldcs_process_data.opts & OPT_PULL) {
       debug_printf("Using PULL model\n");

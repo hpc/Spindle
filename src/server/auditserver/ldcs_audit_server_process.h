@@ -101,6 +101,8 @@ struct ldcs_client_struct
   char                 query_aliasfrom[MAX_PATH_LEN+2];
   int                  query_is_numa_replicated;
   double               query_arrival_time;
+  char                 *crash_exe;       /* CRASH_EXE payload held until this client's CRASH_REPORT */
+  char                 *crash_corepath;  /* CRASH_COREPATH payload, likewise; NULL if none was sent */
 };
 typedef struct ldcs_client_struct ldcs_client_t;
 
@@ -131,6 +133,11 @@ typedef struct crash_site_entry_t {
    size_t site_len;
    int resolved;
    crash_waiter_t waiter;
+   int exemplar_rank;
+   char *exemplar_corepath;
+   int32_t *log_ranks;
+   int log_ranks_count;
+   int log_ranks_cap;
 } crash_site_entry_t;
 
 struct ldcs_process_data_struct
@@ -157,6 +164,7 @@ struct ldcs_process_data_struct
   uint64_t cachepath_bitidx;    /* Bit index of valid cachepaths on a given server. */
   char *hostname;
   char *pythonprefix;
+  char *crash_log;              /* Path of the crash-site log written by the root server. */
   char *localprefix;
   char *exec_excludes;
   char *numa_substrs;
@@ -187,6 +195,7 @@ struct ldcs_process_data_struct
   crash_site_entry_t *crash_sites;
   int crash_sites_count;
   int crash_sites_cap;
+  int crash_log_teardown;
 
   /* multi daemon support */
   int md_rank;

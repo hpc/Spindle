@@ -95,6 +95,9 @@ char* _message_type_to_str (ldcs_message_ids_t type) {
       STR_CASE(LDCS_MSG_CHOSEN_CACHEPATH);
       STR_CASE(LDCS_MSG_CRASH_REPORT);
       STR_CASE(LDCS_MSG_CRASH_RESPONSE);
+      STR_CASE(LDCS_MSG_CRASH_LOG);
+      STR_CASE(LDCS_MSG_CRASH_EXE);
+      STR_CASE(LDCS_MSG_CRASH_COREPATH);
       STR_CASE(LDCS_MSG_UNKNOWN);
    }
    return "unknown";
