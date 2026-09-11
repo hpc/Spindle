@@ -86,7 +86,7 @@ static char *default_subaudit_libstr = libstr_biter_subaudit;
 #error Unknown connection type
 #endif
 
-extern int spindle_mkdir(char *path);
+extern int spindle_mkdir(char *path, int should_track);
 extern char *parse_location(char *loc, number_t number);
 extern char *realize(char *path);
 
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
       }
    }
 
-   if( -1 == getFirstValidPath( commpaths, &commpath, number ) ){
+   if( -1 == getFirstValidPath( commpaths, &commpath, number, 0 ) ){  // No tracking - client doesn't track directories
        return -1;
    }
 

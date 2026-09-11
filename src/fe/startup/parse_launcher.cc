@@ -292,7 +292,7 @@ int ModifyArgv::modifyCmdLine()
    snprintf(options_str, 32, "%lu", (unsigned long) params->opts);
    string options(options_str);
    
-   int rc = getFirstValidPath( params->commpaths, &( params->commpath ), params->number );
+   int rc = getFirstValidPath( params->commpaths, &( params->commpath ), params->number, 0 );  // FE doesn't track
    if( rc != 0 ){
        return -1;
    }

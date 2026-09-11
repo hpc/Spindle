@@ -207,7 +207,8 @@ int ldcs_audit_server_process(spindle_args_t *args)
    determineValidCachePaths(
            &ldcs_process_data.cachepath_bitidx,
            ldcs_process_data.cachepaths,
-           ldcs_process_data.number );
+           ldcs_process_data.number,
+           1 );  // Track for cleanup
    result = handle_cachepath_consensus(&ldcs_process_data);
    if (result == -1) {
       err_printf("Could not determine cachepath consensus\n");

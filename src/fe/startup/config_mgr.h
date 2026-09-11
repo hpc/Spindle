@@ -31,6 +31,7 @@ enum SpindleConfigID {
    confNumPorts,
    confCommPaths,
    confCachePaths,
+   confSessionPaths,
    confCachePrefix,
    confPythonPrefix,
    confLocalPrefix,
@@ -130,6 +131,7 @@ enum CmdlineShortOptions {
    shortPatchLdso = 299,
    shortCachePaths = 300,
    shortCrashDedup = 301,
+   shortSessionPaths = 302,
 };
 
 enum CmdlineGroups {

@@ -147,7 +147,7 @@ int spindleRunBE(unsigned int port, unsigned int num_ports, unique_id_t unique_i
    
    
    /* Find the first valid commpath in the commpaths list. */
-   if( -1 == getFirstValidPath( args.commpaths, &( args.commpath ), args.number ) ){
+   if( -1 == getFirstValidPath( args.commpaths, &( args.commpath ), args.number, 1 ) ){  // BE tracks for cleanup
        // Failed.
        err_printf("Failed to find valid commpath in %s\n", args.commpaths);
        if (args.startup_type == startup_external)

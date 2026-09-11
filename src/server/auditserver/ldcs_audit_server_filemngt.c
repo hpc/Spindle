@@ -48,7 +48,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 char *_ldcs_audit_server_cachepath;
 static char *normalized_tmpdir;
 static char *_ldcs_audit_server_commpath;
-extern int spindle_mkdir(char *path);
+extern int spindle_mkdir(char *path, int should_track);
 
 static char *filemngt_normalize_dir(char *dir) {
    char *newpath = realpath(dir, NULL);
@@ -60,7 +60,7 @@ int ldcs_audit_server_filemngt_init (char *cachepath, char *commpath) {
 
    _ldcs_audit_server_cachepath = cachepath;
    _ldcs_audit_server_commpath  = commpath;
-   if (-1 == spindle_mkdir(_ldcs_audit_server_cachepath)) {
+   if (-1 == spindle_mkdir(_ldcs_audit_server_cachepath, 1)) {  // Track for cleanup
       err_printf("mkdir: ERROR during mkdir %s\n", _ldcs_audit_server_cachepath);
       _error("mkdir failed");
    }
@@ -155,7 +155,7 @@ char *filemngt_calc_localname(char *global_name, calc_local_t reqtype)
    cut_dirpart_slash = (dirpart[0] == '/') ? 1 : 0;
    
    snprintf(target, sizeof(target), "%s%s%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash);
-   spindle_mkdir(target);
+   spindle_mkdir(target, 1);  // Track for cleanup
 
    snprintf(target, sizeof(target), "%s%s%s/%s", _ldcs_audit_server_cachepath, endslash, dirpart+cut_dirpart_slash, filepart);
 

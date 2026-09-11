@@ -35,7 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "ccwarns.h"
 #include "spindle_launch.h"
 
-extern int spindle_mkdir(char *orig_path);
+extern int spindle_mkdir(char *orig_path, int should_track);
 
 #if defined(CUSTOM_GETENV)
 extern char *custom_getenv(char*);
@@ -306,16 +306,18 @@ int is_local_prefix(const char *path, char **local_prefixes) {
  *
  * If not NULL, then realizedPath, parsedPath, and/or symbolicPath will hold the respective intermediate/final results.
  *
+ * should_track: whether spindle_mkdir should track directories for cleanup (1=yes, 0=no)
+ *
  * Return 1 if the candidatePath is valid, otherwise 0.
  */
-static int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number ){
+static int validateCandidatePath( char *candidatePath, char **realizedPath, char **parsedPath, char **symbolicPath, number_t number, int should_track ){
     int rc;
     char *parsedCandidatePath, *realizedCandidatePath;
     parsedCandidatePath = parse_location( candidatePath, number );
     if( parsedCandidatePath ){
        realizedCandidatePath = realize( parsedCandidatePath );
        if( realizedCandidatePath ){
-           rc = spindle_mkdir( parsedCandidatePath );
+           rc = spindle_mkdir( parsedCandidatePath, should_track );
            if( 0 == rc ){
                // candidatePath is going to be freed in the calling function.
                //   symbolicPath needs a strdup().  parsedPath() and realizedPath()
@@ -347,7 +349,7 @@ static int validateCandidatePath( char *candidatePath, char **realizedPath, char
  */
 static char *realizedCachePaths[64], *parsedCachePaths[64], *symbolicCachePaths[64];
 
-void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number ){
+void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number_t number, int should_track ){
 
     char *saveptr, *candidatePath, *pathList = strdup( origPathList );
     size_t pathList_len = strlen( pathList );
@@ -362,7 +364,7 @@ void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number
                             candidatePath,
                             &realizedCachePaths[bitoffset],
                             &parsedCachePaths[bitoffset],
-                            &symbolicCachePaths[bitoffset], number ) << bitoffset;
+                            &symbolicCachePaths[bitoffset], number, should_track ) << bitoffset;
         bitoffset++;
         candidatePath = strtok_r( NULL, ":", &saveptr );
     }
@@ -370,13 +372,13 @@ void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number
     free( pathList );
 }
 
-int getFirstValidPath( char *origPathList, char **firstValidPath, number_t number ){
+int getFirstValidPath( char *origPathList, char **firstValidPath, number_t number, int should_track ){
     char *saveptr, *candidatePath, *pathList = strdup( origPathList );
     int rc = 0;
 
     candidatePath = strtok_r( pathList, ":", &saveptr );
     while( NULL != candidatePath ){
-        rc = validateCandidatePath( candidatePath, firstValidPath, NULL, NULL, number );
+        rc = validateCandidatePath( candidatePath, firstValidPath, NULL, NULL, number, should_track );
         if( 1 == rc ){ // success
             break;
         }

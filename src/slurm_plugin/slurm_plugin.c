@@ -795,7 +795,7 @@ static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv
    }
 
 
-   if( -1 == getFirstValidPath( args->commpaths, &( args->commpath ), args->number ) ){
+   if( -1 == getFirstValidPath( args->commpaths, &( args->commpath ), args->number, 0 ) ){  // Plugin doesn't track
        return -1;
    }
 
