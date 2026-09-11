@@ -9,8 +9,9 @@
 /* Colon-separated list of potential back-end cache directories */
 #undef CACHEPATHS
 
-/* Back-end directory for communication and housekeeping */
-#undef COMMPATH
+/* Colon-separated list of candidate paths for back-end communication and
+   housekeeping */
+#undef COMMPATHS
 
 /* Define if were using biter for client/server communication */
 #undef COMM_BITER

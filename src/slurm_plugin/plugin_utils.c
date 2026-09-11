@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include "plugin_utils.h"
+#include "parseloc.h"
 
 #if !defined(STR)
 #define XSTR(X) #X
@@ -297,46 +298,19 @@ int isFEHost(char **hostlist, unsigned int num_hosts)
    (void) error;
    return feresult;      
 }
-
-static char* locSpecificDir(spindle_args_t *params) 
-{
-   char *dir = NULL, *expanded_dir = NULL, *realized_dir = NULL;
-   
-   dir = params->commpath;
-   if (!dir) {
-      sdprintf(1, "ERROR: Location not filled in\n");
-      goto done;
-   }
-   expanded_dir = parse_location(dir, params->number);
-   if (!expanded_dir) {
-      sdprintf(1, "ERROR: Could not expand file-system dir %s\n", dir);
-      goto done;
-   }
-   realized_dir = realize(expanded_dir);
-   if (!realized_dir) {
-      sdprintf(1, "ERROR: Could not turn dir to a real path\n");
-   }
-
-  done:
-   if (expanded_dir)
-      free(expanded_dir);
-
-   return realized_dir;
-}
-
 #define SOCKET_PREFIX "spFE"
 
 static char* exitSocketPath(spindle_args_t *params)
 {
-   char *realized_dir, *socket_path = NULL;
+   char *realized_dir = NULL, *socket_path = NULL;
    char session_id_str[32];
    size_t socket_path_len;
 
-   realized_dir = locSpecificDir(params);
-   if (!realized_dir) {
+   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number )){
       err_printf("Could not get real path for FE exit socket\n");
       goto done;
    }
+   realized_dir = strdup( params->commpath );
 
    snprintf(session_id_str, sizeof(session_id_str), "%lu", (unsigned long) params->number);
 
@@ -559,11 +533,10 @@ int isBEProc(spindle_args_t *params, unsigned int exit_phase)
    int beproc_result = -1;
    int fd = -1, error;
    
-   realized_dir = locSpecificDir(params);
-   if (!realized_dir) {
-      sdprintf(1, "ERROR: Could not resolve location directory in isBEProc\n");
-      goto done;
+   if( -1 == getFirstValidPath( params->commpaths, &( params->commpath ), params->number ) ){
+        return -1;
    }
+   realized_dir = strdup( params->commpath );
 
    gethostname(hostname, sizeof(hostname));
    hostname[sizeof(hostname)-1] = '\0';

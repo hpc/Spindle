@@ -382,7 +382,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     int crash_dedup = 0;
     const char *relocaout = NULL, *reloclibs = NULL, *relocexec = NULL, *relocpython = NULL;
     const char *followfork = NULL, *preload = NULL, *level = NULL;
-    const char *pyprefix = NULL, *commpath = NULL;
+    const char *pyprefix = NULL, *commpaths = NULL;
     char *numafiles = NULL, *cachepaths = NULL;
 
     if (flux_shell_getopt_unpack (shell, "spindle", "o", &opts) < 0)
@@ -416,7 +416,7 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
                         "reloc-exec", &relocexec,
                         "reloc-python", &relocpython,
                         "python-prefix", &pyprefix,
-                        "commpath", &commpath,
+                        "commpaths", &commpaths,
                         "numa", &numa,
                         "numa-files", &numafiles,
                         "preload", &preload,
@@ -468,8 +468,8 @@ static int sp_getopts (flux_shell_t *shell, struct spindle_ctx *ctx)
     if( cachepaths ){
         ctx->params.candidate_cachepaths = cachepaths;
     }
-    if (commpath) {
-       ctx->params.commpath = (char *) commpath;
+    if (commpaths) {
+       ctx->params.commpaths = (char *) commpaths;
     }
     if (crash_dedup) {
        ctx->params.opts |= OPT_CRASH_HANDLER;

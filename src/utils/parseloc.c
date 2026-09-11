@@ -370,6 +370,24 @@ void determineValidCachePaths( uint64_t *validBitIdx, char *origPathList, number
     free( pathList );
 }
 
+int getFirstValidPath( char *origPathList, char **firstValidPath, number_t number ){
+    char *saveptr, *candidatePath, *pathList = strdup( origPathList );
+    int rc = 0;
+
+    candidatePath = strtok_r( pathList, ":", &saveptr );
+    while( NULL != candidatePath ){
+        rc = validateCandidatePath( candidatePath, firstValidPath, NULL, NULL, number );
+        if( 1 == rc ){ // success
+            break;
+        }
+        *firstValidPath = NULL;
+        candidatePath = strtok_r( NULL, ":", &saveptr );
+    }
+    free(pathList);
+
+    return (1 == rc) ? 0 : -1;
+}
+
 void getValidCachePathByIndex( uint64_t validBitIdx, char **realizedCachePath, char **parsedCachePath, char **symbolicCachePath ){
     uint64_t bitoffset = 0;
     if (!validBitIdx){

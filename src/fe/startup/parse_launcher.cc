@@ -26,7 +26,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include <set>
 #include <string>
 #include <map>
-
+#include "parseloc.h"
 #include "spindle_launch.h"
 #include "spindle_debug.h"
 #include "config.h"
@@ -286,12 +286,16 @@ void ModifyArgv::print_err(string msg)
    fprintf(stderr, " spindle mpirun -np 4 spindlemarker a.out arg1 arg2\n\n");
 }
 
-void ModifyArgv::modifyCmdLine()
+int ModifyArgv::modifyCmdLine()
 {
    char options_str[32];
    snprintf(options_str, 32, "%lu", (unsigned long) params->opts);
    string options(options_str);
    
+   int rc = getFirstValidPath( params->commpaths, &( params->commpath ), params->number );
+   if( rc != 0 ){
+       return -1;
+   }
    string commpath(params->commpath);
    
    char number_str[32];
@@ -323,7 +327,10 @@ void ModifyArgv::modifyCmdLine()
 #else
          char **a_argv;
          int a_argc;
-         getApplicationArgsFE(params, &a_argc, &a_argv);
+         rc = getApplicationArgsFE(params, &a_argc, &a_argv);
+         if( rc != 0 ){
+             return -1;
+         }
          for (int i = 0; i < a_argc; i++) 
             new_argv[n++] = a_argv[i];
          (void) default_libstr; (void) intercept_libstr; //Not needed on linux
@@ -336,6 +343,7 @@ void ModifyArgv::modifyCmdLine()
    new_argv[n] = NULL;
    assert(n < new_argv_size);
    new_argc = n;
+   return 0;
 }
 
 bool ModifyArgv::getNewArgv(int &newargc, char** &newargv)
@@ -367,7 +375,10 @@ bool ModifyArgv::getNewArgv(int &newargc, char** &newargv)
          return false;
    }
    
-   modifyCmdLine();
+   int rc = modifyCmdLine();
+   if( rc == -1 ){
+       return false;
+   }
    
    if (spindle_debug_prints) {
       string new_cmdline = string(new_argv[0]);

@@ -32,7 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "spindle_launch.h"
 #include "plugin_utils.h"
-
+#include "parseloc.h"
 #include "config.h"
 
 #define SPINDLE_USE_SESSION "SPINDLE_USE_SESSION"
@@ -766,7 +766,6 @@ static unique_id_t getUniqueID(spank_t spank, int session_enabled)
 static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv, unique_id_t unique_id, int session_enabled)
 {
    int result;
-   char *symbolic_commpath, *orig_commpath;
    char *err_string;
 
    current_spank = spank;
@@ -796,18 +795,8 @@ static int fillInArgs(spank_t spank, spindle_args_t *args, int argc, char **argv
    }
 
 
-   symbolic_commpath = args->commpath;
-   orig_commpath = parse_location(symbolic_commpath, args->number);
-   if( !orig_commpath ){
+   if( -1 == getFirstValidPath( args->commpaths, &( args->commpath ), args->number ) ){
        return -1;
-   }
-   args->commpath = realize(orig_commpath);
-   if (args->commpath != orig_commpath)
-      free(orig_commpath);
-   if (!args->commpath) {
-      slurm_error("Spindle Options Error: Could not resolve commpath location\n");
-      sdprintf(1, "ERROR: Could not realize commpath from '%s'\n", symbolic_commpath);
-      return -1;
    }
 
    return 0;

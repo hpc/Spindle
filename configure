@@ -850,7 +850,7 @@ with_default_num_ports
 with_localstorage
 with_cachepaths
 with_cachepath
-with_commpath
+with_commpaths
 with_default_local_prefix
 with_testrm
 with_rm
@@ -1600,8 +1600,8 @@ Optional Packages:
   --with-cachepaths=DIR   Colon-separated list of potential back-end cache
                           directories
 ,
-  --with-compath=DIR      Back-end directory for communication and
-                          housekeeping
+  --with-compaths=DIR     Colon-separated list of candidate paths for back-end
+                          communication and housekeeping
   --with-default-local-prefix=DIRS
                           Colon-seperated list of directories that Spindle
                           will not cache files out of
@@ -16693,11 +16693,11 @@ if test "${with_cachepath+set}" = set; then :
 fi
 
 
-# Check whether --with-commpath was given.
-if test "${with_commpath+set}" = set; then :
-  withval=$with_commpath; COMMPATH=${withval}
+# Check whether --with-commpaths was given.
+if test "${with_commpaths+set}" = set; then :
+  withval=$with_commpaths; COMMPATHS=${withval}
 else
-  COMMPATH=$DEFAULT_LOC
+  COMMPATHS=$DEFAULT_LOC
 fi
 
 
@@ -16705,7 +16705,7 @@ fi
 if test "${with_default_local_prefix+set}" = set; then :
   withval=$with_default_local_prefix; SPINDLE_LOCAL_PREFIX=${withval}
 else
-  SPINDLE_LOCAL_PREFIX="$DEFAULT_LOCAL_PREFIX:$COMMPATH"
+  SPINDLE_LOCAL_PREFIX="$DEFAULT_LOCAL_PREFIX:$COMMPATHS"
 fi
 
 
@@ -16725,7 +16725,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define COMMPATH "$COMMPATH"
+#define COMMPATHS "$COMMPATHS"
 _ACEOF
 
 

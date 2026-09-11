@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "client_api.h"
 #include "exec_util.h"
 #include "shmcache.h"
+#include "parseloc.h"
 
 #include "config.h"
 
@@ -53,7 +54,7 @@ static int rankinfo[4]={-1,-1,-1,-1};
 number_t number;
 static int use_cache;
 static unsigned int cachesize;
-static char *commpath, *number_s, *symbolic_commpath;
+static char *commpath, *number_s, *commpaths;
 static char **cmdline;
 static char *executable;
 static char *client_lib;
@@ -168,7 +169,7 @@ static int parse_cmdline(int argc, char *argv[])
       daemon_args[i - 3] = NULL;
    }
 
-   symbolic_commpath = argv[i++];
+   commpaths = argv[i++];
    i++; // Skip over candidate_cachepaths.
    number_s = argv[i++];
    number = (number_t) strtoul(number_s, NULL, 0);
@@ -182,7 +183,7 @@ static int parse_cmdline(int argc, char *argv[])
    return 0;
 }
 
-static void launch_daemon(char *commpath)
+static void launch_daemon( void )
 {
    /*grand-child fork, then execv daemon.  By grand-child forking we ensure that
      the app won't get confused by seeing an unknown process as a child. */
@@ -192,11 +193,6 @@ static void launch_daemon(char *commpath)
    char unique_file[MAX_PATH_LEN+1];
    char buffer[32];
 
-   result = spindle_mkdir(commpath);
-   if (result == -1) {
-      debug_printf("Exiting due to spindle_mkdir error\n");
-      exit(-1);
-   }
    snprintf(unique_file, MAX_PATH_LEN, "%s/spindle_daemon_pid", commpath);
    unique_file[MAX_PATH_LEN] = '\0';
    fd = open(unique_file, O_CREAT | O_EXCL | O_WRONLY, 0600);
@@ -352,14 +348,12 @@ int main(int argc, char *argv[])
       }
    }
 
-   char *orig_commpath = parse_location(symbolic_commpath, number);
-   if (!orig_commpath) {
-      return -1;
+   if( -1 == getFirstValidPath( commpaths, &commpath, number ) ){
+       return -1;
    }
-   commpath = realize(orig_commpath);
 
    if (daemon_args) {
-      launch_daemon(commpath);
+      launch_daemon();
    }
    
    result = establish_connection();
