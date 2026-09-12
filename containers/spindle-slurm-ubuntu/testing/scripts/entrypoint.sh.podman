@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# Podman-compatible entrypoint for Slurm rshlaunch containers
+
+set -x  # Debug output
+
+echo "SLURM_ROLE: ${SLURM_ROLE}"
+
+echo "Configuring SSH..."
+# Create privilege separation directory
+sudo mkdir -p /run/sshd
+sudo chmod 755 /run/sshd
+
+# Regenerate SSH host keys if they don't exist or are problematic
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    sudo ssh-keygen -A
+fi
+# Fix permissions
+sudo chmod 600 /etc/ssh/ssh_host_*_key
+sudo chmod 644 /etc/ssh/ssh_host_*_key.pub
+
+echo "Starting sshd..."
+# Disable privilege separation - setgroups fails in rootless podman on LC systems
+sudo bash -c 'ulimit -c unlimited; /usr/sbin/sshd -o UsePrivilegeSeparation=no'
+
+echo "Starting munged..."
+sudo -u munge /usr/sbin/munged
+sleep 2
+
+if [ -d /shared ]; then
+    sudo chown -R "$(id -un):$(id -gn)" /shared
+    sudo chmod 755 /shared
+fi
+
+if [ "${SLURM_ROLE}" = "db" ]; then
+    echo "Starting slurmdbd..."
+    exec sudo -u slurm /usr/sbin/slurmdbd -Dvvv
+elif [ "${SLURM_ROLE}" = "ctl" ] ; then
+    echo "Starting slurmctld..."
+    exec sudo -u slurm /usr/sbin/slurmctld -i -Dvvv
+elif [ "${SLURM_ROLE}" = "worker" ] ; then
+    echo "Starting slurmd..."
+    exec sudo bash -c 'ulimit -c unlimited; exec /usr/sbin/slurmd -Dvvv'
+else
+    echo "Unknown SLURM_ROLE: ${SLURM_ROLE}"
+    echo "Valid roles: db, ctl, worker"
+    exit 1
+fi

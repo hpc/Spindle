@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# Podman-compatible entrypoint for Flux containers
+# Starts munged and the flux broker.
+#
+# For documentation on running Flux in containers, see
+# https://flux-framework.readthedocs.io/en/latest/tutorials/containers
+
+set -x  # Debug output
+
+brokerOptions="-Scron.directory=/etc/flux/system/cron.d \
+  -Stbon.fanout=256 \
+  -Srundir=/run/flux \
+  -Sstatedir=${STATE_DIRECTORY:-/var/lib/flux} \
+  -Slocal-uri=local:///run/flux/local \
+  -Slog-stderr-level=6 \
+  -Slog-stderr-mode=local"
+
+# Get the hostname that will resolve for the Docker bridge network.
+address=$(echo $( nslookup "$( hostname -i )" | head -n 1 ))
+parts=(${address//=/ })
+hostName=${parts[2]}
+thisHost=(${hostName//./ })
+thisHost=${thisHost[0]}
+echo "This host: $thisHost"
+echo "Main host: $mainHost"
+export FLUX_FAKE_HOSTNAME=$thisHost
+
+if [ -d /shared ]; then
+    sudo chown -R "$(id -un):$(id -gn)" /shared
+    sudo chmod 755 /shared
+fi
+
+# Start munged
+echo "Starting munged..."
+sudo -u munge /usr/sbin/munged
+
+# Give munge time to start
+sleep 2
+
+if [ "${thisHost}" != "${mainHost}" ]; then
+    # Worker node -- wait for head node before connecting
+    echo "Worker node: waiting for head node..."
+    sleep 15
+    echo "Starting flux broker (worker)..."
+    exec flux start -o --config /etc/flux/config ${brokerOptions} sleep inf
+else
+    # Head node
+    echo "Head node: starting flux broker..."
+    exec flux start -o --config /etc/flux/config ${brokerOptions} sleep inf
+fi

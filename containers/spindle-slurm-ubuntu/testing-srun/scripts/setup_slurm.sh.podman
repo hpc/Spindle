@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+
+mkdir -p /etc/slurm /etc/sysconfig/slurm /var/spool/slurmd /var/spool/slurmctld /var/run/slurmd /var/run/slurmdbd /var/lib/slurmd /var/log/slurm
+touch /var/lib/slurmd/node_state /var/lib/slurmd/front_end_state /var/lib/slurmd/job_state /var/lib/slurmd/resv_state /var/lib/slurmd/trigger_state /var/lib/slurmd/assoc_mgr_state /var/lib/slurmd/assoc_usage /var/lib/slurmd/qos_usage /var/lib/slurmd/fed_mgr_state
+cp /home/${SLURM_USER}/slurm.conf.template /etc/slurm/slurm.conf.template
+cp /home/${SLURM_USER}/slurmdbd.conf.template /etc/slurm/slurmdbd.conf.template
+cp /home/${SLURM_USER}/cgroup.conf /etc/slurm/cgroup.conf
+chown -R slurm:slurm /etc/slurm /etc/sysconfig/slurm /var/spool/slurmd /var/spool/slurmctld /var/run/slurmd /var/run/slurmdbd /var/lib/slurmd /var/log/slurm
+# Templates should be readable by slurm (will be used to generate configs at runtime)
+chmod 644 /etc/slurm/slurm.conf.template /etc/slurm/slurmdbd.conf.template
+# cgroup.conf should be world-readable (needed by slurmuser for salloc/srun)
+chmod 644 /etc/slurm/cgroup.conf
